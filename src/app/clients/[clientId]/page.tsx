@@ -19,7 +19,8 @@ import {
   Settings,
   Trash2,
   Save,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,6 +141,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   }
 
   const totalProjectValue = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
+  const totalPitchCount = projects?.filter(p => p.status === 'Pitch').length || 0;
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -288,7 +290,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Amount</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Value</p>
               <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{totalProjectValue.toLocaleString('en-IN')}</h3>
             </div>
           </div>
@@ -299,8 +301,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Briefcase className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Projects</p>
-              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{projects?.filter(p => p.status !== 'Completed').length || 0}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Projects</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{projects?.length || 0}</h3>
             </div>
           </div>
         </Card>
@@ -310,19 +312,19 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Receipt className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pending Invoices</p>
-              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{invoices?.filter(i => i.status !== 'Paid').length || 0}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Invoices</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{invoices?.length || 0}</h3>
             </div>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
           <div className="space-y-4">
             <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center">
-              <MessageSquare className="h-5 w-5 text-purple-500" />
+              <Sparkles className="h-5 w-5 text-purple-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Communications</p>
-              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">0</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Pitch</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{totalPitchCount}</h3>
             </div>
           </div>
         </Card>
