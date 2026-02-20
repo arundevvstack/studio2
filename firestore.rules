@@ -5,14 +5,14 @@ service cloud.firestore {
     /**
      * MEDIAFLOW SECURITY MODEL (PROTOTYPE VERSION)
      * 
-     * For the prototype phase, we permit public read access for most entities.
-     * This prevents blocks when a user has just opened the app and the 
-     * anonymous sign-in is still in progress (request.auth is null).
+     * In the prototype phase, we permit broad read access to ensure 
+     * the dashboard, boards, and client engagements are always visible.
+     * Write access is secured to authenticated users.
      */
 
     // --- GLOBAL HELPER FUNCTIONS ---
 
-    /** @description Checks if the user is authenticated with a valid UID. */
+    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
@@ -22,91 +22,65 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the document exists and the current user is the owner. */
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    /** 
-     * @description Prototype version: Any signed-in user is considered a team member.
-     */
+    /** @description Broad check for team membership in prototype phase. */
     function isTeamMember() {
       return isSignedIn();
     }
 
-    /** @description Checks project-level membership using denormalized maps. */
-    function isProjectCollaborator(data) {
-      return isSignedIn() && (
-        (data.members != null && data.members[request.auth.uid] != null) || 
-        (data.projectMembers != null && data.projectMembers[request.auth.uid] != null)
-      );
-    }
-
     // --- COLLECTION RULES ---
 
+    // Global Roles
     match /roles/{roleId} {
-      allow get, list: if true;
-      allow create, update, delete: if isTeamMember();
+      allow read: if true;
+      allow write: if isTeamMember();
     }
 
+    // Team Member Profiles
     match /team_members/{teamMemberId} {
-      allow get, list: if true;
-      allow create: if isOwner(teamMemberId) && request.resource.data.id == teamMemberId;
-      allow update: if isExistingOwner(teamMemberId) && request.resource.data.id == resource.data.id;
+      allow read: if true;
+      allow create, update: if isOwner(teamMemberId);
       allow delete: if false;
     }
 
+    // Strategic Clients
     match /clients/{clientId} {
-      allow get, list: if true;
-      allow create: if isTeamMember() && request.resource.data.id == clientId;
-      allow update: if isTeamMember() && resource != null && request.resource.data.id == resource.data.id;
-      allow delete: if isTeamMember() && resource != null;
-    }
+      allow read: if true;
+      allow write: if isTeamMember();
 
-    match /projects/{projectId} {
-      allow get, list: if true;
-      allow create: if isTeamMember() && request.resource.data.id == projectId;
-      allow update: if (isProjectCollaborator(resource.data) || isTeamMember()) && request.resource.data.id == resource.data.id;
-      allow delete: if isTeamMember() && resource != null;
+      // Client-specific Invoices
+      match /invoices/{invoiceId} {
+        allow read: if true;
+        allow write: if isTeamMember();
 
-      match /tasks/{taskId} {
-        allow get, list: if true;
-        allow create: if (isProjectCollaborator(request.resource.data) || isTeamMember()) && request.resource.data.projectId == projectId;
-        allow update: if (isProjectCollaborator(resource.data) || isTeamMember()) && request.resource.data.projectId == resource.data.projectId;
-        allow delete: if isProjectCollaborator(resource.data) || isTeamMember();
-
-        match /time_entries/{timeEntryId} {
-          allow get, list: if true;
-          allow create: if (isProjectCollaborator(request.resource.data) || isTeamMember())
-                        && isOwner(request.resource.data.teamMemberId)
-                        && request.resource.data.projectId == projectId
-                        && request.resource.data.taskId == taskId;
-          allow update: if isExistingOwner(resource.data.teamMemberId) 
-                        && request.resource.data.teamMemberId == resource.data.teamMemberId;
-          allow delete: if isExistingOwner(resource.data.teamMemberId);
+        match /line_items/{lineItemId} {
+          allow read: if true;
+          allow write: if isTeamMember();
         }
       }
     }
 
-    match /clients/{clientId}/invoices/{invoiceId} {
-      allow get, list: if true;
-      allow create: if isTeamMember() && request.resource.data.clientId == clientId;
-      allow update: if isTeamMember() && resource != null && request.resource.data.clientId == resource.data.clientId;
-      allow delete: if isTeamMember() && resource != null;
+    // Production Projects
+    match /projects/{projectId} {
+      allow read: if true;
+      allow write: if isTeamMember();
 
-      match /line_items/{lineItemId} {
-        allow get, list: if true;
-        allow create: if isTeamMember() && request.resource.data.invoiceId == invoiceId;
-        allow update: if isTeamMember() && resource != null && request.resource.data.invoiceId == resource.data.invoiceId;
-        allow delete: if isTeamMember() && resource != null;
+      // Project Tasks
+      match /tasks/{taskId} {
+        allow read: if true;
+        allow write: if isTeamMember();
+
+        // Time tracking within tasks
+        match /time_entries/{timeEntryId} {
+          allow read: if true;
+          allow write: if isTeamMember();
+        }
       }
     }
 
+    // Communication Logs
     match /communication_logs/{logId} {
-      allow get, list: if true;
-      allow create: if isOwner(request.resource.data.teamMemberId);
-      allow update: if isExistingOwner(resource.data.teamMemberId) && request.resource.data.teamMemberId == resource.data.teamMemberId;
-      allow delete: if isExistingOwner(resource.data.teamMemberId);
+      allow read: if true;
+      allow write: if isTeamMember();
     }
   }
 }
