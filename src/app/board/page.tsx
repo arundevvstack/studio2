@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, ArrowRight } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   DndContext,
@@ -14,10 +14,17 @@ import {
   useSensors,
   type DragEndEvent,
   type UniqueIdentifier,
+  DragOverlay,
+  defaultDropAnimationSideEffects,
 } from "@dnd-kit/core";
 import {
+  arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
@@ -32,11 +39,19 @@ const COLUMNS = [
   { id: "Released", title: "RELEASE" }
 ];
 
+interface ProjectCard {
+  id: string;
+  title: string;
+  client: string;
+  deadline: string;
+  status: string;
+}
+
 export default function BoardPage() {
   const [mounted, setMounted] = useState(false);
   const db = useFirestore();
   const { user } = useUser();
-  const [boardData, setBoardData] = useState<any[]>([]);
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -59,52 +74,56 @@ export default function BoardPage() {
 
   const { data: clients } = useCollection(clientsQuery);
 
-  useEffect(() => {
-    if (!projects) return;
-
-    const clientMap = new Map((clients || []).map((c: any) => [c.id, c.name]));
-
-    const newBoardData = COLUMNS.map(col => ({
-      ...col,
-      cards: projects
-        .filter((p: any) => (p.status || "Pre Production") === col.id)
-        .map((p: any) => ({
-          id: p.id,
-          title: p.name,
-          criticality: p.priority || "MEDIUM",
-          client: clientMap.get(p.clientId) || "Unknown",
-          progress: p.progress || 0,
-          deadline: p.dueDate || "TBD",
-          team: p.teamMemberIds || []
-        }))
-    }));
-
-    setBoardData(newBoardData);
-  }, [projects, clients]);
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const findContainer = useCallback((id: UniqueIdentifier) => {
-    if (boardData.some((col) => col.id === id)) return id;
-    const container = boardData.find((col) =>
-      col.cards.some((c: any) => c.id === id)
-    );
-    return container ? container.id : null;
-  }, [boardData]);
+  const clientMap = React.useMemo(() => {
+    const map = new Map();
+    clients?.forEach(c => map.set(c.id, c.name));
+    return map;
+  }, [clients]);
+
+  const getProjectsByStatus = useCallback((status: string) => {
+    return (projects || [])
+      .filter((p: any) => (p.status || "Pitch") === status)
+      .map((p: any) => ({
+        id: p.id,
+        title: p.name,
+        client: clientMap.get(p.clientId) || "Unknown",
+        deadline: p.dueDate || "TBD",
+        status: p.status || "Pitch"
+      }));
+  }, [projects, clientMap]);
+
+  function handleDragStart(event: any) {
+    setActiveId(event.active.id);
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    setActiveId(null);
+
     if (!over) return;
 
-    const activeContainer = findContainer(active.id);
-    const overContainer = findContainer(over.id);
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
-    if (activeContainer && overContainer && activeContainer !== overContainer) {
-      const projectRef = doc(db, "projects", active.id as string);
-      updateDocumentNonBlocking(projectRef, { status: overContainer });
+    // Check if we dropped over a column or a card in a different column
+    let newStatus = overId;
+    if (!COLUMNS.find(col => col.id === overId)) {
+      // If dropped over a card, find that card's column
+      const overCard = projects?.find(p => p.id === overId);
+      if (overCard) {
+        newStatus = overCard.status || "Pitch";
+      }
+    }
+
+    const activeProject = projects?.find(p => p.id === activeId);
+    if (activeProject && activeProject.status !== newStatus) {
+      const projectRef = doc(db, "projects", activeId);
+      updateDocumentNonBlocking(projectRef, { status: newStatus });
     }
   }
 
@@ -115,6 +134,8 @@ export default function BoardPage() {
       </div>
     );
   }
+
+  const activeProject = activeId ? projects?.find(p => p.id === activeId) : null;
 
   return (
     <div className="h-full flex flex-col space-y-8 animate-in fade-in duration-500">
@@ -136,59 +157,115 @@ export default function BoardPage() {
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+        <DndContext 
+          sensors={sensors} 
+          collisionDetection={closestCorners} 
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
           <ScrollArea className="w-full flex-1 pb-10">
             <div className="flex gap-6 min-h-[600px] w-max pr-8">
-              {boardData.map((column) => (
-                <div key={column.id} className="w-[320px] shrink-0 flex flex-col gap-4">
-                  <div className="flex items-center justify-between px-2">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{column.title}</h3>
-                    <Badge variant="outline" className="text-[10px] font-bold rounded-md bg-white border-slate-100 tracking-normal">
-                      {column.cards.length}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex-1 bg-slate-50/50 rounded-3xl p-3 border border-slate-100/50 space-y-3">
-                    {column.cards.map((card: any) => (
-                      <Card key={card.id} className="p-5 bg-white border-slate-100 shadow-sm rounded-2xl group hover:shadow-md transition-all cursor-grab active:cursor-grabbing">
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal">{card.client}</p>
-                            <h4 className="text-sm font-bold text-slate-900 leading-snug tracking-normal">{card.title}</h4>
-                          </div>
-                          
-                          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
-                              <span>Due {card.deadline === 'TBD' ? 'NO DATE' : card.deadline}</span>
-                            </div>
-                            <Button asChild variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-[10px] font-bold uppercase tracking-normal hover:bg-slate-100">
-                              <Link href={`/projects/${card.id}`}>Details</Link>
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                    {column.cards.length === 0 && (
-                      <div className="h-32 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">No Active Items</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              {COLUMNS.map((column) => (
+                <BoardColumn 
+                  key={column.id} 
+                  id={column.id} 
+                  title={column.title} 
+                  cards={getProjectsByStatus(column.id)} 
+                />
               ))}
             </div>
             <ScrollBar orientation="horizontal" className="mt-4" />
           </ScrollArea>
+          
+          <DragOverlay>
+            {activeId && activeProject ? (
+              <BoardCard 
+                id={activeProject.id}
+                title={activeProject.name}
+                client={clientMap.get(activeProject.clientId) || "Unknown"}
+                deadline={activeProject.dueDate || "TBD"}
+                isOverlay
+              />
+            ) : null}
+          </DragOverlay>
         </DndContext>
       )}
     </div>
   );
 }
 
-function Card({ children, className, ...props }: any) {
+function BoardColumn({ id, title, cards }: { id: string, title: string, cards: ProjectCard[] }) {
   return (
-    <div className={`rounded-xl border bg-card text-card-foreground shadow-sm ${className}`} {...props}>
-      {children}
+    <div className="w-[320px] shrink-0 flex flex-col gap-4">
+      <div className="flex items-center justify-between px-2">
+        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{title}</h3>
+        <Badge variant="outline" className="text-[10px] font-bold rounded-md bg-white border-slate-100 tracking-normal">
+          {cards.length}
+        </Badge>
+      </div>
+      
+      <SortableContext id={id} items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex-1 bg-slate-50/50 rounded-3xl p-3 border border-slate-100/50 space-y-3 min-h-[200px]">
+          {cards.map((card) => (
+            <SortableCard key={card.id} card={card} />
+          ))}
+          {cards.length === 0 && (
+            <div className="h-32 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center">
+              <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">No Active Items</p>
+            </div>
+          )}
+        </div>
+      </SortableContext>
+    </div>
+  );
+}
+
+function SortableCard({ card }: { card: ProjectCard }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: card.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <BoardCard 
+        id={card.id}
+        title={card.title}
+        client={card.client}
+        deadline={card.deadline}
+      />
+    </div>
+  );
+}
+
+function BoardCard({ id, title, client, deadline, isOverlay = false }: any) {
+  return (
+    <div className={`p-5 bg-white border-slate-100 shadow-sm rounded-2xl group hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${isOverlay ? 'shadow-xl rotate-3 scale-105' : ''}`}>
+      <div className="space-y-4">
+        <div>
+          <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal">{client}</p>
+          <h4 className="text-sm font-bold text-slate-900 leading-snug tracking-normal">{title}</h4>
+        </div>
+        
+        <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
+            <span>Due {deadline === 'TBD' ? 'NO DATE' : deadline}</span>
+          </div>
+          <Button asChild variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-[10px] font-bold uppercase tracking-normal hover:bg-slate-100" onPointerDown={(e) => e.stopPropagation()}>
+            <Link href={`/projects/${id}`}>Details</Link>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
