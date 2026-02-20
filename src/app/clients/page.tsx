@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,7 +130,7 @@ export default function ClientsPage() {
 
       {/* Portfolio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-        {CLIENT_PORTFOLIO.map((client) => (
+        {CLIENTS_PORTFOLIO.map((client) => (
           <Card key={client.id} className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <div className={`h-24 ${client.color} relative overflow-hidden`}>
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
