@@ -15,10 +15,9 @@ import {
   type DragEndEvent,
   type UniqueIdentifier,
   DragOverlay,
-  defaultDropAnimationSideEffects,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -39,7 +38,7 @@ const COLUMNS = [
   { id: "Released", title: "RELEASE" }
 ];
 
-interface ProjectCard {
+interface ProjectCardData {
   id: string;
   title: string;
   client: string;
@@ -85,7 +84,7 @@ export default function BoardPage() {
     return map;
   }, [clients]);
 
-  const getProjectsByStatus = useCallback((status: string) => {
+  const getProjectsByStatus = useCallback((status: string): ProjectCardData[] => {
     return (projects || [])
       .filter((p: any) => (p.status || "Pitch") === status)
       .map((p: any) => ({
@@ -110,20 +109,27 @@ export default function BoardPage() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Check if we dropped over a column or a card in a different column
-    let newStatus = overId;
-    if (!COLUMNS.find(col => col.id === overId)) {
-      // If dropped over a card, find that card's column
+    // Check if we dropped over a column ID directly
+    const columnMatch = COLUMNS.find(col => col.id === overId);
+    let newStatus = columnMatch ? columnMatch.id : null;
+
+    // If not a column, check if we dropped over a card
+    if (!newStatus) {
       const overCard = projects?.find(p => p.id === overId);
       if (overCard) {
         newStatus = overCard.status || "Pitch";
       }
     }
 
-    const activeProject = projects?.find(p => p.id === activeId);
-    if (activeProject && activeProject.status !== newStatus) {
-      const projectRef = doc(db, "projects", activeId);
-      updateDocumentNonBlocking(projectRef, { status: newStatus });
+    if (newStatus) {
+      const activeProject = projects?.find(p => p.id === activeId);
+      if (activeProject && activeProject.status !== newStatus) {
+        const projectRef = doc(db, "projects", activeId);
+        updateDocumentNonBlocking(projectRef, { 
+          status: newStatus,
+          updatedAt: new Date().toISOString()
+        });
+      }
     }
   }
 
@@ -194,7 +200,9 @@ export default function BoardPage() {
   );
 }
 
-function BoardColumn({ id, title, cards }: { id: string, title: string, cards: ProjectCard[] }) {
+function BoardColumn({ id, title, cards }: { id: string, title: string, cards: ProjectCardData[] }) {
+  const { setNodeRef } = useDroppable({ id });
+
   return (
     <div className="w-[320px] shrink-0 flex flex-col gap-4">
       <div className="flex items-center justify-between px-2">
@@ -205,13 +213,16 @@ function BoardColumn({ id, title, cards }: { id: string, title: string, cards: P
       </div>
       
       <SortableContext id={id} items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex-1 bg-slate-50/50 rounded-3xl p-3 border border-slate-100/50 space-y-3 min-h-[200px]">
+        <div 
+          ref={setNodeRef}
+          className="flex-1 bg-slate-50/50 rounded-3xl p-3 border border-slate-100/50 space-y-3 min-h-[200px] transition-colors"
+        >
           {cards.map((card) => (
             <SortableCard key={card.id} card={card} />
           ))}
           {cards.length === 0 && (
             <div className="h-32 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-              <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">No Active Items</p>
+              <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">Drop items here</p>
             </div>
           )}
         </div>
@@ -220,7 +231,7 @@ function BoardColumn({ id, title, cards }: { id: string, title: string, cards: P
   );
 }
 
-function SortableCard({ card }: { card: ProjectCard }) {
+function SortableCard({ card }: { card: ProjectCardData }) {
   const {
     attributes,
     listeners,
@@ -250,7 +261,7 @@ function SortableCard({ card }: { card: ProjectCard }) {
 
 function BoardCard({ id, title, client, deadline, isOverlay = false }: any) {
   return (
-    <div className={`p-5 bg-white border-slate-100 shadow-sm rounded-2xl group hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${isOverlay ? 'shadow-xl rotate-3 scale-105' : ''}`}>
+    <div className={`p-5 bg-white border border-slate-100 shadow-sm rounded-2xl group hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${isOverlay ? 'shadow-xl rotate-3 scale-105' : ''}`}>
       <div className="space-y-4">
         <div>
           <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal">{client}</p>
