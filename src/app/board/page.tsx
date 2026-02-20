@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, where, doc } from "firebase/firestore";
+import { collection, query, orderBy, doc } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const COLUMNS = [
@@ -43,8 +43,6 @@ export default function BoardPage() {
   }, []);
 
   const projectsQuery = useMemoFirebase(() => {
-    // Note: userId check is removed to show all projects for this prototype session
-    // If you want user-specific projects, restore: where("userId", "==", user.uid)
     return query(
       collection(db, "projects"),
       orderBy("createdAt", "desc")
@@ -184,7 +182,6 @@ export default function BoardPage() {
   );
 }
 
-// Minimal Card component for local use to avoid dependency issues
 function Card({ children, className, ...props }: any) {
   return (
     <div className={`rounded-xl border bg-card text-card-foreground shadow-sm ${className}`} {...props}>

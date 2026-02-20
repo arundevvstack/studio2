@@ -4,10 +4,11 @@ service cloud.firestore {
     /**
      * MEDIAFLOW SECURITY MODEL (PROTOTYPE VERSION)
      * 
-     * Full read/write access allowed for rapid prototyping.
+     * Full read/write access allowed for authenticated users during development.
+     * This ensures the prototype functions smoothly without complex role checks.
      */
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null;
     }
   }
 }

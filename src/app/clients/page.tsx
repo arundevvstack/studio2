@@ -7,7 +7,6 @@ import {
   Plus, 
   Briefcase,
   TrendingUp,
-  Globe,
   Mail,
   ArrowRight,
   Filter,
