@@ -1,15 +1,13 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { 
   Search, 
   Plus, 
-  MoreHorizontal, 
   Briefcase,
   TrendingUp,
   Globe,
   Mail,
-  Phone,
   ArrowRight,
   Filter,
   Loader2
@@ -42,7 +40,7 @@ export default function ClientsPage() {
       {/* Header Section */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
+          <h1 className="text-4xl font-bold font-headline text-slate-900">
             Client Portfolio
           </h1>
           <p className="text-sm text-slate-500 font-medium">
@@ -65,7 +63,7 @@ export default function ClientsPage() {
               <Globe className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Reach</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Global Reach</p>
               <h3 className="text-2xl font-bold font-headline">12 Countries</h3>
             </div>
           </div>
@@ -76,8 +74,8 @@ export default function ClientsPage() {
               <TrendingUp className="h-6 w-6 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portfolio Value</p>
-              <h3 className="text-2xl font-bold font-headline">$4.2M</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Portfolio Value</p>
+              <h3 className="text-2xl font-bold font-headline">₹4.2M</h3>
             </div>
           </div>
         </Card>
@@ -87,7 +85,7 @@ export default function ClientsPage() {
               <Briefcase className="h-6 w-6 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Ops</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Active Ops</p>
               <h3 className="text-2xl font-bold font-headline">{clients?.length || 0} Clients</h3>
             </div>
           </div>
@@ -114,7 +112,7 @@ export default function ClientsPage() {
         {isLoading ? (
           <div className="col-span-full flex flex-col items-center justify-center py-20 space-y-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Loading Portfolio...</p>
+            <p className="text-slate-400 font-bold text-sm uppercase tracking-tight">Loading Portfolio...</p>
           </div>
         ) : clients && clients.length > 0 ? (
           clients.map((client, index) => (
@@ -123,7 +121,7 @@ export default function ClientsPage() {
                 <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
                 <div className="absolute -bottom-10 left-8">
                   <Avatar className="h-20 w-20 border-4 border-white shadow-lg rounded-3xl">
-                    <AvatarImage src={`https://picsum.photos/seed/${client.name}/200/200`} />
+                    <AvatarImage src={`https://picsum.photos/seed/${client.id}/200/200`} />
                     <AvatarFallback>{client.name[0]}</AvatarFallback>
                   </Avatar>
                 </div>
@@ -133,7 +131,7 @@ export default function ClientsPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-2xl font-bold font-headline text-slate-900">{client.name}</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{client.industry || "General Industry"}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-tight mt-1">{client.industry || "General Industry"}</p>
                   </div>
                   <Badge className="bg-slate-50 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
                     {client.status || "Active"}
@@ -142,11 +140,11 @@ export default function ClientsPage() {
 
                 <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Contact</p>
                     <p className="text-base font-bold mt-1 text-primary truncate">{client.contactPerson || "N/A"}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phone</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Phone</p>
                     <p className="text-sm font-bold mt-1 text-slate-900 truncate">{client.phone || "N/A"}</p>
                   </div>
                 </div>
@@ -158,9 +156,11 @@ export default function ClientsPage() {
                   </div>
                 </div>
 
-                <Button variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase tracking-widest group-hover:bg-primary group-hover:text-white transition-all gap-2">
-                  View Engagement
-                  <ArrowRight className="h-4 w-4" />
+                <Button asChild variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase tracking-tight group-hover:bg-primary group-hover:text-white transition-all gap-2">
+                  <Link href={`/clients/${client.id}`}>
+                    View Engagement
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
@@ -170,7 +170,7 @@ export default function ClientsPage() {
             <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <Plus className="h-8 w-8 text-slate-300 group-hover:text-primary" />
             </div>
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Scale Portfolio</p>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">Scale Portfolio</p>
             <p className="text-xs text-slate-300 mt-2 font-medium">Add your first high-value client</p>
           </Link>
         )}
