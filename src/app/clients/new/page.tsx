@@ -1,10 +1,19 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, Briefcase, Globe, Mail, Phone, Users, SendHorizontal } from "lucide-react";
+import { 
+  ChevronLeft, 
+  Briefcase, 
+  Globe, 
+  Mail, 
+  Phone, 
+  Users, 
+  SendHorizontal,
+  MapPin,
+  ReceiptText
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function AddClientPage() {
@@ -91,6 +100,48 @@ export default function AddClientPage() {
                   className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 focus-visible:ring-primary/20"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* New Grid Row: Phone & GSTIN */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+                Contact Phone Number
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                <Input 
+                  placeholder="+1 (555) 000-0000" 
+                  className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 focus-visible:ring-primary/20"
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+                GSTIN Number
+              </label>
+              <div className="relative">
+                <ReceiptText className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                <Input 
+                  placeholder="e.g. 22AAAAA0000A1Z5" 
+                  className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 focus-visible:ring-primary/20"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+              Physical Office Address
+            </label>
+            <div className="relative">
+              <MapPin className="absolute left-6 top-7 h-4 w-4 text-slate-300" />
+              <Textarea 
+                placeholder="e.g. 123 Innovation Drive, Silicon Valley, CA 94025"
+                className="pl-14 min-h-[100px] rounded-2xl bg-slate-50 border-none shadow-inner text-base p-6 focus-visible:ring-primary/20 resize-none placeholder:text-slate-400"
+              />
             </div>
           </div>
 
