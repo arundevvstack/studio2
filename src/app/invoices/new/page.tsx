@@ -52,6 +52,11 @@ export default function CreateInvoicePage() {
     .filter(item => selectedItems.includes(item.id))
     .reduce((sum, item) => sum + item.amount, 0);
 
+  const handleDeploy = () => {
+    // Navigate to the high-fidelity view
+    router.push("/invoices/MRZL_202602_25/view");
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header Section */}
@@ -133,7 +138,7 @@ export default function CreateInvoicePage() {
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold font-headline text-slate-900">
-                          ${item.amount.toLocaleString()}
+                          ₹{item.amount.toLocaleString('en-IN')}
                         </p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                           {item.status}
@@ -166,8 +171,8 @@ export default function CreateInvoicePage() {
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                   Total Revenue
                 </p>
-                <h2 className="text-6xl font-bold font-headline tracking-tighter text-slate-900">
-                  ${totalRevenue.toLocaleString()}
+                <h2 className="text-5xl font-bold font-headline tracking-tighter text-slate-900">
+                  ₹{totalRevenue.toLocaleString('en-IN')}
                 </h2>
               </div>
 
@@ -178,12 +183,15 @@ export default function CreateInvoicePage() {
                 <div className="relative group">
                   <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-hover:text-primary transition-colors" />
                   <div className="h-16 w-full rounded-2xl bg-slate-50 border-none flex items-center px-8 text-slate-900 font-bold text-sm shadow-inner cursor-pointer hover:bg-slate-100/50 transition-colors">
-                    03/06/2026
+                    15/02/2026
                   </div>
                 </div>
               </div>
 
-              <Button className="w-full h-16 rounded-3xl bg-primary/40 hover:bg-primary/50 text-white font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+              <Button 
+                onClick={handleDeploy}
+                className="w-full h-16 rounded-3xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+              >
                 Deploy Invoice
               </Button>
             </CardContent>
