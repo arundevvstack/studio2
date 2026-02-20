@@ -49,7 +49,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500">
-      {/* Header Section */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Button 
@@ -85,15 +84,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             SCOPE
           </Button>
           <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-            Edit Entity
+            Edit Project
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Main Content Column */}
         <div className="lg:col-span-9 space-y-8">
-          {/* Throughput Analysis Card */}
           <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between px-10 pt-10 pb-6">
               <CardTitle className="text-[10px] font-bold text-slate-400 uppercase">
@@ -157,7 +154,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             </CardContent>
           </Card>
 
-          {/* Objectives Tabs */}
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-50 overflow-hidden">
             <Tabs defaultValue="objectives" className="w-full">
               <TabsList className="h-auto bg-transparent px-10 pt-6 gap-8 border-b rounded-none">
@@ -220,7 +216,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           </div>
         </div>
 
-        {/* Sidebar Column */}
         <div className="lg:col-span-3 space-y-6">
           <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
             <CardHeader className="p-8 pb-4">

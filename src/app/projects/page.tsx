@@ -31,19 +31,16 @@ import { collection, query, orderBy } from "firebase/firestore";
 export default function ProjectsPage() {
   const db = useFirestore();
 
-  // Fetch Clients
   const clientsQuery = useMemoFirebase(() => {
     return query(collection(db, "clients"), orderBy("name", "asc"));
   }, [db]);
   const { data: clients, isLoading: isLoadingClients } = useCollection(clientsQuery);
 
-  // Fetch Projects
   const projectsQuery = useMemoFirebase(() => {
     return query(collection(db, "projects"), orderBy("createdAt", "desc"));
   }, [db]);
   const { data: projects, isLoading: isLoadingProjects } = useCollection(projectsQuery);
 
-  // Group projects by client
   const clientGroups = useMemo(() => {
     if (!clients || !projects) return [];
 
@@ -70,7 +67,6 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-      {/* Header Section */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold font-headline">Projects</h1>
@@ -92,7 +88,6 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Filter Bar */}
       <div className="space-y-4">
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
@@ -111,7 +106,6 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Grouped Content */}
       <div className="space-y-12">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -121,7 +115,6 @@ export default function ProjectsPage() {
         ) : clientGroups.length > 0 ? (
           clientGroups.map((group) => (
             <div key={group.id} className="space-y-4">
-              {/* Client Header */}
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
                   <User className="h-5 w-5 text-primary/40" />
@@ -134,7 +127,6 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              {/* Project List */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="grid grid-cols-12 px-8 py-4 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase">
                   <div className="col-span-4">PRODUCTION ENTITY</div>
@@ -174,7 +166,7 @@ export default function ProjectsPage() {
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">
-                              <p className="text-[10px] font-bold uppercase">Edit Entity</p>
+                              <p className="text-[10px] font-bold uppercase">Edit Project</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
