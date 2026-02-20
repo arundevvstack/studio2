@@ -1,0 +1,40 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Abstract media production background",
+      "imageUrl": "https://picsum.photos/seed/media1/1200/600",
+      "imageHint": "media studio"
+    },
+    {
+      "id": "client-1",
+      "description": "Corporate client logo placeholder",
+      "imageUrl": "https://picsum.photos/seed/client1/100/100",
+      "imageHint": "corporate logo"
+    },
+    {
+      "id": "client-2",
+      "description": "Tech client logo placeholder",
+      "imageUrl": "https://picsum.photos/seed/client2/100/100",
+      "imageHint": "tech company"
+    },
+    {
+      "id": "team-1",
+      "description": "Team member portrait",
+      "imageUrl": "https://picsum.photos/seed/user1/200/200",
+      "imageHint": "professional person"
+    },
+    {
+      "id": "team-2",
+      "description": "Team member portrait",
+      "imageUrl": "https://picsum.photos/seed/user2/200/200",
+      "imageHint": "designer person"
+    },
+    {
+      "id": "team-3",
+      "description": "Team member portrait",
+      "imageUrl": "https://picsum.photos/seed/user3/200/200",
+      "imageHint": "developer person"
+    }
+  ]
+}
