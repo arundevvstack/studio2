@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -80,8 +79,8 @@ export function AppSidebar() {
             />
           </svg>
           <div className="text-center">
-            <h1 className="text-sm font-bold tracking-tighter text-slate-900 uppercase">Marzelz</h1>
-            <p className="text-[10px] font-medium tracking-[0.2em] text-slate-400 uppercase -mt-1">Lifestyle</p>
+            <h1 className="text-sm font-bold text-slate-900 uppercase">Marzelz</h1>
+            <p className="text-[10px] font-medium text-slate-400 uppercase -mt-1">Lifestyle</p>
           </div>
         </div>
 
@@ -97,7 +96,7 @@ export function AppSidebar() {
       <SidebarContent className="px-4 py-4">
         {/* Workspace Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400/80 mb-4 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400/80 mb-4 group-data-[collapsible=icon]:hidden">
             Workspace
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
@@ -132,7 +131,7 @@ export function AppSidebar() {
 
         {/* Management Section */}
         <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400/80 mb-4 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400/80 mb-4 group-data-[collapsible=icon]:hidden">
             Management
           </SidebarGroupLabel>
           <SidebarMenu>

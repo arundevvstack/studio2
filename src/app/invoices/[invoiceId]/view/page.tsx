@@ -9,23 +9,23 @@ export default function InvoiceViewPage({ params }: { params: { invoiceId: strin
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-slate-100/50 p-4 md:p-8 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-slate-100/50 p-4 md:p-8 animate-in fade-in duration-700 font-body">
       {/* Navigation & Actions */}
       <div className="max-w-[900px] mx-auto mb-8 flex items-center justify-between">
         <Button 
           variant="ghost" 
           onClick={() => router.back()}
-          className="gap-2 text-slate-500 hover:text-slate-900 font-bold text-xs uppercase tracking-widest"
+          className="gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase"
         >
           <ChevronLeft className="h-4 w-4" />
           Back to Synthesis
         </Button>
         <div className="flex gap-4">
-          <Button variant="outline" className="gap-2 bg-white rounded-xl font-bold text-xs uppercase tracking-widest border-slate-200">
+          <Button variant="outline" className="gap-2 bg-white rounded-xl font-bold text-sm uppercase border-slate-200">
             <Download className="h-4 w-4" />
             Download PDF
           </Button>
-          <Button onClick={() => window.print()} className="gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20">
+          <Button onClick={() => window.print()} className="gap-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold text-sm uppercase shadow-lg shadow-primary/20">
             <Printer className="h-4 w-4" />
             Print Invoice
           </Button>
@@ -55,48 +55,48 @@ export default function InvoiceViewPage({ params }: { params: { invoiceId: strin
                 />
               </svg>
               <div className="text-center mt-2">
-                <h1 className="text-xl font-bold tracking-tighter text-slate-800 uppercase leading-none">MARZELZ</h1>
-                <p className="text-[10px] font-medium tracking-[0.2em] text-slate-400 uppercase mt-1">LIFESTYLE</p>
+                <h1 className="text-xl font-bold text-slate-800 uppercase leading-none">MARZELZ</h1>
+                <p className="text-[10px] font-medium text-slate-400 uppercase mt-1">LIFESTYLE</p>
               </div>
             </div>
 
             <div className="text-right space-y-1">
-              <h2 className="text-2xl font-bold text-primary font-headline">
+              <h2 className="text-2xl font-bold text-primary">
                 <span className="text-primary/70">Marzelz</span> Lifestyle PVT LTD
               </h2>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">CIN: U60200KL2023PTC081308</p>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-tight">GSTIN: 32AAQCM8450P1ZQ</p>
-              <h3 className="text-5xl font-bold text-slate-900 font-headline pt-4">Invoice</h3>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">CIN: U60200KL2023PTC081308</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">GSTIN: 32AAQCM8450P1ZQ</p>
+              <h3 className="text-5xl font-bold text-slate-900 pt-4">Invoice</h3>
             </div>
           </div>
 
           {/* Details & Bill To Section */}
           <div className="grid grid-cols-2 gap-12">
             <div className="space-y-3">
-              <div className="grid grid-cols-[100px_1fr] text-[13px]">
+              <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Project :</span>
                 <span className="text-slate-900 font-bold">MRZL_202604_GG11</span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] text-[13px]">
+              <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Invoice No :</span>
                 <span className="text-slate-900 font-bold">MRZL_202602_25</span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] text-[13px]">
+              <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Invoice Date :</span>
                 <span className="text-slate-900 font-bold">05/01/2026</span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] text-[13px]">
+              <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Payable To :</span>
                 <span className="text-slate-900 font-bold">Marzelz Lifestyle PVT LTD</span>
               </div>
-              <div className="grid grid-cols-[100px_1fr] text-[13px]">
+              <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Due Date :</span>
                 <span className="text-slate-900 font-bold">15/02/2026</span>
               </div>
             </div>
 
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-primary uppercase tracking-widest">BILL TO</p>
+              <p className="text-[11px] font-bold text-primary uppercase">BILL TO</p>
               <div className="space-y-1">
                 <h4 className="text-sm font-bold text-slate-900">Paragon Hospital Kerala Pvt. Ltd</h4>
                 <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
@@ -113,11 +113,11 @@ export default function InvoiceViewPage({ params }: { params: { invoiceId: strin
             <table className="w-full text-left border-collapse">
               <thead className="bg-primary text-white">
                 <tr>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-center w-20">SL No</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest">Description</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-center">Unit Price</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-center">Quantity</th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-right">Line Total</th>
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase text-center w-20">SL No</th>
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase">Description</th>
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase text-center">Unit Price</th>
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase text-center">Quantity</th>
+                  <th className="px-6 py-4 text-[11px] font-bold uppercase text-right">Line Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -144,14 +144,14 @@ export default function InvoiceViewPage({ params }: { params: { invoiceId: strin
                 <span className="font-bold text-slate-900 text-right">₹3,600.00</span>
               </div>
               <div className="grid grid-cols-[1fr_100px] bg-slate-200 px-4 py-3 text-sm">
-                <span className="font-bold text-slate-900 uppercase tracking-tighter">Grand Total Including GST</span>
+                <span className="font-bold text-slate-900 uppercase">Grand Total Including GST</span>
                 <span className="font-bold text-slate-900 text-right">₹23,600</span>
               </div>
               
               {/* Seal Placeholder */}
               <div className="flex justify-center pt-8 pb-4">
                 <div className="relative h-24 w-24 border-2 border-blue-600 rounded-full flex items-center justify-center p-2 opacity-80 rotate-[-12deg]">
-                  <div className="text-[7px] font-bold text-blue-600 text-center uppercase tracking-tighter">
+                  <div className="text-[7px] font-bold text-blue-600 text-center uppercase">
                     MARZELZ LIFESTYLE PVT LTD<br />
                     <span className="text-[10px]">TRIVANDRUM</span><br />
                     695003<br />

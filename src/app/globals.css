@@ -66,14 +66,17 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border tracking-normal;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body antialiased;
   }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-headline;
-  }
+  h1 { @apply font-headline text-4xl font-bold; }
+  h2 { @apply font-headline text-2xl font-bold; }
+  h3 { @apply font-headline text-xl font-bold; }
+  h4 { @apply font-headline text-lg font-bold; }
+  h5 { @apply font-headline text-base font-bold; }
+  h6 { @apply font-headline text-sm font-bold; }
 }
 
 .bg-gradient-pink {

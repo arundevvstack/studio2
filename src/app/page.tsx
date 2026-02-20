@@ -39,7 +39,7 @@ export default function Dashboard() {
         {/* Header Section */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold font-headline tracking-tight">Hi Shakir!</h1>
+            <h1 className="text-3xl font-bold font-headline">Hi Shakir!</h1>
           </div>
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ export default function Dashboard() {
                 <Grid className="h-full w-full text-slate-200" />
               </div>
               <div className="text-center">
-                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No Featured Projects</p>
+                <p className="text-xs font-bold text-slate-300 uppercase">No Featured Projects</p>
                 <Button variant="link" asChild className="text-primary font-bold text-xs p-0 h-auto mt-1">
                   <Link href="/projects/new">Create a new pitch</Link>
                 </Button>
@@ -130,7 +130,7 @@ export default function Dashboard() {
           {/* Task List */}
           <div className="space-y-8">
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Today</h3>
+              <h3 className="text-sm font-bold text-muted-foreground uppercase">Today</h3>
               <div className="space-y-3">
                 {TASKS_TODAY.length > 0 ? (
                   TASKS_TODAY.map((task) => (
@@ -157,14 +157,14 @@ export default function Dashboard() {
                   ))
                 ) : (
                   <div className="p-8 text-center bg-white/50 rounded-3xl border-2 border-dashed border-slate-50">
-                    <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No tasks scheduled for today</p>
+                    <p className="text-xs font-bold text-slate-300 uppercase">No tasks scheduled for today</p>
                   </div>
                 )}
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Tomorrow</h3>
+              <h3 className="text-sm font-bold text-muted-foreground uppercase">Tomorrow</h3>
               <div className="space-y-3">
                 {TASKS_TOMORROW.length > 0 ? (
                   TASKS_TOMORROW.map((task) => (
@@ -191,7 +191,7 @@ export default function Dashboard() {
                   ))
                 ) : (
                   <div className="p-8 text-center bg-white/50 rounded-3xl border-2 border-dashed border-slate-50">
-                    <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">Clear schedule for tomorrow</p>
+                    <p className="text-xs font-bold text-slate-300 uppercase">Clear schedule for tomorrow</p>
                   </div>
                 )}
               </div>
@@ -214,7 +214,7 @@ export default function Dashboard() {
 
           <div className="space-y-4">
             <div className="p-8 text-center bg-white rounded-3xl shadow-sm border border-slate-50">
-               <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No appointments today</p>
+               <p className="text-xs font-bold text-slate-300 uppercase">No appointments today</p>
             </div>
           </div>
         </div>
@@ -234,17 +234,17 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-               <p className="text-[10px] font-bold text-muted-foreground uppercase">Completed</p>
+               <p className="text-xs font-bold text-muted-foreground uppercase">Completed</p>
                <p className="text-3xl font-bold font-headline mt-1">0</p>
             </div>
             <div>
-               <p className="text-[10px] font-bold text-muted-foreground uppercase">In Progress</p>
+               <p className="text-xs font-bold text-muted-foreground uppercase">In Progress</p>
                <p className="text-3xl font-bold font-headline mt-1 text-primary relative">
                  0
                </p>
             </div>
             <div>
-               <p className="text-[10px] font-bold text-muted-foreground uppercase">Active Team</p>
+               <p className="text-xs font-bold text-muted-foreground uppercase">Active Team</p>
                <div className="h-8 w-8 rounded-full bg-primary/10 text-primary border-2 border-white flex items-center justify-center text-[10px] font-bold mt-2">0</div>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function Dashboard() {
            
            <div className="space-y-4">
              <div className="space-y-2">
-               <label className="text-[10px] font-bold text-muted-foreground uppercase px-1">Task Title</label>
+               <label className="text-xs font-bold text-muted-foreground uppercase px-1">Task Title</label>
                <Input className="rounded-2xl h-14 bg-muted/30 border-none shadow-inner" placeholder="Create new..." />
              </div>
 
@@ -274,7 +274,7 @@ export default function Dashboard() {
              </div>
 
              <div className="space-y-2">
-               <label className="text-[10px] font-bold text-muted-foreground uppercase px-1">Add Collaborators</label>
+               <label className="text-xs font-bold text-muted-foreground uppercase px-1">Add Collaborators</label>
                <div className="flex flex-wrap gap-2">
                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-dashed border-2 text-muted-foreground">+</Button>
                  <Button className="h-8 w-8 rounded-full bg-primary shadow-lg shadow-primary/20"><ChevronRight className="h-4 w-4" /></Button>
