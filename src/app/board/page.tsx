@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -20,9 +20,11 @@ import {
   useSensors,
   DragOverlay,
   defaultDropAnimationSideEffects,
+  useDroppable,
   type DragStartEvent,
   type DragOverEvent,
   type DragEndEvent,
+  type UniqueIdentifier,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -115,6 +117,12 @@ interface CardProps {
   team: string[];
 }
 
+interface ColumnProps {
+  id: string;
+  title: string;
+  cards: CardProps[];
+}
+
 function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean }) {
   const {
     attributes,
@@ -123,7 +131,13 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: card.id, data: { type: 'card', card } });
+  } = useSortable({ 
+    id: card.id, 
+    data: { 
+      type: 'card', 
+      card 
+    } 
+  });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -181,19 +195,58 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
   );
 }
 
-function EmptyPlaceholder() {
+function KanbanColumn({ column, children }: { column: ColumnProps; children: React.ReactNode }) {
+  const { setNodeRef } = useDroppable({
+    id: column.id,
+  });
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-white/30 py-20 min-h-[300px]">
-      <div className="h-12 w-12 rounded-full border-2 border-slate-100 flex items-center justify-center mb-4">
-        <Plus className="h-6 w-6 text-slate-200" />
+    <div className="w-[320px] shrink-0 flex flex-col space-y-4">
+      <div className="flex items-center justify-between px-2">
+        <div className="flex items-center gap-3">
+          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+            {column.title}
+          </h3>
+          <Badge className="bg-slate-100 text-slate-500 border-none h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
+            {column.cards.length}
+          </Badge>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
       </div>
-      <p className="text-[10px] font-bold text-slate-200 uppercase tracking-[0.2em]">Drop Here</p>
+
+      <div ref={setNodeRef} className="flex-1 flex flex-col gap-4 min-h-[500px] pb-10">
+        <SortableContext
+          id={column.id}
+          items={column.cards.map((c) => c.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {column.cards.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-white/30 py-20">
+              <div className="h-12 w-12 rounded-full border-2 border-slate-100 flex items-center justify-center mb-4">
+                <Plus className="h-6 w-6 text-slate-200" />
+              </div>
+              <p className="text-[10px] font-bold text-slate-200 uppercase tracking-[0.2em]">Drop Here</p>
+            </div>
+          ) : (
+            column.cards.map((card) => (
+              <KanbanCard key={card.id} card={card} />
+            ))
+          )}
+        </SortableContext>
+        
+        <Button variant="ghost" className="h-14 w-full rounded-[2rem] border-none bg-slate-50/50 hover:bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-widest gap-2 mt-auto">
+          <Plus className="h-4 w-4" />
+          New Entry
+        </Button>
+      </div>
     </div>
   );
 }
 
 export default function BoardPage() {
-  const [boardData, setBoardData] = useState(INITIAL_BOARD_DATA);
+  const [boardData, setBoardData] = useState<ColumnProps[]>(INITIAL_BOARD_DATA);
   const [activeCard, setActiveCard] = useState<CardProps | null>(null);
 
   const sensors = useSensors(
@@ -207,25 +260,24 @@ export default function BoardPage() {
     })
   );
 
-  function findContainer(id: string) {
-    if (boardData.find((col) => col.id === id)) return id;
-    const col = boardData.find((col) => col.cards.find((c) => c.id === id));
-    return col ? col.id : null;
-  }
+  const findContainer = useCallback((id: UniqueIdentifier) => {
+    if (boardData.some((col) => col.id === id)) return id;
+    const container = boardData.find((col) => col.cards.some((c) => c.id === id));
+    return container ? container.id : null;
+  }, [boardData]);
 
   function handleDragStart(event: DragStartEvent) {
     const { active } = event;
-    const card = active.data.current?.card;
+    const card = active.data.current?.card as CardProps;
     if (card) setActiveCard(card);
   }
 
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
-    const overId = over?.id as string;
-    if (!overId) return;
+    if (!over) return;
 
-    const activeContainer = findContainer(active.id as string);
-    const overContainer = findContainer(overId);
+    const activeContainer = findContainer(active.id);
+    const overContainer = findContainer(over.id);
 
     if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
@@ -234,10 +286,10 @@ export default function BoardPage() {
       const overItems = prev.find((c) => c.id === overContainer)?.cards || [];
       
       const activeIndex = activeItems.findIndex((i) => i.id === active.id);
-      const overIndex = overItems.findIndex((i) => i.id === overId);
+      const overIndex = overItems.findIndex((i) => i.id === over.id);
 
       let newIndex: number;
-      if (prev.find((c) => c.id === overId)) {
+      if (prev.some((c) => c.id === over.id)) {
         newIndex = overItems.length;
       } else {
         const isBelowLastItem = over && overIndex === overItems.length - 1;
@@ -245,40 +297,35 @@ export default function BoardPage() {
         newIndex = overIndex >= 0 ? overIndex + modifier : overItems.length;
       }
 
-      return prev.map((col) => {
+      const updatedData = prev.map((col) => {
         if (col.id === activeContainer) {
           return { ...col, cards: activeItems.filter((i) => i.id !== active.id) };
         }
         if (col.id === overContainer) {
-          return {
-            ...col,
-            cards: [
-              ...overItems.slice(0, newIndex),
-              activeItems[activeIndex],
-              ...overItems.slice(newIndex)
-            ]
-          };
+          const newCards = [...overItems];
+          newCards.splice(newIndex, 0, activeItems[activeIndex]);
+          return { ...col, cards: newCards };
         }
         return col;
       });
+
+      return updatedData;
     });
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    const overId = over?.id as string;
-
-    if (!overId) {
+    if (!over) {
       setActiveCard(null);
       return;
     }
 
-    const activeContainer = findContainer(active.id as string);
-    const overContainer = findContainer(overId);
+    const activeContainer = findContainer(active.id);
+    const overContainer = findContainer(over.id);
 
     if (activeContainer && overContainer && activeContainer === overContainer) {
       const activeIndex = boardData.find((c) => c.id === activeContainer)?.cards.findIndex((i) => i.id === active.id) ?? -1;
-      const overIndex = boardData.find((c) => c.id === overContainer)?.cards.findIndex((i) => i.id === overId) ?? -1;
+      const overIndex = boardData.find((c) => c.id === overContainer)?.cards.findIndex((i) => i.id === over.id) ?? -1;
 
       if (activeIndex !== overIndex) {
         setBoardData((prev) => prev.map((col) => {
@@ -317,44 +364,11 @@ export default function BoardPage() {
         onDragEnd={handleDragEnd}
       >
         <ScrollArea className="flex-1 w-full pb-6">
-          <div className="flex gap-6 min-h-[700px]">
+          <div className="flex gap-6 min-h-[800px]">
             {boardData.map((column) => (
-              <div key={column.id} className="w-[320px] shrink-0 flex flex-col space-y-4">
-                <div className="flex items-center justify-between px-2">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                      {column.title}
-                    </h3>
-                    <Badge className="bg-slate-100 text-slate-500 border-none h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
-                      {column.cards.length}
-                    </Badge>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <SortableContext
-                  id={column.id}
-                  items={column.cards.map((c) => c.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="flex-1 flex flex-col gap-4 min-h-[200px]">
-                    {column.cards.length === 0 ? (
-                      <EmptyPlaceholder />
-                    ) : (
-                      column.cards.map((card) => (
-                        <KanbanCard key={card.id} card={card} />
-                      ))
-                    )}
-
-                    <Button variant="ghost" className="h-14 w-full rounded-[2rem] border-none bg-slate-50/50 hover:bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-widest gap-2 mt-auto">
-                      <Plus className="h-4 w-4" />
-                      New Entry
-                    </Button>
-                  </div>
-                </SortableContext>
-              </div>
+              <KanbanColumn key={column.id} column={column}>
+                {/* Cards are handled inside KanbanColumn via SortableContext */}
+              </KanbanColumn>
             ))}
           </div>
           <ScrollBar orientation="horizontal" />
