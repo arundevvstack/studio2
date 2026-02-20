@@ -175,13 +175,13 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
           <Tabs defaultValue="projects" className="space-y-8">
             <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-50 w-fit">
               <TabsList className="bg-transparent gap-2 h-auto p-0">
-                <TabsTrigger value="projects" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+                <TabsTrigger value="projects" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
                   Active Projects
                 </TabsTrigger>
-                <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+                <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
                   Billing History
                 </TabsTrigger>
-                <TabsTrigger value="activity" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+                <TabsTrigger value="activity" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
                   Activity Feed
                 </TabsTrigger>
               </TabsList>
@@ -206,9 +206,9 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                             <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-3 py-1 uppercase">
                               {project.status || "Planned"}
                             </Badge>
-                            <span className="text-[10px] font-bold text-slate-300 uppercase flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
-                              {project.dueDate || "NO DEADLINE"}
+                              DUE: {project.dueDate || "NO DEADLINE"}
                             </span>
                           </div>
                         </div>
@@ -252,7 +252,11 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                         </div>
                         <div>
                           <h4 className="text-lg font-bold font-headline text-slate-900">#{invoice.invoiceNumber || invoice.id.substring(0, 8)}</h4>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Issued {invoice.issueDate || "N/A"}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">Issued {invoice.issueDate || "N/A"}</p>
+                            <span className="text-slate-200">|</span>
+                            <p className="text-[10px] font-bold text-primary uppercase">DUE {invoice.dueDate || "N/A"}</p>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-10">

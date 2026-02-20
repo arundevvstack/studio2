@@ -16,13 +16,13 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
         <Button 
           variant="ghost" 
           onClick={() => router.back()}
-          className="gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase"
+          className="gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase shadow-none border-none"
         >
           <ChevronLeft className="h-4 w-4" />
           Back to Synthesis
         </Button>
         <div className="flex gap-4">
-          <Button variant="outline" className="gap-2 bg-white rounded-xl font-bold text-sm uppercase border-slate-200">
+          <Button variant="outline" className="gap-2 bg-white rounded-xl font-bold text-sm uppercase border-slate-200 shadow-none">
             <Download className="h-4 w-4" />
             Download PDF
           </Button>
@@ -34,7 +34,7 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
       </div>
 
       {/* Main Invoice Layout */}
-      <div className="max-w-[900px] mx-auto bg-white shadow-2xl rounded-sm overflow-hidden print:shadow-none print:rounded-none">
+      <div className="max-w-[900px] mx-auto bg-white shadow-2xl rounded-sm overflow-hidden print:shadow-none print:rounded-none border-none">
         <div className="p-12 md:p-16 space-y-12">
           {/* Header Row */}
           <div className="flex justify-between items-start">
