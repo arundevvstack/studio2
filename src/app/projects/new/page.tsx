@@ -76,7 +76,7 @@ export default function AddProjectPage() {
         clientId: formData.clientId,
         description: formData.description,
         budget: parseFloat(formData.budget) || 0,
-        status: "Planned",
+        status: "Pitch",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };

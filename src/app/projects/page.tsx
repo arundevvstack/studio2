@@ -58,10 +58,17 @@ export default function ProjectsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'planned': return 'bg-slate-100 text-slate-500';
-      case 'in progress': return 'bg-primary/10 text-primary';
-      case 'completed': return 'bg-accent/10 text-accent';
-      default: return 'bg-slate-100 text-slate-500';
+      case 'pitch':
+      case 'discussion':
+        return 'bg-blue-50 text-blue-500';
+      case 'pre production':
+        return 'bg-slate-100 text-slate-500';
+      case 'in progress':
+        return 'bg-primary/10 text-primary';
+      case 'released':
+        return 'bg-accent/10 text-accent';
+      default:
+        return 'bg-slate-100 text-slate-500';
     }
   };
 
@@ -145,7 +152,7 @@ export default function ProjectsPage() {
                       </div>
                       <div className="col-span-3 flex justify-center">
                         <Badge className={`rounded-lg px-4 py-1.5 text-[10px] font-bold border-none shadow-none ${getStatusBadge(project.status)}`}>
-                          {project.status || "PLANNED"}
+                          {project.status || "PITCH"}
                         </Badge>
                       </div>
                       <div className="col-span-2">

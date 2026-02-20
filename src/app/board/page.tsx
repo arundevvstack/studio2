@@ -24,12 +24,12 @@ import { collection, query, orderBy, doc } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const COLUMNS = [
-  { id: "Planned", title: "PITCH" },
+  { id: "Pitch", title: "PITCH" },
   { id: "Discussion", title: "DISCUSSION" },
   { id: "Pre Production", title: "PRE PRODUCTION" },
   { id: "In Progress", title: "PRODUCTION" },
   { id: "Post Production", title: "POST PRODUCTION" },
-  { id: "Completed", title: "RELEASE" }
+  { id: "Released", title: "RELEASE" }
 ];
 
 export default function BoardPage() {
@@ -65,7 +65,7 @@ export default function BoardPage() {
     const newBoardData = COLUMNS.map(col => ({
       ...col,
       cards: projects
-        .filter((p: any) => (p.status || "Planned") === col.id)
+        .filter((p: any) => (p.status || "Pitch") === col.id)
         .map((p: any) => ({
           id: p.id,
           title: p.name,

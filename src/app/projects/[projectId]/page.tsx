@@ -48,6 +48,8 @@ import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlo
 import { toast } from "@/hooks/use-toast";
 
 const STATUS_PROGRESS_MAP: Record<string, number> = {
+  "Pitch": 0,
+  "Discussion": 0,
   "Pre Production": 0,
   "In Progress": 33,
   "Post Production": 66,
@@ -55,6 +57,8 @@ const STATUS_PROGRESS_MAP: Record<string, number> = {
 };
 
 const NEXT_PHASE_MAP: Record<string, string | null> = {
+  "Pitch": "Discussion",
+  "Discussion": "Pre Production",
   "Pre Production": "In Progress",
   "In Progress": "Post Production",
   "Post Production": "Released",
@@ -95,23 +99,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     if (project) {
       setEditData({
         name: project.name || "",
-        status: project.status || "Pre Production",
+        status: project.status || "Pitch",
         budget: project.budget || 0,
         description: project.description || "",
       });
       if (typeof project.progress === 'number') {
         setProgress([project.progress]);
       } else {
-        const initialProgress = STATUS_PROGRESS_MAP[project.status || "Pre Production"] || 0;
+        const initialProgress = STATUS_PROGRESS_MAP[project.status || "Pitch"] || 0;
         setProgress([initialProgress]);
       }
     }
   }, [project]);
 
+  const activeViewPhase = editData?.status || project?.status || "Pitch";
+
   const currentPhaseTasks = useMemo(() => {
-    if (!allTasks || !editData) return [];
-    return allTasks.filter(t => t.phase === (editData.status || "Pre Production"));
-  }, [allTasks, editData]);
+    if (!allTasks) return [];
+    return allTasks.filter(t => t.phase === activeViewPhase);
+  }, [allTasks, activeViewPhase]);
 
   const canTransition = useMemo(() => {
     if (currentPhaseTasks.length === 0) return false;
@@ -122,7 +128,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     if (!project || !editData) return false;
     return (
       editData.name !== (project.name || "") ||
-      editData.status !== (project.status || "Pre Production") ||
+      editData.status !== (project.status || "Pitch") ||
       editData.budget !== (project.budget || 0) ||
       editData.description !== (project.description || "") ||
       progress[0] !== (project.progress || 0)
@@ -136,7 +142,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
       progress: progress[0],
       updatedAt: serverTimestamp()
     });
-    toast({ title: "Project Synchronized", description: `${editData.name} has been updated in the global pipeline.` });
+    toast({ title: "Project Synchronized", description: `${editData.name} has been updated.` });
   };
 
   const handleStatusChange = (val: string) => {
@@ -146,7 +152,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   };
 
   const handleTransition = () => {
-    const nextPhase = NEXT_PHASE_MAP[project?.status || "Pre Production"];
+    const nextPhase = NEXT_PHASE_MAP[project?.status || "Pitch"];
     if (!nextPhase) return;
     updateDocumentNonBlocking(projectRef, {
       status: nextPhase,
@@ -168,13 +174,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
       dueDate: newObjective.dueDate,
       assignedTeamMemberId: newObjective.assignedTeamMemberId,
       status: "Active",
-      phase: editData?.status || project?.status || "Pre Production",
+      phase: activeViewPhase,
       projectId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
     setNewObjective({ name: "", description: "", dueDate: "", assignedTeamMemberId: "" });
-    toast({ title: "Objective Defined", description: "New mission objective added to the selected phase." });
+    toast({ title: "Objective Defined", description: "New mission objective added." });
   };
 
   const handleToggleTask = (taskId: string, currentStatus: string) => {
@@ -192,7 +198,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   const handleDeleteProject = () => {
     deleteDocumentNonBlocking(projectRef);
-    toast({ variant: "destructive", title: "Project Purged", description: "Production entity has been removed." });
+    toast({ variant: "destructive", title: "Project Purged", description: "Production entity removed." });
     router.push("/projects");
   };
 
@@ -240,7 +246,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <span className="text-slate-300">•</span>
               <div className="flex items-center gap-2 text-slate-400">
                 <Target className="h-4 w-4" />
-                Phase: {project.status || "Pre Production"}
+                Phase: {project.status || "Pitch"}
               </div>
             </div>
           </div>
@@ -274,6 +280,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         <SelectValue placeholder="Select phase" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectItem value="Pitch">Pitch</SelectItem>
+                        <SelectItem value="Discussion">Discussion</SelectItem>
                         <SelectItem value="Pre Production">Pre Production</SelectItem>
                         <SelectItem value="In Progress">Production</SelectItem>
                         <SelectItem value="Post Production">Post Production</SelectItem>
@@ -340,6 +348,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                       <SelectValue placeholder="Select phase" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                      <SelectItem value="Pitch">Pitch</SelectItem>
+                      <SelectItem value="Discussion">Discussion</SelectItem>
                       <SelectItem value="Pre Production">Pre Production</SelectItem>
                       <SelectItem value="In Progress">Production</SelectItem>
                       <SelectItem value="Post Production">Post Production</SelectItem>
@@ -380,7 +390,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <TabsContent value="objectives" className="p-10 space-y-8 m-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Active Elements: {editData?.status || project.status || "Pre Production"}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Active Elements: {activeViewPhase}</p>
                     <h3 className="text-xl font-bold font-headline mt-1">Strategic Checklist</h3>
                   </div>
                   <Dialog>
@@ -510,7 +520,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <div className="h-full bg-primary" style={{ width: `${progress[0]}%` }} />
                 </div>
               </div>
-              <Button asChild className="w-full h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase border border-white/10 transition-colors">
+              <Button asChild className="w-full h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase transition-colors border border-white/10">
                 <Link href="/invoices/new">Generate Billing</Link>
               </Button>
             </CardContent>
@@ -518,7 +528,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white p-8 space-y-4">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase">System Intelligence</h4>
             <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
-              "Campaign throughput is currently optimized for the {project.status} stage. Completion of checklists is required for automated stage advancement."
+              "Campaign throughput is currently optimized for the {project.status} stage."
             </p>
           </Card>
         </div>
