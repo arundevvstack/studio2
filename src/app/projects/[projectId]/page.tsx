@@ -47,6 +47,15 @@ import { doc, serverTimestamp } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
+const STATUS_PROGRESS_MAP: Record<string, number> = {
+  "Planned": 0,
+  "Discussion": 20,
+  "Pre Production": 40,
+  "In Progress": 60,
+  "Post Production": 80,
+  "Completed": 100,
+};
+
 export default function ProjectDetailPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = React.use(params);
   const router = useRouter();
@@ -69,6 +78,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
       });
       if (typeof project.progress === 'number') {
         setProgress([project.progress]);
+      } else {
+        const initialProgress = STATUS_PROGRESS_MAP[project.status || "Planned"] || 0;
+        setProgress([initialProgress]);
       }
     }
   }, [project]);
@@ -98,6 +110,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
       title: "Strategy Updated",
       description: `${editData.name} has been synchronized.`
     });
+  };
+
+  const handleStatusChange = (val: string) => {
+    setEditData((prev: any) => ({ ...prev, status: val }));
+    const newProgress = STATUS_PROGRESS_MAP[val] || 0;
+    setProgress([newProgress]);
   };
 
   const handleDeleteProject = () => {
@@ -184,7 +202,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Campaign Phase</label>
-                    <Select value={editData?.status} onValueChange={(val) => setEditData({...editData, status: val})}>
+                    <Select value={editData?.status} onValueChange={handleStatusChange}>
                       <SelectTrigger className="rounded-xl bg-slate-50 border-none h-12 shadow-none focus:ring-0">
                         <SelectValue placeholder="Select phase" />
                       </SelectTrigger>
@@ -239,7 +257,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                       className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2 disabled:opacity-50"
                     >
                       <Save className="h-4 w-4" />
-                      Sync Changes
+                      Save
                     </Button>
                   </DialogClose>
                 </div>
@@ -272,7 +290,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Current Phase</label>
-                  <Select value={project.status || "Planned"} onValueChange={(val) => updateDocumentNonBlocking(projectRef, { status: val })}>
+                  <Select value={editData?.status || project.status || "Planned"} onValueChange={handleStatusChange}>
                     <SelectTrigger className="h-12 bg-transparent border-none p-0 text-xl font-bold font-headline shadow-none focus:ring-0">
                       <SelectValue placeholder="Select phase" />
                     </SelectTrigger>
