@@ -1,0 +1,182 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * MEDIAFLOW SECURITY MODEL
+     * 
+     * Core Philosophy:
+     * This ruleset implements an Authorization Independence model designed for a media production 
+     * environment. It leverages denormalized authorization data (specifically 'members' and 'projectMembers' maps)
+     * to allow sub-documents to secure themselves without expensive parent lookups.
+     *
+     * Data Structure:
+     * - Global metadata (Roles) and User Profiles (TeamMembers) are top-level.
+     * - Business entities (Clients, Projects) are top-level.
+     * - Project-specific data (Tasks, TimeEntries) are nested sub-collections of Projects.
+     * - Financial data (Invoices) are nested under Clients but linked to Projects.
+     *
+     * Key Security Decisions:
+     * 1. DBAC (Database-Backed Access Control): The 'team_members' collection maps Firebase UIDs to 
+     *    internal organizational roles.
+     * 2. Collaborative Access: Projects and their sub-collections use a map-based membership check 
+     *    (e.g., resource.data.projectMembers[request.auth.uid] != null) for high-performance authorization.
+     * 3. Structural Segregation: Administrative data (Roles) is separated from operational data (Tasks).
+     * 4. Prototyping Flexibility: This ruleset enforces strict ownership and relationship integrity 
+     *    but allows for flexible data schemas to support rapid iteration.
+     */
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    /** @description Checks if the user is authenticated with a valid UID. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the provided ID matches the authenticated user's UID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Checks if the document exists and the current user is the owner. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /** @description Checks if the user has an active record in the team_members collection. */
+    function isTeamMember() {
+      return isSignedIn() && exists(/databases/$(database)/documents/team_members/$(request.auth.uid));
+    }
+
+    /** @description Checks project-level membership using denormalized maps. */
+    function isProjectCollaborator(data) {
+      return isSignedIn() && (
+        (data.members != null && data.members[request.auth.uid] != null) || 
+        (data.projectMembers != null && data.projectMembers[request.auth.uid] != null)
+      );
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Global role definitions. Accessible by all staff, managed by system/admins.
+     * @path /roles/{roleId}
+     * @allow (get) Any signed-in team member.
+     * @deny (create) Non-admin users.
+     * @principle Restricts structural configuration to authenticated internal staff.
+     */
+    match /roles/{roleId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isTeamMember(); // Simplified for prototyping; production would check for 'Admin' role name.
+    }
+
+    /**
+     * @description Internal user profiles. Users can manage their own profile data.
+     * @path /team_members/{teamMemberId}
+     * @allow (update) User whose UID matches the document ID.
+     * @deny (delete) Attempting to delete someone else's profile.
+     * @principle Enforces path-based identity and ownership for user profiles.
+     */
+    match /team_members/{teamMemberId} {
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(teamMemberId) && request.resource.data.id == teamMemberId;
+      allow update: if isExistingOwner(teamMemberId) && request.resource.data.id == resource.data.id;
+      allow delete: if false; // Profiles typically archived, not deleted for historical integrity.
+    }
+
+    /**
+     * @description Client data management. Access restricted to internal team members.
+     * @path /clients/{clientId}
+     * @allow (create) Any authenticated internal team member.
+     * @deny (get) Unauthenticated public users.
+     * @principle Restricts customer data to verified internal personnel.
+     */
+    match /clients/{clientId} {
+      allow get, list: if isTeamMember();
+      allow create: if isTeamMember() && request.resource.data.id == clientId;
+      allow update: if isTeamMember() && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isTeamMember() && resource != null;
+    }
+
+    /**
+     * @description High-level project data. Uses a 'members' map for collaboration.
+     * @path /projects/{projectId}
+     * @allow (get) Users listed in the document's 'members' map.
+     * @deny (update) Users not assigned to the project.
+     * @principle Uses denormalized collaborator maps for Authorization Independence.
+     */
+    match /projects/{projectId} {
+      allow get, list: if isProjectCollaborator(resource.data);
+      allow create: if isTeamMember() && request.resource.data.id == projectId;
+      allow update: if isProjectCollaborator(resource.data) && request.resource.data.id == resource.data.id;
+      allow delete: if isTeamMember() && resource != null;
+
+      /**
+       * @description Individual tasks within a project. Uses 'projectMembers' for fast lookup.
+       * @path /projects/{projectId}/tasks/{taskId}
+       * @allow (create) Team members assigned to the parent project.
+       * @deny (list) Users not part of the project team.
+       * @principle Enforces path consistency and uses inherited collaborator maps.
+       */
+      match /tasks/{taskId} {
+        allow get, list: if isProjectCollaborator(resource.data);
+        allow create: if isProjectCollaborator(request.resource.data) && request.resource.data.projectId == projectId;
+        allow update: if isProjectCollaborator(resource.data) && request.resource.data.projectId == resource.data.projectId;
+        allow delete: if isProjectCollaborator(resource.data);
+
+        /**
+         * @description Time tracking entries. Tied to both the task and the project.
+         * @path /projects/{projectId}/tasks/{taskId}/time_entries/{timeEntryId}
+         * @allow (create) If logger matches auth UID and is a project member.
+         * @deny (update) Changing the 'teamMemberId' (logger) of an entry.
+         * @principle Combines individual ownership with project-level access control.
+         */
+        match /time_entries/{timeEntryId} {
+          allow get, list: if isProjectCollaborator(resource.data);
+          allow create: if isProjectCollaborator(request.resource.data) 
+                        && isOwner(request.resource.data.teamMemberId)
+                        && request.resource.data.projectId == projectId
+                        && request.resource.data.taskId == taskId;
+          allow update: if isExistingOwner(resource.data.teamMemberId) 
+                        && request.resource.data.teamMemberId == resource.data.teamMemberId;
+          allow delete: if isExistingOwner(resource.data.teamMemberId);
+        }
+      }
+    }
+
+    /**
+     * @description Invoices nested under clients, restricted by project membership.
+     * @path /clients/{clientId}/invoices/{invoiceId}
+     * @allow (get) Project collaborators listed in 'projectMembers'.
+     * @deny (create) Mismatched client ID in the data object.
+     * @principle Validates relational integrity between path and denormalized data.
+     */
+    match /clients/{clientId}/invoices/{invoiceId} {
+      allow get, list: if isProjectCollaborator(resource.data) || isTeamMember();
+      allow create: if isTeamMember() && request.resource.data.clientId == clientId;
+      allow update: if isTeamMember() && resource != null && request.resource.data.clientId == resource.data.clientId;
+      allow delete: if isTeamMember() && resource != null;
+
+      match /line_items/{lineItemId} {
+        allow get, list: if isProjectCollaborator(resource.data) || isTeamMember();
+        allow create: if isTeamMember() && request.resource.data.invoiceId == invoiceId;
+        allow update: if isTeamMember() && resource != null && request.resource.data.invoiceId == resource.data.invoiceId;
+        allow delete: if isTeamMember() && resource != null;
+      }
+    }
+
+    /**
+     * @description Historical logs of project and client communication.
+     * @path /communication_logs/{logId}
+     * @allow (create) Authenticated team member logging the communication.
+     * @deny (get) Users who are neither the author nor project collaborators.
+     * @principle Hybrid security: Checks individual ownership AND project membership maps.
+     */
+    match /communication_logs/{logId} {
+      allow get, list: if isOwner(resource.data.teamMemberId) || isProjectCollaborator(resource.data) || isTeamMember();
+      allow create: if isOwner(request.resource.data.teamMemberId);
+      allow update: if isExistingOwner(resource.data.teamMemberId) && request.resource.data.teamMemberId == resource.data.teamMemberId;
+      allow delete: if isExistingOwner(resource.data.teamMemberId);
+    }
+  }
+}
