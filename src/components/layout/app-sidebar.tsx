@@ -1,18 +1,19 @@
 "use client";
 
 import {
-  LayoutDashboard,
-  Briefcase,
-  Users,
-  Users2,
-  Clock,
-  FileText,
-  TrendingUp,
-  Settings,
-  Mail,
+  LayoutGrid,
+  GitBranch,
+  Folder,
+  Trello,
   Calendar,
-  MessageSquare,
+  Users,
+  FileText,
+  BarChart3,
+  ShieldCheck,
+  Settings,
+  LogOut,
   Plus,
+  ChevronRight,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,83 +26,123 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-const navItems = [
-  { title: "My Tasks", icon: FileText, url: "/tasks" },
-  { title: "Inbox", icon: Mail, url: "/inbox", badge: 0 },
-  { title: "Projects", icon: Briefcase, url: "/projects" },
-  { title: "Standups", icon: MessageSquare, url: "/standups" },
-  { title: "Meetings", icon: Calendar, url: "/meetings", badge: 5 },
-  { title: "Settings", icon: Settings, url: "/settings" },
+const workspaceItems = [
+  { title: "Dashboard", icon: LayoutGrid, url: "/" },
+  { title: "Pipeline", icon: GitBranch, url: "/pipeline" },
+  { title: "Projects", icon: Folder, url: "/projects" },
+  { title: "Board", icon: Trello, url: "/board" },
+  { title: "Schedule", icon: Calendar, url: "/schedule" },
+  { title: "Team", icon: Users, url: "/team" },
+  { title: "Billing", icon: FileText, url: "/invoices" },
+  { title: "Intelligence", icon: BarChart3, url: "/sales-forecast" },
 ];
 
-const favorites = [
-  { title: "Redwhale Design", color: "bg-blue-500" },
-  { title: "Mobile App Mock...", color: "bg-red-500" },
-  { title: "UI Design Revisi...", color: "bg-teal-500" },
+const managementItems = [
+  { title: "Admin Console", icon: ShieldCheck, url: "/admin" },
+];
+
+const footerItems = [
+  { title: "Settings", icon: Settings, url: "/settings", color: "text-slate-500" },
+  { title: "Log out", icon: LogOut, url: "/logout", color: "text-primary" },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-white shadow-xl">
-      <SidebarHeader className="p-6">
-        <div className="flex items-center gap-4 mb-8">
-          <Avatar className="h-12 w-12 border-2 border-primary/20 p-0.5">
-            <AvatarImage src="https://picsum.photos/seed/shakir/200/200" />
-            <AvatarFallback>AS</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="font-headline font-bold text-base">AR Shakir</span>
-            <span className="text-xs text-muted-foreground">Sr. Visual Designer</span>
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-slate-50/50">
+      <SidebarHeader className="p-6 pb-2 space-y-6">
+        {/* Brand Logo */}
+        <div className="flex flex-col items-center gap-1 group-data-[collapsible=icon]:hidden">
+          <svg
+            width="40"
+            height="30"
+            viewBox="0 0 40 30"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="text-primary"
+          >
+            <path
+              d="M5 25L15 5L25 25M15 25L25 5L35 25"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div className="text-center">
+            <h1 className="text-sm font-bold tracking-tighter text-slate-900 uppercase">Marzelz</h1>
+            <p className="text-[10px] font-medium tracking-[0.2em] text-slate-400 uppercase -mt-1">Lifestyle</p>
           </div>
         </div>
+
+        {/* New Production Action */}
+        <Button className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-6 font-bold text-sm shadow-lg shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
+          <Plus className="h-5 w-5 mr-2 group-data-[collapsible=icon]:mr-0" />
+          <span className="group-data-[collapsible=icon]:hidden">New Production</span>
+        </Button>
       </SidebarHeader>
 
-      <SidebarContent className="px-2">
+      <SidebarContent className="px-4 py-4">
+        {/* Workspace Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 group-data-[collapsible=icon]:hidden mb-2">
-            Menu
+          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400/80 mb-4 group-data-[collapsible=icon]:hidden">
+            Workspace
           </SidebarGroupLabel>
-          <SidebarMenu>
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)}
-                  className="rounded-xl h-12 px-4 transition-all hover:bg-primary/5 active:scale-95"
-                >
-                  <Link href={item.url} className="flex items-center gap-4">
-                    <item.icon className={`h-5 w-5 ${pathname.startsWith(item.url) ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <span className="font-medium group-data-[collapsible=icon]:hidden">{item.title}</span>
-                    {item.badge && item.badge > 0 && (
-                      <span className="ml-auto bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold group-data-[collapsible=icon]:hidden">
-                        {item.badge}
+          <SidebarMenu className="space-y-1">
+            {workspaceItems.map((item) => {
+              const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive}
+                    className={`rounded-xl h-11 px-3 transition-all ${
+                      isActive 
+                        ? "bg-white text-primary shadow-sm ring-1 ring-slate-200" 
+                        : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
+                    }`}
+                  >
+                    <Link href={item.url} className="flex items-center w-full">
+                      <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
+                      <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                        {item.title}
                       </span>
-                    )}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+                      {isActive && (
+                        <ChevronRight className="ml-auto h-3 w-3 opacity-40 group-data-[collapsible=icon]:hidden" />
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
 
+        {/* Management Section */}
         <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="px-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 group-data-[collapsible=icon]:hidden mb-2">
-            Favorites
+          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400/80 mb-4 group-data-[collapsible=icon]:hidden">
+            Management
           </SidebarGroupLabel>
           <SidebarMenu>
-            {favorites.map((fav) => (
-              <SidebarMenuItem key={fav.title}>
-                <SidebarMenuButton className="h-10 px-4 group-data-[collapsible=icon]:justify-center">
-                  <div className={`h-2.5 w-2.5 rounded-full ${fav.color} shrink-0`} />
-                  <span className="ml-4 text-sm font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">{fav.title}</span>
+            {managementItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
+                >
+                  <Link href={item.url} className="flex items-center">
+                    <item.icon className="h-[18px] w-[18px] text-slate-400" />
+                    <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                      {item.title}
+                    </span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
@@ -109,13 +150,25 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-6">
-        <Button size="icon" className="h-12 w-12 rounded-2xl shadow-lg shadow-primary/20 active:scale-95">
-          <Plus className="h-6 w-6" />
-        </Button>
-        <div className="mt-4 text-[10px] text-muted-foreground font-medium group-data-[collapsible=icon]:hidden">
-          2024 MediaFlow License
-        </div>
+      <SidebarFooter className="p-4 mt-auto">
+        <SidebarSeparator className="mb-4" />
+        <SidebarMenu className="space-y-1">
+          {footerItems.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                asChild
+                className={`rounded-xl h-11 px-3 hover:bg-slate-100/50 ${item.color}`}
+              >
+                <Link href={item.url} className="flex items-center">
+                  <item.icon className="h-[18px] w-[18px]" />
+                  <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                    {item.title}
+                  </span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
