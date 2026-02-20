@@ -79,7 +79,7 @@ export default function AddProjectPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
-                Project Identifier
+                Project Name
               </label>
               <Input 
                 name="name"
