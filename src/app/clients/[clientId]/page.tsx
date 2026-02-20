@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -17,7 +18,8 @@ import {
   Calendar,
   Settings,
   Trash2,
-  Save
+  Save,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,6 +87,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
         email: client.email || "",
         phone: client.phone || "",
         address: client.address || "",
+        notes: client.notes || "",
       });
     }
   }, [client]);
@@ -94,6 +97,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     
     updateDocumentNonBlocking(clientRef, {
       ...editData,
+      companyName: editData.name, // Keep companyName in sync with brand name for simplicity
       updatedAt: serverTimestamp()
     });
     
@@ -176,11 +180,11 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 Configure Strategy
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
               <DialogHeader className="p-8 pb-0">
                 <DialogTitle className="text-2xl font-bold font-headline">Update Partnership Entity</DialogTitle>
               </DialogHeader>
-              <div className="p-8 space-y-6">
+              <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Brand Name</label>
@@ -217,12 +221,31 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Contact Phone</label>
+                    <Input 
+                      value={editData?.phone} 
+                      onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Office Location</label>
+                    <Input 
+                      value={editData?.address} 
+                      onChange={(e) => setEditData({...editData, address: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Office Location</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Brief (Notes)</label>
                   <Textarea 
-                    value={editData?.address} 
-                    onChange={(e) => setEditData({...editData, address: e.target.value})}
-                    className="rounded-xl bg-slate-50 border-none min-h-[100px] resize-none"
+                    value={editData?.notes} 
+                    onChange={(e) => setEditData({...editData, notes: e.target.value})}
+                    placeholder="Outline the client's core objectives and long-term partnership goals..."
+                    className="rounded-xl bg-slate-50 border-none min-h-[150px] resize-none p-4"
                   />
                 </div>
               </div>
@@ -313,8 +336,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
                   Billing History
                 </TabsTrigger>
-                <TabsTrigger value="activity" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
-                  Activity Feed
+                <TabsTrigger value="brief" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
+                  Strategic Brief
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -417,16 +440,27 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               )}
             </TabsContent>
 
-            <TabsContent value="activity" className="m-0">
+            <TabsContent value="brief" className="m-0">
                <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                    <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center p-5">
-                      <Clock className="h-full w-full text-slate-200" />
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-slate-400" />
+                      </div>
+                      <h3 className="text-xl font-bold font-headline tracking-normal">Partnership Strategic Brief</h3>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">Activity Feed Empty</p>
-                      <p className="text-xs text-slate-300 mt-1 font-medium italic tracking-normal">Communication logs and status changes will appear here.</p>
-                    </div>
+                    {client.notes ? (
+                      <div className="p-8 rounded-2xl bg-slate-50/50 border border-slate-100">
+                        <p className="text-sm font-medium leading-relaxed text-slate-600 whitespace-pre-wrap tracking-normal">
+                          {client.notes}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Strategic Brief Defined</p>
+                        <p className="text-xs text-slate-300 italic tracking-normal">Use the configuration panel to define long-term goals.</p>
+                      </div>
+                    )}
                   </div>
                </Card>
             </TabsContent>
@@ -476,7 +510,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
           <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-10 space-y-8">
             <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Partnership Guidance</h4>
             <p className="text-sm font-medium leading-relaxed italic text-slate-400 tracking-normal">
-              "Strategic focus should be maintained on {client.industry} vertical deliverables to maximize engagement value."
+              "Strategic focus should be maintained on {client.industry || 'key vertical'} deliverables to maximize engagement value."
             </p>
             <div className="pt-6 border-t border-white/10">
                <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-500 mb-2 tracking-normal">
