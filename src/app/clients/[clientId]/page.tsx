@@ -103,8 +103,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     });
     
     toast({
-      title: "Strategy Updated",
-      description: `Partnership details for ${editData.name} have been synchronized.`
+      title: "Strategy Synchronized",
+      description: `Partnership details for ${editData.name} have been updated.`
     });
   };
 
@@ -113,8 +113,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     deleteDocumentNonBlocking(clientRef);
     toast({
       variant: "destructive",
-      title: "Entity Removed",
-      description: "Client has been purged from the portfolio."
+      title: "Entity Purged",
+      description: "Client has been removed from the portfolio."
     });
     router.push("/clients");
   };
@@ -126,7 +126,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-sm uppercase text-center tracking-normal">Identifying Client Strategy...</p>
+        <p className="text-slate-400 font-bold text-sm uppercase text-center tracking-normal">Identifying Partnership Strategy...</p>
       </div>
     );
   }
@@ -134,7 +134,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   if (!client) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-6">
-        <h2 className="text-2xl font-bold font-headline tracking-normal">Client Not Found</h2>
+        <h2 className="text-2xl font-bold font-headline tracking-normal">Entity Not Found</h2>
         <Button onClick={() => router.push("/clients")} className="font-bold tracking-normal">Return to Portfolio</Button>
       </div>
     );
@@ -192,7 +192,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Brand Name</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Partnership Entity</label>
                     <Input 
                       value={editData?.name} 
                       onChange={(e) => setEditData({...editData, name: e.target.value})}
@@ -200,7 +200,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Industry Focus</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Industry Vertical</label>
                     <Input 
                       value={editData?.industry} 
                       onChange={(e) => setEditData({...editData, industry: e.target.value})}
@@ -210,7 +210,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Primary Contact</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Lead Representative</label>
                     <Input 
                       value={editData?.contactPerson} 
                       onChange={(e) => setEditData({...editData, contactPerson: e.target.value})}
@@ -218,7 +218,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Executive Email</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Executive Communication</label>
                     <Input 
                       value={editData?.email} 
                       onChange={(e) => setEditData({...editData, email: e.target.value})}
@@ -228,7 +228,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Contact Phone</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Contact Hotline</label>
                     <Input 
                       value={editData?.phone} 
                       onChange={(e) => setEditData({...editData, phone: e.target.value})}
@@ -236,7 +236,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Office Location</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Headquarters</label>
                     <Input 
                       value={editData?.address} 
                       onChange={(e) => setEditData({...editData, address: e.target.value})}
@@ -245,7 +245,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Brief (Notes)</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Partnership Strategic Brief</label>
                   <Textarea 
                     value={editData?.notes} 
                     onChange={(e) => setEditData({...editData, notes: e.target.value})}
@@ -277,7 +277,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
           </Dialog>
           <Button asChild className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
             <Link href="/projects/new">
-              Initiate Project
+              Initiate Campaign
             </Link>
           </Button>
         </div>
@@ -301,7 +301,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Briefcase className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Projects</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Campaign Entities</p>
               <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{projects?.length || 0}</h3>
             </div>
           </div>
@@ -312,7 +312,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Receipt className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Invoices</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Billing History</p>
               <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{invoices?.length || 0}</h3>
             </div>
           </div>
@@ -323,7 +323,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Sparkles className="h-5 w-5 text-purple-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Pitch</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Pipeline</p>
               <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{totalPitchCount}</h3>
             </div>
           </div>
@@ -336,13 +336,13 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
             <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-50 w-fit">
               <TabsList className="bg-transparent gap-2 h-auto p-0">
                 <TabsTrigger value="projects" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
-                  Active Projects
+                  Active Campaigns
                 </TabsTrigger>
                 <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
-                  Billing History
+                  Financial Ledger
                 </TabsTrigger>
                 <TabsTrigger value="brief" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
-                  Strategic Brief
+                  Partnership Brief
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -368,7 +368,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                             </Badge>
                             <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 tracking-normal">
                               <Calendar className="h-3 w-3" />
-                              DUE: {project.dueDate || "NO DEADLINE"}
+                              DUE: {project.dueDate || "TBD"}
                             </span>
                           </div>
                         </div>
@@ -389,9 +389,9 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 ))
               ) : (
                 <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Active Projects</p>
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Active Campaigns</p>
                   <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
-                    <Link href="/projects/new">Initiate new production campaign</Link>
+                    <Link href="/projects/new">Initiate new production entity</Link>
                   </Button>
                 </div>
               )}
@@ -429,7 +429,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                           <p className="text-lg font-bold font-headline tracking-normal">₹{(invoice.totalAmount || 0).toLocaleString('en-IN')}</p>
                         </div>
                         <Button asChild variant="outline" size="sm" className="h-10 px-4 rounded-xl font-bold border-slate-200 tracking-normal">
-                          <Link href={`/invoices/${invoice.id}/view`}>View Document</Link>
+                          <Link href={`/invoices/${invoice.id}/view`}>View Ledger</Link>
                         </Button>
                       </div>
                     </div>
@@ -437,9 +437,9 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 ))
               ) : (
                 <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Billing History</p>
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Ledger Entries</p>
                   <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
-                    <Link href="/invoices/new">Generate your first invoice</Link>
+                    <Link href="/invoices/new">Initiate billing synthesis</Link>
                   </Button>
                 </div>
               )}
@@ -500,13 +500,13 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                   <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                     <Phone className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold group-hover:text-primary transition-colors tracking-normal">{client.phone || "No phone added"}</span>
+                  <span className="text-sm font-bold group-hover:text-primary transition-colors tracking-normal">{client.phone || "No Hotline"}</span>
                 </div>
                 <div className="flex items-start gap-4 text-slate-600">
                   <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
                     <MapPin className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold leading-relaxed tracking-normal">{client.address || "Physical address not recorded"}</span>
+                  <span className="text-sm font-bold leading-relaxed tracking-normal">{client.address || "Headquarters address not recorded"}</span>
                 </div>
               </div>
             </CardContent>
