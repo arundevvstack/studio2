@@ -54,7 +54,7 @@ const CLIENT_GROUPS = [
 
 export default function ProjectsPage() {
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto">
+    <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
       {/* Header Section */}
       <div className="flex items-start justify-between">
         <div>
@@ -149,8 +149,10 @@ export default function ProjectsPage() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-100 group-hover:border-primary/20 group-hover:text-primary transition-all shadow-sm">
-                              <Pencil className="h-4 w-4" />
+                            <Button asChild variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-100 group-hover:border-primary/20 group-hover:text-primary transition-all shadow-sm">
+                              <Link href={`/projects/${project.id}`}>
+                                <Pencil className="h-4 w-4" />
+                              </Link>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="top">
