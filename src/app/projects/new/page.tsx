@@ -23,7 +23,7 @@ export default function AddProjectPage() {
         </Button>
         <div>
           <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
-            Initiate Production
+            Add Project
           </h1>
           <p className="text-slate-500 mt-1 font-medium">
             Deploy a new high-growth media campaign.
@@ -66,8 +66,8 @@ export default function AddProjectPage() {
                 Project Visuals
               </label>
               <div className="h-48 rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/30 flex flex-col items-center justify-center group cursor-pointer hover:border-primary/30 transition-colors">
-                <div className="mb-3">
-                  <ImageIcon className="h-10 w-10 text-slate-300" />
+                <div className="mb-3 p-4 rounded-full bg-white shadow-sm">
+                  <ImageIcon className="h-8 w-8 text-slate-300" />
                 </div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   Ingest Campaign Asset
@@ -108,7 +108,7 @@ export default function AddProjectPage() {
             Discard
           </Button>
           <Button className="h-14 px-10 rounded-xl bg-[#ef4444] hover:bg-[#ef4444]/90 text-white font-bold text-base shadow-lg shadow-red-200 gap-3 group">
-            Launch Production
+            Save Pitch
             <SendHorizontal className="h-5 w-5 rotate-[-45deg] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
           </Button>
         </div>

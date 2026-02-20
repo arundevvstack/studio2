@@ -68,8 +68,8 @@ export default function PipelinePage() {
         {/* Empty State Body */}
         <div className="flex-1 flex items-center justify-center py-20">
           <div className="text-center space-y-4">
-            <div className="bg-slate-50 h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <SearchIcon className="h-6 w-6 text-slate-300" />
+            <div className="bg-slate-50 h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4 p-5 shadow-inner">
+              <SearchIcon className="h-full w-full text-slate-300" />
             </div>
             <p className="text-slate-400 font-medium italic text-sm">
               No projects in the early-stage pipeline.

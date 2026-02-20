@@ -224,8 +224,8 @@ function KanbanColumn({ column, children }: { column: ColumnProps; children: Rea
         >
           {column.cards.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-white/30 py-20">
-              <div className="h-12 w-12 rounded-full border-2 border-slate-100 flex items-center justify-center mb-4">
-                <Plus className="h-6 w-6 text-slate-200" />
+              <div className="h-12 w-12 rounded-full border-2 border-slate-100 flex items-center justify-center mb-4 p-2.5">
+                <Plus className="h-full w-full text-slate-200" />
               </div>
               <p className="text-[10px] font-bold text-slate-200 uppercase tracking-[0.2em]">Drop Here</p>
             </div>
