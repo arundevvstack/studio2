@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   DndContext,
   closestCorners,
@@ -24,6 +24,8 @@ import { collection, query, orderBy, doc } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const COLUMNS = [
+  { id: "Pitch", title: "PITCH" },
+  { id: "Discussion", title: "DISCUSSION" },
   { id: "Pre Production", title: "PRE PRODUCTION" },
   { id: "In Progress", title: "PRODUCTION" },
   { id: "Post Production", title: "POST PRODUCTION" },
@@ -118,10 +120,10 @@ export default function BoardPage() {
     <div className="h-full flex flex-col space-y-8 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-slate-900">Kanban Board</h1>
+          <h1 className="text-3xl font-bold font-headline text-slate-900 tracking-normal">Kanban Board</h1>
           <p className="text-sm text-slate-500 font-medium tracking-normal">Manage project throughput across strategic phases.</p>
         </div>
-        <Button asChild className="rounded-xl font-bold shadow-lg shadow-primary/20">
+        <Button asChild className="rounded-xl font-bold shadow-lg shadow-primary/20 tracking-normal">
           <Link href="/projects/new">
             <Plus className="h-4 w-4 mr-2" />
             Add Project
@@ -135,8 +137,8 @@ export default function BoardPage() {
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-          <ScrollArea className="flex-1 pb-10">
-            <div className="flex gap-6 min-h-[600px]">
+          <ScrollArea className="w-full flex-1 pb-10">
+            <div className="flex gap-6 min-h-[600px] w-max pr-8">
               {boardData.map((column) => (
                 <div key={column.id} className="w-[320px] shrink-0 flex flex-col gap-4">
                   <div className="flex items-center justify-between px-2">
@@ -175,6 +177,7 @@ export default function BoardPage() {
                 </div>
               ))}
             </div>
+            <ScrollBar orientation="horizontal" className="mt-4" />
           </ScrollArea>
         </DndContext>
       )}
