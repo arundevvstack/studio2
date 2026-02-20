@@ -22,65 +22,37 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Broad check for team membership in prototype phase. */
-    function isTeamMember() {
-      return isSignedIn();
-    }
-
-    // --- COLLECTION RULES ---
-
-    // Global Roles
-    match /roles/{roleId} {
+    // --- GLOBAL RULES ---
+    
+    // Allow read access to all documents for the prototype phase
+    match /{document=**} {
       allow read: if true;
-      allow write: if isTeamMember();
+      allow write: if isSignedIn();
     }
+
+    // --- SPECIFIC COLLECTION RULES (Maintained for future refinement) ---
 
     // Team Member Profiles
     match /team_members/{teamMemberId} {
-      allow read: if true;
       allow create, update: if isOwner(teamMemberId);
-      allow delete: if false;
     }
 
-    // Strategic Clients
-    match /clients/{clientId} {
-      allow read: if true;
-      allow write: if isTeamMember();
-
-      // Client-specific Invoices
-      match /invoices/{invoiceId} {
-        allow read: if true;
-        allow write: if isTeamMember();
-
-        match /line_items/{lineItemId} {
-          allow read: if true;
-          allow write: if isTeamMember();
-        }
-      }
-    }
-
-    // Production Projects
+    // Projects and subcollections
     match /projects/{projectId} {
-      allow read: if true;
-      allow write: if isTeamMember();
-
-      // Project Tasks
       match /tasks/{taskId} {
-        allow read: if true;
-        allow write: if isTeamMember();
-
-        // Time tracking within tasks
         match /time_entries/{timeEntryId} {
-          allow read: if true;
-          allow write: if isTeamMember();
+          allow read, write: if isSignedIn();
         }
       }
     }
 
-    // Communication Logs
-    match /communication_logs/{logId} {
-      allow read: if true;
-      allow write: if isTeamMember();
+    // Clients and subcollections
+    match /clients/{clientId} {
+      match /invoices/{invoiceId} {
+        match /line_items/{lineItemId} {
+          allow read, write: if isSignedIn();
+        }
+      }
     }
   }
 }
