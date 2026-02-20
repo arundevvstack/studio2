@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -111,7 +112,7 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
         </div>
 
         <div className="space-y-3">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+          <p className="text-[10px] font-bold text-slate-400 uppercase">
             {card.progress}% COMPLETE
           </p>
           <Progress value={card.progress} className="h-1.5 bg-slate-50" />
@@ -120,7 +121,7 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
         <div className="flex items-center justify-between pt-2 border-t border-slate-50">
           <div className="flex items-center gap-2 text-red-400">
             <Clock className="h-3 w-3" />
-            <span className="text-[10px] font-bold uppercase tracking-tighter opacity-50">{card.deadline}</span>
+            <span className="text-[10px] font-bold uppercase opacity-50">{card.deadline}</span>
           </div>
           <div className="flex -space-x-2">
             {(card.team || []).map((u, i) => (
@@ -145,7 +146,7 @@ function KanbanColumn({ column, children }: { column: ColumnProps; children: Rea
     <div className="w-[320px] shrink-0 flex flex-col space-y-4">
       <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
-          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+          <h3 className="text-[10px] font-bold text-slate-400 uppercase">
             {column.title}
           </h3>
           <Badge className="bg-slate-100 text-slate-500 border-none h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
@@ -168,7 +169,7 @@ function KanbanColumn({ column, children }: { column: ColumnProps; children: Rea
               <div className="h-12 w-12 rounded-full border-2 border-slate-100 flex items-center justify-center mb-4 p-2.5">
                 <Plus className="h-full w-full text-slate-200" />
               </div>
-              <p className="text-[10px] font-bold text-slate-200 uppercase tracking-tight">Drop Here</p>
+              <p className="text-[10px] font-bold text-slate-200 uppercase">Drop Here</p>
             </div>
           ) : (
             column.cards.map((card) => (
@@ -325,7 +326,7 @@ export default function BoardPage() {
     <div className="h-full flex flex-col space-y-8 animate-in fade-in duration-500">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-4xl font-bold text-slate-900">
             Board
           </h1>
           <p className="text-sm text-slate-500 font-medium">
@@ -343,7 +344,7 @@ export default function BoardPage() {
       {isLoading ? (
         <div className="flex-1 flex flex-col items-center justify-center py-20 space-y-4">
           <Loader2 className="h-10 w-10 text-primary animate-spin" />
-          <p className="text-slate-400 font-bold text-sm uppercase tracking-tight">Synchronizing Board...</p>
+          <p className="text-slate-400 font-bold text-sm uppercase">Synchronizing Board...</p>
         </div>
       ) : (
         <DndContext
@@ -380,5 +381,3 @@ export default function BoardPage() {
     </div>
   );
 }
-
-import Link from "next/link";

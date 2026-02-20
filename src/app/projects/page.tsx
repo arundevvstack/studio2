@@ -13,7 +13,6 @@ import {
   User,
   Clock,
   Pencil,
-  SearchIcon,
   Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -74,7 +73,7 @@ export default function ProjectsPage() {
       {/* Header Section */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-headline tracking-tight text-slate-900">Projects</h1>
+          <h1 className="text-3xl font-bold font-headline">Projects</h1>
           <p className="text-sm text-slate-500 mt-1 font-medium">
             Managing global production assets grouped by client.
           </p>
@@ -117,7 +116,7 @@ export default function ProjectsPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Loading Pipeline...</p>
+            <p className="text-slate-400 font-bold text-sm uppercase">Loading Pipeline...</p>
           </div>
         ) : clientGroups.length > 0 ? (
           clientGroups.map((group) => (
@@ -129,7 +128,7 @@ export default function ProjectsPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold font-headline text-slate-900">{group.name}</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">
                     {group.activeCount} ACTIVE PROJECTS
                   </p>
                 </div>
@@ -137,7 +136,7 @@ export default function ProjectsPage() {
 
               {/* Project List */}
               <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="grid grid-cols-12 px-8 py-4 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <div className="grid grid-cols-12 px-8 py-4 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase">
                   <div className="col-span-4">PRODUCTION ENTITY</div>
                   <div className="col-span-3 text-center">CURRENT PHASE</div>
                   <div className="col-span-2">BUDGET (INR)</div>
@@ -150,7 +149,7 @@ export default function ProjectsPage() {
                     <div key={project.id} className="grid grid-cols-12 px-8 py-6 items-center group hover:bg-slate-50/50 transition-colors">
                       <div className="col-span-4">
                         <h4 className="font-bold text-base text-slate-900">{project.name}</h4>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-tight">ID: {project.id.substring(0, 8).toUpperCase()}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">ID: {project.id.substring(0, 8).toUpperCase()}</p>
                       </div>
                       <div className="col-span-3 flex justify-center">
                         <Badge className={`rounded-lg px-4 py-1.5 text-[10px] font-bold border-none shadow-none ${getStatusBadge(project.status)}`}>
@@ -189,9 +188,9 @@ export default function ProjectsPage() {
         ) : (
           <div className="col-span-full border-2 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center p-20 min-h-[400px] bg-white/30">
             <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-6 p-5">
-              <SearchIcon className="h-full w-full text-slate-200" />
+              <Search className="h-full w-full text-slate-200" />
             </div>
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">No Active Projects</p>
+            <p className="text-sm font-bold text-slate-400 uppercase">No Active Projects</p>
             <Button asChild variant="link" className="text-primary font-bold text-xs mt-2">
               <Link href="/projects/new">Initiate new production</Link>
             </Button>

@@ -16,7 +16,6 @@ import {
   Mic,
   Camera,
   Archive,
-  SearchIcon,
   PhoneCall
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Play, Pause, RotateCcw, Calendar, Filter, BarChart3, SearchIcon } from "lucide-react";
+import { Clock, Play, Pause, RotateCcw, Calendar, Filter, BarChart3, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function TimeTrackingPage() {
@@ -33,7 +33,7 @@ export default function TimeTrackingPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center py-4">
-              <span className="text-6xl font-bold tracking-tighter tabular-nums">00:00:00</span>
+              <span className="text-6xl font-bold tabular-nums leading-none">00:00:00</span>
               <p className="text-primary-foreground/70 mt-2 font-medium">No active task</p>
             </div>
             <div className="flex items-center justify-center gap-4">
@@ -65,7 +65,7 @@ export default function TimeTrackingPage() {
               </div>
             </div>
             <div className="space-y-3 pt-4 border-t text-center py-6">
-               <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No activity this week</p>
+               <p className="text-xs font-bold text-slate-300 uppercase">No activity this week</p>
             </div>
           </CardContent>
         </Card>
@@ -123,9 +123,9 @@ export default function TimeTrackingPage() {
             ) : (
               <div className="p-20 flex flex-col items-center justify-center space-y-4">
                 <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center p-5">
-                  <Clock className="h-full w-full text-slate-200" />
+                  <Search className="h-full w-full text-slate-200" />
                 </div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No recent time entries</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">No recent time entries</p>
               </div>
             )}
           </div>

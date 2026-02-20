@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Send, Filter, MoreHorizontal, FileText, CheckCircle2, Clock, AlertCircle, SearchIcon } from "lucide-react";
+import { Plus, Download, Send, Filter, MoreHorizontal, FileText, CheckCircle2, Clock, AlertCircle, Search } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -76,13 +76,13 @@ export default function InvoicesPage() {
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="px-8 text-[10px] font-bold uppercase tracking-widest">Invoice ID</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest">Client</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest">Project</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest">Amount</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest">Date</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest">Status</TableHead>
-                <TableHead className="text-right px-8 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
+                <TableHead className="px-8 text-[10px] font-bold uppercase">Invoice ID</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase">Client</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase">Project</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase">Amount</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase">Date</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase">Status</TableHead>
+                <TableHead className="text-right px-8 text-[10px] font-bold uppercase">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -130,10 +130,10 @@ export default function InvoicesPage() {
         ) : (
           <div className="p-20 flex flex-col items-center justify-center space-y-4">
             <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center p-5">
-              <SearchIcon className="h-full w-full text-slate-200" />
+              <Search className="h-full w-full text-slate-200" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No Invoices Found</p>
+              <p className="text-sm font-bold text-slate-400 uppercase">No Invoices Found</p>
               <Button asChild variant="link" className="text-primary font-bold text-xs mt-1">
                 <Link href="/invoices/new">Generate your first invoice</Link>
               </Button>

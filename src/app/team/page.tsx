@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Mail, MessageSquare, Briefcase, Plus, SearchIcon } from "lucide-react";
+import { Users, Mail, MessageSquare, Briefcase, Plus, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -67,7 +67,7 @@ export default function TeamPage() {
             <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-6 p-5">
               <Users className="h-full w-full text-slate-200" />
             </div>
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">No Team Members</p>
+            <p className="text-sm font-bold text-slate-400 uppercase">No Team Members</p>
             <Button variant="link" className="text-primary font-bold text-xs mt-2">Scale your production crew</Button>
           </div>
         )}

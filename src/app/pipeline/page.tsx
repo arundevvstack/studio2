@@ -7,8 +7,7 @@ import {
   Search, 
   Filter, 
   Plus, 
-  Sparkles,
-  SearchIcon
+  Sparkles
 } from "lucide-react";
 import Link from "next/link";
 
@@ -19,10 +18,10 @@ export default function PipelinePage() {
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
+            <h1 className="text-4xl font-bold font-headline text-slate-900">
               Strategic Pipeline
             </h1>
-            <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
+            <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-2 py-0.5 uppercase">
               <Sparkles className="h-3 w-3 mr-1" />
               Early Stage
             </Badge>
@@ -57,7 +56,7 @@ export default function PipelinePage() {
       {/* Pipeline Table */}
       <div className="bg-white rounded-[2rem] border border-slate-50 shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         {/* Table Header */}
-        <div className="grid grid-cols-12 px-10 py-6 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+        <div className="grid grid-cols-12 px-10 py-6 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase">
           <div className="col-span-4">Potential Production</div>
           <div className="col-span-3">Pipeline Phase</div>
           <div className="col-span-2 text-center">Confidence</div>
@@ -69,7 +68,7 @@ export default function PipelinePage() {
         <div className="flex-1 flex items-center justify-center py-20">
           <div className="text-center space-y-4">
             <div className="bg-slate-50 h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4 p-5 shadow-inner">
-              <SearchIcon className="h-full w-full text-slate-300" />
+              <Search className="h-full w-full text-slate-300" />
             </div>
             <p className="text-slate-400 font-medium italic text-sm">
               No projects in the early-stage pipeline.

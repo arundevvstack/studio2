@@ -8,7 +8,7 @@ import {
   Calendar, 
   Receipt, 
   ChevronDown,
-  SearchIcon
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,7 +56,7 @@ export default function CreateInvoicePage() {
           <ChevronLeft className="h-5 w-5 text-slate-600" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
+          <h1 className="text-4xl font-bold font-headline text-slate-900">
             Revenue Generation
           </h1>
           <p className="text-slate-500 mt-1 font-medium">
@@ -76,7 +76,7 @@ export default function CreateInvoicePage() {
             </CardHeader>
             <CardContent className="p-0 space-y-10">
               <div className="space-y-4">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
                   Select Strategic Client
                 </label>
                 <Select>
@@ -91,11 +91,11 @@ export default function CreateInvoicePage() {
 
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                  <h3 className="text-[10px] font-bold text-slate-400 uppercase">
                     Production Phases
                   </h3>
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Aggregate Recurring</span>
+                    <span className="text-[10px] font-bold text-primary uppercase">Aggregate Recurring</span>
                     <Checkbox className="h-5 w-5 rounded-md border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white" />
                   </div>
                 </div>
@@ -124,7 +124,7 @@ export default function CreateInvoicePage() {
                           <p className="text-2xl font-bold font-headline text-slate-900">
                             ₹{item.amount.toLocaleString('en-IN')}
                           </p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">
                             {item.status}
                           </p>
                         </div>
@@ -133,9 +133,9 @@ export default function CreateInvoicePage() {
                   ) : (
                     <div className="p-20 flex flex-col items-center justify-center space-y-4 border-2 border-dashed border-slate-50 rounded-3xl">
                       <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center p-5">
-                        <SearchIcon className="h-full w-full text-slate-200" />
+                        <Search className="h-full w-full text-slate-200" />
                       </div>
-                      <p className="text-xs font-bold text-slate-300 uppercase tracking-widest text-center">No production items available for synthesis</p>
+                      <p className="text-xs font-bold text-slate-300 uppercase text-center">No production items available for synthesis</p>
                     </div>
                   )}
                 </div>
@@ -160,16 +160,16 @@ export default function CreateInvoicePage() {
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">
                   Total Revenue
                 </p>
-                <h2 className="text-5xl font-bold font-headline tracking-tighter text-slate-900">
+                <h2 className="text-5xl font-bold font-headline text-slate-900">
                   ₹{totalRevenue.toLocaleString('en-IN')}
                 </h2>
               </div>
 
               <div className="space-y-4">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">
                   Payment Due Date
                 </p>
                 <div className="relative group">
@@ -195,7 +195,7 @@ export default function CreateInvoicePage() {
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest mb-1">
+              <h4 className="text-[10px] font-bold text-slate-900 uppercase mb-1">
                 Auto-Aggregation
               </h4>
               <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
