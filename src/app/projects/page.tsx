@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -11,12 +10,19 @@ import {
   List,
   ArrowUpDown,
   User,
-  Clock
+  Clock,
+  Pencil
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const CLIENT_GROUPS = [
   {
@@ -114,7 +120,7 @@ export default function ProjectsPage() {
                 <div className="col-span-3 text-center">CURRENT PHASE</div>
                 <div className="col-span-2">OPTIMIZATION</div>
                 <div className="col-span-2 text-center">DELIVERY</div>
-                <div className="col-span-1 text-right">EXECUTE</div>
+                <div className="col-span-1 text-right">ACTIONS</div>
               </div>
               
               <div className="divide-y divide-slate-50">
@@ -139,9 +145,21 @@ export default function ProjectsPage() {
                       <Clock className="h-4 w-4" />
                       <span className="text-xs font-bold text-slate-600">{project.delivery}</span>
                     </div>
-                    <div className="col-span-1 flex justify-end">
-                      <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-slate-100 group-hover:border-primary/20 group-hover:text-primary transition-all shadow-sm">
-                        <ChevronRight className="h-5 w-5" />
+                    <div className="col-span-1 flex justify-end gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-100 opacity-0 group-hover:opacity-100 transition-all shadow-sm hover:border-primary/20 hover:text-primary">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <p className="text-[10px] font-bold uppercase">Edit Entity</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-100 group-hover:border-primary/20 group-hover:text-primary transition-all shadow-sm">
+                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
