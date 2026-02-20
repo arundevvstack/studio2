@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -329,21 +328,12 @@ export default function BoardPage() {
                   items={column.cards.map((c) => c.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="flex-1 flex flex-col gap-4">
+                  <div className="flex-1 flex flex-col gap-4 min-h-[200px]">
                     {column.cards.map((card) => (
                       <KanbanCard key={card.id} card={card} />
                     ))}
 
-                    <div className="flex-1 border-2 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center p-8 group hover:border-primary/20 transition-colors">
-                      <div className="h-12 w-12 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm mb-4">
-                        <Plus className="h-4 w-4 text-slate-300 group-hover:text-primary transition-colors" />
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest group-hover:text-primary transition-colors">
-                        Drop Here
-                      </span>
-                    </div>
-
-                    <Button variant="ghost" className="h-14 w-full rounded-[2rem] border-none bg-slate-50/50 hover:bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-widest gap-2">
+                    <Button variant="ghost" className="h-14 w-full rounded-[2rem] border-none bg-slate-50/50 hover:bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-widest gap-2 mt-auto">
                       <Plus className="h-4 w-4" />
                       New Entry
                     </Button>
