@@ -11,51 +11,32 @@ import {
   Mail,
   Phone,
   ArrowRight,
-  Filter
+  Filter,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
 
-const CLIENTS_PORTFOLIO = [
-  {
-    id: 1,
-    name: "Nike",
-    industry: "Sportswear",
-    activeProjects: 4,
-    totalRevenue: "$1.2M",
-    contact: "Sarah Johnson",
-    email: "s.johnson@nike.com",
-    status: "Strategic",
-    color: "bg-gradient-pink"
-  },
-  {
-    id: 2,
-    name: "Apple",
-    industry: "Technology",
-    activeProjects: 2,
-    totalRevenue: "$850k",
-    contact: "Mark Foster",
-    email: "m.foster@apple.com",
-    status: "Active",
-    color: "bg-gradient-purple"
-  },
-  {
-    id: 3,
-    name: "Airbnb",
-    industry: "Travel",
-    activeProjects: 1,
-    totalRevenue: "$320k",
-    contact: "Brian Chesky",
-    email: "brian@airbnb.com",
-    status: "Growth",
-    color: "bg-gradient-blue"
-  }
+const MOCK_GRADIENTS = [
+  "bg-gradient-pink",
+  "bg-gradient-purple",
+  "bg-gradient-blue"
 ];
 
 export default function ClientsPage() {
+  const db = useFirestore();
+
+  const clientsQuery = useMemoFirebase(() => {
+    return query(collection(db, "clients"), orderBy("createdAt", "desc"));
+  }, [db]);
+
+  const { data: clients, isLoading } = useCollection(clientsQuery);
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
       {/* Header Section */}
@@ -107,7 +88,7 @@ export default function ClientsPage() {
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Ops</p>
-              <h3 className="text-2xl font-bold font-headline">18 Projects</h3>
+              <h3 className="text-2xl font-bold font-headline">{clients?.length || 0} Clients</h3>
             </div>
           </div>
         </Card>
@@ -130,67 +111,69 @@ export default function ClientsPage() {
 
       {/* Portfolio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-        {CLIENTS_PORTFOLIO.map((client) => (
-          <Card key={client.id} className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <div className={`h-24 ${client.color} relative overflow-hidden`}>
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
-              <div className="absolute -bottom-10 left-8">
-                <Avatar className="h-20 w-20 border-4 border-white shadow-lg rounded-3xl">
-                  <AvatarImage src={`https://picsum.photos/seed/${client.name}/200/200`} />
-                  <AvatarFallback>{client.name[0]}</AvatarFallback>
-                </Avatar>
-              </div>
-            </div>
-            
-            <CardContent className="p-8 pt-14 space-y-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-2xl font-bold font-headline text-slate-900">{client.name}</h3>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{client.industry}</p>
-                </div>
-                <Badge className="bg-slate-50 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
-                  {client.status}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Projects</p>
-                  <p className="text-xl font-bold mt-1 text-primary">{client.activeProjects}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Est. Revenue</p>
-                  <p className="text-xl font-bold mt-1 text-slate-900">{client.totalRevenue}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-slate-500">
-                  <Mail className="h-4 w-4" />
-                  <span className="text-sm font-medium">{client.email}</span>
-                </div>
-                <div className="flex items-center gap-3 text-slate-500">
-                  <Phone className="h-4 w-4" />
-                  <span className="text-sm font-medium">{client.contact}</span>
-                </div>
-              </div>
-
-              <Button variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase tracking-widest group-hover:bg-primary group-hover:text-white transition-all gap-2">
-                View Engagement
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {/* New Client Empty State Card */}
-        <Link href="/clients/new" className="border-2 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center p-8 min-h-[400px] hover:border-primary/20 hover:bg-slate-50/50 transition-all group">
-          <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <Plus className="h-8 w-8 text-slate-300 group-hover:text-primary" />
+        {isLoading ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 space-y-4">
+            <Loader2 className="h-10 w-10 text-primary animate-spin" />
+            <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Loading Portfolio...</p>
           </div>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Scale Portfolio</p>
-          <p className="text-xs text-slate-300 mt-2 font-medium">Add a new high-value client</p>
-        </Link>
+        ) : clients && clients.length > 0 ? (
+          clients.map((client, index) => (
+            <Card key={client.id} className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className={`h-24 ${MOCK_GRADIENTS[index % MOCK_GRADIENTS.length]} relative overflow-hidden`}>
+                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
+                <div className="absolute -bottom-10 left-8">
+                  <Avatar className="h-20 w-20 border-4 border-white shadow-lg rounded-3xl">
+                    <AvatarImage src={`https://picsum.photos/seed/${client.name}/200/200`} />
+                    <AvatarFallback>{client.name[0]}</AvatarFallback>
+                  </Avatar>
+                </div>
+              </div>
+              
+              <CardContent className="p-8 pt-14 space-y-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-2xl font-bold font-headline text-slate-900">{client.name}</h3>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{client.industry || "General Industry"}</p>
+                  </div>
+                  <Badge className="bg-slate-50 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
+                    {client.status || "Active"}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contact</p>
+                    <p className="text-base font-bold mt-1 text-primary truncate">{client.contactPerson || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phone</p>
+                    <p className="text-sm font-bold mt-1 text-slate-900 truncate">{client.phone || "N/A"}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-slate-500 overflow-hidden">
+                    <Mail className="h-4 w-4 shrink-0" />
+                    <span className="text-sm font-medium truncate">{client.email}</span>
+                  </div>
+                </div>
+
+                <Button variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase tracking-widest group-hover:bg-primary group-hover:text-white transition-all gap-2">
+                  View Engagement
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Link href="/clients/new" className="col-span-full border-2 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center p-8 min-h-[400px] hover:border-primary/20 hover:bg-slate-50/50 transition-all group">
+            <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Plus className="h-8 w-8 text-slate-300 group-hover:text-primary" />
+            </div>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Scale Portfolio</p>
+            <p className="text-xs text-slate-300 mt-2 font-medium">Add your first high-value client</p>
+          </Link>
+        )}
       </div>
     </div>
   );
