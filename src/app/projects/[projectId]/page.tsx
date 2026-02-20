@@ -94,15 +94,18 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
             <CardContent className="px-10 pb-10 space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lifecycle Phase</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phase</label>
                   <Select defaultValue="production">
                     <SelectTrigger className="h-12 bg-transparent border-none p-0 text-xl font-bold font-headline shadow-none focus:ring-0">
                       <SelectValue placeholder="Select phase" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="pitch">Pitch</SelectItem>
+                      <SelectItem value="discussion">Discussion</SelectItem>
                       <SelectItem value="pre">Pre Production</SelectItem>
                       <SelectItem value="production">Production</SelectItem>
                       <SelectItem value="post">Post Production</SelectItem>
+                      <SelectItem value="released">Released</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
