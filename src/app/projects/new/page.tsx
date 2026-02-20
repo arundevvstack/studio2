@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { ChevronLeft, Image as ImageIcon, Rocket } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function InitiateProductionPage() {
+export default function AddProjectPage() {
   const router = useRouter();
 
   return (
@@ -25,7 +24,7 @@ export default function InitiateProductionPage() {
         </Button>
         <div>
           <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
-            Initiate Production
+            Add Projects
           </h1>
           <p className="text-slate-500 mt-1 font-medium">
             Deploy a new high-growth media campaign.
