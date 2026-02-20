@@ -1,27 +1,18 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { 
-  Search, 
   Plus, 
   MoreHorizontal, 
   Clock, 
-  Video,
-  FileText,
-  Calendar,
   Grid,
   ChevronRight,
   ChevronLeft,
-  Smile,
-  Mic,
-  Camera,
-  Archive,
-  PhoneCall
+  Search
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
@@ -38,11 +29,11 @@ export default function Dashboard() {
         {/* Header Section */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold font-headline">Hi Shakir!</h1>
+            <h1 className="text-3xl font-bold font-headline">Welcome back!</h1>
           </div>
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-3">
-               <span className="text-xs font-bold text-muted-foreground">0% task completed</span>
+               <span className="text-xs font-bold text-muted-foreground">0% tasks completed</span>
                <Progress value={0} className="h-2 w-32" />
              </div>
           </div>
@@ -207,7 +198,7 @@ export default function Dashboard() {
             <h2 className="text-xl font-bold font-headline">Today's Schedule</h2>
             <div className="flex items-center gap-2">
                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground bg-white shadow-sm rounded-lg"><Grid className="h-4 w-4" /></Button>
-               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground bg-white shadow-sm rounded-lg"><Calendar className="h-4 w-4" /></Button>
+               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground bg-white shadow-sm rounded-lg"><Clock className="h-4 w-4" /></Button>
             </div>
           </div>
 

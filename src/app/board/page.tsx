@@ -183,9 +183,14 @@ function KanbanColumn({ column, children }: { column: ColumnProps; children: Rea
 }
 
 export default function BoardPage() {
+  const [mounted, setMounted] = useState(false);
   const db = useFirestore();
   const [boardData, setBoardData] = useState<ColumnProps[]>([]);
   const [activeCard, setActiveCard] = useState<CardProps | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch Projects
   const projectsQuery = useMemoFirebase(() => {
@@ -321,6 +326,13 @@ export default function BoardPage() {
 
     setActiveCard(null);
   }
+
+  if (!mounted) return (
+    <div className="flex-1 flex flex-col items-center justify-center py-20 space-y-4">
+      <Loader2 className="h-10 w-10 text-primary animate-spin" />
+      <p className="text-slate-400 font-bold text-sm uppercase">Loading Board...</p>
+    </div>
+  );
 
   return (
     <div className="h-full flex flex-col space-y-8 animate-in fade-in duration-500">
