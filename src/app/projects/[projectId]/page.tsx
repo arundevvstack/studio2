@@ -19,7 +19,9 @@ import {
   IndianRupee,
   Loader2,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Calendar as CalendarIcon,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +49,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where, doc, serverTimestamp, orderBy } from "firebase/firestore";
-import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
 const STATUS_PROGRESS_MAP: Record<string, number> = {
@@ -82,6 +84,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   }, [db, projectId]);
   const { data: allTasks, isLoading: isTasksLoading } = useCollection(tasksQuery);
 
+  // Team Members for assignment
+  const teamQuery = useMemoFirebase(() => {
+    return query(collection(db, "team_members"), orderBy("firstName", "asc"));
+  }, [db]);
+  const { data: teamMembers } = useCollection(teamQuery);
+
   // Filter tasks by current project phase
   const currentPhaseTasks = useMemo(() => {
     if (!allTasks || !project) return [];
@@ -95,7 +103,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   // Edit State
   const [editData, setEditData] = useState<any>(null);
-  const [newObjective, setNewObjective] = useState({ name: "", description: "" });
+  const [newObjective, setNewObjective] = useState({ 
+    name: "", 
+    description: "", 
+    dueDate: "", 
+    assignedTeamMemberId: "" 
+  });
 
   useEffect(() => {
     if (project) {
@@ -161,13 +174,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     addDocumentNonBlocking(tasksRef, {
       name: newObjective.name,
       description: newObjective.description,
+      dueDate: newObjective.dueDate,
+      assignedTeamMemberId: newObjective.assignedTeamMemberId,
       status: "Active",
       phase: project?.status || "Pre Production",
       projectId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-    setNewObjective({ name: "", description: "" });
+    setNewObjective({ name: "", description: "", dueDate: "", assignedTeamMemberId: "" });
     toast({ title: "Objective Defined", description: "New mission objective added to current phase." });
   };
 
@@ -373,20 +388,52 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         <Plus className="h-4 w-4" /> Define Objective
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="rounded-[2rem]">
+                    <DialogContent className="rounded-[2rem] sm:max-w-[500px]">
                       <DialogHeader><DialogTitle className="font-headline">Define Mission Objective</DialogTitle></DialogHeader>
-                      <div className="space-y-4 py-4">
+                      <div className="space-y-6 py-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Objective Title</label>
-                          <Input value={newObjective.name} onChange={(e) => setNewObjective({...newObjective, name: e.target.value})} className="rounded-xl" placeholder="e.g. Creative Brief Approval" />
+                          <Input value={newObjective.name} onChange={(e) => setNewObjective({...newObjective, name: e.target.value})} className="rounded-xl h-12" placeholder="e.g. Creative Brief Approval" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Due Date</label>
+                            <Input 
+                              type="date" 
+                              value={newObjective.dueDate} 
+                              onChange={(e) => setNewObjective({...newObjective, dueDate: e.target.value})} 
+                              className="rounded-xl h-12" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase">Assignee</label>
+                            <Select 
+                              value={newObjective.assignedTeamMemberId} 
+                              onValueChange={(val) => setNewObjective({...newObjective, assignedTeamMemberId: val})}
+                            >
+                              <SelectTrigger className="rounded-xl h-12 border-slate-200">
+                                <SelectValue placeholder="Select member" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                {teamMembers?.map((member) => (
+                                  <SelectItem key={member.id} value={member.id}>
+                                    {member.firstName} {member.lastName}
+                                  </SelectItem>
+                                ))}
+                                {(!teamMembers || teamMembers.length === 0) && (
+                                  <SelectItem value="none" disabled>No members available</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
-                          <Textarea value={newObjective.description} onChange={(e) => setNewObjective({...newObjective, description: e.target.value})} className="rounded-xl resize-none" placeholder="Provide strategic context..." />
+                          <Textarea value={newObjective.description} onChange={(e) => setNewObjective({...newObjective, description: e.target.value})} className="rounded-xl resize-none h-24" placeholder="Provide strategic context..." />
                         </div>
                       </div>
                       <DialogFooter>
-                        <DialogClose asChild><Button onClick={handleAddObjective} className="bg-primary w-full rounded-xl font-bold">Sync Objective</Button></DialogClose>
+                        <DialogClose asChild><Button onClick={handleAddObjective} className="bg-primary w-full h-12 rounded-xl font-bold">Sync Objective</Button></DialogClose>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
@@ -403,6 +450,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                           <div>
                             <p className={`font-bold text-lg ${task.status === "Completed" ? "line-through text-slate-300" : "text-slate-900"}`}>{task.name}</p>
                             <p className="text-xs text-slate-400 mt-1">{task.description}</p>
+                            <div className="flex items-center gap-4 mt-2">
+                              {task.dueDate && (
+                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                  <CalendarIcon className="h-3 w-3" /> {task.dueDate}
+                                </span>
+                              )}
+                              {task.assignedTeamMemberId && (
+                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                  <User className="h-3 w-3" /> {teamMembers?.find(m => m.id === task.assignedTeamMemberId)?.firstName || "Unassigned"}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
