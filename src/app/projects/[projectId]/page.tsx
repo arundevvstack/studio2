@@ -151,17 +151,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             <DialogTrigger asChild>
               <Button variant="outline" className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold gap-2 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
                 <Settings2 className="h-4 w-4" />
-                Configure Project
+                Edit Project
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
               <DialogHeader className="p-8 pb-0">
-                <DialogTitle className="text-2xl font-bold font-headline">Edit Project</DialogTitle>
+                <DialogTitle className="text-2xl font-bold font-headline">Update Production Entity</DialogTitle>
               </DialogHeader>
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Project Name</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Project Title</label>
                     <Input 
                       value={editData?.name} 
                       onChange={(e) => setEditData({...editData, name: e.target.value})}
@@ -169,7 +169,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Phase</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Campaign Phase</label>
                     <Select value={editData?.status} onValueChange={(val) => setEditData({...editData, status: val})}>
                       <SelectTrigger className="rounded-xl bg-slate-50 border-none h-12 shadow-none focus:ring-0">
                         <SelectValue placeholder="Select phase" />
@@ -186,7 +186,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Quote Value (INR)</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Strategic Quote (INR)</label>
                   <div className="relative">
                     <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input 
@@ -198,7 +198,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Executive Brief</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Executive Summary</label>
                   <Textarea 
                     value={editData?.description} 
                     onChange={(e) => setEditData({...editData, description: e.target.value})}
@@ -210,7 +210,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 <DialogClose asChild>
                   <Button variant="ghost" onClick={handleDeleteProject} className="text-destructive font-bold text-xs uppercase hover:bg-destructive/5 hover:text-destructive gap-2">
                     <Trash2 className="h-4 w-4" />
-                    Purge Project
+                    Purge Campaign
                   </Button>
                 </DialogClose>
                 <div className="flex gap-3">
