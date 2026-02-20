@@ -34,7 +34,7 @@ export default function PipelinePage() {
         <Button asChild className="h-12 px-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 gap-2">
           <Link href="/projects/new">
             <Plus className="h-4 w-4" />
-            Draft New Pitch
+            New Pitch
           </Link>
         </Button>
       </div>
