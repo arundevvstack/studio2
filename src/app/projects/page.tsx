@@ -12,7 +12,8 @@ import {
   Clock, 
   Loader2,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Users
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
