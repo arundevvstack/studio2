@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Download, Printer } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function InvoiceViewPage({ params }: { params: { invoiceId: string } }) {
+export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceId: string }> }) {
+  const { invoiceId } = React.use(params);
   const router = useRouter();
 
   return (
@@ -79,7 +80,7 @@ export default function InvoiceViewPage({ params }: { params: { invoiceId: strin
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Invoice No :</span>
-                <span className="text-slate-900 font-bold">MRZL_202602_25</span>
+                <span className="text-slate-900 font-bold">{invoiceId || "MRZL_202602_25"}</span>
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Invoice Date :</span>

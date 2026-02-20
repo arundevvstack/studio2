@@ -26,10 +26,10 @@ import { collection, query, where, orderBy, doc } from "firebase/firestore";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function ClientEngagementPage({ params }: { params: { clientId: string } }) {
+export default function ClientEngagementPage({ params }: { params: Promise<{ clientId: string }> }) {
+  const { clientId } = React.use(params);
   const router = useRouter();
   const db = useFirestore();
-  const { clientId } = params;
 
   // Fetch Client Details
   const clientRef = useMemoFirebase(() => doc(db, "clients", clientId), [db, clientId]);
@@ -58,7 +58,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-sm uppercase tracking-tight text-center">Identifying Client Strategy...</p>
+        <p className="text-slate-400 font-bold text-sm uppercase text-center">Identifying Client Strategy...</p>
       </div>
     );
   }
@@ -92,7 +92,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
               <h1 className="text-4xl font-bold font-headline text-slate-900 leading-none">
                 {client.name}
               </h1>
-              <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase tracking-tight">
+              <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase">
                 {client.status || "Strategic Partner"}
               </Badge>
             </div>
@@ -129,7 +129,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Total Commitment</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Total Commitment</p>
               <h3 className="text-3xl font-bold font-headline mt-1">₹{totalProjectValue.toLocaleString('en-IN')}</h3>
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
               <Briefcase className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Active Projects</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Active Projects</p>
               <h3 className="text-3xl font-bold font-headline mt-1">{projects?.filter(p => p.status !== 'Completed').length || 0}</h3>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
               <Receipt className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Pending Invoices</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Pending Invoices</p>
               <h3 className="text-3xl font-bold font-headline mt-1">{invoices?.filter(i => i.status !== 'Paid').length || 0}</h3>
             </div>
           </div>
@@ -162,7 +162,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
               <MessageSquare className="h-5 w-5 text-purple-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Communications</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Communications</p>
               <h3 className="text-3xl font-bold font-headline mt-1">0</h3>
             </div>
           </div>
@@ -175,13 +175,13 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
           <Tabs defaultValue="projects" className="space-y-8">
             <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-50 w-fit">
               <TabsList className="bg-transparent gap-2 h-auto p-0">
-                <TabsTrigger value="projects" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-tight data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+                <TabsTrigger value="projects" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white">
                   Active Projects
                 </TabsTrigger>
-                <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-tight data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+                <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white">
                   Billing History
                 </TabsTrigger>
-                <TabsTrigger value="activity" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-tight data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+                <TabsTrigger value="activity" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white">
                   Activity Feed
                 </TabsTrigger>
               </TabsList>
@@ -203,10 +203,10 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
                         <div>
                           <h4 className="text-xl font-bold font-headline text-slate-900">{project.name}</h4>
                           <div className="flex items-center gap-3 mt-1">
-                            <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-3 py-1 uppercase tracking-tight">
+                            <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-3 py-1 uppercase">
                               {project.status || "Planned"}
                             </Badge>
-                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tight flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-slate-300 uppercase flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               {project.dueDate || "NO DEADLINE"}
                             </span>
@@ -215,7 +215,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
                       </div>
                       <div className="flex items-center gap-10">
                         <div className="text-right">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Quote Value</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Quote Value</p>
                           <p className="text-xl font-bold font-headline text-slate-900">₹{(project.budget || 0).toLocaleString('en-IN')}</p>
                         </div>
                         <Button asChild variant="ghost" size="icon" className="h-12 w-12 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all">
@@ -229,7 +229,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
                 ))
               ) : (
                 <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">No Active Projects</p>
+                  <p className="text-sm font-bold text-slate-400 uppercase">No Active Projects</p>
                   <Button asChild variant="link" className="text-primary font-bold text-xs">
                     <Link href="/projects/new">Initiate new production campaign</Link>
                   </Button>
@@ -252,7 +252,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
                         </div>
                         <div>
                           <h4 className="text-lg font-bold font-headline text-slate-900">#{invoice.invoiceNumber || invoice.id.substring(0, 8)}</h4>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">Issued {invoice.issueDate || "N/A"}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Issued {invoice.issueDate || "N/A"}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-10">
@@ -273,7 +273,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
                 ))
               ) : (
                 <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">No Billing History</p>
+                  <p className="text-sm font-bold text-slate-400 uppercase">No Billing History</p>
                   <Button asChild variant="link" className="text-primary font-bold text-xs">
                     <Link href="/invoices/new">Generate your first invoice</Link>
                   </Button>
@@ -288,7 +288,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
                       <Clock className="h-full w-full text-slate-200" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">Activity Feed Empty</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase">Activity Feed Empty</p>
                       <p className="text-xs text-slate-300 mt-1 font-medium italic">Communication logs and status changes will appear here.</p>
                     </div>
                   </div>
@@ -301,7 +301,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
         <div className="lg:col-span-4 space-y-6">
           <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
             <CardHeader className="p-10 pb-4">
-              <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Strategic Contact</CardTitle>
+              <CardTitle className="text-[10px] font-bold text-slate-400 uppercase">Strategic Contact</CardTitle>
             </CardHeader>
             <CardContent className="p-10 pt-0 space-y-8">
               <div className="flex items-center gap-5">
@@ -311,7 +311,7 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
                 </Avatar>
                 <div>
                   <h4 className="text-xl font-bold font-headline text-slate-900 leading-tight">{client.contactPerson || "Not Assigned"}</h4>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">Lead Representative</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Lead Representative</p>
                 </div>
               </div>
 
@@ -339,12 +339,12 @@ export default function ClientEngagementPage({ params }: { params: { clientId: s
           </Card>
 
           <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-10 space-y-8">
-            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Partnership Guidance</h4>
+            <h4 className="text-[10px] font-bold text-slate-500 uppercase">Partnership Guidance</h4>
             <p className="text-sm font-medium leading-relaxed italic text-slate-400">
               "Strategic focus should be maintained on {client.industry} vertical deliverables to maximize engagement value."
             </p>
             <div className="pt-6 border-t border-white/10">
-               <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-tight text-slate-500 mb-2">
+               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-500 mb-2">
                  <span>Account Health</span>
                  <span className="text-accent">Optimized</span>
                </div>
