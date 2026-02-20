@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, doc, serverTimestamp, orderBy } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
@@ -69,22 +69,28 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const { projectId } = React.use(params);
   const router = useRouter();
   const db = useFirestore();
+  const { user } = useUser();
   const [progress, setProgress] = useState([0]);
 
-  const projectRef = useMemoFirebase(() => doc(db, "projects", projectId), [db, projectId]);
+  const projectRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "projects", projectId);
+  }, [db, projectId, user]);
   const { data: project, isLoading } = useDoc(projectRef);
 
   const tasksQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(
       collection(db, "projects", projectId, "tasks"),
       orderBy("createdAt", "asc")
     );
-  }, [db, projectId]);
+  }, [db, projectId, user]);
   const { data: allTasks, isLoading: isTasksLoading } = useCollection(tasksQuery);
 
   const teamQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "team_members"), orderBy("firstName", "asc"));
-  }, [db]);
+  }, [db, user]);
   const { data: teamMembers } = useCollection(teamQuery);
 
   const [editData, setEditData] = useState<any>(null);
@@ -136,7 +142,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   }, [project, editData, progress]);
 
   const handleUpdateProject = () => {
-    if (!editData?.name) return;
+    if (!editData?.name || !projectRef) return;
     updateDocumentNonBlocking(projectRef, {
       ...editData,
       progress: progress[0],
@@ -153,7 +159,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   const handleTransition = () => {
     const nextPhase = NEXT_PHASE_MAP[project?.status || "Pitch"];
-    if (!nextPhase) return;
+    if (!nextPhase || !projectRef) return;
     updateDocumentNonBlocking(projectRef, {
       status: nextPhase,
       progress: STATUS_PROGRESS_MAP[nextPhase] || 0,
@@ -197,6 +203,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   };
 
   const handleDeleteProject = () => {
+    if (!projectRef) return;
     deleteDocumentNonBlocking(projectRef);
     toast({ variant: "destructive", title: "Project Purged", description: "Production entity removed." });
     router.push("/projects");
@@ -206,7 +213,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-sm uppercase text-center">Loading Production Entity...</p>
+        <p className="text-slate-400 font-bold text-sm uppercase text-center tracking-normal">Loading Production Entity...</p>
       </div>
     );
   }
@@ -234,17 +241,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           </Button>
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-bold font-headline text-slate-900 leading-none">
+              <h1 className="text-4xl font-bold font-headline text-slate-900 leading-none tracking-normal">
                 {project.name}
               </h1>
-              <span className="text-primary font-bold text-xs uppercase bg-primary/5 px-2 py-0.5 rounded-md">
+              <span className="text-primary font-bold text-xs uppercase bg-primary/5 px-2 py-0.5 rounded-md tracking-normal">
                 #{projectId.substring(0, 8).toUpperCase()}
               </span>
             </div>
-            <div className="flex items-center gap-4 text-sm font-bold">
-              <span className="text-primary uppercase text-[10px]">Campaign Entity</span>
+            <div className="flex items-center gap-4 text-sm font-bold tracking-normal">
+              <span className="text-primary uppercase text-[10px] tracking-normal">Campaign Entity</span>
               <span className="text-slate-300">•</span>
-              <div className="flex items-center gap-2 text-slate-400">
+              <div className="flex items-center gap-2 text-slate-400 tracking-normal">
                 <Target className="h-4 w-4" />
                 Phase: {project.status || "Pitch"}
               </div>
@@ -266,7 +273,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Project Title</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Title</label>
                     <Input 
                       value={editData?.name || ""} 
                       onChange={(e) => setEditData({...editData, name: e.target.value})}
@@ -274,7 +281,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Campaign Phase</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Campaign Phase</label>
                     <Select value={editData?.status} onValueChange={handleStatusChange}>
                       <SelectTrigger className="rounded-xl bg-slate-50 border-none h-12 shadow-none focus:ring-0">
                         <SelectValue placeholder="Select phase" />
@@ -291,7 +298,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Strategic Quote (INR)</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Quote (INR)</label>
                   <div className="relative">
                     <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input 
@@ -303,7 +310,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Executive Summary</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Executive Summary</label>
                   <Textarea 
                     value={editData?.description || ""} 
                     onChange={(e) => setEditData({...editData, description: e.target.value})}
@@ -313,12 +320,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center">
                 <DialogClose asChild>
-                  <Button variant="ghost" onClick={handleDeleteProject} className="text-destructive font-bold text-xs uppercase gap-2">
+                  <Button variant="ghost" onClick={handleDeleteProject} className="text-destructive font-bold text-xs uppercase gap-2 tracking-normal">
                     <Trash2 className="h-4 w-4" /> Purge Project
                   </Button>
                 </DialogClose>
                 <div className="flex gap-3">
-                  <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase">Cancel</Button></DialogClose>
+                  <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
                   <DialogClose asChild><Button onClick={handleUpdateProject} disabled={!isDirty} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2">Save</Button></DialogClose>
                 </div>
               </DialogFooter>
@@ -332,9 +339,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
         <div className="lg:col-span-9 space-y-8">
           <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white">
             <CardHeader className="flex flex-row items-center justify-between px-10 pt-10 pb-6">
-              <CardTitle className="text-[10px] font-bold text-slate-400 uppercase">Throughput Analysis</CardTitle>
+              <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Throughput Analysis</CardTitle>
               {canTransition && NEXT_PHASE_MAP[project.status] && (editData?.status === project.status) && (
-                <Button onClick={handleTransition} className="h-9 px-4 rounded-xl bg-accent text-white font-bold text-[10px] gap-2 hover:bg-accent/90 transition-all animate-bounce">
+                <Button onClick={handleTransition} className="h-9 px-4 rounded-xl bg-accent text-white font-bold text-[10px] gap-2 hover:bg-accent/90 transition-all animate-bounce tracking-normal">
                   Advance to {NEXT_PHASE_MAP[project.status]} <ArrowRight className="h-3 w-3" />
                 </Button>
               )}
@@ -342,9 +349,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             <CardContent className="px-10 pb-10 space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">View Lifecycle Stage</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">View Lifecycle Stage</label>
                   <Select value={editData?.status} onValueChange={handleStatusChange}>
-                    <SelectTrigger className="w-full bg-transparent border-none p-0 h-auto text-xl font-bold font-headline text-slate-900 shadow-none focus:ring-0">
+                    <SelectTrigger className="w-full bg-transparent border-none p-0 h-auto text-xl font-bold font-headline text-slate-900 shadow-none focus:ring-0 tracking-normal">
                       <SelectValue placeholder="Select phase" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-100 shadow-xl">
@@ -358,18 +365,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   </Select>
                 </div>
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Objectives Meta</label>
-                  <p className="text-xl font-bold font-headline text-slate-900">{currentPhaseTasks.filter(t => t.status === 'Completed').length} / {currentPhaseTasks.length}</p>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Objectives Meta</label>
+                  <p className="text-xl font-bold font-headline text-slate-900 tracking-normal">{currentPhaseTasks.filter(t => t.status === 'Completed').length} / {currentPhaseTasks.length}</p>
                 </div>
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Cap-Ex Budget</label>
-                  <div className="h-12 flex items-center text-xl font-bold font-headline">₹{(project.budget || 0).toLocaleString('en-IN')}</div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Cap-Ex Budget</label>
+                  <div className="h-12 flex items-center text-xl font-bold font-headline tracking-normal">₹{(project.budget || 0).toLocaleString('en-IN')}</div>
                 </div>
               </div>
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Optimization Progress</span>
-                  <span className="text-3xl font-bold font-headline text-primary">{progress[0]}%</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Optimization Progress</span>
+                  <span className="text-3xl font-bold font-headline text-primary tracking-normal">{progress[0]}%</span>
                 </div>
                 <Slider value={progress} onValueChange={setProgress} max={100} step={1} className="[&_.bg-primary]:bg-primary" />
               </div>
@@ -379,10 +386,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-50 overflow-hidden">
             <Tabs defaultValue="objectives" className="w-full">
               <TabsList className="h-auto bg-transparent px-10 pt-6 gap-8 border-b rounded-none p-0">
-                <TabsTrigger value="objectives" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2">
+                <TabsTrigger value="objectives" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2 tracking-normal">
                   <LayoutGrid className="h-3 w-3" /> Production Objectives
                 </TabsTrigger>
-                <TabsTrigger value="history" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2">
+                <TabsTrigger value="history" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2 tracking-normal">
                   <History className="h-3 w-3" /> Log History
                 </TabsTrigger>
               </TabsList>
@@ -390,25 +397,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <TabsContent value="objectives" className="p-10 space-y-8 m-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Active Elements: {activeViewPhase}</p>
-                    <h3 className="text-xl font-bold font-headline mt-1">Strategic Checklist</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Elements: {activeViewPhase}</p>
+                    <h3 className="text-xl font-bold font-headline mt-1 tracking-normal">Strategic Checklist</h3>
                   </div>
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button variant="ghost" className="text-primary hover:text-primary/80 font-bold text-[10px] uppercase gap-2">
+                      <Button variant="ghost" className="text-primary hover:text-primary/80 font-bold text-[10px] uppercase gap-2 tracking-normal">
                         <Plus className="h-4 w-4" /> Define Objective
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="rounded-[2rem] sm:max-w-[500px]">
-                      <DialogHeader><DialogTitle className="font-headline">Define Mission Objective</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle className="font-headline tracking-normal">Define Mission Objective</DialogTitle></DialogHeader>
                       <div className="space-y-6 py-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Objective Title</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Objective Title</label>
                           <Input value={newObjective.name} onChange={(e) => setNewObjective({...newObjective, name: e.target.value})} className="rounded-xl h-12" placeholder="e.g. Creative Brief Approval" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Due Date</label>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Due Date</label>
                             <Input 
                               type="date" 
                               value={newObjective.dueDate} 
@@ -417,7 +424,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Assignee</label>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Assignee</label>
                             <Select 
                               value={newObjective.assignedTeamMemberId} 
                               onValueChange={(val) => setNewObjective({...newObjective, assignedTeamMemberId: val})}
@@ -439,12 +446,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Description</label>
                           <Textarea value={newObjective.description} onChange={(e) => setNewObjective({...newObjective, description: e.target.value})} className="rounded-xl resize-none h-24" placeholder="Provide strategic context..." />
                         </div>
                       </div>
                       <DialogFooter>
-                        <DialogClose asChild><Button onClick={handleAddObjective} className="bg-primary w-full h-12 rounded-xl font-bold">Sync Objective</Button></DialogClose>
+                        <DialogClose asChild><Button onClick={handleAddObjective} className="bg-primary w-full h-12 rounded-xl font-bold tracking-normal">Sync Objective</Button></DialogClose>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
@@ -459,16 +466,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         <div className="flex items-center gap-6">
                           <Checkbox checked={task.status === "Completed"} onCheckedChange={() => handleToggleTask(task.id, task.status)} className="h-5 w-5 rounded-md border-slate-200" />
                           <div>
-                            <p className={`font-bold text-lg ${task.status === "Completed" ? "line-through text-slate-300" : "text-slate-900"}`}>{task.name}</p>
-                            <p className="text-xs text-slate-400 mt-1">{task.description}</p>
+                            <p className={`font-bold text-lg tracking-normal ${task.status === "Completed" ? "line-through text-slate-300" : "text-slate-900"}`}>{task.name}</p>
+                            <p className="text-xs text-slate-400 mt-1 tracking-normal">{task.description}</p>
                             <div className="flex items-center gap-4 mt-2">
                               {task.dueDate && (
-                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
                                   <CalendarIcon className="h-3 w-3" /> {task.dueDate}
                                 </span>
                               )}
                               {task.assignedTeamMemberId && (
-                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
                                   <User className="h-3 w-3" /> {teamMembers?.find(m => m.id === task.assignedTeamMemberId)?.firstName || "Unassigned"}
                                 </span>
                               )}
@@ -476,7 +483,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
-                          <Badge className={`border-none font-bold text-[10px] uppercase px-3 ${task.status === 'Completed' ? 'bg-accent/10 text-accent' : 'bg-blue-50 text-blue-500'}`}>
+                          <Badge className={`border-none font-bold text-[10px] uppercase px-3 tracking-normal ${task.status === 'Completed' ? 'bg-accent/10 text-accent' : 'bg-blue-50 text-blue-500'}`}>
                             {task.status === 'Completed' ? 'FINALIZED' : 'ACTIVE'}
                           </Badge>
                           <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-slate-300 hover:text-destructive transition-colors">
@@ -487,8 +494,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     ))
                   ) : (
                     <div className="p-20 border-2 border-dashed border-slate-100 rounded-[2rem] text-center space-y-2">
-                      <p className="text-sm font-bold text-slate-400 uppercase">No active objectives for this phase</p>
-                      <p className="text-xs text-slate-300 italic">Define mission goals to advance the campaign.</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No active objectives for this phase</p>
+                      <p className="text-xs text-slate-300 italic tracking-normal">Define mission goals to advance the campaign.</p>
                     </div>
                   )}
                 </div>
@@ -496,7 +503,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <TabsContent value="history" className="p-10 m-0">
                 <div className="flex flex-col items-center justify-center py-20 text-center text-slate-300 space-y-4">
                   <Clock className="h-12 w-12 opacity-20" />
-                  <p className="text-xs font-bold uppercase">No historical records found</p>
+                  <p className="text-xs font-bold uppercase tracking-normal">No historical records found</p>
                 </div>
               </TabsContent>
             </Tabs>
@@ -505,14 +512,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
         <div className="lg:col-span-3 space-y-6">
           <Card className="bg-[#111827] text-white border-none rounded-[2rem] overflow-hidden shadow-2xl">
-            <CardHeader className="p-10 pb-4"><CardTitle className="text-[10px] font-bold text-slate-500 uppercase">Financial Ledger</CardTitle></CardHeader>
+            <CardHeader className="p-10 pb-4"><CardTitle className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Financial Ledger</CardTitle></CardHeader>
             <CardContent className="p-10 pt-0 space-y-8">
               <div>
-                <h2 className="text-4xl font-bold font-headline">₹{(project.budget || 0).toLocaleString('en-IN')}</h2>
-                <p className="text-[10px] font-bold text-slate-500 uppercase mt-2">Deployment Limit</p>
+                <h2 className="text-4xl font-bold font-headline tracking-normal">₹{(project.budget || 0).toLocaleString('en-IN')}</h2>
+                <p className="text-[10px] font-bold text-slate-500 uppercase mt-2 tracking-normal">Deployment Limit</p>
               </div>
               <div className="space-y-4">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-normal">
                   <span className="text-slate-500">Allocation</span>
                   <span className="text-primary">{progress[0]}%</span>
                 </div>
@@ -520,14 +527,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <div className="h-full bg-primary" style={{ width: `${progress[0]}%` }} />
                 </div>
               </div>
-              <Button asChild className="w-full h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase transition-colors border border-white/10">
+              <Button asChild className="w-full h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase transition-colors border border-white/10 tracking-normal">
                 <Link href="/invoices/new">Generate Billing</Link>
               </Button>
             </CardContent>
           </Card>
           <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white p-8 space-y-4">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase">System Intelligence</h4>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">System Intelligence</h4>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed italic tracking-normal">
               "Campaign throughput is currently optimized for the {project.status} stage."
             </p>
           </Card>

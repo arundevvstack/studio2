@@ -24,8 +24,6 @@ import { collection, query, orderBy, doc } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const COLUMNS = [
-  { id: "Pitch", title: "PITCH" },
-  { id: "Discussion", title: "DISCUSSION" },
   { id: "Pre Production", title: "PRE PRODUCTION" },
   { id: "In Progress", title: "PRODUCTION" },
   { id: "Post Production", title: "POST PRODUCTION" },
@@ -43,17 +41,19 @@ export default function BoardPage() {
   }, []);
 
   const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(
       collection(db, "projects"),
       orderBy("createdAt", "desc")
     );
-  }, [db]);
+  }, [db, user]);
 
   const { data: projects, isLoading } = useCollection(projectsQuery);
 
   const clientsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "clients"));
-  }, [db]);
+  }, [db, user]);
 
   const { data: clients } = useCollection(clientsQuery);
 
@@ -65,7 +65,7 @@ export default function BoardPage() {
     const newBoardData = COLUMNS.map(col => ({
       ...col,
       cards: projects
-        .filter((p: any) => (p.status || "Pitch") === col.id)
+        .filter((p: any) => (p.status || "Pre Production") === col.id)
         .map((p: any) => ({
           id: p.id,
           title: p.name,
@@ -119,7 +119,7 @@ export default function BoardPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold font-headline text-slate-900">Kanban Board</h1>
-          <p className="text-sm text-slate-500 font-medium">Manage project throughput across strategic phases.</p>
+          <p className="text-sm text-slate-500 font-medium tracking-normal">Manage project throughput across strategic phases.</p>
         </div>
         <Button asChild className="rounded-xl font-bold shadow-lg shadow-primary/20">
           <Link href="/projects/new">
@@ -140,8 +140,8 @@ export default function BoardPage() {
               {boardData.map((column) => (
                 <div key={column.id} className="w-[320px] shrink-0 flex flex-col gap-4">
                   <div className="flex items-center justify-between px-2">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase">{column.title}</h3>
-                    <Badge variant="outline" className="text-[10px] font-bold rounded-md bg-white border-slate-100">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{column.title}</h3>
+                    <Badge variant="outline" className="text-[10px] font-bold rounded-md bg-white border-slate-100 tracking-normal">
                       {column.cards.length}
                     </Badge>
                   </div>
@@ -151,15 +151,15 @@ export default function BoardPage() {
                       <Card key={card.id} className="p-5 bg-white border-slate-100 shadow-sm rounded-2xl group hover:shadow-md transition-all cursor-grab active:cursor-grabbing">
                         <div className="space-y-4">
                           <div>
-                            <p className="text-[10px] font-bold text-primary uppercase mb-1">{card.client}</p>
-                            <h4 className="text-sm font-bold text-slate-900 leading-snug">{card.title}</h4>
+                            <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal">{card.client}</p>
+                            <h4 className="text-sm font-bold text-slate-900 leading-snug tracking-normal">{card.title}</h4>
                           </div>
                           
                           <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
                               <span>Due {card.deadline === 'TBD' ? 'NO DATE' : card.deadline}</span>
                             </div>
-                            <Button asChild variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-[10px] font-bold uppercase hover:bg-slate-100">
+                            <Button asChild variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-[10px] font-bold uppercase tracking-normal hover:bg-slate-100">
                               <Link href={`/projects/${card.id}`}>Details</Link>
                             </Button>
                           </div>
@@ -168,7 +168,7 @@ export default function BoardPage() {
                     ))}
                     {column.cards.length === 0 && (
                       <div className="h-32 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-                        <p className="text-[10px] font-bold text-slate-300 uppercase">No Active Items</p>
+                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">No Active Items</p>
                       </div>
                     )}
                   </div>

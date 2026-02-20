@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 
 const MOCK_GRADIENTS = [
@@ -29,23 +29,26 @@ const MOCK_GRADIENTS = [
 
 export default function ClientsPage() {
   const db = useFirestore();
+  const { user } = useUser();
 
   const clientsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "clients"), orderBy("createdAt", "desc"));
-  }, [db]);
+  }, [db, user]);
 
   const { data: clients, isLoading: isLoadingClients } = useCollection(clientsQuery);
 
   const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "projects"));
-  }, [db]);
+  }, [db, user]);
 
   const { data: projects, isLoading: isLoadingProjects } = useCollection(projectsQuery);
 
   const stats = useMemo(() => {
     const totalClients = clients?.length || 0;
     const projectValue = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
-    const totalPitch = projects?.filter(p => (p.status || "").toLowerCase() === "planned").length || 0;
+    const totalPitch = projects?.filter(p => (p.status || "").toLowerCase() === "pitch").length || 0;
 
     return { totalClients, projectValue, totalPitch };
   }, [clients, projects]);
@@ -56,10 +59,10 @@ export default function ClientsPage() {
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold font-headline text-slate-900">
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">
             Client Portfolio
           </h1>
-          <p className="text-sm text-slate-500 font-medium">
+          <p className="text-sm text-slate-500 font-medium tracking-normal">
             Managing global partnerships and strategic accounts.
           </p>
         </div>
@@ -78,8 +81,8 @@ export default function ClientsPage() {
               <Users className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Total Clients</p>
-              <h3 className="text-2xl font-bold font-headline">{stats.totalClients}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Clients</p>
+              <h3 className="text-2xl font-bold font-headline tracking-normal">{stats.totalClients}</h3>
             </div>
           </div>
         </Card>
@@ -89,8 +92,8 @@ export default function ClientsPage() {
               <TrendingUp className="h-6 w-6 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Project Value</p>
-              <h3 className="text-2xl font-bold font-headline">₹{stats.projectValue.toLocaleString('en-IN')}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Value</p>
+              <h3 className="text-2xl font-bold font-headline tracking-normal">₹{stats.projectValue.toLocaleString('en-IN')}</h3>
             </div>
           </div>
         </Card>
@@ -100,8 +103,8 @@ export default function ClientsPage() {
               <Briefcase className="h-6 w-6 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Total Pitch</p>
-              <h3 className="text-2xl font-bold font-headline">{stats.totalPitch}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Pitch</p>
+              <h3 className="text-2xl font-bold font-headline tracking-normal">{stats.totalPitch}</h3>
             </div>
           </div>
         </Card>
@@ -125,7 +128,7 @@ export default function ClientsPage() {
         {isLoading ? (
           <div className="col-span-full flex flex-col items-center justify-center py-20 space-y-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            <p className="text-slate-400 font-bold text-sm uppercase">Loading Portfolio...</p>
+            <p className="text-slate-400 font-bold text-sm uppercase tracking-normal">Loading Portfolio...</p>
           </div>
         ) : clients && clients.length > 0 ? (
           clients.map((client, index) => (
@@ -143,33 +146,33 @@ export default function ClientsPage() {
               <CardContent className="p-8 pt-14 space-y-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-2xl font-bold font-headline text-slate-900">{client.name}</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase mt-1">{client.industry || "General Industry"}</p>
+                    <h3 className="text-2xl font-bold font-headline text-slate-900 tracking-normal">{client.name}</h3>
+                    <p className="text-xs font-bold text-slate-400 uppercase mt-1 tracking-normal">{client.industry || "General Industry"}</p>
                   </div>
-                  <Badge className="bg-slate-50 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
+                  <Badge className="bg-slate-50 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1 tracking-normal">
                     {client.status || "Active"}
                   </Badge>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Contact</p>
-                    <p className="text-base font-bold mt-1 text-primary truncate">{client.contactPerson || "N/A"}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Contact</p>
+                    <p className="text-base font-bold mt-1 text-primary truncate tracking-normal">{client.contactPerson || "N/A"}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Phone</p>
-                    <p className="text-sm font-bold mt-1 text-slate-900 truncate">{client.phone || "N/A"}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Phone</p>
+                    <p className="text-sm font-bold mt-1 text-slate-900 truncate tracking-normal">{client.phone || "N/A"}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-slate-500 overflow-hidden">
                     <Mail className="h-4 w-4 shrink-0" />
-                    <span className="text-sm font-medium truncate">{client.email}</span>
+                    <span className="text-sm font-medium truncate tracking-normal">{client.email}</span>
                   </div>
                 </div>
 
-                <Button asChild variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase group-hover:bg-primary group-hover:text-white transition-all gap-2">
+                <Button asChild variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase group-hover:bg-primary group-hover:text-white transition-all gap-2 tracking-normal">
                   <Link href={`/clients/${client.id}`}>
                     More
                     <ArrowRight className="h-4 w-4" />
@@ -183,8 +186,8 @@ export default function ClientsPage() {
             <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <Plus className="h-8 w-8 text-slate-300 group-hover:text-primary" />
             </div>
-            <p className="text-sm font-bold text-slate-400 uppercase">Scale Portfolio</p>
-            <p className="text-xs text-slate-300 mt-2 font-medium">Add your first high-value client</p>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">Scale Portfolio</p>
+            <p className="text-xs text-slate-300 mt-2 font-medium tracking-normal">Add your first high-value client</p>
           </Link>
         )}
       </div>

@@ -24,7 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, where, orderBy, doc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,25 +46,31 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   const { clientId } = React.use(params);
   const router = useRouter();
   const db = useFirestore();
+  const { user } = useUser();
 
-  const clientRef = useMemoFirebase(() => doc(db, "clients", clientId), [db, clientId]);
+  const clientRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "clients", clientId);
+  }, [db, clientId, user]);
   const { data: client, isLoading: isClientLoading } = useDoc(clientRef);
 
   const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(
       collection(db, "projects"), 
       where("clientId", "==", clientId),
       orderBy("createdAt", "desc")
     );
-  }, [db, clientId]);
+  }, [db, clientId, user]);
   const { data: projects, isLoading: isProjectsLoading } = useCollection(projectsQuery);
 
   const invoicesQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(
       collection(db, "clients", clientId, "invoices"),
       orderBy("createdAt", "desc")
     );
-  }, [db, clientId]);
+  }, [db, clientId, user]);
   const { data: invoices, isLoading: isInvoicesLoading } = useCollection(invoicesQuery);
 
   // Edit State
@@ -84,7 +90,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   }, [client]);
 
   const handleUpdateClient = () => {
-    if (!editData.name || !editData.email) return;
+    if (!editData.name || !editData.email || !clientRef) return;
     
     updateDocumentNonBlocking(clientRef, {
       ...editData,
@@ -98,6 +104,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   };
 
   const handleDeleteClient = () => {
+    if (!clientRef) return;
     deleteDocumentNonBlocking(clientRef);
     toast({
       variant: "destructive",
@@ -111,7 +118,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-sm uppercase text-center">Identifying Client Strategy...</p>
+        <p className="text-slate-400 font-bold text-sm uppercase text-center tracking-normal">Identifying Client Strategy...</p>
       </div>
     );
   }
@@ -141,14 +148,14 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
           </Button>
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-bold font-headline text-slate-900 leading-none">
+              <h1 className="text-4xl font-bold font-headline text-slate-900 leading-none tracking-normal">
                 {client.name}
               </h1>
-              <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase">
+              <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
                 {client.status || "Strategic Partner"}
               </Badge>
             </div>
-            <div className="flex items-center gap-4 text-sm font-medium text-slate-500">
+            <div className="flex items-center gap-4 text-sm font-medium text-slate-500 tracking-normal">
               <span className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
                 {client.industry || "General Industry"}
@@ -176,7 +183,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Brand Name</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Brand Name</label>
                     <Input 
                       value={editData?.name} 
                       onChange={(e) => setEditData({...editData, name: e.target.value})}
@@ -184,7 +191,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Industry Focus</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Industry Focus</label>
                     <Input 
                       value={editData?.industry} 
                       onChange={(e) => setEditData({...editData, industry: e.target.value})}
@@ -194,7 +201,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Primary Contact</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Primary Contact</label>
                     <Input 
                       value={editData?.contactPerson} 
                       onChange={(e) => setEditData({...editData, contactPerson: e.target.value})}
@@ -202,7 +209,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Executive Email</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Executive Email</label>
                     <Input 
                       value={editData?.email} 
                       onChange={(e) => setEditData({...editData, email: e.target.value})}
@@ -211,7 +218,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Office Location</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Office Location</label>
                   <Textarea 
                     value={editData?.address} 
                     onChange={(e) => setEditData({...editData, address: e.target.value})}
@@ -221,14 +228,14 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
                 <DialogClose asChild>
-                  <Button variant="ghost" onClick={handleDeleteClient} className="text-destructive font-bold text-xs uppercase hover:bg-destructive/5 hover:text-destructive gap-2">
+                  <Button variant="ghost" onClick={handleDeleteClient} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
                     <Trash2 className="h-4 w-4" />
                     Purge Entity
                   </Button>
                 </DialogClose>
                 <div className="flex gap-3">
                   <DialogClose asChild>
-                    <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase">Cancel</Button>
+                    <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button>
                   </DialogClose>
                   <DialogClose asChild>
                     <Button onClick={handleUpdateClient} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2">
@@ -255,8 +262,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Total Commitment</p>
-              <h3 className="text-3xl font-bold font-headline mt-1">₹{totalProjectValue.toLocaleString('en-IN')}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Commitment</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{totalProjectValue.toLocaleString('en-IN')}</h3>
             </div>
           </div>
         </Card>
@@ -266,8 +273,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Briefcase className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Active Projects</p>
-              <h3 className="text-3xl font-bold font-headline mt-1">{projects?.filter(p => p.status !== 'Completed').length || 0}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Projects</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{projects?.filter(p => p.status !== 'Completed').length || 0}</h3>
             </div>
           </div>
         </Card>
@@ -277,8 +284,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Receipt className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Pending Invoices</p>
-              <h3 className="text-3xl font-bold font-headline mt-1">{invoices?.filter(i => i.status !== 'Paid').length || 0}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pending Invoices</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{invoices?.filter(i => i.status !== 'Paid').length || 0}</h3>
             </div>
           </div>
         </Card>
@@ -288,8 +295,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <MessageSquare className="h-5 w-5 text-purple-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Communications</p>
-              <h3 className="text-3xl font-bold font-headline mt-1">0</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Communications</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">0</h3>
             </div>
           </div>
         </Card>
@@ -300,13 +307,13 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
           <Tabs defaultValue="projects" className="space-y-8">
             <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-50 w-fit">
               <TabsList className="bg-transparent gap-2 h-auto p-0">
-                <TabsTrigger value="projects" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
+                <TabsTrigger value="projects" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
                   Active Projects
                 </TabsTrigger>
-                <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
+                <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
                   Billing History
                 </TabsTrigger>
-                <TabsTrigger value="activity" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
+                <TabsTrigger value="activity" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
                   Activity Feed
                 </TabsTrigger>
               </TabsList>
@@ -326,12 +333,12 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                           <Briefcase className="h-8 w-8 text-slate-300 group-hover:text-primary transition-colors" />
                         </div>
                         <div>
-                          <h4 className="text-xl font-bold font-headline text-slate-900">{project.name}</h4>
+                          <h4 className="text-xl font-bold font-headline text-slate-900 tracking-normal">{project.name}</h4>
                           <div className="flex items-center gap-3 mt-1">
-                            <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
+                            <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1 tracking-normal">
                               {project.status || "Planned"}
                             </Badge>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 tracking-normal">
                               <Calendar className="h-3 w-3" />
                               DUE: {project.dueDate || "NO DEADLINE"}
                             </span>
@@ -340,8 +347,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                       </div>
                       <div className="flex items-center gap-10">
                         <div className="text-right">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">Quote Value</p>
-                          <p className="text-xl font-bold font-headline text-slate-900">₹{(project.budget || 0).toLocaleString('en-IN')}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Quote Value</p>
+                          <p className="text-xl font-bold font-headline text-slate-900 tracking-normal">₹{(project.budget || 0).toLocaleString('en-IN')}</p>
                         </div>
                         <Button asChild variant="ghost" size="icon" className="h-12 w-12 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all">
                           <Link href={`/projects/${project.id}`}>
@@ -354,8 +361,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 ))
               ) : (
                 <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-sm font-bold text-slate-400 uppercase">No Active Projects</p>
-                  <Button asChild variant="link" className="text-primary font-bold text-xs">
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Active Projects</p>
+                  <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
                     <Link href="/projects/new">Initiate new production campaign</Link>
                   </Button>
                 </div>
@@ -376,24 +383,24 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                           <Receipt className="h-6 w-6 text-slate-300" />
                         </div>
                         <div>
-                          <h4 className="text-lg font-bold font-headline text-slate-900">#{invoice.invoiceNumber || invoice.id.substring(0, 8)}</h4>
+                          <h4 className="text-lg font-bold font-headline text-slate-900 tracking-normal">#{invoice.invoiceNumber || invoice.id.substring(0, 8)}</h4>
                           <div className="flex items-center gap-3 mt-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase">Issued {invoice.issueDate || "N/A"}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Issued {invoice.issueDate || "N/A"}</p>
                             <span className="text-slate-200">|</span>
-                            <p className="text-[10px] font-bold text-primary uppercase">DUE {invoice.dueDate || "N/A"}</p>
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-normal">DUE {invoice.dueDate || "N/A"}</p>
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-10">
-                        <Badge className={`px-4 py-1.5 rounded-lg border-none font-bold text-[10px] uppercase ${
+                        <Badge className={`px-4 py-1.5 rounded-lg border-none font-bold text-[10px] uppercase tracking-normal ${
                           invoice.status === 'Paid' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'
                         }`}>
                           {invoice.status}
                         </Badge>
                         <div className="text-right">
-                          <p className="text-lg font-bold font-headline">₹{(invoice.totalAmount || 0).toLocaleString('en-IN')}</p>
+                          <p className="text-lg font-bold font-headline tracking-normal">₹{(invoice.totalAmount || 0).toLocaleString('en-IN')}</p>
                         </div>
-                        <Button asChild variant="outline" size="sm" className="h-10 px-4 rounded-xl font-bold border-slate-200">
+                        <Button asChild variant="outline" size="sm" className="h-10 px-4 rounded-xl font-bold border-slate-200 tracking-normal">
                           <Link href={`/invoices/${invoice.id}/view`}>View Document</Link>
                         </Button>
                       </div>
@@ -402,8 +409,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 ))
               ) : (
                 <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-sm font-bold text-slate-400 uppercase">No Billing History</p>
-                  <Button asChild variant="link" className="text-primary font-bold text-xs">
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Billing History</p>
+                  <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
                     <Link href="/invoices/new">Generate your first invoice</Link>
                   </Button>
                 </div>
@@ -417,8 +424,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                       <Clock className="h-full w-full text-slate-200" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-400 uppercase">Activity Feed Empty</p>
-                      <p className="text-xs text-slate-300 mt-1 font-medium italic">Communication logs and status changes will appear here.</p>
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">Activity Feed Empty</p>
+                      <p className="text-xs text-slate-300 mt-1 font-medium italic tracking-normal">Communication logs and status changes will appear here.</p>
                     </div>
                   </div>
                </Card>
@@ -429,7 +436,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
         <div className="lg:col-span-4 space-y-6">
           <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
             <CardHeader className="p-10 pb-4">
-              <CardTitle className="text-[10px] font-bold text-slate-400 uppercase">Strategic Contact</CardTitle>
+              <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Contact</CardTitle>
             </CardHeader>
             <CardContent className="p-10 pt-0 space-y-8">
               <div className="flex items-center gap-5">
@@ -438,8 +445,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                   <AvatarFallback>{client.contactPerson?.[0] || "U"}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="text-xl font-bold font-headline text-slate-900 leading-tight">{client.contactPerson || "Not Assigned"}</h4>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Lead Representative</p>
+                  <h4 className="text-xl font-bold font-headline text-slate-900 leading-tight tracking-normal">{client.contactPerson || "Not Assigned"}</h4>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-normal">Lead Representative</p>
                 </div>
               </div>
 
@@ -448,31 +455,31 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                   <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                     <Mail className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold truncate group-hover:text-primary transition-colors">{client.email}</span>
+                  <span className="text-sm font-bold truncate group-hover:text-primary transition-colors tracking-normal">{client.email}</span>
                 </div>
                 <div className="flex items-center gap-4 text-slate-600 group cursor-pointer">
                   <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                     <Phone className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold group-hover:text-primary transition-colors">{client.phone || "No phone added"}</span>
+                  <span className="text-sm font-bold group-hover:text-primary transition-colors tracking-normal">{client.phone || "No phone added"}</span>
                 </div>
                 <div className="flex items-start gap-4 text-slate-600">
                   <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
                     <MapPin className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold leading-relaxed">{client.address || "Physical address not recorded"}</span>
+                  <span className="text-sm font-bold leading-relaxed tracking-normal">{client.address || "Physical address not recorded"}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-10 space-y-8">
-            <h4 className="text-[10px] font-bold text-slate-500 uppercase">Partnership Guidance</h4>
-            <p className="text-sm font-medium leading-relaxed italic text-slate-400">
+            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Partnership Guidance</h4>
+            <p className="text-sm font-medium leading-relaxed italic text-slate-400 tracking-normal">
               "Strategic focus should be maintained on {client.industry} vertical deliverables to maximize engagement value."
             </p>
             <div className="pt-6 border-t border-white/10">
-               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-500 mb-2">
+               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-500 mb-2 tracking-normal">
                  <span>Account Health</span>
                  <span className="text-accent">Optimized</span>
                </div>
