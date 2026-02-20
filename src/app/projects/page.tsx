@@ -145,11 +145,11 @@ export default function ProjectsPage() {
                       <Clock className="h-4 w-4" />
                       <span className="text-xs font-bold text-slate-600">{project.delivery}</span>
                     </div>
-                    <div className="col-span-1 flex justify-end gap-2">
+                    <div className="col-span-1 flex justify-end">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-100 opacity-0 group-hover:opacity-100 transition-all shadow-sm hover:border-primary/20 hover:text-primary">
+                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-100 group-hover:border-primary/20 group-hover:text-primary transition-all shadow-sm">
                               <Pencil className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
@@ -158,9 +158,6 @@ export default function ProjectsPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-100 group-hover:border-primary/20 group-hover:text-primary transition-all shadow-sm">
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
                 ))}
