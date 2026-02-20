@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -7,21 +6,17 @@ import Link from "next/link";
 import { 
   ChevronLeft, 
   Settings2, 
-  Sparkles, 
   Trash2, 
   Plus, 
-  Users, 
-  Clock, 
   Target,
   LayoutGrid,
   History,
-  Save,
   IndianRupee,
   Loader2,
-  CheckCircle2,
   ArrowRight,
   Calendar as CalendarIcon,
-  User
+  User,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,7 +43,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc, serverTimestamp, orderBy } from "firebase/firestore";
+import { collection, query, doc, serverTimestamp, orderBy } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
@@ -145,7 +140,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
       progress: progress[0],
       updatedAt: serverTimestamp()
     });
-    toast({ title: "Strategy Updated", description: `${editData.name} has been synchronized.` });
+    toast({ title: "Project Synchronized", description: `${editData.name} has been updated in the global pipeline.` });
   };
 
   const handleStatusChange = (val: string) => {
@@ -344,7 +339,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Current Phase</label>
-                  <p className="text-xl font-bold font-headline text-slate-900">{project.status || "Pre Production"}</p>
+                  <Select value={editData?.status} onValueChange={handleStatusChange}>
+                    <SelectTrigger className="w-full bg-transparent border-none p-0 h-auto text-xl font-bold font-headline text-slate-900 shadow-none focus:ring-0">
+                      <SelectValue placeholder="Select phase" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                      <SelectItem value="Pre Production">Pre Production</SelectItem>
+                      <SelectItem value="In Progress">Production</SelectItem>
+                      <SelectItem value="Post Production">Post Production</SelectItem>
+                      <SelectItem value="Released">Released</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Objectives Meta</label>
@@ -509,7 +514,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <div className="h-full bg-primary" style={{ width: `${progress[0]}%` }} />
                 </div>
               </div>
-              <Button asChild className="w-full h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase border border-white/10 transition-all">
+              <Button asChild className="w-full h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase border border-white/10 transition-colors">
                 <Link href="/invoices/new">Generate Billing</Link>
               </Button>
             </CardContent>
