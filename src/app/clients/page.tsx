@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Search, 
@@ -10,7 +11,8 @@ import {
   Mail,
   ArrowRight,
   Filter,
-  Loader2
+  Loader2,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,7 +35,23 @@ export default function ClientsPage() {
     return query(collection(db, "clients"), orderBy("createdAt", "desc"));
   }, [db]);
 
-  const { data: clients, isLoading } = useCollection(clientsQuery);
+  const { data: clients, isLoading: isLoadingClients } = useCollection(clientsQuery);
+
+  const projectsQuery = useMemoFirebase(() => {
+    return query(collection(db, "projects"));
+  }, [db]);
+
+  const { data: projects, isLoading: isLoadingProjects } = useCollection(projectsQuery);
+
+  const stats = useMemo(() => {
+    const totalClients = clients?.length || 0;
+    const projectValue = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
+    const totalPitch = projects?.filter(p => (p.status || "").toLowerCase() === "planned").length || 0;
+
+    return { totalClients, projectValue, totalPitch };
+  }, [clients, projects]);
+
+  const isLoading = isLoadingClients || isLoadingProjects;
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
@@ -58,11 +76,11 @@ export default function ClientsPage() {
         <Card className="border-none shadow-sm rounded-[2rem] bg-white overflow-hidden p-8">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Globe className="h-6 w-6 text-primary" />
+              <Users className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Global Reach</p>
-              <h3 className="text-2xl font-bold font-headline">12 Countries</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Total Clients</p>
+              <h3 className="text-2xl font-bold font-headline">{stats.totalClients}</h3>
             </div>
           </div>
         </Card>
@@ -72,8 +90,8 @@ export default function ClientsPage() {
               <TrendingUp className="h-6 w-6 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Portfolio Value</p>
-              <h3 className="text-2xl font-bold font-headline">₹4.2M</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Project Value</p>
+              <h3 className="text-2xl font-bold font-headline">₹{stats.projectValue.toLocaleString('en-IN')}</h3>
             </div>
           </div>
         </Card>
@@ -83,8 +101,8 @@ export default function ClientsPage() {
               <Briefcase className="h-6 w-6 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Active Ops</p>
-              <h3 className="text-2xl font-bold font-headline">{clients?.length || 0} Clients</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Total Pitch</p>
+              <h3 className="text-2xl font-bold font-headline">{stats.totalPitch}</h3>
             </div>
           </div>
         </Card>
