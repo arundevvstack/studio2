@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -14,6 +15,7 @@ import {
   LogOut,
   Plus,
   ChevronRight,
+  Briefcase,
 } from "lucide-react";
 import {
   Sidebar,
@@ -37,6 +39,7 @@ const workspaceItems = [
   { title: "Pipeline", icon: GitBranch, url: "/pipeline" },
   { title: "Projects", icon: Folder, url: "/projects" },
   { title: "Board", icon: Trello, url: "/board" },
+  { title: "Clients", icon: Briefcase, url: "/clients" },
   { title: "Schedule", icon: Calendar, url: "/schedule" },
   { title: "Team", icon: Users, url: "/team" },
   { title: "Billing", icon: FileText, url: "/invoices" },
