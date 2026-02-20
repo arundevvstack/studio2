@@ -72,7 +72,7 @@ export default function ProjectDetailPage({ params }: { params: { projectId: str
             SCOPE
           </Button>
           <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-            EXECUTE RELEASE
+            Add Projects
           </Button>
         </div>
       </div>
