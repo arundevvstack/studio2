@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from "react";
@@ -16,24 +17,23 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 
 export default function PipelinePage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
 
-  // Memoize the query to fetch projects strictly in the "Pitch" phase.
-  // We wait for the user to be authenticated to satisfy security rules.
-  const pipelineQuery = useMemoFirebase(() => {
+  // Fetch all projects to filter client-side. This is more robust for prototypes
+  // as it avoids the need for composite indexes on status + createdAt.
+  const allProjectsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
       collection(db, "projects"),
-      where("status", "==", "Pitch"),
       orderBy("createdAt", "desc")
     );
   }, [db, user]);
 
-  const { data: projects, isLoading: isProjectsLoading } = useCollection(pipelineQuery);
+  const { data: allProjects, isLoading: isProjectsLoading } = useCollection(allProjectsQuery);
 
   // Fetch clients to map IDs to names for the list display.
   const clientsQuery = useMemoFirebase(() => {
@@ -43,13 +43,19 @@ export default function PipelinePage() {
 
   const { data: clients } = useCollection(clientsQuery);
 
+  // Client-side filtering for "Pitch" projects
+  const pitchProjects = useMemo(() => {
+    if (!allProjects) return [];
+    return allProjects.filter(p => p.status === "Pitch");
+  }, [allProjects]);
+
   const clientMap = useMemo(() => {
     const map = new Map();
     clients?.forEach(c => map.set(c.id, c.name));
     return map;
   }, [clients]);
 
-  // Combined loading state to handle auth and data fetching gracefully.
+  // Combined loading state
   const isLoading = isUserLoading || isProjectsLoading;
 
   return (
@@ -81,11 +87,11 @@ export default function PipelinePage() {
         <div className="relative flex-1 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           <Input 
-            className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400" 
+            className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal" 
             placeholder="Search pending pitches..." 
           />
         </div>
-        <Button variant="outline" className="h-14 px-6 bg-white border-slate-100 rounded-xl font-bold text-slate-600 gap-2 shadow-sm">
+        <Button variant="outline" className="h-14 px-6 bg-white border-slate-100 rounded-xl font-bold text-slate-600 gap-2 shadow-sm tracking-normal">
           <Filter className="h-4 w-4" />
           Refine
         </Button>
@@ -105,9 +111,9 @@ export default function PipelinePage() {
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 text-primary animate-spin" />
             </div>
-          ) : projects && projects.length > 0 ? (
+          ) : pitchProjects.length > 0 ? (
             <div className="divide-y divide-slate-50">
-              {projects.map((project) => (
+              {pitchProjects.map((project) => (
                 <div key={project.id} className="grid grid-cols-12 px-10 py-8 items-center hover:bg-slate-50/50 transition-colors group">
                   <div className="col-span-4">
                     <h4 className="font-bold text-lg text-slate-900 tracking-normal">{project.name}</h4>
