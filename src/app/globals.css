@@ -71,12 +71,12 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
-  h1 { @apply font-headline text-4xl font-bold tracking-normal; }
-  h2 { @apply font-headline text-2xl font-bold tracking-normal; }
-  h3 { @apply font-headline text-xl font-bold tracking-normal; }
-  h4 { @apply font-headline text-lg font-bold tracking-normal; }
-  h5 { @apply font-headline text-base font-bold tracking-normal; }
-  h6 { @apply font-headline text-sm font-bold tracking-normal; }
+  h1 { @apply font-headline text-4xl font-bold; }
+  h2 { @apply font-headline text-2xl font-bold; }
+  h3 { @apply font-headline text-xl font-bold; }
+  h4 { @apply font-headline text-lg font-bold; }
+  h5 { @apply font-headline text-base font-bold; }
+  h6 { @apply font-headline text-sm font-bold; }
 }
 
 .bg-gradient-pink {
