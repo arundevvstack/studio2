@@ -12,7 +12,6 @@ import {
   Sparkles,
   ArrowRight,
   Loader2,
-  Clock,
   Briefcase
 } from "lucide-react";
 import Link from "next/link";
@@ -99,11 +98,10 @@ export default function PipelinePage() {
 
       <div className="bg-white rounded-[2rem] border border-slate-50 shadow-sm overflow-hidden min-h-[400px] flex flex-col">
         <div className="grid grid-cols-12 px-10 py-6 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
-          <div className="col-span-4">Potential Production</div>
-          <div className="col-span-3">Client Partnership</div>
-          <div className="col-span-2 text-center">Budget (INR)</div>
-          <div className="col-span-2 text-center">Initiated</div>
-          <div className="col-span-1 text-right">Action</div>
+          <div className="col-span-3">Client</div>
+          <div className="col-span-4">Project</div>
+          <div className="col-span-3 text-center">Status</div>
+          <div className="col-span-2 text-right">Followup</div>
         </div>
         
         <div className="flex-1">
@@ -115,6 +113,11 @@ export default function PipelinePage() {
             <div className="divide-y divide-slate-50">
               {pitchProjects.map((project) => (
                 <div key={project.id} className="grid grid-cols-12 px-10 py-8 items-center hover:bg-slate-50/50 transition-colors group">
+                  <div className="col-span-3">
+                    <span className="text-sm font-bold text-primary tracking-normal">
+                      {clientMap.get(project.clientId) || "Unknown Client"}
+                    </span>
+                  </div>
                   <div className="col-span-4">
                     <h4 className="font-bold text-lg text-slate-900 tracking-normal">{project.name}</h4>
                     <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 flex items-center gap-2 tracking-normal">
@@ -122,26 +125,16 @@ export default function PipelinePage() {
                       ID: {project.id.substring(0, 8).toUpperCase()}
                     </p>
                   </div>
-                  <div className="col-span-3">
-                    <span className="text-sm font-bold text-primary tracking-normal">
-                      {clientMap.get(project.clientId) || "Unknown Client"}
-                    </span>
+                  <div className="col-span-3 text-center">
+                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-normal border-slate-100 text-slate-500 bg-slate-50/50 px-3 py-1">
+                      {project.status || "Pitch"}
+                    </Badge>
                   </div>
-                  <div className="col-span-2 text-center">
-                    <span className="text-base font-bold text-slate-900 tracking-normal">
-                      ₹{(project.budget || 0).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                  <div className="col-span-2 text-center flex items-center justify-center gap-2 text-slate-400">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-xs font-bold uppercase tracking-normal">
-                      {project.createdAt ? new Date(project.createdAt.seconds * 1000).toLocaleDateString() : "TBD"}
-                    </span>
-                  </div>
-                  <div className="col-span-1 text-right">
-                    <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all">
+                  <div className="col-span-2 text-right">
+                    <Button asChild variant="ghost" size="sm" className="h-9 px-4 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all font-bold text-[10px] uppercase gap-2 tracking-normal">
                       <Link href={`/projects/${project.id}`}>
-                        <ArrowRight className="h-5 w-5" />
+                        Resume
+                        <ArrowRight className="h-3 w-3" />
                       </Link>
                     </Button>
                   </div>
