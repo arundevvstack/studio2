@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +9,7 @@ import {
   Plus, 
   MoreHorizontal, 
   Clock, 
+  Loader2
 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
@@ -34,14 +35,17 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy, doc } from "firebase/firestore";
+import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
-const INITIAL_BOARD_DATA = [
-  { id: "col-1", title: "PITCH", cards: [] },
-  { id: "col-2", title: "DISCUSSION", cards: [] },
-  { id: "col-3", title: "PRE PRODUCTION", cards: [] },
-  { id: "col-4", title: "PRODUCTION", cards: [] },
-  { id: "col-5", title: "POST PRODUCTION", cards: [] },
-  { id: "col-6", title: "RELEASE", cards: [] }
+const COLUMNS = [
+  { id: "Planned", title: "PITCH" },
+  { id: "Discussion", title: "DISCUSSION" },
+  { id: "Pre Production", title: "PRE PRODUCTION" },
+  { id: "In Progress", title: "PRODUCTION" },
+  { id: "Post Production", title: "POST PRODUCTION" },
+  { id: "Completed", title: "RELEASE" }
 ];
 
 interface CardProps {
@@ -91,7 +95,7 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
       className={`bg-white rounded-[2rem] p-8 shadow-sm border border-slate-50 group hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${isOverlay ? 'shadow-xl rotate-2 scale-105' : ''}`}
     >
       <div className="space-y-6 pointer-events-none">
-        <h4 className="text-xl font-bold font-headline text-slate-900 leading-tight">
+        <h4 className="text-xl font-bold text-slate-900 leading-tight">
           {card.title}
         </h4>
         
@@ -99,7 +103,7 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
           <Badge className={`border-none text-[8px] font-bold px-3 py-0.5 rounded-lg ${
             card.criticality === 'HIGH' ? 'bg-red-50 text-red-500' : 'bg-orange-50 text-orange-500'
           }`}>
-            {card.criticality}
+            {card.criticality || 'MEDIUM'}
           </Badge>
           <Badge className="bg-blue-50 text-blue-500 border-none text-[8px] font-bold px-3 py-0.5 rounded-lg">
             {card.client}
@@ -107,7 +111,7 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
         </div>
 
         <div className="space-y-3">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
             {card.progress}% COMPLETE
           </p>
           <Progress value={card.progress} className="h-1.5 bg-slate-50" />
@@ -119,7 +123,7 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
             <span className="text-[10px] font-bold uppercase tracking-tighter opacity-50">{card.deadline}</span>
           </div>
           <div className="flex -space-x-2">
-            {card.team.map((u, i) => (
+            {(card.team || []).map((u, i) => (
               <Avatar key={i} className="h-8 w-8 border-2 border-white grayscale hover:grayscale-0 transition-all">
                 <AvatarImage src={`https://picsum.photos/seed/${u}/100/100`} />
                 <AvatarFallback>U</AvatarFallback>
@@ -141,7 +145,7 @@ function KanbanColumn({ column, children }: { column: ColumnProps; children: Rea
     <div className="w-[320px] shrink-0 flex flex-col space-y-4">
       <div className="flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
-          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
             {column.title}
           </h3>
           <Badge className="bg-slate-100 text-slate-500 border-none h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
@@ -164,7 +168,7 @@ function KanbanColumn({ column, children }: { column: ColumnProps; children: Rea
               <div className="h-12 w-12 rounded-full border-2 border-slate-100 flex items-center justify-center mb-4 p-2.5">
                 <Plus className="h-full w-full text-slate-200" />
               </div>
-              <p className="text-[10px] font-bold text-slate-200 uppercase tracking-[0.2em]">Drop Here</p>
+              <p className="text-[10px] font-bold text-slate-200 uppercase tracking-tight">Drop Here</p>
             </div>
           ) : (
             column.cards.map((card) => (
@@ -172,19 +176,51 @@ function KanbanColumn({ column, children }: { column: ColumnProps; children: Rea
             ))
           )}
         </SortableContext>
-        
-        <Button variant="ghost" className="h-14 w-full rounded-[2rem] border-none bg-slate-50/50 hover:bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-widest gap-2 mt-auto">
-          <Plus className="h-4 w-4" />
-          New Entry
-        </Button>
       </div>
     </div>
   );
 }
 
 export default function BoardPage() {
-  const [boardData, setBoardData] = useState<ColumnProps[]>(INITIAL_BOARD_DATA);
+  const db = useFirestore();
+  const [boardData, setBoardData] = useState<ColumnProps[]>([]);
   const [activeCard, setActiveCard] = useState<CardProps | null>(null);
+
+  // Fetch Projects
+  const projectsQuery = useMemoFirebase(() => {
+    return query(collection(db, "projects"), orderBy("createdAt", "desc"));
+  }, [db]);
+  const { data: projects, isLoading } = useCollection(projectsQuery);
+
+  // Fetch Clients for mapping names
+  const clientsQuery = useMemoFirebase(() => {
+    return query(collection(db, "clients"));
+  }, [db]);
+  const { data: clients } = useCollection(clientsQuery);
+
+  // Synchronize board data with Firestore projects
+  useEffect(() => {
+    if (!projects) return;
+
+    const clientMap = new Map((clients || []).map(c => [c.id, c.name]));
+
+    const newBoardData = COLUMNS.map(col => ({
+      ...col,
+      cards: projects
+        .filter(p => (p.status || "Planned") === col.id)
+        .map(p => ({
+          id: p.id,
+          title: p.name,
+          criticality: p.priority || "MEDIUM",
+          client: clientMap.get(p.clientId) || "Unknown Client",
+          progress: p.progress || 0,
+          deadline: p.dueDate || "TBD",
+          team: p.teamMemberIds || []
+        }))
+    }));
+
+    setBoardData(newBoardData);
+  }, [projects, clients]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -260,17 +296,25 @@ export default function BoardPage() {
     const activeContainer = findContainer(active.id);
     const overContainer = findContainer(over.id);
 
-    if (activeContainer && overContainer && activeContainer === overContainer) {
-      const activeIndex = boardData.find((c) => c.id === activeContainer)?.cards.findIndex((i) => i.id === active.id) ?? -1;
-      const overIndex = boardData.find((c) => c.id === overContainer)?.cards.findIndex((i) => i.id === over.id) ?? -1;
+    if (activeContainer && overContainer) {
+      // Update Firestore status if moved to a different column
+      if (activeContainer !== overContainer) {
+        const projectRef = doc(db, "projects", active.id as string);
+        updateDocumentNonBlocking(projectRef, { status: overContainer });
+      }
 
-      if (activeIndex !== overIndex) {
-        setBoardData((prev) => prev.map((col) => {
-          if (col.id === activeContainer) {
-            return { ...col, cards: arrayMove(col.cards, activeIndex, overIndex) };
-          }
-          return col;
-        }));
+      if (activeContainer === overContainer) {
+        const activeIndex = boardData.find((c) => c.id === activeContainer)?.cards.findIndex((i) => i.id === active.id) ?? -1;
+        const overIndex = boardData.find((c) => c.id === overContainer)?.cards.findIndex((i) => i.id === over.id) ?? -1;
+
+        if (activeIndex !== overIndex) {
+          setBoardData((prev) => prev.map((col) => {
+            if (col.id === activeContainer) {
+              return { ...col, cards: arrayMove(col.cards, activeIndex, overIndex) };
+            }
+            return col;
+          }));
+        }
       }
     }
 
@@ -281,48 +325,60 @@ export default function BoardPage() {
     <div className="h-full flex flex-col space-y-8 animate-in fade-in duration-500">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Board
           </h1>
           <p className="text-sm text-slate-500 font-medium">
             Visualize and manage your production pipeline.
           </p>
         </div>
-        <Button variant="outline" className="h-10 px-4 rounded-xl font-bold text-[10px] uppercase tracking-widest bg-white text-slate-400 border-none shadow-sm opacity-50 cursor-not-allowed">
-          + Quick Add
+        <Button asChild className="h-12 px-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 gap-2">
+          <Link href="/projects/new">
+            <Plus className="h-4 w-4" />
+            Add Project
+          </Link>
         </Button>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <ScrollArea className="flex-1 w-full pb-6">
-          <div className="flex gap-6 min-h-[800px]">
-            {boardData.map((column) => (
-              <KanbanColumn key={column.id} column={column}>
-                {/* Cards are handled inside KanbanColumn via SortableContext */}
-              </KanbanColumn>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+      {isLoading ? (
+        <div className="flex-1 flex flex-col items-center justify-center py-20 space-y-4">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-slate-400 font-bold text-sm uppercase tracking-tight">Synchronizing Board...</p>
+        </div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <ScrollArea className="flex-1 w-full pb-6">
+            <div className="flex gap-6 min-h-[800px]">
+              {boardData.map((column) => (
+                <KanbanColumn key={column.id} column={column}>
+                  {/* Cards are handled inside KanbanColumn via SortableContext */}
+                </KanbanColumn>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
 
-        <DragOverlay dropAnimation={{
-          sideEffects: defaultDropAnimationSideEffects({
-            styles: {
-              active: {
-                opacity: '0.5',
+          <DragOverlay dropAnimation={{
+            sideEffects: defaultDropAnimationSideEffects({
+              styles: {
+                active: {
+                  opacity: '0.5',
+                },
               },
-            },
-          }),
-        }}>
-          {activeCard ? <KanbanCard card={activeCard} isOverlay /> : null}
-        </DragOverlay>
-      </DndContext>
+            }),
+          }}>
+            {activeCard ? <KanbanCard card={activeCard} isOverlay /> : null}
+          </DragOverlay>
+        </DndContext>
+      )}
     </div>
   );
 }
+
+import Link from "next/link";
