@@ -70,7 +70,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const projectRef = useMemoFirebase(() => doc(db, "projects", projectId), [db, projectId]);
   const { data: project, isLoading } = useDoc(projectRef);
 
-  // Objectives (Tasks)
   const tasksQuery = useMemoFirebase(() => {
     return query(
       collection(db, "projects", projectId, "tasks"),
@@ -79,24 +78,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   }, [db, projectId]);
   const { data: allTasks, isLoading: isTasksLoading } = useCollection(tasksQuery);
 
-  // Team Members for assignment
   const teamQuery = useMemoFirebase(() => {
     return query(collection(db, "team_members"), orderBy("firstName", "asc"));
   }, [db]);
   const { data: teamMembers } = useCollection(teamQuery);
 
-  // Filter tasks by current project phase
-  const currentPhaseTasks = useMemo(() => {
-    if (!allTasks || !project) return [];
-    return allTasks.filter(t => t.phase === (project.status || "Pre Production"));
-  }, [allTasks, project]);
-
-  const canTransition = useMemo(() => {
-    if (currentPhaseTasks.length === 0) return false;
-    return currentPhaseTasks.every(t => t.status === 'Completed');
-  }, [currentPhaseTasks]);
-
-  // Edit State
   const [editData, setEditData] = useState<any>(null);
   const [newObjective, setNewObjective] = useState({ 
     name: "", 
@@ -121,6 +107,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
       }
     }
   }, [project]);
+
+  const currentPhaseTasks = useMemo(() => {
+    if (!allTasks || !editData) return [];
+    return allTasks.filter(t => t.phase === (editData.status || "Pre Production"));
+  }, [allTasks, editData]);
+
+  const canTransition = useMemo(() => {
+    if (currentPhaseTasks.length === 0) return false;
+    return currentPhaseTasks.every(t => t.status === 'Completed');
+  }, [currentPhaseTasks]);
 
   const isDirty = useMemo(() => {
     if (!project || !editData) return false;
@@ -172,13 +168,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
       dueDate: newObjective.dueDate,
       assignedTeamMemberId: newObjective.assignedTeamMemberId,
       status: "Active",
-      phase: project?.status || "Pre Production",
+      phase: editData?.status || project?.status || "Pre Production",
       projectId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
     setNewObjective({ name: "", description: "", dueDate: "", assignedTeamMemberId: "" });
-    toast({ title: "Objective Defined", description: "New mission objective added to current phase." });
+    toast({ title: "Objective Defined", description: "New mission objective added to the selected phase." });
   };
 
   const handleToggleTask = (taskId: string, currentStatus: string) => {
@@ -329,7 +325,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white">
             <CardHeader className="flex flex-row items-center justify-between px-10 pt-10 pb-6">
               <CardTitle className="text-[10px] font-bold text-slate-400 uppercase">Throughput Analysis</CardTitle>
-              {canTransition && NEXT_PHASE_MAP[project.status] && (
+              {canTransition && NEXT_PHASE_MAP[project.status] && (editData?.status === project.status) && (
                 <Button onClick={handleTransition} className="h-9 px-4 rounded-xl bg-accent text-white font-bold text-[10px] gap-2 hover:bg-accent/90 transition-all animate-bounce">
                   Advance to {NEXT_PHASE_MAP[project.status]} <ArrowRight className="h-3 w-3" />
                 </Button>
@@ -338,7 +334,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             <CardContent className="px-10 pb-10 space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Current Phase</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">View Lifecycle Stage</label>
                   <Select value={editData?.status} onValueChange={handleStatusChange}>
                     <SelectTrigger className="w-full bg-transparent border-none p-0 h-auto text-xl font-bold font-headline text-slate-900 shadow-none focus:ring-0">
                       <SelectValue placeholder="Select phase" />
@@ -384,7 +380,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <TabsContent value="objectives" className="p-10 space-y-8 m-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Active Elements: {project.status || "Pre Production"}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Active Elements: {editData?.status || project.status || "Pre Production"}</p>
                     <h3 className="text-xl font-bold font-headline mt-1">Strategic Checklist</h3>
                   </div>
                   <Dialog>
