@@ -4,39 +4,39 @@
 
 @layer base {
   :root {
-    --background: 0 0% 96%;
+    --background: 225 40% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 204 61% 47%;
+    --primary: 346 84% 61%;
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 122 39% 49%;
+    --accent: 158 64% 52%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 204 61% 47%;
-    --radius: 0.75rem;
+    --ring: 346 84% 61%;
+    --radius: 1.25rem;
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 204 61% 47%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 16% 47%;
+    --sidebar-primary: 346 84% 61%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 204 61% 47%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 204 61% 47%;
+    --sidebar-accent: 346 84% 96%;
+    --sidebar-accent-foreground: 346 84% 61%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 346 84% 61%;
 
-    --chart-1: 204 61% 47%;
-    --chart-2: 122 39% 49%;
-    --chart-3: 197 37% 24%;
+    --chart-1: 346 84% 61%;
+    --chart-2: 262 83% 58%;
+    --chart-3: 158 64% 52%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
   }
@@ -48,19 +48,19 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 204 61% 47%;
+    --primary: 346 84% 61%;
     --primary-foreground: 0 0% 100%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 122 39% 49%;
+    --accent: 158 64% 52%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 204 61% 47%;
+    --ring: 346 84% 61%;
   }
 }
 
@@ -74,4 +74,16 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline;
   }
+}
+
+.bg-gradient-pink {
+  background: linear-gradient(135deg, #ff5f6d 0%, #ffc371 100%);
+}
+
+.bg-gradient-purple {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+}
+
+.bg-gradient-blue {
+  background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
 }
