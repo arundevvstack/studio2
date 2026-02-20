@@ -171,7 +171,7 @@ export default function ClientsPage() {
 
                 <Button asChild variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase group-hover:bg-primary group-hover:text-white transition-all gap-2">
                   <Link href={`/clients/${client.id}`}>
-                    View Engagement
+                    More
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>

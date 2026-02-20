@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { 
   ChevronLeft, 
   Globe, 
@@ -14,7 +14,10 @@ import {
   ArrowRight,
   Clock,
   Loader2,
-  Calendar
+  Calendar,
+  Settings,
+  Trash2,
+  Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,20 +25,31 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy, doc } from "firebase/firestore";
+import { collection, query, where, orderBy, doc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { toast } from "@/hooks/use-toast";
 
 export default function ClientEngagementPage({ params }: { params: Promise<{ clientId: string }> }) {
   const { clientId } = React.use(params);
   const router = useRouter();
   const db = useFirestore();
 
-  // Fetch Client Details
   const clientRef = useMemoFirebase(() => doc(db, "clients", clientId), [db, clientId]);
   const { data: client, isLoading: isClientLoading } = useDoc(clientRef);
 
-  // Fetch Related Projects
   const projectsQuery = useMemoFirebase(() => {
     return query(
       collection(db, "projects"), 
@@ -45,7 +59,6 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   }, [db, clientId]);
   const { data: projects, isLoading: isProjectsLoading } = useCollection(projectsQuery);
 
-  // Fetch Related Invoices
   const invoicesQuery = useMemoFirebase(() => {
     return query(
       collection(db, "clients", clientId, "invoices"),
@@ -53,6 +66,46 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     );
   }, [db, clientId]);
   const { data: invoices, isLoading: isInvoicesLoading } = useCollection(invoicesQuery);
+
+  // Edit State
+  const [editData, setEditData] = useState<any>(null);
+
+  useEffect(() => {
+    if (client) {
+      setEditData({
+        name: client.name || "",
+        industry: client.industry || "",
+        contactPerson: client.contactPerson || "",
+        email: client.email || "",
+        phone: client.phone || "",
+        address: client.address || "",
+      });
+    }
+  }, [client]);
+
+  const handleUpdateClient = () => {
+    if (!editData.name || !editData.email) return;
+    
+    updateDocumentNonBlocking(clientRef, {
+      ...editData,
+      updatedAt: serverTimestamp()
+    });
+    
+    toast({
+      title: "Strategy Updated",
+      description: `Partnership details for ${editData.name} have been synchronized.`
+    });
+  };
+
+  const handleDeleteClient = () => {
+    deleteDocumentNonBlocking(clientRef);
+    toast({
+      variant: "destructive",
+      title: "Entity Removed",
+      description: "Client has been purged from the portfolio."
+    });
+    router.push("/clients");
+  };
 
   if (isClientLoading) {
     return (
@@ -76,7 +129,6 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-6">
           <Button 
@@ -104,15 +156,90 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <span className="text-slate-200">•</span>
               <span className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4" />
-                Since {new Date(client.createdAt?.seconds * 1000).getFullYear() || "2024"}
+                Since {client.createdAt ? new Date(client.createdAt.seconds * 1000).getFullYear() : "2024"}
               </span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <Button variant="outline" className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold gap-2 bg-white border-slate-200 text-slate-600">
-            Edit Profile
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold gap-2 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                <Settings className="h-4 w-4" />
+                Configure Strategy
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+              <DialogHeader className="p-8 pb-0">
+                <DialogTitle className="text-2xl font-bold font-headline">Update Partnership Entity</DialogTitle>
+              </DialogHeader>
+              <div className="p-8 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Brand Name</label>
+                    <Input 
+                      value={editData?.name} 
+                      onChange={(e) => setEditData({...editData, name: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Industry Focus</label>
+                    <Input 
+                      value={editData?.industry} 
+                      onChange={(e) => setEditData({...editData, industry: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Primary Contact</label>
+                    <Input 
+                      value={editData?.contactPerson} 
+                      onChange={(e) => setEditData({...editData, contactPerson: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Executive Email</label>
+                    <Input 
+                      value={editData?.email} 
+                      onChange={(e) => setEditData({...editData, email: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Office Location</label>
+                  <Textarea 
+                    value={editData?.address} 
+                    onChange={(e) => setEditData({...editData, address: e.target.value})}
+                    className="rounded-xl bg-slate-50 border-none min-h-[100px] resize-none"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
+                <DialogClose asChild>
+                  <Button variant="ghost" onClick={handleDeleteClient} className="text-destructive font-bold text-xs uppercase hover:bg-destructive/5 hover:text-destructive gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    Purge Entity
+                  </Button>
+                </DialogClose>
+                <div className="flex gap-3">
+                  <DialogClose asChild>
+                    <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase">Cancel</Button>
+                  </DialogClose>
+                  <DialogClose asChild>
+                    <Button onClick={handleUpdateClient} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2">
+                      <Save className="h-4 w-4" />
+                      Sync Changes
+                    </Button>
+                  </DialogClose>
+                </div>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Button asChild className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2">
             <Link href="/projects/new">
               Initiate Project
@@ -121,7 +248,6 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
         </div>
       </div>
 
-      {/* Engagement Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
           <div className="space-y-4">
@@ -170,7 +296,6 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Main Tabs Column */}
         <div className="lg:col-span-8">
           <Tabs defaultValue="projects" className="space-y-8">
             <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-50 w-fit">
@@ -203,7 +328,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                         <div>
                           <h4 className="text-xl font-bold font-headline text-slate-900">{project.name}</h4>
                           <div className="flex items-center gap-3 mt-1">
-                            <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-3 py-1 uppercase">
+                            <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
                               {project.status || "Planned"}
                             </Badge>
                             <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
@@ -301,7 +426,6 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
           </Tabs>
         </div>
 
-        {/* Sidebar Info Column */}
         <div className="lg:col-span-4 space-y-6">
           <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
             <CardHeader className="p-10 pb-4">
