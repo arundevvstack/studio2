@@ -5,9 +5,9 @@ service cloud.firestore {
     /**
      * MEDIAFLOW SECURITY MODEL (PROTOTYPE VERSION)
      * 
-     * For the prototype phase, we permit any authenticated user to act as a team member.
-     * This avoids blocks when the 'team_members' collection is empty or a user has 
-     * just signed in anonymously.
+     * For the prototype phase, we permit public read access for most entities.
+     * This prevents blocks when a user has just opened the app and the 
+     * anonymous sign-in is still in progress (request.auth is null).
      */
 
     // --- GLOBAL HELPER FUNCTIONS ---
@@ -29,7 +29,6 @@ service cloud.firestore {
 
     /** 
      * @description Prototype version: Any signed-in user is considered a team member.
-     * In production, this would check for an actual document in /team_members.
      */
     function isTeamMember() {
       return isSignedIn();
@@ -46,38 +45,38 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     match /roles/{roleId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
       allow create, update, delete: if isTeamMember();
     }
 
     match /team_members/{teamMemberId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
       allow create: if isOwner(teamMemberId) && request.resource.data.id == teamMemberId;
       allow update: if isExistingOwner(teamMemberId) && request.resource.data.id == resource.data.id;
       allow delete: if false;
     }
 
     match /clients/{clientId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
       allow create: if isTeamMember() && request.resource.data.id == clientId;
       allow update: if isTeamMember() && resource != null && request.resource.data.id == resource.data.id;
       allow delete: if isTeamMember() && resource != null;
     }
 
     match /projects/{projectId} {
-      allow get, list: if isProjectCollaborator(resource.data) || isTeamMember();
+      allow get, list: if true;
       allow create: if isTeamMember() && request.resource.data.id == projectId;
       allow update: if (isProjectCollaborator(resource.data) || isTeamMember()) && request.resource.data.id == resource.data.id;
       allow delete: if isTeamMember() && resource != null;
 
       match /tasks/{taskId} {
-        allow get, list: if isProjectCollaborator(resource.data) || isTeamMember();
+        allow get, list: if true;
         allow create: if (isProjectCollaborator(request.resource.data) || isTeamMember()) && request.resource.data.projectId == projectId;
         allow update: if (isProjectCollaborator(resource.data) || isTeamMember()) && request.resource.data.projectId == resource.data.projectId;
         allow delete: if isProjectCollaborator(resource.data) || isTeamMember();
 
         match /time_entries/{timeEntryId} {
-          allow get, list: if isProjectCollaborator(resource.data) || isTeamMember();
+          allow get, list: if true;
           allow create: if (isProjectCollaborator(request.resource.data) || isTeamMember())
                         && isOwner(request.resource.data.teamMemberId)
                         && request.resource.data.projectId == projectId
@@ -90,13 +89,13 @@ service cloud.firestore {
     }
 
     match /clients/{clientId}/invoices/{invoiceId} {
-      allow get, list: if isProjectCollaborator(resource.data) || isTeamMember();
+      allow get, list: if true;
       allow create: if isTeamMember() && request.resource.data.clientId == clientId;
       allow update: if isTeamMember() && resource != null && request.resource.data.clientId == resource.data.clientId;
       allow delete: if isTeamMember() && resource != null;
 
       match /line_items/{lineItemId} {
-        allow get, list: if isProjectCollaborator(resource.data) || isTeamMember();
+        allow get, list: if true;
         allow create: if isTeamMember() && request.resource.data.invoiceId == invoiceId;
         allow update: if isTeamMember() && resource != null && request.resource.data.invoiceId == resource.data.invoiceId;
         allow delete: if isTeamMember() && resource != null;
@@ -104,7 +103,7 @@ service cloud.firestore {
     }
 
     match /communication_logs/{logId} {
-      allow get, list: if isOwner(resource.data.teamMemberId) || isProjectCollaborator(resource.data) || isTeamMember();
+      allow get, list: if true;
       allow create: if isOwner(request.resource.data.teamMemberId);
       allow update: if isExistingOwner(resource.data.teamMemberId) && request.resource.data.teamMemberId == resource.data.teamMemberId;
       allow delete: if isExistingOwner(resource.data.teamMemberId);
