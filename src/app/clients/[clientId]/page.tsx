@@ -288,7 +288,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <TrendingUp className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Commitment</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Amount</p>
               <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{totalProjectValue.toLocaleString('en-IN')}</h3>
             </div>
           </div>
