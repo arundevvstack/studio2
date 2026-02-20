@@ -20,8 +20,10 @@ import { collection, query, where, orderBy } from "firebase/firestore";
 
 export default function PipelinePage() {
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
+  // Memoize the query to fetch projects strictly in the "Pitch" phase.
+  // We wait for the user to be authenticated to satisfy security rules.
   const pipelineQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
@@ -33,6 +35,7 @@ export default function PipelinePage() {
 
   const { data: projects, isLoading: isProjectsLoading } = useCollection(pipelineQuery);
 
+  // Fetch clients to map IDs to names for the list display.
   const clientsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, "clients"));
@@ -45,6 +48,9 @@ export default function PipelinePage() {
     clients?.forEach(c => map.set(c.id, c.name));
     return map;
   }, [clients]);
+
+  // Combined loading state to handle auth and data fetching gracefully.
+  const isLoading = isUserLoading || isProjectsLoading;
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
@@ -95,7 +101,7 @@ export default function PipelinePage() {
         </div>
         
         <div className="flex-1">
-          {isProjectsLoading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 text-primary animate-spin" />
             </div>
