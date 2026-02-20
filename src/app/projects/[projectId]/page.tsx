@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ChevronLeft, 
@@ -50,7 +50,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const { projectId } = React.use(params);
   const router = useRouter();
   const db = useFirestore();
-  const [progress, setProgress] = useState([65]);
+  const [progress, setProgress] = useState([0]);
 
   const projectRef = useMemoFirebase(() => doc(db, "projects", projectId), [db, projectId]);
   const { data: project, isLoading } = useDoc(projectRef);
@@ -66,14 +66,26 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
         budget: project.budget || 0,
         description: project.description || "",
       });
-      if (project.progress) {
+      if (typeof project.progress === 'number') {
         setProgress([project.progress]);
       }
     }
   }, [project]);
 
+  // Dirty check to activate Save button
+  const isDirty = useMemo(() => {
+    if (!project || !editData) return false;
+    return (
+      editData.name !== (project.name || "") ||
+      editData.status !== (project.status || "Planned") ||
+      editData.budget !== (project.budget || 0) ||
+      editData.description !== (project.description || "") ||
+      progress[0] !== (project.progress || 0)
+    );
+  }, [project, editData, progress]);
+
   const handleUpdateProject = () => {
-    if (!editData.name) return;
+    if (!editData?.name) return;
     
     updateDocumentNonBlocking(projectRef, {
       ...editData,
@@ -163,9 +175,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">Project Title</label>
                     <Input 
-                      value={editData?.name} 
+                      value={editData?.name || ""} 
                       onChange={(e) => setEditData({...editData, name: e.target.value})}
                       className="rounded-xl bg-slate-50 border-none h-12"
+                      placeholder="Enter project title"
                     />
                   </div>
                   <div className="space-y-2">
@@ -191,7 +204,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input 
                       type="number"
-                      value={editData?.budget} 
+                      value={editData?.budget || 0} 
                       onChange={(e) => setEditData({...editData, budget: parseFloat(e.target.value) || 0})}
                       className="rounded-xl bg-slate-50 border-none h-12 pl-12"
                     />
@@ -200,9 +213,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Executive Summary</label>
                   <Textarea 
-                    value={editData?.description} 
+                    value={editData?.description || ""} 
                     onChange={(e) => setEditData({...editData, description: e.target.value})}
                     className="rounded-xl bg-slate-50 border-none min-h-[120px] resize-none"
+                    placeholder="Briefly describe the campaign strategy"
                   />
                 </div>
               </div>
@@ -218,7 +232,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase">Cancel</Button>
                   </DialogClose>
                   <DialogClose asChild>
-                    <Button onClick={handleUpdateProject} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2">
+                    <Button 
+                      onClick={handleUpdateProject} 
+                      disabled={!isDirty}
+                      className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2 disabled:opacity-50"
+                    >
                       <Save className="h-4 w-4" />
                       Sync Changes
                     </Button>
@@ -227,7 +245,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button onClick={handleUpdateProject} className="h-12 flex-1 md:flex-none px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
+          <Button 
+            onClick={handleUpdateProject} 
+            disabled={!isDirty}
+            className="h-12 flex-1 md:flex-none px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 disabled:opacity-50 transition-all"
+          >
             Save Status
           </Button>
         </div>
@@ -285,7 +307,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">Optimization Progress</span>
-                  <span className="text-3xl font-bold font-headline text-primary">{progress}%</span>
+                  <span className="text-3xl font-bold font-headline text-primary">{progress[0]}%</span>
                 </div>
                 <Slider 
                   value={progress} 
@@ -395,7 +417,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               </div>
 
               <Button asChild className="w-full h-14 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase transition-colors border border-white/10">
-                <a href="/invoices/new">Generate Billing</a>
+                <Link href="/invoices/new">Generate Billing</Link>
               </Button>
             </CardContent>
           </Card>
