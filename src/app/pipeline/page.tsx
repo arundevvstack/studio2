@@ -10,6 +10,7 @@ import {
   Sparkles,
   SearchIcon
 } from "lucide-react";
+import Link from "next/link";
 
 export default function PipelinePage() {
   return (
@@ -30,9 +31,11 @@ export default function PipelinePage() {
             Managing high-potential opportunities in Pitch & Discussion phases.
           </p>
         </div>
-        <Button className="h-12 px-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 gap-2">
-          <Plus className="h-4 w-4" />
-          Draft New Pitch
+        <Button asChild className="h-12 px-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 gap-2">
+          <Link href="/projects/new">
+            <Plus className="h-4 w-4" />
+            Draft New Pitch
+          </Link>
         </Button>
       </div>
 

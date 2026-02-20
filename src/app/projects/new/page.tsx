@@ -3,8 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, Image as ImageIcon, Rocket } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft, Image as ImageIcon, SendHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function AddProjectPage() {
@@ -24,7 +23,7 @@ export default function AddProjectPage() {
         </Button>
         <div>
           <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
-            Add Projects
+            Initiate Production
           </h1>
           <p className="text-slate-500 mt-1 font-medium">
             Deploy a new high-growth media campaign.
@@ -34,8 +33,8 @@ export default function AddProjectPage() {
 
       {/* Main Form Card */}
       <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden relative">
-        {/* Top Accent Border */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-primary" />
+        {/* Top Accent Border (Red as per image) */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#ef4444]" />
         
         <div className="p-10 space-y-12">
           {/* Top Row: Identifiers */}
@@ -66,9 +65,9 @@ export default function AddProjectPage() {
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
                 Project Visuals
               </label>
-              <div className="h-48 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center group cursor-pointer hover:border-primary/30 transition-colors">
-                <div className="bg-white p-4 rounded-2xl shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                  <ImageIcon className="h-8 w-8 text-slate-300" />
+              <div className="h-48 rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/30 flex flex-col items-center justify-center group cursor-pointer hover:border-primary/30 transition-colors">
+                <div className="mb-3">
+                  <ImageIcon className="h-10 w-10 text-slate-300" />
                 </div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   Ingest Campaign Asset
@@ -76,11 +75,11 @@ export default function AddProjectPage() {
               </div>
             </div>
             <div className="space-y-3">
-              <div className="mt-7 p-8 rounded-2xl bg-slate-50/50 border border-slate-100 h-48 flex flex-col justify-center">
-                <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest mb-2">
+               <div className="mt-7 p-8 rounded-2xl bg-slate-50/50 border border-slate-100 h-48 flex flex-col justify-center">
+                <h4 className="text-[10px] font-bold text-[#ef4444] uppercase tracking-widest mb-2">
                   Strategic Guidance
                 </h4>
-                <p className="text-sm text-slate-500 leading-relaxed">
+                <p className="text-sm text-slate-500 leading-relaxed font-medium">
                   High-resolution stills or mood-board assets are recommended.
                 </p>
               </div>
@@ -94,23 +93,23 @@ export default function AddProjectPage() {
             </label>
             <Textarea 
               placeholder="Outline the core creative direction..."
-              className="min-h-[250px] rounded-2xl bg-slate-50 border-none shadow-inner text-base p-8 focus-visible:ring-primary/20 resize-none"
+              className="min-h-[250px] rounded-2xl bg-slate-50 border-none shadow-inner text-base p-8 focus-visible:ring-primary/20 resize-none placeholder:text-slate-400"
             />
           </div>
         </div>
 
         {/* Form Footer */}
-        <div className="px-10 py-8 bg-slate-50/30 border-t border-slate-100 flex items-center justify-end gap-6">
+        <div className="px-10 py-8 border-t border-slate-50 flex items-center justify-end gap-10">
           <Button 
             variant="ghost" 
-            className="text-slate-500 font-bold text-sm hover:bg-transparent hover:text-slate-900"
+            className="text-slate-900 font-bold text-sm hover:bg-transparent"
             onClick={() => router.back()}
           >
             Discard
           </Button>
-          <Button className="h-14 px-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-xl shadow-primary/20 gap-3 group">
+          <Button className="h-14 px-10 rounded-xl bg-[#ef4444] hover:bg-[#ef4444]/90 text-white font-bold text-base shadow-lg shadow-red-200 gap-3 group">
             Launch Production
-            <Rocket className="h-5 w-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+            <SendHorizontal className="h-5 w-5 rotate-[-45deg] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
           </Button>
         </div>
       </div>
