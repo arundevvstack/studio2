@@ -251,7 +251,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             disabled={!isDirty}
             className="h-12 flex-1 md:flex-none px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 disabled:opacity-50 transition-all"
           >
-            Save Status
+            Save
           </Button>
         </div>
       </div>
