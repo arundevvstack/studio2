@@ -181,6 +181,17 @@ function KanbanCard({ card, isOverlay }: { card: CardProps; isOverlay?: boolean 
   );
 }
 
+function EmptyPlaceholder() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-white/30 py-20 min-h-[300px]">
+      <div className="h-12 w-12 rounded-full border-2 border-slate-100 flex items-center justify-center mb-4">
+        <Plus className="h-6 w-6 text-slate-200" />
+      </div>
+      <p className="text-[10px] font-bold text-slate-200 uppercase tracking-[0.2em]">Drop Here</p>
+    </div>
+  );
+}
+
 export default function BoardPage() {
   const [boardData, setBoardData] = useState(INITIAL_BOARD_DATA);
   const [activeCard, setActiveCard] = useState<CardProps | null>(null);
@@ -329,9 +340,13 @@ export default function BoardPage() {
                   strategy={verticalListSortingStrategy}
                 >
                   <div className="flex-1 flex flex-col gap-4 min-h-[200px]">
-                    {column.cards.map((card) => (
-                      <KanbanCard key={card.id} card={card} />
-                    ))}
+                    {column.cards.length === 0 ? (
+                      <EmptyPlaceholder />
+                    ) : (
+                      column.cards.map((card) => (
+                        <KanbanCard key={card.id} card={card} />
+                      ))
+                    )}
 
                     <Button variant="ghost" className="h-14 w-full rounded-[2rem] border-none bg-slate-50/50 hover:bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-widest gap-2 mt-auto">
                       <Plus className="h-4 w-4" />
