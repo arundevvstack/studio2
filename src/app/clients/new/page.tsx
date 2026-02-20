@@ -17,7 +17,7 @@ import {
   Loader2
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useFirestore, useAuth } from "@/firebase";
+import { useFirestore } from "@/firebase";
 import { collection, doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
@@ -25,7 +25,6 @@ import { toast } from "@/hooks/use-toast";
 export default function AddClientPage() {
   const router = useRouter();
   const db = useFirestore();
-  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -65,7 +64,7 @@ export default function AddClientPage() {
       const clientData = {
         id: clientId,
         name: formData.name,
-        companyName: formData.name, // Using name as companyName for now
+        companyName: formData.name,
         industry: formData.industry,
         contactPerson: formData.contactPerson,
         email: formData.email,
@@ -94,7 +93,6 @@ export default function AddClientPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header Section */}
       <div className="flex items-start gap-6">
         <Button 
           variant="outline" 
@@ -105,7 +103,7 @@ export default function AddClientPage() {
           <ChevronLeft className="h-5 w-5 text-slate-600" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
+          <h1 className="text-4xl font-bold font-headline text-slate-900">
             Onboard Client
           </h1>
           <p className="text-slate-500 mt-1 font-medium">
@@ -114,16 +112,13 @@ export default function AddClientPage() {
         </div>
       </div>
 
-      {/* Main Form Card */}
       <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden relative">
-        {/* Top Accent Border (Purple for Clients) */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-[#a855f7]" />
         
         <div className="p-10 space-y-12">
-          {/* Identifiers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
                 Client Brand Name
               </label>
               <div className="relative">
@@ -139,7 +134,7 @@ export default function AddClientPage() {
               </div>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
                 Industry Vertical
               </label>
               <div className="relative">
@@ -155,10 +150,9 @@ export default function AddClientPage() {
             </div>
           </div>
 
-          {/* Contact Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
                 Primary Contact Person
               </label>
               <div className="relative">
@@ -173,7 +167,7 @@ export default function AddClientPage() {
               </div>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
                 Executive Email
               </label>
               <div className="relative">
@@ -191,10 +185,9 @@ export default function AddClientPage() {
             </div>
           </div>
 
-          {/* New Grid Row: Phone & GSTIN */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
                 Contact Phone Number
               </label>
               <div className="relative">
@@ -209,7 +202,7 @@ export default function AddClientPage() {
               </div>
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
                 GSTIN Number
               </label>
               <div className="relative">
@@ -225,9 +218,8 @@ export default function AddClientPage() {
             </div>
           </div>
 
-          {/* Address */}
           <div className="space-y-3">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
               Physical Office Address
             </label>
             <div className="relative">
@@ -242,9 +234,8 @@ export default function AddClientPage() {
             </div>
           </div>
 
-          {/* Partnership Brief */}
           <div className="space-y-3">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase px-1">
               Strategic Brief
             </label>
             <Textarea 
@@ -257,7 +248,6 @@ export default function AddClientPage() {
           </div>
         </div>
 
-        {/* Form Footer */}
         <div className="px-10 py-8 border-t border-slate-50 flex items-center justify-end gap-10">
           <Button 
             type="button"

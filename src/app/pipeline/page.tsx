@@ -14,7 +14,6 @@ import Link from "next/link";
 export default function PipelinePage() {
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-      {/* Header Section */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
@@ -38,7 +37,6 @@ export default function PipelinePage() {
         </Button>
       </div>
 
-      {/* Search and Filter Bar */}
       <div className="flex gap-4">
         <div className="relative flex-1 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
@@ -53,9 +51,7 @@ export default function PipelinePage() {
         </Button>
       </div>
 
-      {/* Pipeline Table */}
       <div className="bg-white rounded-[2rem] border border-slate-50 shadow-sm overflow-hidden min-h-[400px] flex flex-col">
-        {/* Table Header */}
         <div className="grid grid-cols-12 px-10 py-6 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase">
           <div className="col-span-4">Potential Production</div>
           <div className="col-span-3">Pipeline Phase</div>
@@ -64,7 +60,6 @@ export default function PipelinePage() {
           <div className="col-span-1 text-right">Action</div>
         </div>
         
-        {/* Empty State Body */}
         <div className="flex-1 flex items-center justify-center py-20">
           <div className="text-center space-y-4">
             <div className="bg-slate-50 h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4 p-5 shadow-inner">

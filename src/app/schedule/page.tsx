@@ -14,10 +14,9 @@ export default function SchedulePage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">
+          <h1 className="text-4xl font-bold font-headline text-slate-900">
             Production Schedule
           </h1>
           <p className="text-sm text-slate-500 font-medium">
@@ -25,13 +24,12 @@ export default function SchedulePage() {
           </p>
         </div>
 
-        {/* Month Navigator */}
         <div className="flex items-center bg-white border border-slate-100 rounded-xl p-1 shadow-sm">
           <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="px-6">
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-900">
+            <span className="text-xs font-bold uppercase text-slate-900">
               February 2026
             </span>
           </div>
@@ -41,21 +39,18 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {/* Calendar Grid Container */}
       <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-        {/* Days Header */}
         <div className="grid grid-cols-7 border-b border-slate-50 bg-slate-50/30">
           {DAYS_OF_WEEK.map((day) => (
             <div
               key={day}
-              className="py-6 text-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]"
+              className="py-6 text-center text-[10px] font-bold text-slate-400 uppercase"
             >
               {day}
             </div>
           ))}
         </div>
 
-        {/* Calendar Grid */}
         <div className="grid grid-cols-7 border-collapse">
           {CALENDAR_DAYS.map((day) => {
             const isToday = day === today;
@@ -75,15 +70,13 @@ export default function SchedulePage() {
                     {day}
                   </span>
                   {isToday && (
-                    <Badge className="bg-primary text-white border-none text-[8px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider">
+                    <Badge className="bg-primary text-white border-none text-[8px] font-bold px-2 py-0.5 rounded-sm uppercase">
                       Today
                     </Badge>
                   )}
                 </div>
 
-                {/* Placeholder for events/milestones */}
                 <div className="mt-4 space-y-2">
-                  {/* Milestones would go here */}
                 </div>
               </div>
             );

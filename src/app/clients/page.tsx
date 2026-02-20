@@ -37,7 +37,6 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-      {/* Header Section */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <h1 className="text-4xl font-bold font-headline text-slate-900">
@@ -55,7 +54,6 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      {/* Strategic Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white overflow-hidden p-8">
           <div className="flex items-center gap-4">
@@ -63,7 +61,7 @@ export default function ClientsPage() {
               <Globe className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Global Reach</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Global Reach</p>
               <h3 className="text-2xl font-bold font-headline">12 Countries</h3>
             </div>
           </div>
@@ -74,7 +72,7 @@ export default function ClientsPage() {
               <TrendingUp className="h-6 w-6 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Portfolio Value</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Portfolio Value</p>
               <h3 className="text-2xl font-bold font-headline">₹4.2M</h3>
             </div>
           </div>
@@ -85,14 +83,13 @@ export default function ClientsPage() {
               <Briefcase className="h-6 w-6 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Active Ops</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Active Ops</p>
               <h3 className="text-2xl font-bold font-headline">{clients?.length || 0} Clients</h3>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Filter Bar */}
       <div className="flex gap-4">
         <div className="relative flex-1 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
@@ -107,12 +104,11 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      {/* Portfolio Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
         {isLoading ? (
           <div className="col-span-full flex flex-col items-center justify-center py-20 space-y-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            <p className="text-slate-400 font-bold text-sm uppercase tracking-tight">Loading Portfolio...</p>
+            <p className="text-slate-400 font-bold text-sm uppercase">Loading Portfolio...</p>
           </div>
         ) : clients && clients.length > 0 ? (
           clients.map((client, index) => (
@@ -131,7 +127,7 @@ export default function ClientsPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-2xl font-bold font-headline text-slate-900">{client.name}</h3>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-tight mt-1">{client.industry || "General Industry"}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase mt-1">{client.industry || "General Industry"}</p>
                   </div>
                   <Badge className="bg-slate-50 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
                     {client.status || "Active"}
@@ -140,11 +136,11 @@ export default function ClientsPage() {
 
                 <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Contact</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Contact</p>
                     <p className="text-base font-bold mt-1 text-primary truncate">{client.contactPerson || "N/A"}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Phone</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Phone</p>
                     <p className="text-sm font-bold mt-1 text-slate-900 truncate">{client.phone || "N/A"}</p>
                   </div>
                 </div>
@@ -156,7 +152,7 @@ export default function ClientsPage() {
                   </div>
                 </div>
 
-                <Button asChild variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase tracking-tight group-hover:bg-primary group-hover:text-white transition-all gap-2">
+                <Button asChild variant="ghost" className="w-full h-12 rounded-2xl bg-slate-50 text-slate-900 font-bold text-xs uppercase group-hover:bg-primary group-hover:text-white transition-all gap-2">
                   <Link href={`/clients/${client.id}`}>
                     View Engagement
                     <ArrowRight className="h-4 w-4" />
@@ -170,7 +166,7 @@ export default function ClientsPage() {
             <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <Plus className="h-8 w-8 text-slate-300 group-hover:text-primary" />
             </div>
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">Scale Portfolio</p>
+            <p className="text-sm font-bold text-slate-400 uppercase">Scale Portfolio</p>
             <p className="text-xs text-slate-300 mt-2 font-medium">Add your first high-value client</p>
           </Link>
         )}

@@ -1,58 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     /**
      * MEDIAFLOW SECURITY MODEL (PROTOTYPE VERSION)
      * 
-     * In the prototype phase, we permit broad read access to ensure 
-     * the dashboard, boards, and client engagements are always visible.
-     * Write access is secured to authenticated users.
+     * In the prototype phase, we permit broad read and write access 
+     * to ensure seamless development and testing of the production pipeline.
      */
-
-    // --- GLOBAL HELPER FUNCTIONS ---
-
-    /** @description Checks if the user is authenticated. */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /** @description Checks if the provided ID matches the authenticated user's UID. */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // --- GLOBAL RULES ---
-    
-    // Allow read access to all documents for the prototype phase
     match /{document=**} {
-      allow read: if true;
-      allow write: if isSignedIn();
-    }
-
-    // --- SPECIFIC COLLECTION RULES (Maintained for future refinement) ---
-
-    // Team Member Profiles
-    match /team_members/{teamMemberId} {
-      allow create, update: if isOwner(teamMemberId);
-    }
-
-    // Projects and subcollections
-    match /projects/{projectId} {
-      match /tasks/{taskId} {
-        match /time_entries/{timeEntryId} {
-          allow read, write: if isSignedIn();
-        }
-      }
-    }
-
-    // Clients and subcollections
-    match /clients/{clientId} {
-      match /invoices/{invoiceId} {
-        match /line_items/{lineItemId} {
-          allow read, write: if isSignedIn();
-        }
-      }
+      allow read, write: if true;
     }
   }
 }
