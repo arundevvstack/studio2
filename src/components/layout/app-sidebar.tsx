@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -83,9 +84,11 @@ export function AppSidebar() {
         </div>
 
         {/* New Production Action */}
-        <Button className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-6 font-bold text-sm shadow-lg shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
-          <Plus className="h-5 w-5 mr-2 group-data-[collapsible=icon]:mr-0" />
-          <span className="group-data-[collapsible=icon]:hidden">New Production</span>
+        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-6 font-bold text-sm shadow-lg shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
+          <Link href="/projects/new">
+            <Plus className="h-5 w-5 mr-2 group-data-[collapsible=icon]:mr-0" />
+            <span className="group-data-[collapsible=icon]:hidden">New Production</span>
+          </Link>
         </Button>
       </SidebarHeader>
 

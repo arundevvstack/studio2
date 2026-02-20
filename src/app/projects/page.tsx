@@ -1,13 +1,11 @@
+
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, 
   Search, 
   Filter, 
-  Loader2,
-  Sparkles,
   ChevronRight,
   LayoutGrid,
   List,
@@ -17,20 +15,8 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { generateProjectTasksAndTimeline } from "@/ai/flows/project-task-and-timeline-generation";
-import type { ProjectTaskAndTimelineGenerationOutput } from "@/ai/flows/project-task-and-timeline-generation";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import Link from "next/link";
 
 const CLIENT_GROUPS = [
   {
@@ -61,23 +47,6 @@ const CLIENT_GROUPS = [
 ];
 
 export default function ProjectsPage() {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [projectDescription, setProjectDescription] = useState("");
-  const [aiResult, setAiResult] = useState<ProjectTaskAndTimelineGenerationOutput | null>(null);
-
-  const handleGenerateTasks = async () => {
-    if (!projectDescription) return;
-    setIsGenerating(true);
-    try {
-      const result = await generateProjectTasksAndTimeline({ projectDescription });
-      setAiResult(result);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto">
       {/* Header Section */}
@@ -93,94 +62,12 @@ export default function ProjectsPage() {
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md"><List className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md text-slate-400"><LayoutGrid className="h-4 w-4" /></Button>
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="gap-2 px-6 shadow-lg shadow-primary/20 font-bold">
-                <Plus className="h-4 w-4" />
-                Add Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="font-headline text-2xl">Create New Project</DialogTitle>
-                <DialogDescription>
-                  Define your project and let AI help you generate a timeline and tasks.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Project Name</label>
-                  <Input placeholder="e.g. Nike Winter Campaign" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Description</label>
-                  <Textarea 
-                    placeholder="Describe the project scope, deliverables, and goals..."
-                    value={projectDescription}
-                    onChange={(e) => setProjectDescription(e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                </div>
-                
-                {!aiResult && (
-                  <Button 
-                    onClick={handleGenerateTasks} 
-                    disabled={isGenerating || !projectDescription}
-                    className="w-full bg-primary/10 text-primary hover:bg-primary/20 border-none font-bold"
-                    variant="outline"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating AI Plan...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Generate Project Tasks & Timeline with AI
-                      </>
-                    )}
-                  </Button>
-                )}
-
-                {aiResult && (
-                  <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        AI Proposed Roadmap
-                      </h3>
-                      <Button variant="ghost" size="sm" onClick={() => setAiResult(null)}>Reset</Button>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-bold uppercase text-muted-foreground">Timeline Summary</p>
-                      <p className="text-sm text-foreground">{aiResult.timelineSummary}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-xs font-bold uppercase text-muted-foreground">Proposed Tasks</p>
-                      <ScrollArea className="h-[200px] rounded-md border p-4 bg-background">
-                        <div className="space-y-4">
-                          {aiResult.tasks.map((task, i) => (
-                            <div key={i} className="flex flex-col gap-1 border-b pb-2 last:border-0">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-sm">{task.name}</span>
-                                <Badge variant="secondary" className="text-[10px]">{task.estimatedDuration}</Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{task.description}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <DialogFooter>
-                <Button variant="outline">Cancel</Button>
-                <Button>Create Project</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button asChild className="gap-2 px-6 shadow-lg shadow-primary/20 font-bold">
+            <Link href="/projects/new">
+              <Plus className="h-4 w-4" />
+              Add Project
+            </Link>
+          </Button>
         </div>
       </div>
 
