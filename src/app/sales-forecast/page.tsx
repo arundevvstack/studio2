@@ -32,18 +32,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 
-const MOCK_HISTORICAL = [
-  { projectName: "Nike Campaign", clientName: "Nike", revenue: 45000, startDate: "2024-01-01", endDate: "2024-02-15", status: "Completed" },
-  { projectName: "Apple UI Design", clientName: "Apple", revenue: 15000, startDate: "2024-01-10", endDate: "2024-02-01", status: "Completed" },
-  { projectName: "Tesla Branding", clientName: "Tesla", revenue: 32000, startDate: "2024-02-01", endDate: "2024-04-01", status: "In Progress" },
-];
-
-const MOCK_CLIENTS = [
-  { clientName: "Nike", industry: "Sportswear", pastProjectCount: 12 },
-  { clientName: "Apple", industry: "Technology", pastProjectCount: 8 },
-  { clientName: "Tesla", industry: "Automotive", pastProjectCount: 3 },
-  { clientName: "Netflix", industry: "Entertainment", pastProjectCount: 0 },
-];
+const MOCK_HISTORICAL: any[] = [];
+const MOCK_CLIENTS: any[] = [];
 
 export default function SalesForecastPage() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -51,6 +41,10 @@ export default function SalesForecastPage() {
   const [forecastData, setForecastData] = useState<SalesForecastGenerationOutput | null>(null);
 
   const handleGenerateForecast = async () => {
+    if (MOCK_HISTORICAL.length === 0) {
+      alert("No historical data available for analysis. Please onboard clients and log projects first.");
+      return;
+    }
     setIsGenerating(true);
     try {
       const result = await salesForecastGeneration({
@@ -93,7 +87,7 @@ export default function SalesForecastPage() {
               <SelectItem value="12">Next 12 Weeks</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleGenerateForecast} disabled={isGenerating} className="gap-2">
+          <Button onClick={handleGenerateForecast} disabled={isGenerating || MOCK_HISTORICAL.length === 0} className="gap-2">
             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {forecastData ? "Update Forecast" : "Generate Forecast"}
           </Button>
@@ -112,7 +106,9 @@ export default function SalesForecastPage() {
                 Use MediaFlow's advanced AI to analyze your historical client data, current project statuses, and market trends to predict upcoming earnings.
               </p>
             </div>
-            <Button onClick={handleGenerateForecast} className="mt-4">Start Analysis</Button>
+            <Button onClick={handleGenerateForecast} disabled={MOCK_HISTORICAL.length === 0} className="mt-4">
+              {MOCK_HISTORICAL.length === 0 ? "Insufficient Data" : "Start Analysis"}
+            </Button>
           </CardContent>
         </Card>
       )}

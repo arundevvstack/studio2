@@ -7,7 +7,8 @@ import {
   Sparkles, 
   Calendar, 
   Receipt, 
-  ChevronDown
+  ChevronDown,
+  SearchIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,22 +22,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 
-const PRODUCTION_ITEMS = [
-  {
-    id: "item-1",
-    title: "Podcast",
-    phase: "Pre Production",
-    amount: 38000,
-    status: "BUDGETED"
-  },
-  {
-    id: "item-2",
-    title: "TVC",
-    phase: "Production",
-    amount: 250000,
-    status: "BUDGETED"
-  }
-];
+const PRODUCTION_ITEMS: any[] = [];
 
 export default function CreateInvoicePage() {
   const router = useRouter();
@@ -93,15 +79,12 @@ export default function CreateInvoicePage() {
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">
                   Select Strategic Client
                 </label>
-                <Select defaultValue="gg">
+                <Select>
                   <SelectTrigger className="h-16 rounded-2xl bg-slate-50/50 border-slate-100 px-8 text-slate-900 font-bold focus:ring-primary/20">
                     <SelectValue placeholder="Identify client for billing..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                    <SelectItem value="nike">Nike Global</SelectItem>
-                    <SelectItem value="gg">GG</SelectItem>
-                    <SelectItem value="apple">Apple EMEA</SelectItem>
-                    <SelectItem value="airbnb">Airbnb Strategic</SelectItem>
+                    <SelectItem value="none">No clients available</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -118,34 +101,43 @@ export default function CreateInvoicePage() {
                 </div>
 
                 <div className="space-y-4">
-                  {PRODUCTION_ITEMS.map((item) => (
-                    <div 
-                      key={item.id}
-                      className="flex items-center justify-between p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                      onClick={() => toggleItem(item.id)}
-                    >
-                      <div className="flex items-center gap-6">
-                        <Checkbox 
-                          checked={selectedItems.includes(item.id)}
-                          className="h-6 w-6 rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
-                        />
-                        <div>
-                          <h4 className="text-xl font-bold font-headline text-slate-900">{item.title}</h4>
-                          <Badge className="mt-2 bg-slate-100 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
-                            {item.phase}
-                          </Badge>
+                  {PRODUCTION_ITEMS.length > 0 ? (
+                    PRODUCTION_ITEMS.map((item) => (
+                      <div 
+                        key={item.id}
+                        className="flex items-center justify-between p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                        onClick={() => toggleItem(item.id)}
+                      >
+                        <div className="flex items-center gap-6">
+                          <Checkbox 
+                            checked={selectedItems.includes(item.id)}
+                            className="h-6 w-6 rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
+                          />
+                          <div>
+                            <h4 className="text-xl font-bold font-headline text-slate-900">{item.title}</h4>
+                            <Badge className="mt-2 bg-slate-100 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1">
+                              {item.phase}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold font-headline text-slate-900">
+                            ₹{item.amount.toLocaleString('en-IN')}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                            {item.status}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold font-headline text-slate-900">
-                          ₹{item.amount.toLocaleString('en-IN')}
-                        </p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                          {item.status}
-                        </p>
+                    ))
+                  ) : (
+                    <div className="p-20 flex flex-col items-center justify-center space-y-4 border-2 border-dashed border-slate-50 rounded-3xl">
+                      <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center p-5">
+                        <SearchIcon className="h-full w-full text-slate-200" />
                       </div>
+                      <p className="text-xs font-bold text-slate-300 uppercase tracking-widest text-center">No production items available for synthesis</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -183,14 +175,15 @@ export default function CreateInvoicePage() {
                 <div className="relative group">
                   <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-hover:text-primary transition-colors" />
                   <div className="h-16 w-full rounded-2xl bg-slate-50 border-none flex items-center px-8 text-slate-900 font-bold text-sm shadow-inner cursor-pointer hover:bg-slate-100/50 transition-colors">
-                    15/02/2026
+                    -- / -- / ----
                   </div>
                 </div>
               </div>
 
               <Button 
                 onClick={handleDeploy}
-                className="w-full h-16 rounded-3xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                disabled={selectedItems.length === 0}
+                className="w-full h-16 rounded-3xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 Deploy Invoice
               </Button>

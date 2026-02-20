@@ -1,14 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Play, Pause, RotateCcw, Calendar, Filter, BarChart3 } from "lucide-react";
+import { Clock, Play, Pause, RotateCcw, Calendar, Filter, BarChart3, SearchIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function TimeTrackingPage() {
-  const recentEntries = [
-    { id: 1, task: "Color Grading - Nike Commercial", project: "Nike Summer", duration: "3h 45m", date: "Today", status: "Submitted" },
-    { id: 2, task: "Storyboarding - Apple Event", project: "Apple Launch", duration: "1h 20m", date: "Today", status: "Live" },
-    { id: 3, task: "Script Review - Tesla Identity", project: "Tesla Branding", duration: "2h 10m", date: "Yesterday", status: "Approved" },
-  ];
+  const recentEntries: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -37,17 +33,17 @@ export default function TimeTrackingPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col items-center justify-center py-4">
-              <span className="text-6xl font-bold tracking-tighter tabular-nums">01:45:22</span>
-              <p className="text-primary-foreground/70 mt-2 font-medium">Currently working on: Storyboarding - Apple Event</p>
+              <span className="text-6xl font-bold tracking-tighter tabular-nums">00:00:00</span>
+              <p className="text-primary-foreground/70 mt-2 font-medium">No active task</p>
             </div>
             <div className="flex items-center justify-center gap-4">
               <Button size="lg" variant="secondary" className="rounded-full h-16 w-16 p-0 shadow-lg">
-                <Pause className="h-8 w-8" />
+                <Play className="h-8 w-8 ml-1" />
               </Button>
-              <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground/20 text-primary-foreground hover:bg-white/10 rounded-full h-12 w-12 p-0">
+              <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground/20 text-primary-foreground hover:bg-white/10 rounded-full h-12 w-12 p-0" disabled>
                 <RotateCcw className="h-5 w-5" />
               </Button>
-              <Button size="lg" variant="secondary" className="px-8 font-bold">
+              <Button size="lg" variant="secondary" className="px-8 font-bold" disabled>
                 Complete Task
               </Button>
             </div>
@@ -62,26 +58,14 @@ export default function TimeTrackingPage() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Total Tracked</span>
-                <span className="font-bold">34.5 / 40 hrs</span>
+                <span className="font-bold">0 / 40 hrs</span>
               </div>
               <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                <div className="bg-accent h-full w-[86%]" />
+                <div className="bg-accent h-full w-0" />
               </div>
             </div>
-            <div className="space-y-3 pt-4 border-t">
-              {[
-                { name: "Nike Summer", hrs: "12.5 hrs", color: "bg-primary" },
-                { name: "Apple Launch", hrs: "15.0 hrs", color: "bg-blue-400" },
-                { name: "Tesla Brand", hrs: "7.0 hrs", color: "bg-slate-400" },
-              ].map((proj) => (
-                <div key={proj.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${proj.color}`} />
-                    <span className="text-xs font-medium">{proj.name}</span>
-                  </div>
-                  <span className="text-xs font-bold">{proj.hrs}</span>
-                </div>
-              ))}
+            <div className="space-y-3 pt-4 border-t text-center py-6">
+               <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No activity this week</p>
             </div>
           </CardContent>
         </Card>
@@ -103,38 +87,47 @@ export default function TimeTrackingPage() {
         </div>
         <CardContent className="p-0">
           <div className="divide-y">
-            {recentEntries.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-4">
-                  <div className={`rounded-full p-2 ${entry.status === 'Live' ? 'bg-accent/10' : 'bg-muted'}`}>
-                    {entry.status === 'Live' ? (
-                      <div className="relative">
-                        <Clock className="h-4 w-4 text-accent" />
-                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
-                        </span>
-                      </div>
-                    ) : (
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    )}
+            {recentEntries.length > 0 ? (
+              recentEntries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className={`rounded-full p-2 ${entry.status === 'Live' ? 'bg-accent/10' : 'bg-muted'}`}>
+                      {entry.status === 'Live' ? (
+                        <div className="relative">
+                          <Clock className="h-4 w-4 text-accent" />
+                          <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+                          </span>
+                        </div>
+                      ) : (
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">{entry.task}</p>
+                      <p className="text-xs text-muted-foreground">{entry.project} • {entry.date}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold">{entry.task}</p>
-                    <p className="text-xs text-muted-foreground">{entry.project} • {entry.date}</p>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-sm font-bold tabular-nums">{entry.duration}</p>
+                      <Badge variant="outline" className="text-[10px] py-0">{entry.status}</Badge>
+                    </div>
+                    <Button variant="ghost" size="icon">
+                      <Play className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <p className="text-sm font-bold tabular-nums">{entry.duration}</p>
-                    <Badge variant="outline" className="text-[10px] py-0">{entry.status}</Badge>
-                  </div>
-                  <Button variant="ghost" size="icon">
-                    <Play className="h-4 w-4" />
-                  </Button>
+              ))
+            ) : (
+              <div className="p-20 flex flex-col items-center justify-center space-y-4">
+                <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center p-5">
+                  <Clock className="h-full w-full text-slate-200" />
                 </div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No recent time entries</p>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>

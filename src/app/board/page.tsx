@@ -36,75 +36,12 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 const INITIAL_BOARD_DATA = [
-  {
-    id: "col-1",
-    title: "PITCH",
-    cards: []
-  },
-  {
-    id: "col-2",
-    title: "DISCUSSION",
-    cards: []
-  },
-  {
-    id: "col-3",
-    title: "PRE PRODUCTION",
-    cards: [
-      {
-        id: "p-1",
-        title: "Podcast",
-        criticality: "MEDIUM",
-        client: "GG",
-        progress: 35,
-        deadline: "N/A",
-        team: ["u1", "u2"]
-      }
-    ]
-  },
-  {
-    id: "col-4",
-    title: "PRODUCTION",
-    cards: [
-      {
-        id: "p-2",
-        title: "TVC",
-        criticality: "MEDIUM",
-        client: "GG",
-        progress: 65,
-        deadline: "N/A",
-        team: ["u3", "u4"]
-      },
-      {
-        id: "p-3",
-        title: "TVC",
-        criticality: "MEDIUM",
-        client: "Amaze Homes",
-        progress: 65,
-        deadline: "N/A",
-        team: ["u1", "u5"]
-      }
-    ]
-  },
-  {
-    id: "col-5",
-    title: "POST PRODUCTION",
-    cards: [
-      {
-        id: "p-4",
-        title: "Ai Video production",
-        criticality: "HIGH",
-        client: "Kumbaya Kombucha",
-        progress: 85,
-        deadline: "N/A",
-        team: ["u2", "u3"]
-      }
-    ]
-  },
-  {
-    id: "col-6",
-    title: "RELEASE",
-    cards: []
-  }
+  { id: "col-1", title: "PITCH", cards: [] },
+  { id: "col-2", title: "DISCUSSION", cards: [] },
+  { id: "col-3", title: "PRE PRODUCTION", cards: [] },
+  { id: "col-4", title: "PRODUCTION", cards: [] },
+  { id: "col-5", title: "POST PRODUCTION", cards: [] },
+  { id: "col-6", title: "RELEASE", cards: [] }
 ];
 
 interface CardProps {
