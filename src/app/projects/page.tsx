@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, 
@@ -12,7 +13,8 @@ import {
   User,
   Clock,
   Pencil,
-  SearchIcon
+  SearchIcon,
+  Loader2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -24,10 +26,49 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-const CLIENT_GROUPS: any[] = [];
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
 
 export default function ProjectsPage() {
+  const db = useFirestore();
+
+  // Fetch Clients
+  const clientsQuery = useMemoFirebase(() => {
+    return query(collection(db, "clients"), orderBy("name", "asc"));
+  }, [db]);
+  const { data: clients, isLoading: isLoadingClients } = useCollection(clientsQuery);
+
+  // Fetch Projects
+  const projectsQuery = useMemoFirebase(() => {
+    return query(collection(db, "projects"), orderBy("createdAt", "desc"));
+  }, [db]);
+  const { data: projects, isLoading: isLoadingProjects } = useCollection(projectsQuery);
+
+  // Group projects by client
+  const clientGroups = useMemo(() => {
+    if (!clients || !projects) return [];
+
+    return clients.map(client => {
+      const clientProjects = projects.filter(p => p.clientId === client.id);
+      return {
+        ...client,
+        projects: clientProjects,
+        activeCount: clientProjects.length
+      };
+    }).filter(group => group.projects.length > 0);
+  }, [clients, projects]);
+
+  const isLoading = isLoadingClients || isLoadingProjects;
+
+  const getStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'planned': return 'bg-slate-100 text-slate-500';
+      case 'in progress': return 'bg-primary/10 text-primary';
+      case 'completed': return 'bg-accent/10 text-accent';
+      default: return 'bg-slate-100 text-slate-500';
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
       {/* Header Section */}
@@ -43,7 +84,7 @@ export default function ProjectsPage() {
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md"><List className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md text-slate-400"><LayoutGrid className="h-4 w-4" /></Button>
           </div>
-          <Button asChild className="gap-2 px-6 shadow-lg shadow-primary/20 font-bold">
+          <Button asChild className="gap-2 px-6 shadow-lg shadow-primary/20 font-bold rounded-xl">
             <Link href="/projects/new">
               <Plus className="h-4 w-4" />
               Add Project
@@ -73,8 +114,13 @@ export default function ProjectsPage() {
 
       {/* Grouped Content */}
       <div className="space-y-12">
-        {CLIENT_GROUPS.length > 0 ? (
-          CLIENT_GROUPS.map((group) => (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <Loader2 className="h-10 w-10 text-primary animate-spin" />
+            <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Loading Pipeline...</p>
+          </div>
+        ) : clientGroups.length > 0 ? (
+          clientGroups.map((group) => (
             <div key={group.id} className="space-y-4">
               {/* Client Header */}
               <div className="flex items-center gap-3">
@@ -94,7 +140,7 @@ export default function ProjectsPage() {
                 <div className="grid grid-cols-12 px-8 py-4 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   <div className="col-span-4">PRODUCTION ENTITY</div>
                   <div className="col-span-3 text-center">CURRENT PHASE</div>
-                  <div className="col-span-2">OPTIMIZATION</div>
+                  <div className="col-span-2">BUDGET (INR)</div>
                   <div className="col-span-2 text-center">DELIVERY</div>
                   <div className="col-span-1 text-right">ACTIONS</div>
                 </div>
@@ -104,22 +150,19 @@ export default function ProjectsPage() {
                     <div key={project.id} className="grid grid-cols-12 px-8 py-6 items-center group hover:bg-slate-50/50 transition-colors">
                       <div className="col-span-4">
                         <h4 className="font-bold text-base text-slate-900">{project.name}</h4>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">ID: {project.code}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-tight">ID: {project.id.substring(0, 8).toUpperCase()}</p>
                       </div>
                       <div className="col-span-3 flex justify-center">
-                        <Badge className={`rounded-lg px-4 py-1.5 text-[10px] font-bold border-none shadow-none ${project.phaseColor}`}>
-                          {project.phase}
+                        <Badge className={`rounded-lg px-4 py-1.5 text-[10px] font-bold border-none shadow-none ${getStatusBadge(project.status)}`}>
+                          {project.status || "PLANNED"}
                         </Badge>
                       </div>
-                      <div className="col-span-2 space-y-2">
-                        <div className="flex items-center justify-between">
-                           <span className="text-[10px] font-bold text-primary">{project.progress}% SYNC</span>
-                        </div>
-                        <Progress value={project.progress} className="h-1.5 bg-slate-100" />
+                      <div className="col-span-2">
+                        <span className="text-sm font-bold text-slate-900">₹{(project.budget || 0).toLocaleString('en-IN')}</span>
                       </div>
                       <div className="col-span-2 flex items-center justify-center gap-2 text-slate-400">
                         <Clock className="h-4 w-4" />
-                        <span className="text-xs font-bold text-slate-600">{project.delivery}</span>
+                        <span className="text-xs font-bold text-slate-600">TBD</span>
                       </div>
                       <div className="col-span-1 flex justify-end">
                         <TooltipProvider>
