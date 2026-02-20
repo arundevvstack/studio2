@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -69,14 +70,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const { projectId } = React.use(params);
   const router = useRouter();
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const [progress, setProgress] = useState([0]);
 
   const projectRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "projects", projectId);
   }, [db, projectId, user]);
-  const { data: project, isLoading } = useDoc(projectRef);
+  const { data: project, isLoading: isProjectLoading } = useDoc(projectRef);
 
   const tasksQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -209,6 +210,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     router.push("/projects");
   };
 
+  // Wait for both user auth and document load before rendering
+  const isLoading = isUserLoading || isProjectLoading;
+
   if (isLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
@@ -221,8 +225,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   if (!project) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-6">
-        <h2 className="text-2xl font-bold font-headline">Project Not Found</h2>
-        <Button onClick={() => router.push("/projects")}>Return to Pipeline</Button>
+        <h2 className="text-2xl font-bold font-headline tracking-normal">Project Not Found</h2>
+        <Button onClick={() => router.push("/projects")} className="font-bold tracking-normal">Return to Pipeline</Button>
       </div>
     );
   }
@@ -261,14 +265,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold gap-2 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+              <Button variant="outline" className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold gap-2 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors tracking-normal">
                 <Settings2 className="h-4 w-4" />
                 Edit Project
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
               <DialogHeader className="p-8 pb-0">
-                <DialogTitle className="text-2xl font-bold font-headline">Update Production Entity</DialogTitle>
+                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Production Entity</DialogTitle>
               </DialogHeader>
               <div className="p-8 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -277,13 +281,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     <Input 
                       value={editData?.name || ""} 
                       onChange={(e) => setEditData({...editData, name: e.target.value})}
-                      className="rounded-xl bg-slate-50 border-none h-12"
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Campaign Phase</label>
                     <Select value={editData?.status} onValueChange={handleStatusChange}>
-                      <SelectTrigger className="rounded-xl bg-slate-50 border-none h-12 shadow-none focus:ring-0">
+                      <SelectTrigger className="rounded-xl bg-slate-50 border-none h-12 shadow-none focus:ring-0 tracking-normal">
                         <SelectValue placeholder="Select phase" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
@@ -305,7 +309,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                       type="number"
                       value={editData?.budget || 0} 
                       onChange={(e) => setEditData({...editData, budget: parseFloat(e.target.value) || 0})}
-                      className="rounded-xl bg-slate-50 border-none h-12 pl-12"
+                      className="rounded-xl bg-slate-50 border-none h-12 pl-12 tracking-normal"
                     />
                   </div>
                 </div>
@@ -314,7 +318,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <Textarea 
                     value={editData?.description || ""} 
                     onChange={(e) => setEditData({...editData, description: e.target.value})}
-                    className="rounded-xl bg-slate-50 border-none min-h-[120px] resize-none"
+                    className="rounded-xl bg-slate-50 border-none min-h-[120px] resize-none tracking-normal"
                   />
                 </div>
               </div>
@@ -326,12 +330,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 </DialogClose>
                 <div className="flex gap-3">
                   <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
-                  <DialogClose asChild><Button onClick={handleUpdateProject} disabled={!isDirty} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2">Save</Button></DialogClose>
+                  <DialogClose asChild><Button onClick={handleUpdateProject} disabled={!isDirty} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2 tracking-normal">Save</Button></DialogClose>
                 </div>
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button onClick={handleUpdateProject} disabled={!isDirty} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg">Save</Button>
+          <Button onClick={handleUpdateProject} disabled={!isDirty} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg tracking-normal">Save</Button>
         </div>
       </div>
 
@@ -411,7 +415,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                       <div className="space-y-6 py-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Objective Title</label>
-                          <Input value={newObjective.name} onChange={(e) => setNewObjective({...newObjective, name: e.target.value})} className="rounded-xl h-12" placeholder="e.g. Creative Brief Approval" />
+                          <Input value={newObjective.name} onChange={(e) => setNewObjective({...newObjective, name: e.target.value})} className="rounded-xl h-12 tracking-normal" placeholder="e.g. Creative Brief Approval" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -420,7 +424,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                               type="date" 
                               value={newObjective.dueDate} 
                               onChange={(e) => setNewObjective({...newObjective, dueDate: e.target.value})} 
-                              className="rounded-xl h-12" 
+                              className="rounded-xl h-12 tracking-normal" 
                             />
                           </div>
                           <div className="space-y-2">
@@ -429,17 +433,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                               value={newObjective.assignedTeamMemberId} 
                               onValueChange={(val) => setNewObjective({...newObjective, assignedTeamMemberId: val})}
                             >
-                              <SelectTrigger className="rounded-xl h-12 border-slate-200">
+                              <SelectTrigger className="rounded-xl h-12 border-slate-200 tracking-normal">
                                 <SelectValue placeholder="Select member" />
                               </SelectTrigger>
                               <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                                 {teamMembers?.map((member) => (
-                                  <SelectItem key={member.id} value={member.id}>
+                                  <SelectItem key={member.id} value={member.id} className="tracking-normal">
                                     {member.firstName} {member.lastName}
                                   </SelectItem>
                                 ))}
                                 {(!teamMembers || teamMembers.length === 0) && (
-                                  <SelectItem value="none" disabled>No members available</SelectItem>
+                                  <SelectItem value="none" disabled className="tracking-normal">No members available</SelectItem>
                                 )}
                               </SelectContent>
                             </Select>
@@ -447,7 +451,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Description</label>
-                          <Textarea value={newObjective.description} onChange={(e) => setNewObjective({...newObjective, description: e.target.value})} className="rounded-xl resize-none h-24" placeholder="Provide strategic context..." />
+                          <Textarea value={newObjective.description} onChange={(e) => setNewObjective({...newObjective, description: e.target.value})} className="rounded-xl resize-none h-24 tracking-normal" placeholder="Provide strategic context..." />
                         </div>
                       </div>
                       <DialogFooter>
@@ -486,7 +490,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                           <Badge className={`border-none font-bold text-[10px] uppercase px-3 tracking-normal ${task.status === 'Completed' ? 'bg-accent/10 text-accent' : 'bg-blue-50 text-blue-500'}`}>
                             {task.status === 'Completed' ? 'FINALIZED' : 'ACTIVE'}
                           </Badge>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-slate-300 hover:text-destructive transition-colors">
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)} className="text-slate-300 hover:text-destructive transition-colors tracking-normal">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>

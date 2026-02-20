@@ -48,7 +48,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   const { clientId } = React.use(params);
   const router = useRouter();
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const clientRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -97,7 +97,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     
     updateDocumentNonBlocking(clientRef, {
       ...editData,
-      companyName: editData.name, // Keep companyName in sync with brand name for simplicity
+      companyName: editData.name,
       updatedAt: serverTimestamp()
     });
     
@@ -118,7 +118,10 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     router.push("/clients");
   };
 
-  if (isClientLoading) {
+  // Wait for both user auth and document load before rendering
+  const isLoading = isUserLoading || isClientLoading;
+
+  if (isLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -130,8 +133,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   if (!client) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-6">
-        <h2 className="text-2xl font-bold font-headline">Client Not Found</h2>
-        <Button onClick={() => router.push("/clients")}>Return to Portfolio</Button>
+        <h2 className="text-2xl font-bold font-headline tracking-normal">Client Not Found</h2>
+        <Button onClick={() => router.push("/clients")} className="font-bold tracking-normal">Return to Portfolio</Button>
       </div>
     );
   }
@@ -175,14 +178,14 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold gap-2 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+              <Button variant="outline" className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold gap-2 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors tracking-normal">
                 <Settings className="h-4 w-4" />
                 Configure Strategy
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
               <DialogHeader className="p-8 pb-0">
-                <DialogTitle className="text-2xl font-bold font-headline">Update Partnership Entity</DialogTitle>
+                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Partnership Entity</DialogTitle>
               </DialogHeader>
               <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-2 gap-4">
@@ -191,7 +194,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     <Input 
                       value={editData?.name} 
                       onChange={(e) => setEditData({...editData, name: e.target.value})}
-                      className="rounded-xl bg-slate-50 border-none h-12"
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
                     />
                   </div>
                   <div className="space-y-2">
@@ -199,7 +202,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     <Input 
                       value={editData?.industry} 
                       onChange={(e) => setEditData({...editData, industry: e.target.value})}
-                      className="rounded-xl bg-slate-50 border-none h-12"
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
                     />
                   </div>
                 </div>
@@ -209,7 +212,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     <Input 
                       value={editData?.contactPerson} 
                       onChange={(e) => setEditData({...editData, contactPerson: e.target.value})}
-                      className="rounded-xl bg-slate-50 border-none h-12"
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
                     />
                   </div>
                   <div className="space-y-2">
@@ -217,7 +220,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     <Input 
                       value={editData?.email} 
                       onChange={(e) => setEditData({...editData, email: e.target.value})}
-                      className="rounded-xl bg-slate-50 border-none h-12"
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
                     />
                   </div>
                 </div>
@@ -227,7 +230,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     <Input 
                       value={editData?.phone} 
                       onChange={(e) => setEditData({...editData, phone: e.target.value})}
-                      className="rounded-xl bg-slate-50 border-none h-12"
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
                     />
                   </div>
                   <div className="space-y-2">
@@ -235,7 +238,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     <Input 
                       value={editData?.address} 
                       onChange={(e) => setEditData({...editData, address: e.target.value})}
-                      className="rounded-xl bg-slate-50 border-none h-12"
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
                     />
                   </div>
                 </div>
@@ -245,7 +248,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     value={editData?.notes} 
                     onChange={(e) => setEditData({...editData, notes: e.target.value})}
                     placeholder="Outline the client's core objectives and long-term partnership goals..."
-                    className="rounded-xl bg-slate-50 border-none min-h-[150px] resize-none p-4"
+                    className="rounded-xl bg-slate-50 border-none min-h-[150px] resize-none p-4 tracking-normal"
                   />
                 </div>
               </div>
@@ -261,7 +264,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                     <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button>
                   </DialogClose>
                   <DialogClose asChild>
-                    <Button onClick={handleUpdateClient} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2">
+                    <Button onClick={handleUpdateClient} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2 tracking-normal">
                       <Save className="h-4 w-4" />
                       Sync Changes
                     </Button>
@@ -270,7 +273,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button asChild className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2">
+          <Button asChild className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
             <Link href="/projects/new">
               Initiate Project
             </Link>
@@ -373,7 +376,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Quote Value</p>
                           <p className="text-xl font-bold font-headline text-slate-900 tracking-normal">₹{(project.budget || 0).toLocaleString('en-IN')}</p>
                         </div>
-                        <Button asChild variant="ghost" size="icon" className="h-12 w-12 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all">
+                        <Button asChild variant="ghost" size="icon" className="h-12 w-12 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all tracking-normal">
                           <Link href={`/projects/${project.id}`}>
                             <ArrowRight className="h-5 w-5" />
                           </Link>
