@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Download, Printer, Loader2, Cloud, CheckCircle2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -9,7 +9,7 @@ import { doc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import { exportInvoiceToOneDrive } from "@/app/actions/onedrive-export";
 
-export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceId: string }> }) {
+function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }> }) {
   const { invoiceId } = React.use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -290,5 +290,18 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
         </div>
       </div>
     </div>
+  );
+}
+
+export default function InvoiceViewPage(props: { params: Promise<{ invoiceId: string }> }) {
+  return (
+    <Suspense fallback={
+      <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+        <p className="text-slate-400 font-bold text-sm uppercase text-center tracking-normal">Initializing Viewport...</p>
+      </div>
+    }>
+      <InvoiceViewContent {...props} />
+    </Suspense>
   );
 }
