@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -62,7 +61,7 @@ import {
   SortableContext, 
   verticalListSortingStrategy, 
   useSortable 
-} from "@nd-kit/sortable";
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
