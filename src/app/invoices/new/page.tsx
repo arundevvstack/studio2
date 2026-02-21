@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 
@@ -33,6 +34,9 @@ export default function CreateInvoicePage() {
   
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [dueDate, setDueDate] = useState<string>(
+    new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  );
 
   // Fetch real clients
   const clientsQuery = useMemoFirebase(() => {
@@ -67,9 +71,8 @@ export default function CreateInvoicePage() {
   }, [availableProjects, selectedProjectIds]);
 
   const handleDeploy = () => {
-    // Navigate to a mock view with the first selected ID or a static one for demo
     const targetId = selectedProjectIds[0] || "MRZL_202602_25";
-    router.push(`/invoices/${targetId}/view`);
+    router.push(`/invoices/${targetId}/view?dueDate=${dueDate}`);
   };
 
   const isLoading = isLoadingClients || isLoadingProjects;
@@ -223,10 +226,13 @@ export default function CreateInvoicePage() {
                   Payment Due Date
                 </p>
                 <div className="relative group">
-                  <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-hover:text-primary transition-colors" />
-                  <div className="h-16 w-full rounded-2xl bg-slate-50 border-none flex items-center px-8 text-slate-900 font-bold text-sm shadow-inner cursor-pointer hover:bg-slate-100/50 transition-colors tracking-normal">
-                    {new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                  </div>
+                  <Input 
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="h-16 w-full rounded-2xl bg-slate-50 border-none px-8 text-slate-900 font-bold text-sm shadow-inner focus-visible:ring-primary/20 tracking-normal appearance-none"
+                  />
+                  <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none transition-colors group-focus-within:text-primary" />
                 </div>
               </div>
 

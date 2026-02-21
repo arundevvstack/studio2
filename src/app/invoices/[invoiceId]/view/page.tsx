@@ -3,15 +3,18 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Download, Printer, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc } from "firebase/firestore";
 
 export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceId: string }> }) {
   const { invoiceId } = React.use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const db = useFirestore();
   const { user } = useUser();
+
+  const paramDueDate = searchParams.get('dueDate');
 
   // In the current flow, the 'invoiceId' in the URL is the 'projectId'
   const projectRef = useMemoFirebase(() => {
@@ -39,7 +42,11 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
   const gst = budget * 0.18;
   const grandTotal = budget + gst;
   const invoiceDate = new Date().toLocaleDateString('en-GB');
-  const dueDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
+  
+  // Use param date if available, otherwise default to 15 days from now
+  const dueDateDisplay = paramDueDate 
+    ? new Date(paramDueDate).toLocaleDateString('en-GB')
+    : new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
 
   return (
     <div className="min-h-screen bg-slate-100/50 p-4 md:p-8 animate-in fade-in duration-700 font-body">
@@ -124,7 +131,7 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Due Date :</span>
-                <span className="text-slate-900 font-bold">{dueDate}</span>
+                <span className="text-slate-900 font-bold">{dueDateDisplay}</span>
               </div>
             </div>
 
