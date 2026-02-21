@@ -63,7 +63,6 @@ import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocki
 import { toast } from "@/hooks/use-toast";
 
 const STAGES = [
-  { id: "New", title: "NEW LEAD" },
   { id: "Contacted", title: "CONTACTED" },
   { id: "Lead", title: "LEAD" },
   { id: "Proposal Sent", title: "PROPOSAL SENT" },
@@ -162,7 +161,7 @@ export default function PipelineEnginePage() {
     addDocumentNonBlocking(leadsRef, {
       ...newLead,
       estimatedBudget: parseFloat(newLead.estimatedBudget) || 0,
-      status: "New",
+      status: "Contacted",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
@@ -622,7 +621,7 @@ function SortableLeadCard({ lead, onConvert }: { lead: any, onConvert: (l: any) 
 
           <div className="flex items-center justify-between pt-4">
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
-              <Clock className="h-3 w-3" />
+              <ClockIcon className="h-3 w-3" />
               <span>{lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : "NO DATE"}</span>
             </div>
             {lead.status === 'Won' ? (
@@ -641,7 +640,7 @@ function SortableLeadCard({ lead, onConvert }: { lead: any, onConvert: (l: any) 
   );
 }
 
-function Clock(props: any) {
+function ClockIcon(props: any) {
   return (
     <svg
       {...props}
