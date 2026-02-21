@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -55,7 +54,7 @@ import {
   SortableContext, 
   verticalListSortingStrategy, 
   useSortable 
-} from "@nd-kit/sortable";
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
@@ -192,7 +191,7 @@ export default function PipelineEnginePage() {
       name: `${lead.company || lead.name} - Initial Production`,
       clientId: clientRef.id,
       budget: lead.estimatedBudget,
-      status: "Discussion",
+      status: "Lead",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }, { merge: true });
