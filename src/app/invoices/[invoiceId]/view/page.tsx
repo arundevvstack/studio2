@@ -1,27 +1,29 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, Suspense, use } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Download, Printer, Loader2, Cloud, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, Download, Printer, Loader2, FileText } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc } from "firebase/firestore";
-import { toast } from "@/hooks/use-toast";
-import { exportInvoiceToOneDrive } from "@/app/actions/onedrive-export";
+
+/**
+ * @fileOverview High-fidelity Invoice View viewport.
+ * Consolidates production metadata into a strategic billing document.
+ */
 
 function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }> }) {
-  const { invoiceId } = React.use(params);
+  const { invoiceId } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
   const db = useFirestore();
   const { user } = useUser();
-  const [isExporting, setIsExporting] = useState(false);
 
   const paramDueDate = searchParams.get('dueDate');
 
-  // In the current flow, the 'invoiceId' in the URL is the 'projectId'
+  // Retrieve project entity (the invoiceId in the URL corresponds to the projectId)
   const projectRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !invoiceId) return null;
     return doc(db, "projects", invoiceId);
   }, [db, invoiceId, user]);
   const { data: project, isLoading: isProjectLoading } = useDoc(projectRef);
@@ -46,48 +48,16 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
   const grandTotal = budget + gst;
   const invoiceDate = new Date().toLocaleDateString('en-GB');
   
-  // Use param date if available, otherwise default to 15 days from now
+  // Resolution of due date from params or fallback
   const dueDateDisplay = paramDueDate 
     ? new Date(paramDueDate).toLocaleDateString('en-GB')
     : new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
 
   const invoiceNumber = `MRZL_${invoiceId.substring(0, 8).toUpperCase()}`;
 
-  const handleOneDriveSync = async () => {
-    setIsExporting(true);
-    try {
-      await exportInvoiceToOneDrive({
-        project: project?.name || "UGC AD",
-        invoiceNo: invoiceNumber,
-        invoiceDate: invoiceDate,
-        payableTo: "Marzelz Lifestyle PVT LTD",
-        dueDate: dueDateDisplay,
-        amount: grandTotal
-      });
-      
-      toast({
-        title: "Export Simulated",
-        description: "Billing metadata has been logged for OneDrive sync. (API integration required for live reflection).",
-        action: (
-          <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center">
-            <CheckCircle2 className="h-4 w-4 text-accent" />
-          </div>
-        )
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Sync Error",
-        description: "Could not establish connection with OneDrive."
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-100/50 p-4 md:p-8 animate-in fade-in duration-700 font-body">
-      {/* Navigation & Actions */}
+      {/* Strategic Actions */}
       <div className="max-w-[900px] mx-auto mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
         <Button 
           variant="ghost" 
@@ -98,15 +68,6 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
           Back to Synthesis
         </Button>
         <div className="flex flex-wrap justify-center gap-4">
-          <Button 
-            onClick={handleOneDriveSync}
-            disabled={isExporting}
-            variant="outline" 
-            className="gap-2 bg-white rounded-xl font-bold text-xs uppercase border-slate-200 shadow-sm hover:bg-slate-50 tracking-normal transition-all"
-          >
-            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Cloud className="h-4 w-4 text-primary" />}
-            Sync to OneDrive
-          </Button>
           <Button variant="outline" className="gap-2 bg-white rounded-xl font-bold text-xs uppercase border-slate-200 shadow-sm tracking-normal">
             <Download className="h-4 w-4" />
             PDF
@@ -118,10 +79,10 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
         </div>
       </div>
 
-      {/* Main Invoice Layout */}
+      {/* Main Invoice Synthesis */}
       <div className="max-w-[900px] mx-auto bg-white shadow-2xl rounded-sm overflow-hidden print:shadow-none print:rounded-none border-none">
         <div className="p-12 md:p-16 space-y-12">
-          {/* Header Row */}
+          {/* Brand Identity */}
           <div className="flex justify-between items-start">
             <div className="flex flex-col items-center">
               <svg
@@ -156,7 +117,7 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
             </div>
           </div>
 
-          {/* Details & Bill To Section */}
+          {/* Core Metadata */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             <div className="space-y-3">
               <div className="grid grid-cols-[100px_1fr] text-sm">
@@ -185,15 +146,15 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
               <p className="text-[11px] font-bold text-primary uppercase tracking-normal">BILL TO</p>
               <div className="space-y-1">
                 <h4 className="text-sm font-bold text-slate-900 tracking-normal">{client?.name || "Client Name Not Found"}</h4>
-                <p className="text-[12px] text-slate-600 leading-relaxed font-medium tracking-normal">
+                <p className="text-[12px] text-slate-600 leading-relaxed font-medium tracking-normal whitespace-pre-line">
                   {client?.address || "Address not specified"}<br />
-                  {client?.gstin || "GSTIN not recorded"}
+                  {client?.gstin && `GSTIN: ${client.gstin}`}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Line Items Table */}
+          {/* Strategic Ledger */}
           <div className="overflow-hidden rounded-sm border border-slate-100">
             <table className="w-full text-left border-collapse">
               <thead className="bg-primary text-white">
@@ -217,11 +178,11 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
             </table>
           </div>
 
-          {/* Totals Section */}
+          {/* Totals & Reconciliation */}
           <div className="flex justify-end pt-4">
             <div className="w-[300px] space-y-0.5">
               <div className="grid grid-cols-[1fr_100px] bg-slate-100/80 px-4 py-2 text-sm">
-                <span className="font-bold text-slate-900 tracking-normal">Total</span>
+                <span className="font-bold text-slate-900 tracking-normal">Subtotal</span>
                 <span className="font-bold text-slate-900 text-right tracking-normal">₹{budget.toLocaleString('en-IN')}</span>
               </div>
               <div className="grid grid-cols-[1fr_100px] bg-slate-100/80 px-4 py-2 text-sm">
@@ -233,7 +194,7 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
                 <span className="font-bold text-slate-900 text-right tracking-normal">₹{grandTotal.toLocaleString('en-IN')}</span>
               </div>
               
-              {/* Seal Placeholder */}
+              {/* Authenticity Seal */}
               <div className="flex justify-center pt-8 pb-4">
                 <div className="relative h-24 w-24 border-2 border-blue-600 rounded-full flex items-center justify-center p-2 opacity-80 rotate-[-12deg]">
                   <div className="text-[7px] font-bold text-blue-600 text-center uppercase tracking-normal">
@@ -242,7 +203,6 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
                     695003<br />
                     CIN: U60200KL2023PTC081308
                   </div>
-                  {/* Mock Signature Line */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-16 pointer-events-none opacity-60">
                     <svg viewBox="0 0 100 40" className="w-full h-full text-blue-800">
                       <path d="M10,30 Q30,5 50,25 T90,10" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -253,24 +213,24 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
             </div>
           </div>
 
-          {/* Bank Details */}
+          {/* Account Details */}
           <div className="pt-12 border-t border-slate-900/10">
-            <h4 className="text-sm font-bold text-slate-900 mb-4 tracking-normal">Account Details</h4>
+            <h4 className="text-sm font-bold text-slate-900 mb-4 tracking-normal">Settlement Details</h4>
             <div className="space-y-3">
               <h5 className="text-[13px] font-bold text-slate-900 tracking-normal">Axis Bank</h5>
               <div className="grid grid-cols-[120px_1fr] text-[13px] gap-y-1">
-                <span className="text-slate-500 tracking-normal">Acc no</span><span className="font-medium tracking-normal">: 922020014850667</span>
+                <span className="text-slate-500 tracking-normal">Acc No</span><span className="font-medium tracking-normal">: 922020014850667</span>
                 <span className="text-slate-500 tracking-normal">Phone</span><span className="font-medium tracking-normal">: 9947109143</span>
-                <span className="text-slate-500 tracking-normal">NAME</span><span className="font-medium tracking-normal">: Marzelz Lifestyle Private Limited.</span>
+                <span className="text-slate-500 tracking-normal">Name</span><span className="font-medium tracking-normal">: Marzelz Lifestyle Private Limited.</span>
                 <span className="text-slate-500 tracking-normal">IFSC</span><span className="font-medium tracking-normal">: UTIB0003042</span>
                 <span className="text-slate-500 tracking-normal">Branch</span><span className="font-medium tracking-normal">: Sasthamangalam</span>
                 <span className="text-slate-500 tracking-normal">PAN</span><span className="font-medium tracking-normal">: AAQCM8450P</span>
-                <span className="text-slate-500 tracking-normal">GST</span><span className="font-medium tracking-normal">: 32AAQCM8450P1ZQ</span>
+                <span className="text-slate-500 tracking-normal">GSTIN</span><span className="font-medium tracking-normal">: 32AAQCM8450P1ZQ</span>
               </div>
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Strategic Footer */}
           <div className="pt-20 flex flex-col md:flex-row justify-between items-end border-t border-slate-100 gap-6">
             <div className="space-y-2">
               <h5 className="text-[12px] font-bold text-slate-900 uppercase tracking-normal">MARZELZ LIFESTYLE PRIVATE LIMITED</h5>
@@ -301,7 +261,7 @@ export default function InvoiceViewPage(props: { params: Promise<{ invoiceId: st
         <p className="text-slate-400 font-bold text-sm uppercase text-center tracking-normal">Initializing Viewport...</p>
       </div>
     }>
-      <InvoiceViewContent {...props} />
+      <InvoiceViewContent params={props.params} />
     </Suspense>
   );
 }
