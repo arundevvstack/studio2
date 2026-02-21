@@ -16,7 +16,14 @@ import {
   Calendar,
   MapPin,
   Lightbulb,
-  Users
+  Users,
+  Package,
+  IndianRupee,
+  Mail,
+  Instagram,
+  MessageSquare,
+  Phone,
+  Rocket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -71,6 +78,16 @@ export default function MarketResearchPage() {
       console.error("Research Error:", error);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const getContactIcon = (strategy: string) => {
+    switch (strategy) {
+      case 'Instagram DM': return <Instagram className="h-3 w-3" />;
+      case 'Email': return <Mail className="h-3 w-3" />;
+      case 'WhatsApp': return <MessageSquare className="h-3 w-3" />;
+      case 'Phone Call': return <Phone className="h-3 w-3" />;
+      default: return <Zap className="h-3 w-3" />;
     }
   };
 
@@ -191,7 +208,7 @@ export default function MarketResearchPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-8 space-y-8">
+        <div className="lg:col-span-8 space-y-12">
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center py-48 bg-white/50 rounded-[3rem] border-2 border-dashed border-slate-100 space-y-6 text-center">
               <div className="relative">
@@ -204,7 +221,7 @@ export default function MarketResearchPage() {
               </div>
             </div>
           ) : researchData ? (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-8">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-12">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
                   <CardHeader className="p-0 mb-8">
@@ -268,6 +285,93 @@ export default function MarketResearchPage() {
                 </Card>
               </div>
 
+              {/* ACTIONABLE ASSETS: Suggested Content Packages */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold font-headline tracking-normal flex items-center gap-3">
+                  <Package className="h-5 w-5 text-primary" /> Strategic Service Packages
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {researchData.contentPackages.map((pkg, i) => (
+                    <Card key={i} className="border-none shadow-sm rounded-[2rem] bg-white p-8 group hover:shadow-xl transition-all border border-slate-50">
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-start">
+                          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
+                            <Rocket className="h-5 w-5 text-primary" />
+                          </div>
+                          <Badge className="bg-slate-50 text-slate-500 border-none text-[8px] font-bold uppercase tracking-normal px-2">
+                            Package {i + 1}
+                          </Badge>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-slate-900 tracking-normal line-clamp-1">{pkg.packageName}</h4>
+                          <p className="text-[10px] font-bold text-primary uppercase mt-1 tracking-normal flex items-center gap-1">
+                            <IndianRupee className="h-3 w-3" /> {pkg.priceRange}
+                          </p>
+                        </div>
+                        <div className="space-y-2 pt-4 border-t border-slate-50">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Deliverables</p>
+                          <ul className="space-y-1.5">
+                            {pkg.deliverables.map((item, idx) => (
+                              <li key={idx} className="text-[11px] font-medium text-slate-600 flex items-center gap-2">
+                                <CheckCircle2 className="h-3 w-3 text-accent shrink-0" /> {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="pt-4">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Target</p>
+                          <p className="text-[11px] font-bold text-slate-900 mt-1 tracking-normal">{pkg.targetAudience}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* ACTIONABLE ASSETS: Targeted Client Leads */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold font-headline tracking-normal flex items-center gap-3">
+                  <Rocket className="h-5 w-5 text-accent" /> Strategic Prospecting
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {researchData.potentialClientLeads.map((lead, i) => (
+                    <Card key={i} className="border-none shadow-sm rounded-3xl bg-white overflow-hidden group hover:shadow-md transition-all">
+                      <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex items-center gap-6">
+                          <div className="h-14 w-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 group-hover:bg-primary/5 transition-colors">
+                            <Users className="h-6 w-6 text-slate-300 group-hover:text-primary transition-colors" />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                              <h4 className="text-lg font-bold text-slate-900 tracking-normal">{lead.businessType}</h4>
+                              <Badge className="bg-accent/10 text-accent border-none text-[8px] font-bold uppercase tracking-normal px-2">Hot Lead</Badge>
+                            </div>
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed tracking-normal italic">
+                              "{lead.reasoning}"
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-8 justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
+                          <div className="text-right">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Est. Budget</p>
+                            <p className="text-sm font-bold text-slate-900 tracking-normal flex items-center gap-1 justify-end">
+                              <IndianRupee className="h-3 w-3" /> {lead.estimatedBudget}
+                            </p>
+                          </div>
+                          <div className="text-right space-y-2">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Best Contact Method</p>
+                            <Button variant="outline" size="sm" className="h-8 rounded-lg font-bold text-[10px] uppercase gap-2 border-slate-100 text-slate-600 bg-white">
+                              {getContactIcon(lead.contactStrategy)}
+                              {lead.contactStrategy}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="md:col-span-2 space-y-8">
                   <h3 className="text-xl font-bold font-headline tracking-normal flex items-center gap-3">
@@ -299,7 +403,7 @@ export default function MarketResearchPage() {
                   <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-accent/20 blur-3xl rounded-full -mr-24 -mt-24" />
                     <div className="space-y-2 relative z-10">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Executive Brief</p>
+                      <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Executive Brief</p>
                       <h4 className="text-xl font-bold font-headline tracking-normal">Core Insights</h4>
                     </div>
                     <div className="p-6 rounded-2xl bg-white/5 border border-white/5 relative z-10">
@@ -329,7 +433,7 @@ export default function MarketResearchPage() {
               <div className="max-w-md space-y-2">
                 <h3 className="text-2xl font-bold font-headline text-slate-900 tracking-normal">Launch Local Intelligence Research</h3>
                 <p className="text-slate-500 font-medium text-sm leading-relaxed tracking-normal">
-                  Configure your focus and location on the left to synthesize real-time data about industry demands and marketing strategies.
+                  Configure your focus and location on the left to synthesize real-time data about industry demands, targeted leads, and content packages.
                 </p>
               </div>
             </div>
