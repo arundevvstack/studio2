@@ -16,7 +16,8 @@ import {
   Settings,
   Trash2,
   Save,
-  FileText
+  FileText,
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,6 +133,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
       </div>
     );
   }
+
+  const releasedCount = projects?.filter(p => p.status === "Released").length || 0;
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -273,7 +276,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
           <div className="space-y-4">
             <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
@@ -296,12 +299,23 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
             </div>
           </div>
         </Card>
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
+          <div className="space-y-4">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Released Campaigns</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{releasedCount}</h3>
+            </div>
+          </div>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8 space-y-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Active Campaigns</h3>
+            <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Campaign Entities</h3>
           </div>
           
           {projects && projects.length > 0 ? (
