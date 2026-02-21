@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -56,14 +57,14 @@ export default function Dashboard() {
   const { data: teamMembers } = useCollection(teamQuery);
 
   const stats = useMemo(() => {
-    if (!allProjects) return { completed: 0, inProgress: 0, pitch: 0, totalRevenue: 0, percent: 0 };
+    if (!allProjects) return { completed: 0, inProgress: 0, lead: 0, totalRevenue: 0, percent: 0 };
     const completed = allProjects.filter(p => p.status === "Released").length;
     const inProgress = allProjects.filter(p => p.status === "In Progress" || p.status === "Post Production").length;
-    const pitch = allProjects.filter(p => p.status === "Pitch" || p.status === "Discussion").length;
+    const lead = allProjects.filter(p => p.status === "Lead" || p.status === "Discussion").length;
     const totalRevenue = allProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
     const total = allProjects.length;
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-    return { completed, inProgress, pitch, totalRevenue, percent };
+    return { completed, inProgress, lead, totalRevenue, percent };
   }, [allProjects]);
 
   const projectionData = useMemo(() => {
@@ -83,7 +84,6 @@ export default function Dashboard() {
     if (allProjects) {
       allProjects.forEach(p => {
         // Mocking some distribution if specific dates aren't rich enough
-        // In a real app, we'd use project.startDate or delivery dates
         const budget = p.budget || 0;
         const randomMonthOffset = Math.floor(Math.random() * 6);
         displayMonths[randomMonthOffset].revenue += budget;
@@ -99,8 +99,8 @@ export default function Dashboard() {
 
   const filteredProjects = useMemo(() => {
     if (!allProjects) return [];
-    if (activeTab === "pitch") {
-      return allProjects.filter(p => p.status === "Pitch" || p.status === "Discussion");
+    if (activeTab === "lead") {
+      return allProjects.filter(p => p.status === "Lead" || p.status === "Discussion");
     }
     if (activeTab === "released") {
       return allProjects.filter(p => p.status === "Released");
@@ -167,14 +167,13 @@ export default function Dashboard() {
               <div className="text-center">
                 <p className="text-xs font-bold text-slate-300 uppercase tracking-normal">No Featured Projects</p>
                 <Button variant="link" asChild className="text-primary font-bold text-xs p-0 h-auto mt-1 tracking-normal">
-                  <Link href="/projects/new">Create a new pitch</Link>
+                  <Link href="/projects/new">Create a new lead</Link>
                 </Button>
               </div>
             </Card>
           )}
         </div>
 
-        {/* Monthly Projection Graph */}
         <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
           <CardHeader className="p-0 mb-8 flex flex-row items-center justify-between">
             <div>
@@ -238,7 +237,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between pb-4 border-b border-slate-50">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
               <TabsList className="bg-transparent gap-8 h-auto p-0">
-                <TabsTrigger value="pitch" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Pitch</TabsTrigger>
+                <TabsTrigger value="lead" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Lead</TabsTrigger>
                 <TabsTrigger value="production" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Production</TabsTrigger>
                 <TabsTrigger value="released" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Released</TabsTrigger>
               </TabsList>
@@ -309,9 +308,9 @@ export default function Dashboard() {
                </p>
             </div>
             <div>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Pitch</p>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Lead</p>
                <p className="text-3xl font-bold font-headline mt-1 text-blue-500 tracking-normal">
-                 {stats.pitch}
+                 {stats.lead}
                </p>
             </div>
             <div>
@@ -341,7 +340,7 @@ export default function Dashboard() {
              <div className="space-y-2">
                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">System Guidance</p>
                <p className="text-sm font-medium leading-relaxed italic text-slate-300 tracking-normal">
-                 "Maintain strategic focus on {allProjects?.[0]?.status === 'In Progress' ? 'delivery' : 'client acquisition'} to optimize growth."
+                 "Maintain strategic focus on {allProjects?.[0]?.status === 'In Progress' ? 'delivery' : 'lead acquisition'} to optimize growth."
                </p>
              </div>
              <Button asChild className="w-full bg-white text-slate-900 hover:bg-white/90 rounded-xl font-bold text-[10px] uppercase tracking-normal h-12 shadow-none border-none">

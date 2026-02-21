@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from "react";
@@ -6,7 +7,6 @@ import {
   Plus, 
   Search, 
   Filter, 
-  ChevronRight,
   LayoutGrid,
   List,
   ArrowUpDown,
@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { 
   Tooltip,
@@ -61,7 +60,7 @@ export default function ProjectsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'pitch':
+      case 'lead':
       case 'discussion':
         return 'bg-blue-50 text-blue-500';
       case 'pre production':
@@ -155,7 +154,7 @@ export default function ProjectsPage() {
                       </div>
                       <div className="col-span-3 flex justify-center">
                         <Badge className={`rounded-lg px-4 py-1.5 text-[10px] font-bold border-none shadow-none tracking-normal ${getStatusBadge(project.status)}`}>
-                          {project.status || "PITCH"}
+                          {project.status || "LEAD"}
                         </Badge>
                       </div>
                       <div className="col-span-2">

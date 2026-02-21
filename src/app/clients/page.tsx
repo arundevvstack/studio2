@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from "react";
@@ -48,9 +49,9 @@ export default function ClientsPage() {
   const stats = useMemo(() => {
     const totalClients = clients?.length || 0;
     const projectValue = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
-    const totalPitch = projects?.filter(p => (p.status || "").toLowerCase() === "pitch").length || 0;
+    const totalLead = projects?.filter(p => (p.status || "").toLowerCase() === "lead").length || 0;
 
-    return { totalClients, projectValue, totalPitch };
+    return { totalClients, projectValue, totalLead };
   }, [clients, projects]);
 
   const isLoading = isLoadingClients || isLoadingProjects;
@@ -103,8 +104,8 @@ export default function ClientsPage() {
               <Briefcase className="h-6 w-6 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Pitch</p>
-              <h3 className="text-2xl font-bold font-headline tracking-normal">{stats.totalPitch}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Lead</p>
+              <h3 className="text-2xl font-bold font-headline tracking-normal">{stats.totalLead}</h3>
             </div>
           </div>
         </Card>

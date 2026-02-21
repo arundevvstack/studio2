@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, ArrowRight } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   DndContext,
@@ -22,7 +23,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from "@dnd-kit/sortable";
+} from "@nd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
@@ -30,7 +31,7 @@ import { collection, query, orderBy, doc } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const COLUMNS = [
-  { id: "Pitch", title: "PITCH" },
+  { id: "Lead", title: "LEAD" },
   { id: "Discussion", title: "DISCUSSION" },
   { id: "Pre Production", title: "PRE PRODUCTION" },
   { id: "In Progress", title: "PRODUCTION" },
@@ -86,13 +87,13 @@ export default function BoardPage() {
 
   const getProjectsByStatus = useCallback((status: string): ProjectCardData[] => {
     return (projects || [])
-      .filter((p: any) => (p.status || "Pitch") === status)
+      .filter((p: any) => (p.status || "Lead") === status)
       .map((p: any) => ({
         id: p.id,
         title: p.name,
         client: clientMap.get(p.clientId) || "Unknown",
         deadline: p.dueDate || "TBD",
-        status: p.status || "Pitch"
+        status: p.status || "Lead"
       }));
   }, [projects, clientMap]);
 
@@ -109,15 +110,13 @@ export default function BoardPage() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Check if we dropped over a column ID directly
     const columnMatch = COLUMNS.find(col => col.id === overId);
     let newStatus = columnMatch ? columnMatch.id : null;
 
-    // If not a column, check if we dropped over a card
     if (!newStatus) {
       const overCard = projects?.find(p => p.id === overId);
       if (overCard) {
-        newStatus = overCard.status || "Pitch";
+        newStatus = overCard.status || "Lead";
       }
     }
 

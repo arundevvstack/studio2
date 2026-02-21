@@ -1,10 +1,10 @@
+
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { 
   Plus, 
   Search, 
-  Filter, 
   Sparkles, 
   Target, 
   TrendingUp, 
@@ -12,15 +12,11 @@ import {
   Briefcase, 
   IndianRupee, 
   Loader2, 
-  ChevronRight, 
-  MoreVertical, 
   Phone, 
   MessageSquare, 
   Mail, 
   Users, 
   CheckCircle2, 
-  Trash2,
-  ArrowRight,
   Zap,
   BarChart3,
   Globe,
@@ -30,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Dialog, 
   DialogContent, 
@@ -47,32 +43,30 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   DndContext, 
   closestCorners, 
   PointerSensor, 
   useSensor, 
   useSensors, 
-  DragOverlay,
   type DragEndEvent 
 } from "@dnd-kit/core";
 import { 
   SortableContext, 
   verticalListSortingStrategy, 
   useSortable 
-} from "@dnd-kit/sortable";
+} from "@nd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, serverTimestamp, where } from "firebase/firestore";
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { collection, query, orderBy, doc, serverTimestamp } from "firebase/firestore";
+import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
 const STAGES = [
   { id: "New", title: "NEW LEAD" },
   { id: "Contacted", title: "CONTACTED" },
-  { id: "Pitch", title: "STRATEGIC PITCH" },
+  { id: "Lead", title: "STRATEGIC LEAD" },
   { id: "Proposal Sent", title: "PROPOSAL SENT" },
   { id: "Negotiation", title: "NEGOTIATION" },
   { id: "Won", title: "WON" },
@@ -90,7 +84,6 @@ export default function PipelineEnginePage() {
   const db = useFirestore();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState("kanban");
-  const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
 
   // --- Data Streams ---
   const leadsQuery = useMemoFirebase(() => {
@@ -142,13 +135,13 @@ export default function PipelineEnginePage() {
 
   // --- Analytics Logic ---
   const stats = useMemo(() => {
-    if (!leads) return { totalLeads: 0, conversionRate: 0, activeValue: 0, forecast: 0, pitchCount: 0 };
+    if (!leads) return { totalLeads: 0, conversionRate: 0, activeValue: 0, forecast: 0, leadCount: 0 };
     const won = leads.filter(l => l.status === 'Won').length;
     const total = leads.length;
     const conversionRate = total > 0 ? Math.round((won / total) * 100) : 0;
     const activeValue = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost').reduce((acc, curr) => acc + (curr.estimatedBudget || 0), 0);
-    const pitchProjectCount = projects?.filter(p => p.status === 'Pitch').length || 0;
-    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3, pitchCount: pitchProjectCount };
+    const leadProjectCount = projects?.filter(p => p.status === 'Lead').length || 0;
+    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3, leadCount: leadProjectCount };
   }, [leads, projects]);
 
   // --- Form Logic ---
@@ -183,7 +176,6 @@ export default function PipelineEnginePage() {
     const projectRef = doc(collection(db, "projects"));
     const clientRef = doc(collection(db, "clients"));
     
-    // 1. Create Client
     setDocumentNonBlocking(clientRef, {
       id: clientRef.id,
       name: lead.company || lead.name,
@@ -195,7 +187,6 @@ export default function PipelineEnginePage() {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    // 2. Create Project
     setDocumentNonBlocking(projectRef, {
       id: projectRef.id,
       name: `${lead.company || lead.name} - Initial Production`,
@@ -206,7 +197,6 @@ export default function PipelineEnginePage() {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    // 3. Mark lead as Won
     updateDocumentNonBlocking(doc(db, "leads", lead.id), {
       status: "Won",
       updatedAt: serverTimestamp()
@@ -215,11 +205,8 @@ export default function PipelineEnginePage() {
     toast({ title: "Conversion Successful", description: "Lead converted to Client and Project." });
   };
 
-  const isLoading = leadsLoading || followUpsLoading;
-
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-20">
-      {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
@@ -315,7 +302,6 @@ export default function PipelineEnginePage() {
         </div>
       </div>
 
-      {/* Analytics Summary */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
@@ -331,8 +317,8 @@ export default function PipelineEnginePage() {
             <Sparkles className="h-5 w-5 text-blue-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pitch</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.pitchCount}</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Lead</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.leadCount}</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">

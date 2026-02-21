@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -9,7 +10,6 @@ import {
   Image as ImageIcon, 
   SendHorizontal,
   Loader2,
-  Briefcase,
   IndianRupee
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -76,7 +76,7 @@ export default function AddProjectPage() {
         clientId: formData.clientId,
         description: formData.description,
         budget: parseFloat(formData.budget) || 0,
-        status: "Pitch",
+        status: "Lead",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -97,7 +97,6 @@ export default function AddProjectPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header Section */}
       <div className="flex items-start gap-6">
         <Button 
           variant="outline" 
@@ -117,13 +116,10 @@ export default function AddProjectPage() {
         </div>
       </div>
 
-      {/* Main Form Card */}
       <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden relative">
-        {/* Top Accent Border */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
         
         <div className="p-10 space-y-12">
-          {/* Row 1: Basic Identifiers */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label className="text-xs font-bold text-slate-400 uppercase px-1">
@@ -175,7 +171,6 @@ export default function AddProjectPage() {
             </div>
           </div>
 
-          {/* Row 2: Financials & Quote */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label className="text-xs font-bold text-slate-400 uppercase px-1">
@@ -201,7 +196,6 @@ export default function AddProjectPage() {
             </div>
           </div>
 
-          {/* Row 3: Visuals and Guidance */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label className="text-xs font-bold text-slate-400 uppercase px-1">
@@ -228,7 +222,6 @@ export default function AddProjectPage() {
             </div>
           </div>
 
-          {/* Row 4: Executive Brief */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-slate-400 uppercase px-1">
               Executive Brief
@@ -243,7 +236,6 @@ export default function AddProjectPage() {
           </div>
         </div>
 
-        {/* Form Footer */}
         <div className="px-10 py-8 border-t border-slate-50 flex items-center justify-end gap-10">
           <Button 
             type="button"

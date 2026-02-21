@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -48,7 +49,7 @@ import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlo
 import { toast } from "@/hooks/use-toast";
 
 const STATUS_PROGRESS_MAP: Record<string, number> = {
-  "Pitch": 0,
+  "Lead": 0,
   "Discussion": 0,
   "Pre Production": 0,
   "In Progress": 33,
@@ -57,7 +58,7 @@ const STATUS_PROGRESS_MAP: Record<string, number> = {
 };
 
 const NEXT_PHASE_MAP: Record<string, string | null> = {
-  "Pitch": "Discussion",
+  "Lead": "Discussion",
   "Discussion": "Pre Production",
   "Pre Production": "In Progress",
   "In Progress": "Post Production",
@@ -105,20 +106,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     if (project) {
       setEditData({
         name: project.name || "",
-        status: project.status || "Pitch",
+        status: project.status || "Lead",
         budget: project.budget || 0,
         description: project.description || "",
       });
       if (typeof project.progress === 'number') {
         setProgress([project.progress]);
       } else {
-        const initialProgress = STATUS_PROGRESS_MAP[project.status || "Pitch"] || 0;
+        const initialProgress = STATUS_PROGRESS_MAP[project.status || "Lead"] || 0;
         setProgress([initialProgress]);
       }
     }
   }, [project]);
 
-  const activeViewPhase = editData?.status || project?.status || "Pitch";
+  const activeViewPhase = editData?.status || project?.status || "Lead";
 
   const currentPhaseTasks = useMemo(() => {
     if (!allTasks) return [];
@@ -134,7 +135,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     if (!project || !editData) return false;
     return (
       editData.name !== (project.name || "") ||
-      editData.status !== (project.status || "Pitch") ||
+      editData.status !== (project.status || "Lead") ||
       editData.budget !== (project.budget || 0) ||
       editData.description !== (project.description || "") ||
       progress[0] !== (project.progress || 0)
@@ -158,7 +159,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   };
 
   const handleTransition = () => {
-    const nextPhase = NEXT_PHASE_MAP[project?.status || "Pitch"];
+    const nextPhase = NEXT_PHASE_MAP[project?.status || "Lead"];
     if (!nextPhase || !projectRef) return;
     updateDocumentNonBlocking(projectRef, {
       status: nextPhase,
@@ -209,7 +210,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     router.push("/projects");
   };
 
-  // Wait for both user auth and document load before rendering
   const isLoading = isUserLoading || isProjectLoading;
 
   if (isLoading) {
@@ -256,7 +256,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <span className="text-slate-300">•</span>
               <div className="flex items-center gap-2 text-slate-400 tracking-normal">
                 <Target className="h-4 w-4" />
-                Phase: {project.status || "Pitch"}
+                Phase: {project.status || "Lead"}
               </div>
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         <SelectValue placeholder="Select phase" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                        <SelectItem value="Pitch">Pitch</SelectItem>
+                        <SelectItem value="Lead">Lead</SelectItem>
                         <SelectItem value="Discussion">Discussion</SelectItem>
                         <SelectItem value="Pre Production">Pre Production</SelectItem>
                         <SelectItem value="In Progress">Production</SelectItem>
@@ -358,7 +358,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                       <SelectValue placeholder="Select phase" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                      <SelectItem value="Pitch">Pitch</SelectItem>
+                      <SelectItem value="Lead">Lead</SelectItem>
                       <SelectItem value="Discussion">Discussion</SelectItem>
                       <SelectItem value="Pre Production">Pre Production</SelectItem>
                       <SelectItem value="In Progress">Production</SelectItem>
