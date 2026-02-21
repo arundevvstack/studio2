@@ -20,7 +20,8 @@ import {
   Zap,
   BarChart3,
   Globe,
-  Star
+  Star,
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,8 +56,9 @@ import {
   SortableContext, 
   verticalListSortingStrategy, 
   useSortable 
-} from "@dnd-kit/sortable";
+} from "@nd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import Link from "next/link";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp } from "firebase/firestore";
@@ -64,7 +66,7 @@ import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocki
 import { toast } from "@/hooks/use-toast";
 
 const STAGES = [
-  { id: "New", title: "NEW LEAD" },
+  { id: "New", title: "Lead" },
   { id: "Contacted", title: "CONTACTED" },
   { id: "Proposal Sent", title: "PROPOSAL SENT" },
   { id: "Negotiation", title: "NEGOTIATION" },
@@ -600,9 +602,9 @@ function SortableLeadCard({ lead, onConvert }: { lead: any, onConvert: (l: any) 
       <Card className="p-6 bg-white border border-slate-100 shadow-sm rounded-2xl group hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden">
         <div className="space-y-4">
           <div className="flex justify-between items-start">
-            <div>
-              <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal">{lead.company || "Individual"}</p>
-              <h4 className="text-sm font-bold text-slate-900 leading-snug tracking-normal">{lead.name}</h4>
+            <div className="max-w-[180px]">
+              <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal truncate">{lead.company || "Individual"}</p>
+              <h4 className="text-sm font-bold text-slate-900 leading-snug tracking-normal truncate">{lead.name}</h4>
             </div>
             <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority]}`}>
               {lead.priority}
@@ -625,15 +627,12 @@ function SortableLeadCard({ lead, onConvert }: { lead: any, onConvert: (l: any) 
               <ClockIcon className="h-3 w-3" />
               <span>{lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : "NO DATE"}</span>
             </div>
-            {lead.status === 'Won' ? (
-              <Button size="sm" className="h-7 px-3 bg-accent text-white font-bold text-[9px] uppercase rounded-lg tracking-normal" onPointerDown={(e) => e.stopPropagation()} onClick={() => onConvert(lead)}>
-                Convert to Project
-              </Button>
-            ) : (
-              <Button variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-[9px] font-bold uppercase tracking-normal hover:bg-slate-100" onPointerDown={(e) => e.stopPropagation()}>
-                Engagement
-              </Button>
-            )}
+            <Button asChild variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-[9px] font-bold uppercase tracking-normal hover:bg-slate-100 gap-1" onPointerDown={(e) => e.stopPropagation()}>
+              <Link href={`/pipeline/leads/${lead.id}`}>
+                View
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </Button>
           </div>
         </div>
       </Card>
