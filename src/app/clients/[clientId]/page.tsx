@@ -8,24 +8,19 @@ import {
   Mail, 
   Phone, 
   MapPin, 
-  TrendingUp, 
   Briefcase, 
   Receipt,
-  MessageSquare,
   ArrowRight,
-  Clock,
   Loader2,
   Calendar,
   Settings,
   Trash2,
   Save,
-  FileText,
-  Sparkles
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, where, orderBy, doc, serverTimestamp } from "firebase/firestore";
@@ -139,9 +134,6 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
       </div>
     );
   }
-
-  const totalProjectValue = projects?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
-  const totalPitchCount = projects?.filter(p => p.status === 'Pitch').length || 0;
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -283,18 +275,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
-          <div className="space-y-4">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Value</p>
-              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{totalProjectValue.toLocaleString('en-IN')}</h3>
-            </div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
           <div className="space-y-4">
             <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
@@ -312,164 +293,66 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Receipt className="h-5 w-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Billing History</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Billing</p>
               <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{invoices?.length || 0}</h3>
-            </div>
-          </div>
-        </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
-          <div className="space-y-4">
-            <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-purple-500" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Pipeline</p>
-              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{totalPitchCount}</h3>
             </div>
           </div>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-8">
-          <Tabs defaultValue="projects" className="space-y-8">
-            <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-50 w-fit">
-              <TabsList className="bg-transparent gap-2 h-auto p-0">
-                <TabsTrigger value="projects" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
-                  Active Campaigns
-                </TabsTrigger>
-                <TabsTrigger value="billing" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
-                  Financial Ledger
-                </TabsTrigger>
-                <TabsTrigger value="brief" className="rounded-xl px-8 py-3 text-[10px] font-bold uppercase tracking-normal data-[state=active]:bg-slate-900 data-[state=active]:text-white shadow-none border-none">
-                  Partnership Brief
-                </TabsTrigger>
-              </TabsList>
+        <div className="lg:col-span-8 space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Active Campaigns</h3>
+          </div>
+          
+          {isProjectsLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 space-y-4">
+              <Loader2 className="h-8 w-8 text-primary animate-spin" />
             </div>
-
-            <TabsContent value="projects" className="m-0 space-y-4">
-              {isProjectsLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-              ) : projects && projects.length > 0 ? (
-                projects.map((project) => (
-                  <Card key={project.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden group hover:shadow-md transition-all">
-                    <div className="p-8 flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <div className="h-16 w-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                          <Briefcase className="h-8 w-8 text-slate-300 group-hover:text-primary transition-colors" />
-                        </div>
-                        <div>
-                          <h4 className="text-xl font-bold font-headline text-slate-900 tracking-normal">{project.name}</h4>
-                          <div className="flex items-center gap-3 mt-1">
-                            <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1 tracking-normal">
-                              {project.status || "Planned"}
-                            </Badge>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 tracking-normal">
-                              <Calendar className="h-3 w-3" />
-                              DUE: {project.dueDate || "TBD"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-10">
-                        <div className="text-right">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Quote Value</p>
-                          <p className="text-xl font-bold font-headline text-slate-900 tracking-normal">₹{(project.budget || 0).toLocaleString('en-IN')}</p>
-                        </div>
-                        <Button asChild variant="ghost" size="icon" className="h-12 w-12 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all tracking-normal">
-                          <Link href={`/projects/${project.id}`}>
-                            <ArrowRight className="h-5 w-5" />
-                          </Link>
-                        </Button>
-                      </div>
+          ) : projects && projects.length > 0 ? (
+            projects.map((project) => (
+              <Card key={project.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden group hover:shadow-md transition-all">
+                <div className="p-8 flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                    <div className="h-16 w-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+                      <Briefcase className="h-8 w-8 text-slate-300 group-hover:text-primary transition-colors" />
                     </div>
-                  </Card>
-                ))
-              ) : (
-                <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Active Campaigns</p>
-                  <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
-                    <Link href="/projects/new">Initiate new production entity</Link>
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="billing" className="m-0 space-y-4">
-              {isInvoicesLoading ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-              ) : invoices && invoices.length > 0 ? (
-                invoices.map((invoice) => (
-                  <Card key={invoice.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden">
-                    <div className="p-8 flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center">
-                          <Receipt className="h-6 w-6 text-slate-300" />
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-bold font-headline text-slate-900 tracking-normal">#{invoice.invoiceNumber || invoice.id.substring(0, 8)}</h4>
-                          <div className="flex items-center gap-3 mt-1">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Issued {invoice.issueDate || "N/A"}</p>
-                            <span className="text-slate-200">|</span>
-                            <p className="text-[10px] font-bold text-primary uppercase tracking-normal">DUE {invoice.dueDate || "N/A"}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-10">
-                        <Badge className={`px-4 py-1.5 rounded-lg border-none font-bold text-[10px] uppercase tracking-normal ${
-                          invoice.status === 'Paid' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'
-                        }`}>
-                          {invoice.status}
+                    <div>
+                      <h4 className="text-xl font-bold font-headline text-slate-900 tracking-normal">{project.name}</h4>
+                      <div className="flex items-center gap-3 mt-1">
+                        <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] uppercase px-3 py-1 tracking-normal">
+                          {project.status || "Planned"}
                         </Badge>
-                        <div className="text-right">
-                          <p className="text-lg font-bold font-headline tracking-normal">₹{(invoice.totalAmount || 0).toLocaleString('en-IN')}</p>
-                        </div>
-                        <Button asChild variant="outline" size="sm" className="h-10 px-4 rounded-xl font-bold border-slate-200 tracking-normal">
-                          <Link href={`/invoices/${invoice.id}/view`}>View Ledger</Link>
-                        </Button>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 tracking-normal">
+                          <Calendar className="h-3 w-3" />
+                          DUE: {project.dueDate || "TBD"}
+                        </span>
                       </div>
                     </div>
-                  </Card>
-                ))
-              ) : (
-                <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Ledger Entries</p>
-                  <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
-                    <Link href="/invoices/new">Initiate billing synthesis</Link>
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="brief" className="m-0">
-               <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center">
-                        <FileText className="h-5 w-5 text-slate-400" />
-                      </div>
-                      <h3 className="text-xl font-bold font-headline tracking-normal">Partnership Strategic Brief</h3>
-                    </div>
-                    {client.notes ? (
-                      <div className="p-8 rounded-2xl bg-slate-50/50 border border-slate-100">
-                        <p className="text-sm font-medium leading-relaxed text-slate-600 whitespace-pre-wrap tracking-normal">
-                          {client.notes}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
-                        <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Strategic Brief Defined</p>
-                        <p className="text-xs text-slate-300 italic tracking-normal">Use the configuration panel to define long-term goals.</p>
-                      </div>
-                    )}
                   </div>
-               </Card>
-            </TabsContent>
-          </Tabs>
+                  <div className="flex items-center gap-10">
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Quote Value</p>
+                      <p className="text-xl font-bold font-headline text-slate-900 tracking-normal">₹{(project.budget || 0).toLocaleString('en-IN')}</p>
+                    </div>
+                    <Button asChild variant="ghost" size="icon" className="h-12 w-12 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all tracking-normal">
+                      <Link href={`/projects/${project.id}`}>
+                        <ArrowRight className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Active Campaigns</p>
+              <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
+                <Link href="/projects/new">Initiate new production entity</Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="lg:col-span-4 space-y-6">
@@ -511,6 +394,24 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               </div>
             </CardContent>
           </Card>
+
+          {client.notes && (
+            <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
+               <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-bold font-headline tracking-normal">Partnership Brief</h3>
+                </div>
+                <div className="p-8 rounded-2xl bg-slate-50/50 border border-slate-100">
+                  <p className="text-sm font-medium leading-relaxed text-slate-600 whitespace-pre-wrap tracking-normal">
+                    {client.notes}
+                  </p>
+                </div>
+               </div>
+            </Card>
+          )}
 
           <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-10 space-y-8">
             <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Partnership Guidance</h4>
