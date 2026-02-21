@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -89,6 +88,18 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     toast({ title: "Intelligence Synchronized", description: `${editData.name} profile has been updated.` });
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    if (!leadRef) return;
+    updateDocumentNonBlocking(leadRef, {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+    toast({ 
+      title: "Phase Advanced", 
+      description: `Lead has been moved to ${newStatus}.` 
+    });
+  };
+
   const handleDeleteLead = () => {
     if (!leadRef) return;
     deleteDocumentNonBlocking(leadRef);
@@ -175,7 +186,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                 {lead.name}
               </h1>
               <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
-                {lead.status}
+                {lead.status === 'New' ? 'Lead' : lead.status}
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm font-medium text-slate-500 tracking-normal">
@@ -311,25 +322,49 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
-            <TrendingUp className="h-5 w-5 text-accent" />
+            <IndianRupee className="h-5 w-5 text-accent" />
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Estimated Budget</p>
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</h3>
           </div>
         </Card>
+
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
             <Target className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pipeline Phase</p>
+            <Select value={lead.status} onValueChange={handleStatusChange}>
+              <SelectTrigger className="h-10 w-full rounded-xl bg-slate-50 border-none font-bold text-xs tracking-normal shadow-none hover:bg-slate-100 transition-colors">
+                <SelectValue placeholder="Select Phase" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                <SelectItem value="New" className="text-xs font-bold uppercase">Lead</SelectItem>
+                <SelectItem value="Contacted" className="text-xs font-bold uppercase">Contacted</SelectItem>
+                <SelectItem value="Proposal Sent" className="text-xs font-bold uppercase">Proposal Sent</SelectItem>
+                <SelectItem value="Negotiation" className="text-xs font-bold uppercase">Negotiation</SelectItem>
+                <SelectItem value="Won" className="text-xs font-bold uppercase">Won</SelectItem>
+                <SelectItem value="Lost" className="text-xs font-bold uppercase">Lost</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
+
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <Globe className="h-5 w-5 text-blue-500" />
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Source</p>
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{lead.source || "Organic"}</h3>
           </div>
         </Card>
+
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
             <Zap className="h-5 w-5" />
@@ -381,7 +416,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">Lifecycle</p>
-                        <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">{lead.status}</p>
+                        <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">{lead.status === 'New' ? 'Lead' : lead.status}</p>
                       </div>
                     </div>
                   </div>
