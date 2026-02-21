@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -270,7 +269,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
           </Dialog>
           <Button asChild className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
             <Link href="/projects/new">
-              Initiate Campaign
+              Initiate Project
             </Link>
           </Button>
         </div>
@@ -283,7 +282,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <Briefcase className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Campaign Entities</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Entities</p>
               <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{projects?.length || 0}</h3>
             </div>
           </div>
@@ -305,7 +304,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Released Campaigns</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Released Projects</p>
               <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{releasedCount}</h3>
             </div>
           </div>
@@ -315,7 +314,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8 space-y-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Campaign Entities</h3>
+            <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Project Entities</h3>
           </div>
           
           {projects && projects.length > 0 ? (
@@ -355,7 +354,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
             ))
           ) : (
             <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] flex flex-col items-center justify-center text-center space-y-4">
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Active Campaigns</p>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Active Projects</p>
               <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
                 <Link href="/projects/new">Initiate new production entity</Link>
               </Button>
