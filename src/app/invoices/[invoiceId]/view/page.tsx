@@ -2,12 +2,44 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Download, Printer } from "lucide-react";
+import { ChevronLeft, Download, Printer, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceId: string }> }) {
   const { invoiceId } = React.use(params);
   const router = useRouter();
+  const db = useFirestore();
+  const { user } = useUser();
+
+  // In the current flow, the 'invoiceId' in the URL is the 'projectId'
+  const projectRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "projects", invoiceId);
+  }, [db, invoiceId, user]);
+  const { data: project, isLoading: isProjectLoading } = useDoc(projectRef);
+
+  const clientRef = useMemoFirebase(() => {
+    if (!db || !project?.clientId) return null;
+    return doc(db, "clients", project.clientId);
+  }, [db, project?.clientId]);
+  const { data: client, isLoading: isClientLoading } = useDoc(clientRef);
+
+  if (isProjectLoading || isClientLoading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+        <p className="text-slate-400 font-bold text-sm uppercase text-center tracking-normal">Synthesizing Billing Document...</p>
+      </div>
+    );
+  }
+
+  const budget = project?.budget || 0;
+  const gst = budget * 0.18;
+  const grandTotal = budget + gst;
+  const invoiceDate = new Date().toLocaleDateString('en-GB');
+  const dueDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB');
 
   return (
     <div className="min-h-screen bg-slate-100/50 p-4 md:p-8 animate-in fade-in duration-700 font-body">
@@ -76,15 +108,15 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
             <div className="space-y-3">
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Project :</span>
-                <span className="text-slate-900 font-bold">MRZL_202604_GG11</span>
+                <span className="text-slate-900 font-bold">{project?.name || "Production Entity"}</span>
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Invoice No :</span>
-                <span className="text-slate-900 font-bold">{invoiceId || "MRZL_202602_25"}</span>
+                <span className="text-slate-900 font-bold">MRZL_{invoiceId.substring(0, 8).toUpperCase()}</span>
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Invoice Date :</span>
-                <span className="text-slate-900 font-bold">05/01/2026</span>
+                <span className="text-slate-900 font-bold">{invoiceDate}</span>
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Payable To :</span>
@@ -92,18 +124,17 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium">Due Date :</span>
-                <span className="text-slate-900 font-bold">15/02/2026</span>
+                <span className="text-slate-900 font-bold">{dueDate}</span>
               </div>
             </div>
 
             <div className="space-y-2">
               <p className="text-[11px] font-bold text-primary uppercase">BILL TO</p>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-slate-900">Paragon Hospital Kerala Pvt. Ltd</h4>
+                <h4 className="text-sm font-bold text-slate-900">{client?.name || "Client Name Not Found"}</h4>
                 <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
-                  TC.1/1469, GG HOSPITAL, Murinjapalam medical college, Pattom<br />
-                  Trivandrum PIN: 695011<br />
-                  32AAFCP2774A1ZU
+                  {client?.address || "Address not specified"}<br />
+                  {client?.gstin || "GSTIN not recorded"}
                 </p>
               </div>
             </div>
@@ -124,10 +155,10 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
               <tbody className="divide-y divide-slate-100">
                 <tr className="bg-slate-50/50">
                   <td className="px-6 py-4 text-sm font-bold text-slate-900 text-center">1</td>
-                  <td className="px-6 py-4 text-sm font-medium text-slate-700">MRI launch Video</td>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-900 text-center">20,000</td>
+                  <td className="px-6 py-4 text-sm font-medium text-slate-700">{project?.name || "Project Service"}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-slate-900 text-center">₹{budget.toLocaleString('en-IN')}</td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900 text-center">1</td>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right">₹20,000</td>
+                  <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right">₹{budget.toLocaleString('en-IN')}</td>
                 </tr>
               </tbody>
             </table>
@@ -138,15 +169,15 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
             <div className="w-[300px] space-y-0.5">
               <div className="grid grid-cols-[1fr_100px] bg-slate-100/80 px-4 py-2 text-sm">
                 <span className="font-bold text-slate-900">Total</span>
-                <span className="font-bold text-slate-900 text-right">₹20,000.00</span>
+                <span className="font-bold text-slate-900 text-right">₹{budget.toLocaleString('en-IN')}</span>
               </div>
               <div className="grid grid-cols-[1fr_100px] bg-slate-100/80 px-4 py-2 text-sm">
                 <span className="font-bold text-slate-900">GST @ 18%</span>
-                <span className="font-bold text-slate-900 text-right">₹3,600.00</span>
+                <span className="font-bold text-slate-900 text-right">₹{gst.toLocaleString('en-IN')}</span>
               </div>
               <div className="grid grid-cols-[1fr_100px] bg-slate-200 px-4 py-3 text-sm">
                 <span className="font-bold text-slate-900 uppercase">Grand Total Including GST</span>
-                <span className="font-bold text-slate-900 text-right">₹23,600</span>
+                <span className="font-bold text-slate-900 text-right">₹{grandTotal.toLocaleString('en-IN')}</span>
               </div>
               
               {/* Seal Placeholder */}
