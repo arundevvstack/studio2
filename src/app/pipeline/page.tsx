@@ -56,7 +56,7 @@ import {
   SortableContext, 
   verticalListSortingStrategy, 
   useSortable 
-} from "@nd-kit/sortable";
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 
@@ -430,7 +430,7 @@ export default function PipelineEnginePage() {
               <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
                 <div className="space-y-2 relative z-10">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Follow-up Velocity</p>
+                  <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Follow-up Velocity</p>
                   <h4 className="text-xl font-bold font-headline tracking-normal">Response Efficiency</h4>
                 </div>
                 <div className="space-y-6 relative z-10">
