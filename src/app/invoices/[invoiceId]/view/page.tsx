@@ -66,8 +66,8 @@ export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceI
       });
       
       toast({
-        title: "Cloud Sync Successful",
-        description: "Billing data has been written to the OneDrive Sheet.",
+        title: "Export Simulated",
+        description: "Billing metadata has been logged for OneDrive sync. (API integration required for live reflection).",
         action: (
           <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center">
             <CheckCircle2 className="h-4 w-4 text-accent" />
