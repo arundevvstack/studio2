@@ -15,6 +15,7 @@ import {
   Plus,
   ChevronRight,
   Briefcase,
+  Globe,
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,6 +44,7 @@ const workspaceItems = [
   { title: "Team", icon: Users, url: "/team" },
   { title: "Billing", icon: FileText, url: "/invoices" },
   { title: "Intelligence", icon: BarChart3, url: "/sales-forecast" },
+  { title: "Market Research", icon: Globe, url: "/market-research" },
 ];
 
 const managementItems = [
