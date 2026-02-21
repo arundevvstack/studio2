@@ -112,7 +112,7 @@ export default function AddProjectPage() {
             Initiate Project
           </h1>
           <p className="text-slate-500 mt-1 font-medium">
-            Deploy a new high-growth media campaign for your partners.
+            Deploy a new high-growth media project for your partners.
           </p>
         </div>
       </div>
@@ -212,7 +212,7 @@ export default function AddProjectPage() {
                   <ImageIcon className="h-8 w-8 text-slate-300" />
                 </div>
                 <span className="text-xs font-bold text-slate-400 uppercase">
-                  Ingest Campaign Asset
+                  Ingest Project Asset
                 </span>
               </div>
             </div>
@@ -262,7 +262,7 @@ export default function AddProjectPage() {
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <>
-                Initiate Production
+                Initiate Project
                 <SendHorizontal className="h-5 w-5 rotate-[-45deg] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
               </>
             )}

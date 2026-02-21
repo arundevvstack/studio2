@@ -256,7 +256,7 @@ export default function Dashboard() {
                </p>
              </div>
              <Button asChild className="w-full bg-white text-slate-900 hover:bg-white/90 rounded-xl font-bold text-[10px] uppercase tracking-normal h-12 shadow-none border-none">
-               <Link href="/projects/new">New Campaign</Link>
+               <Link href="/projects/new">New Project</Link>
              </Button>
            </Card>
         </div>

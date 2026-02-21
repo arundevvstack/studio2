@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -253,7 +252,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               </span>
             </div>
             <div className="flex items-center gap-4 text-sm font-bold tracking-normal">
-              <span className="text-primary uppercase text-[10px] tracking-normal">Campaign Entity</span>
+              <span className="text-primary uppercase text-[10px] tracking-normal">Project Entity</span>
               <span className="text-slate-300">•</span>
               <div className="flex items-center gap-2 text-slate-400 tracking-normal">
                 <Target className="h-4 w-4" />
@@ -285,7 +284,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Campaign Phase</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Phase</label>
                     <Select value={editData?.status} onValueChange={handleStatusChange}>
                       <SelectTrigger className="rounded-xl bg-slate-50 border-none h-12 shadow-none focus:ring-0 tracking-normal">
                         <SelectValue placeholder="Select phase" />
@@ -499,7 +498,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   ) : (
                     <div className="p-20 border-2 border-dashed border-slate-100 rounded-[2rem] text-center space-y-2">
                       <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No active objectives for this phase</p>
-                      <p className="text-xs text-slate-300 italic tracking-normal">Define mission goals to advance the campaign.</p>
+                      <p className="text-xs text-slate-300 italic tracking-normal">Define mission goals to advance the project.</p>
                     </div>
                   )}
                 </div>
@@ -539,7 +538,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           <Card className="border-none shadow-sm rounded-3xl overflow-hidden bg-white p-8 space-y-4">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">System Intelligence</h4>
             <p className="text-xs text-slate-500 font-medium leading-relaxed italic tracking-normal">
-              "Campaign throughput is currently optimized for the {project.status} stage."
+              "Project throughput is currently optimized for the {project.status} stage."
             </p>
           </Card>
         </div>
