@@ -63,11 +63,11 @@ import { toast } from "@/hooks/use-toast";
 
 const STAGES = [
   { id: "Lead", title: "Lead" },
-  { id: "Contacted", title: "CONTACTED" },
-  { id: "Proposal Sent", title: "PROPOSAL SENT" },
-  { id: "Negotiation", title: "NEGOTIATION" },
-  { id: "Won", title: "WON" },
-  { id: "Lost", title: "LOST" }
+  { id: "Contacted", title: "Contacted" },
+  { id: "Proposal Sent", title: "Proposal Sent" },
+  { id: "Negotiation", title: "Negotiation" },
+  { id: "Won", title: "Won" },
+  { id: "Lost", title: "Lost" }
 ];
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -82,6 +82,7 @@ export default function PipelineEnginePage() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState("list");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeStageTab, setActiveStageTab] = useState("Lead");
 
   // --- Data Streams ---
   const leadsQuery = useMemoFirebase(() => {
@@ -337,25 +338,29 @@ export default function PipelineEnginePage() {
         </TabsList>
 
         <TabsContent value="list" className="m-0 animate-in slide-in-from-left-2 duration-300">
-          <div className="space-y-12">
-            {leadsLoading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                <p className="text-slate-400 font-bold text-sm uppercase mt-4 tracking-normal">Syncing Pipeline...</p>
+          <div className="space-y-8">
+            <Tabs value={activeStageTab} onValueChange={setActiveStageTab} className="w-full">
+              <div className="flex items-center justify-between mb-6">
+                <TabsList className="bg-slate-100/50 p-1 h-auto rounded-xl gap-1">
+                  {STAGES.map((stage) => (
+                    <TabsTrigger 
+                      key={stage.id} 
+                      value={stage.id} 
+                      className="rounded-lg px-6 py-2 text-[10px] font-bold uppercase data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all tracking-normal"
+                    >
+                      {stage.title}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">
+                    {filteredLeads.filter(l => l.status === activeStageTab).length} Entities
+                  </span>
+                </div>
               </div>
-            ) : STAGES.map((stage) => {
-              const stageLeads = filteredLeads.filter(l => l.status === stage.id);
-              if (stageLeads.length === 0 && searchQuery) return null;
 
-              return (
-                <div key={stage.id} className="space-y-4">
-                  <div className="flex items-center gap-3 px-2">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{stage.title}</h3>
-                    <Badge variant="outline" className="text-[10px] font-bold rounded-md bg-white border-slate-100 tracking-normal">
-                      {stageLeads.length}
-                    </Badge>
-                  </div>
-                  
+              {STAGES.map((stage) => (
+                <TabsContent key={stage.id} value={stage.id} className="m-0 animate-in fade-in duration-300">
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <Table>
                       <TableHeader className="bg-slate-50/50">
@@ -369,36 +374,51 @@ export default function PipelineEnginePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {stageLeads.length > 0 ? stageLeads.map((lead) => (
-                          <TableRow key={lead.id} className="group hover:bg-slate-50/50 transition-colors">
-                            <TableCell className="px-10 font-bold text-slate-900 tracking-normal">{lead.name}</TableCell>
-                            <TableCell className="text-sm font-medium text-slate-600 tracking-normal">{lead.company || "—"}</TableCell>
-                            <TableCell className="text-sm font-medium text-slate-600 tracking-normal">{lead.source || "—"}</TableCell>
-                            <TableCell>
-                              <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
-                                {lead.priority || "Medium"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="font-bold text-slate-900 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</TableCell>
-                            <TableCell className="text-right px-10">
-                              <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-slate-50 hover:bg-primary hover:text-white transition-all">
-                                <Link href={`/pipeline/leads/${lead.id}`}>
-                                  <ArrowRight className="h-4 w-4" />
-                                </Link>
-                              </Button>
+                        {leadsLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-20">
+                              <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto" />
                             </TableCell>
                           </TableRow>
-                        )) : (
+                        ) : filteredLeads.filter(l => l.status === stage.id).length > 0 ? (
+                          filteredLeads.filter(l => l.status === stage.id).map((lead) => (
+                            <TableRow key={lead.id} className="group hover:bg-slate-50/50 transition-colors">
+                              <TableCell className="px-10 font-bold text-slate-900 tracking-normal">{lead.name}</TableCell>
+                              <TableCell className="text-sm font-medium text-slate-600 tracking-normal">{lead.company || "—"}</TableCell>
+                              <TableCell className="text-sm font-medium text-slate-600 tracking-normal">{lead.source || "—"}</TableCell>
+                              <TableCell>
+                                <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
+                                  {lead.priority || "Medium"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-bold text-slate-900 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</TableCell>
+                              <TableCell className="text-right px-10">
+                                <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                                  <Link href={`/pipeline/leads/${lead.id}`}>
+                                    <ArrowRight className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-12 text-slate-300 text-[10px] font-bold uppercase tracking-normal">No items in this phase</TableCell>
+                            <TableCell colSpan={6} className="text-center py-24">
+                              <div className="flex flex-col items-center justify-center space-y-4">
+                                <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center">
+                                  <Search className="h-6 w-6 text-slate-200" />
+                                </div>
+                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">No leads in this stage</p>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         )}
                       </TableBody>
                     </Table>
                   </div>
-                </div>
-              );
-            })}
+                </TabsContent>
+              ))}
+            </Tabs>
           </div>
         </TabsContent>
 
