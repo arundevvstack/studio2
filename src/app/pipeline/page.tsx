@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -63,8 +64,8 @@ import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocki
 import { toast } from "@/hooks/use-toast";
 
 const STAGES = [
+  { id: "New", title: "NEW LEAD" },
   { id: "Contacted", title: "CONTACTED" },
-  { id: "Lead", title: "LEAD" },
   { id: "Proposal Sent", title: "PROPOSAL SENT" },
   { id: "Negotiation", title: "NEGOTIATION" },
   { id: "Won", title: "WON" },
@@ -161,7 +162,7 @@ export default function PipelineEnginePage() {
     addDocumentNonBlocking(leadsRef, {
       ...newLead,
       estimatedBudget: parseFloat(newLead.estimatedBudget) || 0,
-      status: "Contacted",
+      status: "New",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
