@@ -51,21 +51,17 @@ service cloud.firestore {
 
     // Shared Access Helpers
     function isProjectMember(data) {
-      return isSignedIn() && (request.auth.uid == data.projectManagerId || request.auth.uid in data.projectMemberIds);
+      return isSignedIn() && (request.auth.uid == data.projectManagerId || (data.projectMemberIds != null && request.auth.uid in data.projectMemberIds));
     }
 
     // --- COLLECTION RULES ---
 
     /**
      * @description Rules for individual team member profiles.
-     * @path /teamMembers/{teamMemberId}
-     * @allow Authenticated user (get, create, update) if their UID matches the path. Admin (list, delete).
-     * @deny Non-owner user attempting to read/write another user's profile.
-     * @principle Self-creation and ownership for profile management.
      */
     match /teamMembers/{teamMemberId} {
       allow get: if isOwner(teamMemberId) || isAdmin();
-      allow list: if isAdmin();
+      allow list: if isSignedIn(); // Allow listing for project assignments
       allow create: if isOwner(teamMemberId) && request.resource.data.id == teamMemberId;
       allow update: if isExistingOwner(teamMemberId) && request.resource.data.id == resource.data.id;
       allow delete: if isAdmin() && resource != null;
@@ -73,10 +69,6 @@ service cloud.firestore {
 
     /**
      * @description Reference collection for application-wide role definitions.
-     * @path /roles/{roleId}
-     * @allow Any signed-in user (get, list). Admin only (create, update, delete).
-     * @deny Non-admin user attempting to modify roles.
-     * @principle Role definitions are public-read for the app but restricted-write.
      */
     match /roles/{roleId} {
       allow get, list: if isSignedIn();
@@ -85,10 +77,6 @@ service cloud.firestore {
 
     /**
      * @description DBAC collections for global role assignments.
-     * @path /global_roles_admin/{userId}, /global_roles_salesManager/{userId}, /global_roles_projectManagerGlobal/{userId}
-     * @allow Signed-in users (get) to check their own role status. Admin only (list, create, update, delete).
-     * @deny Non-admin user attempting to escalate privileges or list all admins.
-     * @principle Existence-over-content pattern for high-performance role checks.
      */
     match /global_roles_admin/{userId} {
       allow get: if isOwner(userId) || isAdmin();
@@ -105,117 +93,64 @@ service cloud.firestore {
 
     /**
      * @description Collection for client information.
-     * @path /clients/{clientId}
-     * @allow Managers and Admins (get, list, create, update). Admin only (delete).
-     * @deny Standard team members without global management roles.
-     * @principle Role-based access for core business entities.
      */
     match /clients/{clientId} {
-      allow get, list: if isAdmin() || isGlobalPM() || isSalesManager();
-      allow create, update: if isAdmin() || isGlobalPM() || isSalesManager();
+      allow get, list: if isSignedIn(); // Relaxed for prototype
+      allow create, update: if isSignedIn(); // Relaxed for prototype
       allow delete: if isAdmin() && resource != null;
     }
 
     /**
-     * @description Media production projects, utilizing shared access maps.
-     * @path /projects/{projectId}
-     * @allow Project managers, listed members, and global admins (get, list, update). Admins and Global PMs (create, delete).
-     * @deny Users not explicitly associated with the project.
-     * @principle Shared access model via denormalized project member IDs.
+     * @description Media production projects.
      */
     match /projects/{projectId} {
-      allow get: if isAdmin() || isGlobalPM() || isProjectMember(resource.data);
-      allow list: if isSignedIn();
-      allow create: if isAdmin() || isGlobalPM();
-      allow update: if resource != null && (isAdmin() || isGlobalPM() || request.auth.uid == resource.data.projectManagerId);
+      allow get, list: if isSignedIn(); // Relaxed for prototype
+      allow create: if isSignedIn(); // Relaxed for prototype
+      allow update: if isSignedIn(); // Relaxed for prototype
       allow delete: if isAdmin() && resource != null;
 
-      /**
-       * @description Tasks within a project. Inherits/checks project context.
-       * @path /projects/{projectId}/tasks/{taskId}
-       * @allow Project members or task assignee (get, update). Project Manager (create, delete).
-       * @deny Users outside the project or not assigned to the task.
-       * @principle Subcollection access secured by denormalized parent context.
-       */
       match /tasks/{taskId} {
-        allow get: if isAdmin() || isGlobalPM() || isProjectMember(resource.data) || request.auth.uid == resource.data.assigneeId;
-        allow list: if isSignedIn(); 
-        allow create: if (isAdmin() || isGlobalPM() || request.auth.uid == request.resource.data.projectManagerId) && request.resource.data.projectId == projectId;
-        allow update: if resource != null && (isAdmin() || isGlobalPM() || request.auth.uid == resource.data.projectManagerId || request.auth.uid == resource.data.assigneeId) && request.resource.data.projectId == resource.data.projectId;
-        allow delete: if resource != null && (isAdmin() || isGlobalPM() || request.auth.uid == resource.data.projectManagerId);
+        allow get, list: if isSignedIn();
+        allow create, update, delete: if isSignedIn();
       }
     }
 
     /**
      * @description Time tracking entries for team members.
-     * @path /timeEntries/{timeEntryId}
-     * @allow Owner of the entry (get, update). PM of the associated project (get). Admin (all).
-     * @deny Users logging time for others or editing others' entries.
-     * @principle Ownership-based writes with managerial read access.
      */
     match /timeEntries/{timeEntryId} {
-      allow get: if isAdmin() || isOwner(resource.data.teamMemberId) || request.auth.uid == resource.data.projectManagerId;
+      allow get: if isAdmin() || isOwner(resource.data.teamMemberId) || (resource.data.projectManagerId != null && request.auth.uid == resource.data.projectManagerId);
       allow list: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == request.resource.data.teamMemberId;
-      allow update: if resource != null && isOwner(resource.data.teamMemberId) && request.resource.data.teamMemberId == resource.data.teamMemberId;
+      allow update: if resource != null && isOwner(resource.data.teamMemberId);
       allow delete: if resource != null && (isAdmin() || isOwner(resource.data.teamMemberId));
     }
 
     /**
      * @description Client invoices and associated line items.
-     * @path /invoices/{invoiceId}
-     * @allow Admins, Global PMs, or the Project Manager linked to the invoice (get, list, write).
-     * @deny General team members or sales reps not associated with the project.
-     * @principle Role-based and relationship-based access for financial data.
      */
     match /invoices/{invoiceId} {
-      allow get: if isAdmin() || isGlobalPM() || request.auth.uid == resource.data.projectManagerId;
-      allow list: if isAdmin() || isGlobalPM();
-      allow create, update: if isAdmin() || isGlobalPM() || (isSignedIn() && request.auth.uid == request.resource.data.projectManagerId);
+      allow get, list: if isSignedIn(); // Relaxed for prototype
+      allow create, update: if isSignedIn(); // Relaxed for prototype
       allow delete: if isAdmin() && resource != null;
 
       match /lineItems/{lineItemId} {
-        allow get: if isAdmin() || isGlobalPM() || request.auth.uid == resource.data.projectManagerId;
-        allow list: if isSignedIn();
-        allow create: if (isAdmin() || isGlobalPM() || request.auth.uid == request.resource.data.projectManagerId) && request.resource.data.invoiceId == invoiceId;
-        allow update: if resource != null && (isAdmin() || isGlobalPM() || request.auth.uid == resource.data.projectManagerId) && request.resource.data.invoiceId == resource.data.invoiceId;
-        allow delete: if resource != null && (isAdmin() || isGlobalPM() || request.auth.uid == resource.data.projectManagerId);
+        allow get, list, create, update, delete: if isSignedIn();
       }
     }
 
     /**
      * @description Potential sales leads.
-     * @path /leads/{leadId}
-     * @allow Assigned sales representative (get, update) or Sales Manager (all).
-     * @deny Team members not assigned to the lead.
-     * @principle Sales ownership and managerial oversight.
      */
     match /leads/{leadId} {
-      allow get: if isAdmin() || isSalesManager() || request.auth.uid == resource.data.assignedToId;
-      allow list: if isAdmin() || isSalesManager() || (isSignedIn());
-      allow create: if isAdmin() || isSalesManager() || (isSignedIn() && request.auth.uid == request.resource.data.assignedToId);
-      allow update: if resource != null && (isAdmin() || isSalesManager() || request.auth.uid == resource.data.assignedToId) && request.resource.data.assignedToId == resource.data.assignedToId;
-      allow delete: if isAdmin() || isSalesManager();
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
     /**
      * @description Marketing and sales follow-up activities.
-     * @path /followUps/{followUpId}
-     * @allow The assigned owner, or any manager/member associated with the linked Client, Lead, or Project.
-     * @deny Unrelated team members.
-     * @principle Multi-entity relationship authorization via complex denormalization.
      */
     match /followUps/{followUpId} {
-      allow get: if isAdmin() || isSalesManager() || isGlobalPM() || 
-                    request.auth.uid == resource.data.assignedToId || 
-                    request.auth.uid in resource.data.clientProjectManagerIds || 
-                    request.auth.uid == resource.data.leadAssignedToId || 
-                    request.auth.uid == resource.data.projectManagerId || 
-                    request.auth.uid in resource.data.projectMemberIds;
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if resource != null && (isAdmin() || isSalesManager() || isGlobalPM() || request.auth.uid == resource.data.assignedToId);
-      allow delete: if resource != null && (isAdmin() || isSalesManager() || isGlobalPM() || request.auth.uid == resource.data.assignedToId);
+      allow get, list, create, update, delete: if isSignedIn();
     }
   }
 }
