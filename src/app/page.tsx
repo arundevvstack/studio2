@@ -11,7 +11,8 @@ import {
   Search,
   Briefcase,
   Loader2,
-  TrendingUp
+  TrendingUp,
+  Target
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -219,18 +220,24 @@ export default function Dashboard() {
                </p>
             </div>
             <div>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Pitch</p>
+               <p className="text-3xl font-bold font-headline mt-1 text-blue-500 tracking-normal">
+                 {stats.pitch}
+               </p>
+            </div>
+            <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Team</p>
                <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary border-2 border-white flex items-center justify-center text-xs font-bold mt-2 shadow-sm">
                  {teamMembers?.length || 0}
                </div>
             </div>
-            <div>
+            <div className="col-span-2 pt-4 border-t border-slate-50">
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Revenue</p>
                <div className="flex items-center gap-2 mt-2">
                  <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">
                    <TrendingUp className="h-4 w-4 text-accent" />
                  </div>
-                 <p className="text-xl font-bold font-headline text-slate-900 tracking-normal">
+                 <p className="text-2xl font-bold font-headline text-slate-900 tracking-normal">
                    ₹{(stats.totalRevenue / 100000).toFixed(1)}L
                  </p>
                </div>
