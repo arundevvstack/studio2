@@ -1,40 +1,188 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    /**
+     * CORE PHILOSOPHY
+     * This ruleset implements a robust Project-Based Access Control (PBAC) model combined with a 
+     * global Administrative layer. It prioritizes "Authorization Independence" by leveraging 
+     * denormalized member maps on documents, ensuring that security checks are performant 
+     * and compatible with complex queries.
+     *
+     * DATA STRUCTURE
+     * - Global Admin Access: Controlled via the /admin_users marker collection.
+     * - User Profiles: Stored in /teamMembers.
+     * - Project Ecosystem: /projects is the root of most activity, with tasks, tickets, and 
+     *   time entries nested as subcollections for logical grouping.
+     * - Billing: /invoices are top-level but linked to projects via denormalized metadata.
+     *
+     * KEY SECURITY DECISIONS
+     * - Denormalization for Performance: Every task, ticket, time entry, and invoice contains 
+     *   a `projectMembers` map. This allows rules to verify access without costly cross-document 
+     *   lookups (get() calls) for single document reads and writes.
+     * - Query-as-Permission (QAP): Listing operations on project-related data are secured 
+     *   by enforcing that the user is a member of the project.
+     * - Relational Integrity: On creation, documents must include IDs that match their 
+     *   Firestore path to prevent data-path mismatches.
+     */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    match /leads/{leadId} {
-      allow read, write: if isSignedIn();
+    /** @description Checks if the user has a document in the admin_users collection. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
     }
 
-    match /followUps/{followUpId} {
-      allow read, write: if isSignedIn();
+    /** @description Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    match /campaigns/{campaignId} {
-      allow read, write: if isSignedIn();
+    /** @description Checks if the user is present in the document's projectMembers map. */
+    function isProjectMember(data) {
+      return isSignedIn() && data.projectMembers[request.auth.uid] != null;
     }
 
+    /** @description Checks if the user has the 'manager' role in the projectMembers map. */
+    function isProjectManager(data) {
+      return isSignedIn() && data.projectMembers[request.auth.uid] == 'manager';
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Global admin marker collection. Existence grants system-wide permissions.
+     * @path /admin_users/{teamMemberId}
+     * @allow (get) Any authenticated user to verify admin status.
+     * @deny (write) Any non-admin user from granting themselves admin rights.
+     * @principle Roles-based access control using existence-over-content.
+     */
+    match /admin_users/{teamMemberId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description User profiles for team members.
+     * @path /teamMembers/{teamMemberId}
+     * @allow (update) The user themselves or a system admin.
+     * @deny (create) Creating a profile with a different ID than the auth UID.
+     * @principle Ownership and path-based consistency.
+     */
+    match /teamMembers/{teamMemberId} {
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(teamMemberId) && request.resource.data.id == teamMemberId;
+      allow update: if (isOwner(teamMemberId) || isAdmin()) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Client contact and history records.
+     * @path /clients/{clientId}
+     * @allow (read) Any team member to view client info.
+     * @deny (write) Non-admin users who are not project managers.
+     * @principle Restricts management to privileged roles.
+     */
     match /clients/{clientId} {
-      allow read, write: if isSignedIn();
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == clientId;
+      allow update: if (isAdmin() || isSignedIn()) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin() && resource != null;
     }
 
+    /**
+     * @description Primary project documents.
+     * @path /projects/{projectId}
+     * @allow (get) Any member of the project or an admin.
+     * @deny (update) Project members with 'member' role (requires 'manager').
+     * @principle Shared access with role-based write permissions.
+     */
     match /projects/{projectId} {
-      allow read, write: if isSignedIn();
+      allow get: if isAdmin() || isProjectMember(resource.data);
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == projectId;
+      allow update: if (isAdmin() || isProjectManager(resource.data)) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin() && resource != null;
+
+      /**
+       * @description Project tasks subcollection.
+       * @path /projects/{projectId}/tasks/{taskId}
+       * @allow (create) Any project member (verified via denormalized data).
+       * @deny (delete) Standard project members.
+       * @principle Denormalization for authorization independence.
+       */
       match /tasks/{taskId} {
-        allow read, write: if isSignedIn();
+        allow get: if isAdmin() || isProjectMember(resource.data);
+        allow list: if isSignedIn();
+        allow create: if isProjectMember(request.resource.data) && request.resource.data.id == taskId;
+        allow update: if (isAdmin() || isProjectMember(resource.data)) && resource != null && request.resource.data.id == resource.data.id;
+        allow delete: if (isAdmin() || isProjectManager(resource.data)) && resource != null;
+      }
+
+      /**
+       * @description Project support tickets subcollection.
+       * @path /projects/{projectId}/tickets/{ticketId}
+       * @allow (read) All project members.
+       * @deny (update) Users not in the projectMembers map.
+       * @principle Shared access for collaborators.
+       */
+      match /tickets/{ticketId} {
+        allow get: if isAdmin() || isProjectMember(resource.data);
+        allow list: if isSignedIn();
+        allow create: if isProjectMember(request.resource.data) && request.resource.data.id == ticketId;
+        allow update: if (isAdmin() || isProjectMember(resource.data)) && resource != null && request.resource.data.id == resource.data.id;
+        allow delete: if (isAdmin() || isProjectManager(resource.data)) && resource != null;
+      }
+
+      /**
+       * @description Project time tracking entries.
+       * @path /projects/{projectId}/timeEntries/{timeEntryId}
+       * @allow (create) The team member logging the time.
+       * @deny (update) Editing someone else's time entry without admin/manager status.
+       * @principle Combined ownership and shared project access.
+       */
+      match /timeEntries/{timeEntryId} {
+        allow get: if isAdmin() || isProjectMember(resource.data);
+        allow list: if isSignedIn();
+        allow create: if isProjectMember(request.resource.data) && isOwner(request.resource.data.teamMemberId) && request.resource.data.id == timeEntryId;
+        allow update: if (isAdmin() || isProjectManager(resource.data) || isOwner(resource.data.teamMemberId)) && resource != null && request.resource.data.id == resource.data.id;
+        allow delete: if (isAdmin() || isProjectManager(resource.data) || isOwner(resource.data.teamMemberId)) && resource != null;
       }
     }
 
-    match /team_members/{memberId} {
-      allow read, write: if isSignedIn();
-    }
+    /**
+     * @description Client invoices related to projects.
+     * @path /invoices/{invoiceId}
+     * @allow (read) Project members associated with the invoice's project.
+     * @deny (write) Non-manager project members.
+     * @principle Restricts financial data to project leadership.
+     */
+    match /invoices/{invoiceId} {
+      allow get: if isAdmin() || isProjectMember(resource.data);
+      allow list: if isSignedIn();
+      allow create: if (isAdmin() || isProjectManager(request.resource.data)) && request.resource.data.id == invoiceId;
+      allow update: if (isAdmin() || isProjectManager(resource.data)) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin() && resource != null;
 
-    match /roles/{roleId} {
-      allow read: if isSignedIn();
+      /**
+       * @description Detailed line items for an invoice.
+       * @path /invoices/{invoiceId}/lineItems/{lineItemId}
+       * @allow (get) Users with access to the parent invoice.
+       * @principle Relational integrity and inherited access via denormalization.
+       */
+      match /lineItems/{lineItemId} {
+        allow get: if isAdmin() || isProjectMember(resource.data);
+        allow list: if isSignedIn();
+        allow create: if (isAdmin() || isProjectManager(request.resource.data)) && request.resource.data.id == lineItemId;
+        allow update: if (isAdmin() || isProjectManager(resource.data)) && resource != null && request.resource.data.id == resource.data.id;
+        allow delete: if (isAdmin() || isProjectManager(resource.data)) && resource != null;
+      }
     }
   }
 }

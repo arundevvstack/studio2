@@ -1,73 +1,689 @@
-
 {
   "entities": {
-    "Lead": {
-      "title": "Lead",
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
       "type": "object",
-      "description": "Represents a potential client or sales opportunity in the Strategic Pipeline Engine.",
+      "description": "Represents a client of the media production company, storing their contact details and related project history.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "company": { "type": "string" },
-        "phone": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "source": { "type": "string", "enum": ["Instagram", "WhatsApp", "Referral", "Website", "Cold Call", "Ads"] },
-        "industry": { "type": "string" },
-        "estimatedBudget": { "type": "number" },
-        "status": { "type": "string", "enum": ["New", "Contacted", "Proposal Sent", "Negotiation", "Won", "Lost"] },
-        "assignedTo": { "type": "string" },
-        "priority": { "type": "string", "enum": ["Low", "Medium", "High", "Hot"] },
-        "tags": { "type": "array", "items": { "type": "string" } },
-        "notes": { "type": "array", "items": { "type": "string" } },
-        "nextFollowUpDate": { "type": "string", "format": "date-time" },
-        "lastContactedAt": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Client entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the client or company."
+        },
+        "contactPerson": {
+          "type": "string",
+          "description": "The primary contact person at the client organization."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the primary contact person.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the primary contact person."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the client."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any additional notes or specific instructions regarding the client."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the client record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the client record was last updated.",
+          "format": "date-time"
+        }
       },
-      "required": ["id", "name", "email", "status", "priority", "createdAt"]
+      "required": [
+        "id",
+        "name",
+        "contactPerson",
+        "email",
+        "createdAt"
+      ]
     },
-    "FollowUp": {
-      "title": "FollowUp",
+    "TeamMember": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TeamMember",
       "type": "object",
-      "description": "Records a specific sales engagement activity for a lead.",
+      "description": "Represents an individual team member within the media production company, including their roles and contact information.",
       "properties": {
-        "id": { "type": "string" },
-        "leadId": { "type": "string" },
-        "type": { "type": "string", "enum": ["Call", "WhatsApp", "Email", "Meeting"] },
-        "scheduledAt": { "type": "string", "format": "date-time" },
-        "completed": { "type": "boolean" },
-        "remarks": { "type": "string" },
-        "outcome": { "type": "string" },
-        "nextFollowUpDate": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TeamMember entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the team member."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the team member."
+        },
+        "email": {
+          "type": "string",
+          "description": "The professional email address of the team member.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role or position of the team member within the company (e.g., 'Project Manager', 'Editor', 'Administrator')."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "The contact phone number for the team member."
+        },
+        "hireDate": {
+          "type": "string",
+          "description": "The date when the team member was hired.",
+          "format": "date"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the team member is currently active in the company."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the team member record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the team member record was last updated.",
+          "format": "date-time"
+        }
       },
-      "required": ["id", "leadId", "type", "scheduledAt", "completed"]
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "role",
+        "isActive",
+        "createdAt"
+      ]
     },
-    "Campaign": {
-      "title": "Campaign",
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
       "type": "object",
-      "description": "Tracks marketing campaign performance and ROI.",
+      "description": "Defines a media production project, linking to clients, managing its lifecycle, and tracking associated tasks and resources.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "channel": { "type": "string", "enum": ["Meta Ads", "Google Ads", "Organic", "Referral"] },
-        "budget": { "type": "number" },
-        "leadsGenerated": { "type": "number" },
-        "conversions": { "type": "number" },
-        "ROI": { "type": "number" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Project entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the project scope and objectives."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the Client associated with this project. (Relationship: Client 1:N Project)"
+        },
+        "projectManagerId": {
+          "type": "string",
+          "description": "Reference to the TeamMember who is managing this project. (Relationship: TeamMember 1:N Project)"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The planned start date of the project.",
+          "format": "date"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The planned end date of the project.",
+          "format": "date"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the project (e.g., 'Planning', 'In Progress', 'Completed', 'On Hold')."
+        },
+        "budget": {
+          "type": "number",
+          "description": "The allocated budget for the project."
+        },
+        "actualCost": {
+          "type": "number",
+          "description": "The actual cost incurred for the project to date."
+        },
+        "teamMemberIds": {
+          "type": "array",
+          "description": "References to TeamMembers assigned to this project. (Relationship: TeamMember N:N Project)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the project record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the project record was last updated.",
+          "format": "date-time"
+        }
       },
-      "required": ["id", "name", "channel", "budget"]
+      "required": [
+        "id",
+        "name",
+        "clientId",
+        "projectManagerId",
+        "startDate",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a specific task within a project, used for granular tracking of work and assignments.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Task entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "A brief title for the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of what the task entails."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to the Project this task belongs to. (Relationship: Project 1:N Task)"
+        },
+        "assignedToTeamMemberId": {
+          "type": "string",
+          "description": "Reference to the TeamMember assigned to complete this task. (Relationship: TeamMember 1:N Task)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the task (e.g., 'To Do', 'In Progress', 'Done', 'Blocked')."
+        },
+        "priority": {
+          "type": "string",
+          "description": "The priority level of the task (e.g., 'Low', 'Medium', 'High')."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The deadline for completing the task.",
+          "format": "date-time"
+        },
+        "estimatedHours": {
+          "type": "number",
+          "description": "The estimated number of hours required to complete the task."
+        },
+        "actualHours": {
+          "type": "number",
+          "description": "The actual number of hours spent on the task."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the task was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the task was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "projectId",
+        "assignedToTeamMemberId",
+        "status",
+        "createdAt"
+      ]
+    },
+    "TimeEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TimeEntry",
+      "type": "object",
+      "description": "Records time spent by a team member on a specific project or task, used for automated time tracking and billing.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TimeEntry entity."
+        },
+        "teamMemberId": {
+          "type": "string",
+          "description": "Reference to the TeamMember who logged this time entry. (Relationship: TeamMember 1:N TimeEntry)"
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to the Project this time entry is associated with. (Relationship: Project 1:N TimeEntry)"
+        },
+        "taskId": {
+          "type": "string",
+          "description": "Reference to the specific Task this time entry is for. (Relationship: Task 1:N TimeEntry)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The start date and time of the work session.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The end date and time of the work session.",
+          "format": "date-time"
+        },
+        "durationInHours": {
+          "type": "number",
+          "description": "The total duration of the work session in hours."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the work performed during this time entry."
+        },
+        "isBillable": {
+          "type": "boolean",
+          "description": "Indicates whether this time entry is billable to the client."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the time entry was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the time entry was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "teamMemberId",
+        "projectId",
+        "startTime",
+        "endTime",
+        "durationInHours",
+        "isBillable",
+        "createdAt"
+      ]
+    },
+    "Invoice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Invoice",
+      "type": "object",
+      "description": "Represents a generated invoice for a client, detailing services rendered and tracking payment status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Invoice entity."
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "description": "A unique identifier for the invoice, often sequential."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the Client to whom this invoice is issued. (Relationship: Client 1:N Invoice)"
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to the primary Project associated with this invoice. (Relationship: Project 1:N Invoice)"
+        },
+        "issueDate": {
+          "type": "string",
+          "description": "The date when the invoice was issued.",
+          "format": "date"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The date by which the invoice payment is due.",
+          "format": "date"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "The total monetary amount of the invoice."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current payment status of the invoice (e.g., 'Sent', 'Paid', 'Overdue', 'Partially Paid')."
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "The date when the invoice was fully paid.",
+          "format": "date"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any additional notes or terms for the invoice."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the invoice was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the invoice was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "invoiceNumber",
+        "clientId",
+        "projectId",
+        "issueDate",
+        "dueDate",
+        "totalAmount",
+        "status",
+        "createdAt"
+      ]
+    },
+    "InvoiceLineItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InvoiceLineItem",
+      "type": "object",
+      "description": "Represents a single line item within an invoice, detailing a specific charge or service.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the InvoiceLineItem entity."
+        },
+        "invoiceId": {
+          "type": "string",
+          "description": "Reference to the Invoice this line item belongs to. (Relationship: Invoice 1:N InvoiceLineItem)"
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the service or item being charged."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity of the item or service."
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "The price per unit of the item or service."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total amount for this line item (quantity * unitPrice)."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Optional: Reference to a specific Project if this line item relates to it. (Relationship: Project 1:N InvoiceLineItem)"
+        },
+        "timeEntryIds": {
+          "type": "array",
+          "description": "Optional: References to TimeEntry entities that contribute to this line item. (Relationship: TimeEntry N:N InvoiceLineItem)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "invoiceId",
+        "description",
+        "quantity",
+        "unitPrice",
+        "amount"
+      ]
+    },
+    "Ticket": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ticket",
+      "type": "object",
+      "description": "Represents a support ticket, issue, or request related to a specific project, used for tracking and resolution.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Ticket entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "A brief title or summary of the ticket."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the issue or request."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to the Project this ticket is associated with. (Relationship: Project 1:N Ticket)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the ticket (e.g., 'Open', 'In Progress', 'Resolved', 'Closed', 'On Hold')."
+        },
+        "priority": {
+          "type": "string",
+          "description": "The urgency or importance level of the ticket (e.g., 'Low', 'Medium', 'High', 'Critical')."
+        },
+        "type": {
+          "type": "string",
+          "description": "The classification of the ticket (e.g., 'Bug', 'Feature Request', 'Question', 'Change Request')."
+        },
+        "assignedToTeamMemberId": {
+          "type": "string",
+          "description": "Reference to the TeamMember responsible for resolving this ticket. (Relationship: TeamMember 1:N Ticket)"
+        },
+        "reportedByTeamMemberId": {
+          "type": "string",
+          "description": "Reference to the TeamMember who reported or created this ticket. (Relationship: TeamMember 1:N Ticket)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the ticket was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the ticket was last updated.",
+          "format": "date-time"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The target date for resolving the ticket.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "projectId",
+        "status",
+        "reportedByTeamMemberId",
+        "createdAt"
+      ]
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
     "structure": [
-      { "path": "/leads/{leadId}", "definition": { "entityName": "Lead", "description": "Lead management collection." } },
-      { "path": "/followUps/{followUpId}", "definition": { "entityName": "FollowUp", "description": "Sales engagement activities." } },
-      { "path": "/campaigns/{campaignId}", "definition": { "entityName": "Campaign", "description": "Marketing campaign performance." } }
-    ]
+      {
+        "path": "/admin_users/{teamMemberId}",
+        "definition": {
+          "entityName": "TeamMember",
+          "schema": {
+            "$ref": "#/backend/entities/TeamMember"
+          },
+          "description": "Marker collection for system-wide administrators. The existence of a document here grants 'admin' privileges to the associated TeamMember. Rules can check for existence to grant broad access.",
+          "params": [
+            {
+              "name": "teamMemberId",
+              "description": "The unique ID of the TeamMember granted admin privileges, corresponding to request.auth.uid."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/teamMembers/{teamMemberId}",
+        "definition": {
+          "entityName": "TeamMember",
+          "schema": {
+            "$ref": "#/backend/entities/TeamMember"
+          },
+          "description": "Stores individual team member profiles. Accessed by the team member themselves (for their own profile) and by administrators for management.",
+          "params": [
+            {
+              "name": "teamMemberId",
+              "description": "The unique ID of the team member."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/backend/entities/Client"
+          },
+          "description": "Stores client details, managed by system administrators and project managers.",
+          "params": [
+            {
+              "name": "clientId",
+              "description": "The unique ID of the client."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores project details. Includes denormalized 'projectOwnerId' (the project's projectManagerId) and a 'projectMembers' map for authorization independence of subcollections and QAP support.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique ID of the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores tasks specific to a project. Includes denormalized 'projectId', 'projectOwnerId' (from parent Project), and 'projectMembers' (from parent Project) for authorization independence.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique ID of the parent project."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique ID of the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/tickets/{ticketId}",
+        "definition": {
+          "entityName": "Ticket",
+          "schema": {
+            "$ref": "#/backend/entities/Ticket"
+          },
+          "description": "Stores support tickets/issues specific to a project. Includes denormalized 'projectId', 'projectOwnerId' (from parent Project), and 'projectMembers' (from parent Project) for authorization independence.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique ID of the parent project."
+            },
+            {
+              "name": "ticketId",
+              "description": "The unique ID of the ticket."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/timeEntries/{timeEntryId}",
+        "definition": {
+          "entityName": "TimeEntry",
+          "schema": {
+            "$ref": "#/backend/entities/TimeEntry"
+          },
+          "description": "Stores time logged by team members for a specific project/task. Includes denormalized 'projectId', 'projectOwnerId' (from parent Project), and 'projectMembers' (from parent Project) for authorization independence.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique ID of the parent project."
+            },
+            {
+              "name": "timeEntryId",
+              "description": "The unique ID of the time entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/invoices/{invoiceId}",
+        "definition": {
+          "entityName": "Invoice",
+          "schema": {
+            "$ref": "#/backend/entities/Invoice"
+          },
+          "description": "Stores invoices for clients. Includes denormalized 'clientId', 'projectId', 'projectOwnerId' (from associated Project), and 'projectMembers' (from associated Project) for authorization independence for project-related invoice management.",
+          "params": [
+            {
+              "name": "invoiceId",
+              "description": "The unique ID of the invoice."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/invoices/{invoiceId}/lineItems/{lineItemId}",
+        "definition": {
+          "entityName": "InvoiceLineItem",
+          "schema": {
+            "$ref": "#/backend/entities/InvoiceLineItem"
+          },
+          "description": "Stores individual line items for an invoice. Includes denormalized 'invoiceId', 'clientId', 'projectId', 'projectOwnerId', and 'projectMembers' for authorization independence.",
+          "params": [
+            {
+              "name": "invoiceId",
+              "description": "The unique ID of the parent invoice."
+            },
+            {
+              "name": "lineItemId",
+              "description": "The unique ID of the invoice line item."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and debuggable, adhering strictly to the provided core design principles and mandates. The core idea revolves around denormalizing authorization-relevant data into child documents and using structural segregation to simplify security rules and ensure Query-as-Permission (QAP) compliance.Authorization Independence (CRITICAL): This is achieved by systematically denormalizing key authorization fields from parent documents into their subcollections and related top-level collections. Specifically: Each Project document (/projects/{projectId}) will include projectOwnerId (a copy of projectManagerId) and a projectMembers map. This map will store the UIDs of all team members associated with the project (including the manager) along with their project-specific roles (e.g., {'uid1': 'manager', 'uid2': 'member'}). All subcollections of a project (/projects/{projectId}/tasks/{taskId}, /projects/{projectId}/tickets/{ticketId}, /projects/{projectId}/timeEntries/{timeEntryId}) will denormalize projectId, the projectOwnerId, and the projectMembers map from their parent Project document. This means any security rule for a task, ticket, or time entry can directly check resource.data.projectMembers[request.auth.uid] without needing to perform a get() call to the parent Project document. Similarly, Invoice documents (/invoices/{invoiceId}) and their InvoiceLineItem subcollections (/invoices/{invoiceId}/lineItems/{lineItemId}) will denormalize projectId, clientId, projectOwnerId, and the projectMembers map from the associated Project. This ensures that access to billing information can also be determined atomically based on the document itself. This denormalization strategy eliminates hierarchical dependencies, making atomic operations (transactions/batches) possible and greatly simplifying the debugging of security rules.Clarity of Intent & DBAC: Global Roles: System-wide roles (like 'admin') are managed using an 'existence over content' approach in a dedicated collection (/admin_users/{teamMemberId}). The mere presence of a document for a user's teamMemberId in this collection grants them system administrator privileges. This provides a clear, explicit, and easy-to-debug mechanism for global access control: allow read, write: if exists(/admin_users/$(request.auth.uid));. Project-Specific Roles: The projectMembers map within project-related documents makes project-level roles (manager vs. member) explicit and local to the document, supporting clear authorization checks like resource.data.projectMembers[request.auth.uid] == 'manager'.Structural Segregation & QAPs: Each primary entity (Clients, Projects, TeamMembers, Invoices) is in its own top-level collection, ensuring documents within a collection share a homogeneous security posture. For example, all documents in /clients require similar permissions (admin/project manager access). The denormalization of projectMembers directly supports QAPs. For instance, a user can query all projects they are part of using db.collection('projects').where('projectMembers.' + auth.auth.uid, '!=', null). This query is efficient and directly supported by Firestore indices. Rules then confirm that the user is indeed a member. No data is fetched that the user is not authorized to see, meaning rules are not used as filters after the fact. Similarly, a Project Manager can query all tasks for their project: db.collection('projects/{projectId}/tasks').where('projectOwnerId', '==', request.auth.uid) (assuming projectOwnerId is also indexed), and the rules will then check resource.data.projectMembers[request.auth.uid]. This ensures secure list operations.Hierarchical Paths & Data Clarity: Nested data (Tasks, Tickets, TimeEntries, Invoice Line Items) are structured as subcollections of their logical parent (/projects/{projectId}/tasks/{taskId}). This maintains a clear logical hierarchy while ensuring authorization independence through denormalization. Fields like status are used for explicit state modeling. Wildcards are descriptive (e.g., {projectId}, {teamMemberId}).This robust structure provides a clear, efficient, and secure foundation for the MediaFlow application."
   }
 }
