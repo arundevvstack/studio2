@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -72,7 +73,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
         industry: lead.industry || "",
         source: lead.source || "Instagram",
         priority: lead.priority || "Medium",
-        status: lead.status || "New",
+        status: lead.status || "Lead",
         estimatedBudget: lead.estimatedBudget || 0,
         notes: lead.notes || []
       });
@@ -186,7 +187,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                 {lead.name}
               </h1>
               <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
-                {lead.status === 'New' ? 'Lead' : lead.status}
+                {lead.status}
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm font-medium text-slate-500 tracking-normal">
@@ -344,7 +345,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                 <SelectValue placeholder="Select Phase" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                <SelectItem value="New" className="text-xs font-bold uppercase">Lead</SelectItem>
+                <SelectItem value="Lead" className="text-xs font-bold uppercase">Lead</SelectItem>
                 <SelectItem value="Contacted" className="text-xs font-bold uppercase">Contacted</SelectItem>
                 <SelectItem value="Proposal Sent" className="text-xs font-bold uppercase">Proposal Sent</SelectItem>
                 <SelectItem value="Negotiation" className="text-xs font-bold uppercase">Negotiation</SelectItem>
@@ -416,7 +417,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">Lifecycle</p>
-                        <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">{lead.status === 'New' ? 'Lead' : lead.status}</p>
+                        <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">{lead.status}</p>
                       </div>
                     </div>
                   </div>
@@ -454,12 +455,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
           <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
             <div className="space-y-2 relative z-10">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Conversion Path</p>
+              <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Conversion Path</p>
               <h4 className="text-xl font-bold font-headline tracking-normal">Next Strategic Step</h4>
             </div>
             <div className="p-6 rounded-2xl bg-white/5 border border-white/5 relative z-10">
               <p className="text-sm font-medium leading-relaxed text-slate-300 tracking-normal mb-6">
-                {lead.status === 'New' ? "Initiate contact through WhatsApp or Email to gauge immediate requirements." : 
+                {lead.status === 'Lead' ? "Initiate contact through WhatsApp or Email to gauge immediate requirements." : 
                  lead.status === 'Contacted' ? "Schedule a meeting to present the creative direction and value brief." :
                  "Finalize proposal details and secure budget approval."}
               </p>
