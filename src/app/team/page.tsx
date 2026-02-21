@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -15,7 +16,7 @@ export default function TeamPage() {
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "team_members"), orderBy("firstName", "asc"));
+    return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
   }, [db, user]);
 
   const { data: team, isLoading } = useCollection(teamQuery);

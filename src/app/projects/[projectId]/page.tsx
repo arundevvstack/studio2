@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -101,7 +102,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "team_members"), orderBy("firstName", "asc"));
+    return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
   }, [db, user]);
   const { data: teamMembers } = useCollection(teamQuery);
 

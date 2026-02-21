@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -72,7 +73,7 @@ export default function SettingsPage() {
   // Team Data
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "team_members"), orderBy("firstName", "asc"));
+    return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
   }, [db, user]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
 
@@ -95,7 +96,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteMember = (memberId: string, name: string) => {
-    const memberRef = doc(db, "team_members", memberId);
+    const memberRef = doc(db, "teamMembers", memberId);
     deleteDocumentNonBlocking(memberRef);
     toast({
       variant: "destructive",

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Plus, 
@@ -39,10 +39,15 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
+  const [mounted, setMounted] = useState(false);
   const db = useFirestore();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState("production");
   const [forecastView, setForecastView] = useState("monthly");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -64,7 +69,7 @@ export default function Dashboard() {
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "team_members"));
+    return query(collection(db, "teamMembers"));
   }, [db, user]);
   const { data: teamMembers } = useCollection(teamQuery);
 
@@ -80,6 +85,8 @@ export default function Dashboard() {
   }, [allProjects]);
 
   const projectionData = useMemo(() => {
+    if (!mounted) return [];
+    
     if (forecastView === "monthly") {
       const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const currentMonth = new Date().getMonth();
@@ -119,7 +126,7 @@ export default function Dashboard() {
         leads: Math.floor(Math.random() * 3) + 1
       }));
     }
-  }, [allProjects, allLeads, forecastView]);
+  }, [allProjects, allLeads, forecastView, mounted]);
 
   const filteredProjects = useMemo(() => {
     if (!allProjects) return [];
@@ -131,6 +138,14 @@ export default function Dashboard() {
     }
     return allProjects.filter(p => p.status === "In Progress" || p.status === "Pre Production" || p.status === "Post Production");
   }, [allProjects, activeTab]);
+
+  if (!mounted) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-full animate-in fade-in duration-500">
