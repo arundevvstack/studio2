@@ -150,7 +150,7 @@ export default function InvoicesPage() {
             <div className="text-center space-y-2">
               <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Production Entities Found</p>
               <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
-                <Link href="/projects/new">Initiate your first production pitch</Link>
+                <Link href="/projects/new">Initiate your first production lead</Link>
               </Button>
             </div>
           </div>
