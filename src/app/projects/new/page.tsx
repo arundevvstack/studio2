@@ -119,8 +119,8 @@ export default function AddProjectPage() {
 
       {/* Main Form Card */}
       <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden relative">
-        {/* Top Accent Border (Red for Projects) */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-[#ef4444]" />
+        {/* Top Accent Border */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
         
         <div className="p-10 space-y-12">
           {/* Row 1: Basic Identifiers */}
@@ -218,7 +218,7 @@ export default function AddProjectPage() {
             </div>
             <div className="space-y-3">
                <div className="mt-7 p-8 rounded-2xl bg-slate-50/50 border border-slate-100 h-48 flex flex-col justify-center">
-                <h4 className="text-xs font-bold text-[#ef4444] uppercase mb-2">
+                <h4 className="text-xs font-bold text-primary uppercase mb-2">
                   Strategic Guidance
                 </h4>
                 <p className="text-sm text-slate-500 leading-relaxed font-medium">
@@ -256,7 +256,7 @@ export default function AddProjectPage() {
           <Button 
             type="submit"
             disabled={isSubmitting || !formData.clientId}
-            className="h-14 px-10 rounded-xl bg-[#ef4444] hover:bg-[#ef4444]/90 text-white font-bold text-base shadow-lg shadow-red-200 gap-3 group"
+            className="h-14 px-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-lg shadow-primary/20 gap-3 group"
           >
             {isSubmitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />

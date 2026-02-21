@@ -50,7 +50,7 @@ const managementItems = [
 ];
 
 const footerItems = [
-  { title: "Settings", icon: Settings, url: "/settings", color: "text-slate-500" },
+  { title: "Settings", icon: Settings, url: "/settings", color: "text-slate-400" },
   { title: "Log out", icon: LogOut, url: "/logout", color: "text-primary" },
 ];
 
@@ -58,7 +58,7 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-slate-50/50">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-6 pb-2 space-y-6">
         {/* Brand Logo */}
         <div className="flex flex-col items-center gap-1 group-data-[collapsible=icon]:hidden">
@@ -79,7 +79,7 @@ export function AppSidebar() {
             />
           </svg>
           <div className="text-center">
-            <h1 className="text-sm font-bold text-slate-900 uppercase">Marzelz</h1>
+            <h1 className="text-sm font-bold text-white uppercase">Marzelz</h1>
             <p className="text-[10px] font-medium text-slate-400 uppercase -mt-1">Lifestyle</p>
           </div>
         </div>
@@ -88,7 +88,7 @@ export function AppSidebar() {
         <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-6 font-bold text-sm shadow-lg shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
           <Link href="/projects/new">
             <Plus className="h-5 w-5 mr-2 group-data-[collapsible=icon]:mr-0" />
-            <span className="group-data-[collapsible=icon]:hidden">Add Projects</span>
+            <span className="group-data-[collapsible=icon]:hidden">Add Project</span>
           </Link>
         </Button>
       </SidebarHeader>
@@ -96,7 +96,7 @@ export function AppSidebar() {
       <SidebarContent className="px-4 py-4">
         {/* Workspace Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400/80 mb-4 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
             Workspace
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
@@ -109,12 +109,12 @@ export function AppSidebar() {
                     isActive={isActive}
                     className={`rounded-xl h-11 px-3 transition-all ${
                       isActive 
-                        ? "bg-white text-primary shadow-sm ring-1 ring-slate-200" 
-                        : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
+                        ? "bg-white/10 text-white shadow-sm ring-1 ring-white/20" 
+                        : "text-slate-400 hover:bg-white/5 hover:text-white"
                     }`}
                   >
                     <Link href={item.url} className="flex items-center w-full">
-                      <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
+                      <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-500'}`} />
                       <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
                         {item.title}
                       </span>
@@ -131,7 +131,7 @@ export function AppSidebar() {
 
         {/* Management Section */}
         <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400/80 mb-4 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
             Management
           </SidebarGroupLabel>
           <SidebarMenu>
@@ -139,10 +139,10 @@ export function AppSidebar() {
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
                   asChild
-                  className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
+                  className="rounded-xl h-11 px-3 text-slate-400 hover:bg-white/5 hover:text-white"
                 >
                   <Link href={item.url} className="flex items-center">
-                    <item.icon className="h-[18px] w-[18px] text-slate-400" />
+                    <item.icon className="h-[18px] w-[18px] text-slate-500" />
                     <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
                       {item.title}
                     </span>
@@ -155,13 +155,13 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto">
-        <SidebarSeparator className="mb-4" />
+        <SidebarSeparator className="mb-4 bg-white/10" />
         <SidebarMenu className="space-y-1">
           {footerItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
-                className={`rounded-xl h-11 px-3 hover:bg-slate-100/50 ${item.color}`}
+                className={`rounded-xl h-11 px-3 hover:bg-white/5 ${item.color}`}
               >
                 <Link href={item.url} className="flex items-center">
                   <item.icon className="h-[18px] w-[18px]" />

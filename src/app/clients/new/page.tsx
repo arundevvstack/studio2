@@ -113,7 +113,7 @@ export default function AddClientPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden relative">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-[#a855f7]" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
         
         <div className="p-10 space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -261,7 +261,7 @@ export default function AddClientPage() {
           <Button 
             type="submit"
             disabled={isSubmitting}
-            className="h-14 px-10 rounded-xl bg-[#a855f7] hover:bg-[#a855f7]/90 text-white font-bold text-base shadow-lg shadow-purple-200 gap-3 group"
+            className="h-14 px-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-lg shadow-primary/20 gap-3 group"
           >
             {isSubmitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
