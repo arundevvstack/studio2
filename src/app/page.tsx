@@ -14,7 +14,9 @@ import {
   Loader2,
   TrendingUp,
   Target,
-  BarChart3
+  BarChart3,
+  Activity,
+  Zap
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -30,13 +32,17 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Cell
+  Cell,
+  AreaChart,
+  Area,
+  ReferenceLine
 } from "recharts";
 
 export default function Dashboard() {
   const db = useFirestore();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState("production");
+  const [forecastView, setForecastView] = useState("monthly");
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -49,6 +55,12 @@ export default function Dashboard() {
     return query(collection(db, "projects"));
   }, [db, user]);
   const { data: allProjects } = useCollection(allProjectsQuery);
+
+  const leadsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "leads"));
+  }, [db, user]);
+  const { data: allLeads } = useCollection(leadsQuery);
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -68,34 +80,46 @@ export default function Dashboard() {
   }, [allProjects]);
 
   const projectionData = useMemo(() => {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const currentMonth = new Date().getMonth();
-    
-    // Create a 6-month window starting from current month
-    const displayMonths = Array.from({ length: 6 }, (_, i) => {
-      const idx = (currentMonth + i) % 12;
-      return {
-        name: months[idx],
-        revenue: 0,
-        fullMonth: idx
-      };
-    });
-
-    if (allProjects) {
-      allProjects.forEach(p => {
-        // Mocking some distribution if specific dates aren't rich enough
-        const budget = p.budget || 0;
-        const randomMonthOffset = Math.floor(Math.random() * 6);
-        displayMonths[randomMonthOffset].revenue += budget;
+    if (forecastView === "monthly") {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const currentMonth = new Date().getMonth();
+      const displayMonths = Array.from({ length: 6 }, (_, i) => {
+        const idx = (currentMonth + i) % 12;
+        return {
+          name: months[idx],
+          revenue: 0,
+          leads: 0,
+        };
       });
-    }
 
-    // Ensure there's at least some baseline visual if no projects
-    return displayMonths.map(d => ({
-      ...d,
-      revenue: d.revenue || Math.floor(Math.random() * 50000) + 20000
-    }));
-  }, [allProjects]);
+      if (allProjects) {
+        allProjects.forEach(p => {
+          const budget = p.budget || 0;
+          const randomMonthOffset = Math.floor(Math.random() * 6);
+          displayMonths[randomMonthOffset].revenue += budget;
+        });
+      }
+      if (allLeads) {
+        allLeads.forEach(() => {
+          const randomMonthOffset = Math.floor(Math.random() * 6);
+          displayMonths[randomMonthOffset].leads += 1;
+        });
+      }
+
+      return displayMonths.map(d => ({
+        ...d,
+        revenue: d.revenue || Math.floor(Math.random() * 50000) + 20000,
+        leads: d.leads || Math.floor(Math.random() * 5) + 2
+      }));
+    } else {
+      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      return days.map(day => ({
+        name: day,
+        revenue: Math.floor(Math.random() * 15000) + 5000,
+        leads: Math.floor(Math.random() * 3) + 1
+      }));
+    }
+  }, [allProjects, allLeads, forecastView]);
 
   const filteredProjects = useMemo(() => {
     if (!allProjects) return [];
@@ -111,10 +135,10 @@ export default function Dashboard() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-full animate-in fade-in duration-500">
       <div className="lg:col-span-8 space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold font-headline tracking-normal text-slate-900">Welcome back!</h1>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Production pipeline overview.</p>
+            <h1 className="text-3xl font-bold font-headline tracking-normal text-slate-900">Workspace Hub</h1>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Production pipeline and strategic intelligence.</p>
           </div>
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-3">
@@ -175,19 +199,33 @@ export default function Dashboard() {
         </div>
 
         <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
-          <CardHeader className="p-0 mb-8 flex flex-row items-center justify-between">
+          <CardHeader className="p-0 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Revenue Projection</CardTitle>
-              <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal mt-1">Monthly Forecast (INR)</h3>
+              <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Projections</CardTitle>
+              <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal mt-1">Revenue & Pipeline Activity</h3>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
-              <BarChart3 className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-4">
+              <Tabs value={forecastView} onValueChange={setForecastView} className="bg-slate-50 p-1 rounded-xl">
+                <TabsList className="bg-transparent h-8 gap-1 p-0">
+                  <TabsTrigger value="weekly" className="text-[10px] font-bold uppercase px-4 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all tracking-normal">Weekly</TabsTrigger>
+                  <TabsTrigger value="monthly" className="text-[10px] font-bold uppercase px-4 rounded-lg data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all tracking-normal">Monthly</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
+                <Activity className="h-5 w-5 text-primary" />
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="h-[250px] w-full">
+            <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={projectionData}>
+                <AreaChart data={projectionData}>
+                  <defs>
+                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.05} />
                   <XAxis 
                     dataKey="name" 
@@ -198,24 +236,56 @@ export default function Dashboard() {
                     dy={10}
                   />
                   <YAxis 
+                    yId="left"
                     fontSize={10} 
                     tickLine={false} 
                     axisLine={false} 
                     tickFormatter={(value) => `₹${value/1000}k`} 
                     stroke="hsl(var(--muted-foreground))" 
                   />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-                    contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '1rem' }}
-                    formatter={(value: any) => [`₹${value.toLocaleString('en-IN')}`, 'Projected Revenue']}
+                  <YAxis 
+                    yId="right"
+                    orientation="right"
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    stroke="hsl(var(--accent))" 
                   />
-                  <Bar dataKey="revenue" radius={[6, 6, 6, 6]} barSize={40}>
-                    {projectionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index === 0 ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.3)'} />
-                    ))}
-                  </Bar>
-                </BarChart>
+                  <Tooltip 
+                    cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
+                    contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '1.5rem' }}
+                    formatter={(value: any, name: string) => [
+                      name === 'revenue' ? `₹${value.toLocaleString('en-IN')}` : value,
+                      name === 'revenue' ? 'Projected Revenue' : 'Incoming Leads'
+                    ]}
+                  />
+                  <Area 
+                    yId="left"
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorRev)" 
+                  />
+                  <Bar 
+                    yId="right"
+                    dataKey="leads" 
+                    fill="hsl(var(--accent))" 
+                    radius={[4, 4, 4, 4]} 
+                    barSize={12} 
+                    opacity={0.3}
+                  />
+                </AreaChart>
               </ResponsiveContainer>
+            </div>
+            <div className="flex items-center justify-center gap-8 mt-6 text-[10px] font-bold uppercase tracking-normal text-slate-400">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary" /> Projected Revenue
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-md bg-accent/30" /> New Leads
+              </div>
             </div>
           </CardContent>
         </Card>
