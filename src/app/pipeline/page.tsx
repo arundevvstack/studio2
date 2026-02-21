@@ -65,7 +65,7 @@ import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocki
 import { toast } from "@/hooks/use-toast";
 
 const STAGES = [
-  { id: "New", title: "Lead" },
+  { id: "Lead", title: "Lead" },
   { id: "Contacted", title: "CONTACTED" },
   { id: "Proposal Sent", title: "PROPOSAL SENT" },
   { id: "Negotiation", title: "NEGOTIATION" },
@@ -163,7 +163,7 @@ export default function PipelineEnginePage() {
     addDocumentNonBlocking(leadsRef, {
       ...newLead,
       estimatedBudget: parseFloat(newLead.estimatedBudget) || 0,
-      status: "New",
+      status: "Lead",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });

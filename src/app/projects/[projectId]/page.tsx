@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -17,7 +16,10 @@ import {
   ArrowRight,
   Calendar as CalendarIcon,
   User,
-  Clock
+  Clock,
+  Ticket as TicketIcon,
+  AlertCircle,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,6 +90,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   }, [db, projectId, user]);
   const { data: allTasks, isLoading: isTasksLoading } = useCollection(tasksQuery);
 
+  const ticketsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(
+      collection(db, "projects", projectId, "tickets"),
+      orderBy("createdAt", "desc")
+    );
+  }, [db, projectId, user]);
+  const { data: tickets, isLoading: isTicketsLoading } = useCollection(ticketsQuery);
+
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, "team_members"), orderBy("firstName", "asc"));
@@ -100,6 +111,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     description: "", 
     dueDate: "", 
     assignedTeamMemberId: "" 
+  });
+  const [newTicket, setNewTicket] = useState({
+    title: "",
+    description: "",
+    priority: "Medium",
+    type: "Bug",
+    assignedToTeamMemberId: ""
   });
 
   useEffect(() => {
@@ -190,12 +208,42 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     toast({ title: "Objective Defined", description: "New mission objective added." });
   };
 
+  const handleAddTicket = () => {
+    if (!newTicket.title) return;
+    const ticketsRef = collection(db, "projects", projectId, "tickets");
+    addDocumentNonBlocking(ticketsRef, {
+      ...newTicket,
+      projectId,
+      status: "Open",
+      reportedByTeamMemberId: user?.uid || "Unknown",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    setNewTicket({
+      title: "",
+      description: "",
+      priority: "Medium",
+      type: "Bug",
+      assignedToTeamMemberId: ""
+    });
+    toast({ title: "Ticket Logged", description: "Support request has been recorded." });
+  };
+
   const handleToggleTask = (taskId: string, currentStatus: string) => {
     const taskRef = doc(db, "projects", projectId, "tasks", taskId);
     updateDocumentNonBlocking(taskRef, {
       status: currentStatus === "Completed" ? "Active" : "Completed",
       updatedAt: serverTimestamp()
     });
+  };
+
+  const handleUpdateTicketStatus = (ticketId: string, newStatus: string) => {
+    const ticketRef = doc(db, "projects", projectId, "tickets", ticketId);
+    updateDocumentNonBlocking(ticketRef, {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+    toast({ title: "Ticket Updated", description: `Status changed to ${newStatus}.` });
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -392,6 +440,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 <TabsTrigger value="objectives" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2 tracking-normal">
                   <LayoutGrid className="h-3 w-3" /> Production Objectives
                 </TabsTrigger>
+                <TabsTrigger value="tickets" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2 tracking-normal">
+                  <TicketIcon className="h-3 w-3" /> Support Tickets
+                </TabsTrigger>
                 <TabsTrigger value="history" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2 tracking-normal">
                   <History className="h-3 w-3" /> Log History
                 </TabsTrigger>
@@ -503,6 +554,162 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   )}
                 </div>
               </TabsContent>
+
+              <TabsContent value="tickets" className="p-10 space-y-8 m-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Support</p>
+                    <h3 className="text-xl font-bold font-headline mt-1 tracking-normal">Mission Intelligence Logs</h3>
+                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" className="text-primary hover:text-primary/80 font-bold text-[10px] uppercase gap-2 tracking-normal">
+                        <Plus className="h-4 w-4" /> Log Ticket
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="rounded-[2rem] sm:max-w-[500px]">
+                      <DialogHeader><DialogTitle className="font-headline tracking-normal">Log Support Ticket</DialogTitle></DialogHeader>
+                      <div className="space-y-6 py-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Subject</label>
+                          <Input value={newTicket.title} onChange={(e) => setNewTicket({...newTicket, title: e.target.value})} className="rounded-xl h-12 tracking-normal" placeholder="e.g. Color Grade Mismatch" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Category</label>
+                            <Select value={newTicket.type} onValueChange={(val) => setNewTicket({...newTicket, type: val})}>
+                              <SelectTrigger className="rounded-xl h-12 tracking-normal">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl shadow-xl">
+                                <SelectItem value="Bug">Bug</SelectItem>
+                                <SelectItem value="Feature Request">Feature</SelectItem>
+                                <SelectItem value="Question">Question</SelectItem>
+                                <SelectItem value="Change Request">Change Request</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Priority</label>
+                            <Select value={newTicket.priority} onValueChange={(val) => setNewTicket({...newTicket, priority: val})}>
+                              <SelectTrigger className="rounded-xl h-12 tracking-normal">
+                                <SelectValue placeholder="Select priority" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl shadow-xl">
+                                <SelectItem value="Low">Low</SelectItem>
+                                <SelectItem value="Medium">Medium</SelectItem>
+                                <SelectItem value="High">High</SelectItem>
+                                <SelectItem value="Critical">Critical</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Assignee</label>
+                          <Select 
+                            value={newTicket.assignedToTeamMemberId} 
+                            onValueChange={(val) => setNewTicket({...newTicket, assignedToTeamMemberId: val})}
+                          >
+                            <SelectTrigger className="rounded-xl h-12 tracking-normal">
+                              <SelectValue placeholder="Identify member" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl shadow-xl">
+                              {teamMembers?.map((member) => (
+                                <SelectItem key={member.id} value={member.id} className="tracking-normal">
+                                  {member.firstName} {member.lastName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Diagnostic Brief</label>
+                          <Textarea value={newTicket.description} onChange={(e) => setNewTicket({...newTicket, description: e.target.value})} className="rounded-xl resize-none h-24 tracking-normal" placeholder="Describe the issue..." />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <DialogClose asChild><Button onClick={handleAddTicket} className="bg-primary w-full h-12 rounded-xl font-bold tracking-normal">Log Intelligence</Button></DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="space-y-4">
+                  {isTicketsLoading ? (
+                    <div className="flex justify-center p-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+                  ) : tickets && tickets.length > 0 ? (
+                    tickets.map((ticket) => (
+                      <Card key={ticket.id} className="border-none shadow-sm rounded-2xl bg-white border border-slate-50 overflow-hidden group hover:shadow-md transition-all">
+                        <div className="p-6 flex items-start justify-between">
+                          <div className="flex items-start gap-5">
+                            <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                              ticket.priority === 'Critical' ? 'bg-red-50 text-red-500' :
+                              ticket.priority === 'High' ? 'bg-orange-50 text-orange-500' :
+                              'bg-slate-50 text-slate-400'
+                            }`}>
+                              <AlertCircle className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-3">
+                                <h4 className="font-bold text-lg text-slate-900 tracking-normal">{ticket.title}</h4>
+                                <Badge variant="outline" className="text-[8px] font-bold uppercase rounded-md tracking-normal border-slate-100">
+                                  {ticket.type}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-xl tracking-normal">{ticket.description}</p>
+                              <div className="flex items-center gap-6 mt-4">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-3 w-3 text-slate-300" />
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">
+                                    {teamMembers?.find(m => m.id === ticket.assignedToTeamMemberId)?.firstName || "Unassigned"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-3 w-3 text-slate-300" />
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">
+                                    {ticket.createdAt ? new Date(ticket.createdAt.seconds * 1000).toLocaleDateString() : "Pending"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-3">
+                            <Select value={ticket.status} onValueChange={(val) => handleUpdateTicketStatus(ticket.id, val)}>
+                              <SelectTrigger className="h-8 w-32 rounded-lg bg-slate-50 border-none font-bold text-[10px] uppercase tracking-normal shadow-none">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl shadow-xl">
+                                <SelectItem value="Open" className="text-[10px] font-bold uppercase">Open</SelectItem>
+                                <SelectItem value="In Progress" className="text-[10px] font-bold uppercase">In Progress</SelectItem>
+                                <SelectItem value="Resolved" className="text-[10px] font-bold uppercase">Resolved</SelectItem>
+                                <SelectItem value="Closed" className="text-[10px] font-bold uppercase">Closed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Badge className={`border-none font-bold text-[9px] uppercase px-3 tracking-normal ${
+                              ticket.status === 'Resolved' ? 'bg-accent/10 text-accent' :
+                              ticket.status === 'In Progress' ? 'bg-blue-50 text-blue-500' :
+                              'bg-slate-100 text-slate-400'
+                            }`}>
+                              {ticket.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="p-20 border-2 border-dashed border-slate-100 rounded-[2rem] text-center space-y-4">
+                      <div className="h-16 w-16 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto">
+                        <MessageSquare className="h-8 w-8 text-slate-200" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No active tickets</p>
+                        <p className="text-xs text-slate-300 italic tracking-normal">Intelligence flow is currently nominal.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
               <TabsContent value="history" className="p-10 m-0">
                 <div className="flex flex-col items-center justify-center py-20 text-center text-slate-300 space-y-4">
                   <Clock className="h-12 w-12 opacity-20" />
