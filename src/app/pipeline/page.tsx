@@ -169,7 +169,7 @@ export default function PipelineEnginePage() {
     });
     setNewLead({ name: "", company: "", email: "", phone: "", estimatedBudget: "", source: "Instagram", priority: "Medium", industry: "" });
     setIsAddingLead(false);
-    toast({ title: "Lead Ingested", description: `${newLead.name} added to the engine.` });
+    toast({ title: "Lead Created", description: `${newLead.name} added to the engine.` });
   };
 
   const convertToProject = (lead: any) => {
@@ -233,12 +233,12 @@ export default function PipelineEnginePage() {
             <DialogTrigger asChild>
               <Button className="h-12 flex-1 md:flex-none px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
                 <Plus className="h-4 w-4" />
-                Ingest Lead
+                New Lead
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden">
               <DialogHeader className="p-8 pb-4">
-                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Lead Ingestion Portal</DialogTitle>
+                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">New Lead Portal</DialogTitle>
               </DialogHeader>
               <div className="p-8 pt-0 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -300,7 +300,7 @@ export default function PipelineEnginePage() {
               <DialogFooter className="bg-slate-50 p-6">
                 <div className="flex gap-3 w-full">
                   <DialogClose asChild><Button variant="ghost" className="flex-1 font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
-                  <Button onClick={handleCreateLead} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold h-11 tracking-normal">Sync Ingestion</Button>
+                  <Button onClick={handleCreateLead} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold h-11 tracking-normal">Create Lead</Button>
                 </div>
               </DialogFooter>
             </DialogContent>
@@ -342,7 +342,7 @@ export default function PipelineEnginePage() {
             <TrendingUp className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Revenue Forecast</p>
+            <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Revenue Forecast</p>
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{(stats.forecast / 1000).toFixed(0)}k</h3>
           </div>
         </Card>
