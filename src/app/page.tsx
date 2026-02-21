@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Plus, 
@@ -8,15 +8,13 @@ import {
   Clock, 
   Grid,
   ChevronRight,
-  ChevronLeft,
   Search,
   Briefcase,
-  Loader2
+  Loader2,
+  TrendingUp
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
@@ -25,6 +23,7 @@ import { collection, query, orderBy, limit } from "firebase/firestore";
 export default function Dashboard() {
   const db = useFirestore();
   const { user } = useUser();
+  const [activeTab, setActiveTab] = useState("production");
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -45,13 +44,26 @@ export default function Dashboard() {
   const { data: teamMembers } = useCollection(teamQuery);
 
   const stats = useMemo(() => {
-    if (!allProjects) return { completed: 0, inProgress: 0, percent: 0 };
+    if (!allProjects) return { completed: 0, inProgress: 0, pitch: 0, totalRevenue: 0, percent: 0 };
     const completed = allProjects.filter(p => p.status === "Released").length;
-    const inProgress = allProjects.filter(p => p.status === "In Progress").length;
+    const inProgress = allProjects.filter(p => p.status === "In Progress" || p.status === "Post Production").length;
+    const pitch = allProjects.filter(p => p.status === "Pitch" || p.status === "Discussion").length;
+    const totalRevenue = allProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
     const total = allProjects.length;
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-    return { completed, inProgress, percent };
+    return { completed, inProgress, pitch, totalRevenue, percent };
   }, [allProjects]);
+
+  const filteredProjects = useMemo(() => {
+    if (!allProjects) return [];
+    if (activeTab === "pitch") {
+      return allProjects.filter(p => p.status === "Pitch" || p.status === "Discussion");
+    }
+    if (activeTab === "released") {
+      return allProjects.filter(p => p.status === "Released");
+    }
+    return allProjects.filter(p => p.status === "In Progress" || p.status === "Pre Production" || p.status === "Post Production");
+  }, [allProjects, activeTab]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-full animate-in fade-in duration-500">
@@ -63,7 +75,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-3">
-               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{stats.percent}% tasks completed</span>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{stats.percent}% items released</span>
                <Progress value={stats.percent} className="h-2 w-32 bg-slate-100" />
              </div>
           </div>
@@ -134,10 +146,11 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center justify-between pb-4 border-b border-slate-50">
-            <Tabs defaultValue="active" className="w-auto">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
               <TabsList className="bg-transparent gap-8 h-auto p-0">
-                <TabsTrigger value="active" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Production</TabsTrigger>
-                <TabsTrigger value="completed" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Released</TabsTrigger>
+                <TabsTrigger value="pitch" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Pitch</TabsTrigger>
+                <TabsTrigger value="production" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Production</TabsTrigger>
+                <TabsTrigger value="released" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Released</TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
@@ -147,8 +160,8 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-4">
-            {allProjects && allProjects.length > 0 ? (
-              allProjects.slice(0, 5).map((project) => (
+            {filteredProjects.length > 0 ? (
+              filteredProjects.slice(0, 5).map((project) => (
                 <div key={project.id} className="flex items-center justify-between p-6 bg-white rounded-3xl border border-slate-50 shadow-sm hover:shadow-md transition-all group cursor-pointer">
                   <div className="flex items-center gap-6">
                     <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
@@ -174,7 +187,7 @@ export default function Dashboard() {
               ))
             ) : (
               <div className="p-20 text-center bg-white/50 rounded-3xl border-2 border-dashed border-slate-100">
-                <p className="text-xs font-bold text-slate-300 uppercase tracking-normal">No production assets found</p>
+                <p className="text-xs font-bold text-slate-300 uppercase tracking-normal">No items found in this category</p>
               </div>
             )}
           </div>
@@ -194,7 +207,7 @@ export default function Dashboard() {
             <MoreHorizontal className="h-5 w-5 text-slate-300" />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-8">
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Released</p>
                <p className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.completed}</p>
@@ -209,6 +222,17 @@ export default function Dashboard() {
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Team</p>
                <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary border-2 border-white flex items-center justify-center text-xs font-bold mt-2 shadow-sm">
                  {teamMembers?.length || 0}
+               </div>
+            </div>
+            <div>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Revenue</p>
+               <div className="flex items-center gap-2 mt-2">
+                 <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                   <TrendingUp className="h-4 w-4 text-accent" />
+                 </div>
+                 <p className="text-xl font-bold font-headline text-slate-900 tracking-normal">
+                   ₹{(stats.totalRevenue / 100000).toFixed(1)}L
+                 </p>
                </div>
             </div>
           </div>
