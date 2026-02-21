@@ -139,7 +139,7 @@ export default function Dashboard() {
               <Button className="rounded-xl px-6 text-xs font-bold shadow-lg shadow-primary/20 tracking-normal" asChild>
                 <Link href="/projects/new">
                   <Plus className="h-4 w-4 mr-2" />
-                  New Entity
+                  Add Project
                 </Link>
               </Button>
             </div>
