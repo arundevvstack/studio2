@@ -116,9 +116,9 @@ export default function PipelineEnginePage() {
     const total = leads.length;
     const conversionRate = total > 0 ? Math.round((won / total) * 100) : 0;
     const activeValue = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost').reduce((acc, curr) => acc + (curr.estimatedBudget || 0), 0);
-    const leadProjectCount = projects?.filter(p => p.status === 'Lead').length || 0;
-    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3, leadCount: leadProjectCount };
-  }, [leads, projects]);
+    const leadCountInStage = leads.filter(l => l.status === 'Lead').length;
+    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3, leadCount: leadCountInStage };
+  }, [leads]);
 
   // --- Form Logic ---
   const [isAddingLead, setIsAddingLead] = useState(false);
@@ -290,13 +290,14 @@ export default function PipelineEnginePage() {
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{(stats.activeValue / 1000).toFixed(0)}k</h3>
           </div>
         </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+        <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
+          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center relative z-10">
             <TrendingUp className="h-5 w-5 text-primary" />
           </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Revenue Forecast</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{(stats.forecast / 1000).toFixed(0)}k</h3>
+          <div className="relative z-10">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Revenue Forecast</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal text-white">₹{(stats.forecast / 1000).toFixed(0)}k</h3>
           </div>
         </Card>
       </div>
