@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
@@ -53,7 +52,7 @@ export default function Dashboard() {
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "projects"), orderBy("updatedAt", "desc"), limit(4));
+    return query(collection(db, "projects"), orderBy("updatedAt", "desc"), limit(6));
   }, [db, user]);
   const { data: featuredProjects, isLoading: projectsLoading } = useCollection(projectsQuery);
 
@@ -183,7 +182,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projectsLoading ? (
             <div className="col-span-full h-64 flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -191,29 +190,29 @@ export default function Dashboard() {
           ) : featuredProjects && featuredProjects.length > 0 ? (
             featuredProjects.map((project, idx) => (
               <Card key={project.id} className={`${idx % 2 === 0 ? 'bg-slate-900' : 'bg-primary'} border-none shadow-xl rounded-3xl overflow-hidden relative group cursor-pointer`}>
-                <CardContent className="p-8 text-white h-64 flex flex-col justify-between">
+                <CardContent className="p-6 text-white h-64 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
-                      <Briefcase className="h-5 w-5" />
+                    <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-md">
+                      <Briefcase className="h-4 w-4" />
                     </div>
-                    <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-xl">
+                    <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-xl h-8 w-8">
                       <Link href={`/projects/${project.id}`}>
-                        <ChevronRight className="h-5 w-5" />
+                        <ChevronRight className="h-4 w-4" />
                       </Link>
                     </Button>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-white/60 uppercase mb-1 tracking-normal">Active Entity</p>
-                    <h3 className="text-xl font-bold font-headline leading-tight tracking-normal mb-4">
+                    <p className="text-[9px] font-bold text-white/60 uppercase mb-1 tracking-normal">Active Entity</p>
+                    <h3 className="text-lg font-bold font-headline leading-tight tracking-normal mb-3 line-clamp-2">
                       {project.name}
                     </h3>
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-                      <span className="text-[10px] font-bold uppercase tracking-normal">{project.status}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-normal">{project.status}</span>
                     </div>
                   </div>
-                  <div className="absolute right-0 bottom-0 opacity-20 group-hover:scale-110 transition-transform">
-                     <div className="w-32 h-32 bg-white/20 rounded-full blur-3xl" />
+                  <div className="absolute right-0 bottom-0 opacity-20 group-hover:scale-110 transition-transform pointer-events-none">
+                     <div className="w-24 h-24 bg-white/20 rounded-full blur-2xl" />
                   </div>
                 </CardContent>
               </Card>
