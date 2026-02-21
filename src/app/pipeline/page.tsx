@@ -99,6 +99,12 @@ export default function PipelineEnginePage() {
   }, [db, user]);
   const { data: leads, isLoading: leadsLoading } = useCollection(leadsQuery);
 
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "projects"));
+  }, [db, user]);
+  const { data: projects } = useCollection(projectsQuery);
+
   const followUpsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, "followUps"), orderBy("scheduledAt", "asc"));
@@ -138,12 +144,12 @@ export default function PipelineEnginePage() {
   const stats = useMemo(() => {
     if (!leads) return { totalLeads: 0, conversionRate: 0, activeValue: 0, forecast: 0, pitchCount: 0 };
     const won = leads.filter(l => l.status === 'Won').length;
-    const pitch = leads.filter(l => l.status === 'Pitch').length;
     const total = leads.length;
     const conversionRate = total > 0 ? Math.round((won / total) * 100) : 0;
     const activeValue = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost').reduce((acc, curr) => acc + (curr.estimatedBudget || 0), 0);
-    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3, pitchCount: pitch };
-  }, [leads]);
+    const pitchProjectCount = projects?.filter(p => p.status === 'Pitch').length || 0;
+    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3, pitchCount: pitchProjectCount };
+  }, [leads, projects]);
 
   // --- Form Logic ---
   const [isAddingLead, setIsAddingLead] = useState(false);
@@ -325,7 +331,7 @@ export default function PipelineEnginePage() {
             <Sparkles className="h-5 w-5 text-blue-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pitch Assets</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pitch</p>
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.pitchCount}</h3>
           </div>
         </Card>
