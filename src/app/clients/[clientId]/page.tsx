@@ -23,7 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, where, orderBy, doc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, doc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -56,8 +56,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     if (!user) return null;
     return query(
       collection(db, "projects"), 
-      where("clientId", "==", clientId),
-      orderBy("createdAt", "desc")
+      where("clientId", "==", clientId)
     );
   }, [db, clientId, user]);
   const { data: projects, isLoading: isProjectsLoading } = useCollection(projectsQuery);
@@ -65,8 +64,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   const invoicesQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
-      collection(db, "clients", clientId, "invoices"),
-      orderBy("createdAt", "desc")
+      collection(db, "clients", clientId, "invoices")
     );
   }, [db, clientId, user]);
   const { data: invoices, isLoading: isInvoicesLoading } = useCollection(invoicesQuery);
@@ -114,8 +112,8 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
     router.push("/clients");
   };
 
-  // Wait for both user auth and document load before rendering
-  const isLoading = isUserLoading || isClientLoading;
+  // Wait for all essential data streams before clearing the loader
+  const isLoading = isUserLoading || isClientLoading || isProjectsLoading || isInvoicesLoading;
 
   if (isLoading) {
     return (
@@ -306,11 +304,7 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
             <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Active Campaigns</h3>
           </div>
           
-          {isProjectsLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            </div>
-          ) : projects && projects.length > 0 ? (
+          {projects && projects.length > 0 ? (
             projects.map((project) => (
               <Card key={project.id} className="border-none shadow-sm rounded-[2rem] overflow-hidden group hover:shadow-md transition-all">
                 <div className="p-8 flex items-center justify-between">
