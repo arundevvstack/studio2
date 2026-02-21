@@ -31,6 +31,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
@@ -312,7 +320,7 @@ export default function PipelineEnginePage() {
         <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1">
           <TabsTrigger value="list" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Briefcase className="h-4 w-4" />
-            Pipeline List
+            Pipeline Ledger
           </TabsTrigger>
           <TabsTrigger value="followups" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Calendar className="h-4 w-4" />
@@ -348,50 +356,45 @@ export default function PipelineEnginePage() {
                     </Badge>
                   </div>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {stageLeads.length > 0 ? stageLeads.map((lead) => (
-                      <Card key={lead.id} className="border-none shadow-sm hover:shadow-md transition-all rounded-[2rem] bg-white overflow-hidden group">
-                        <CardContent className="p-8 space-y-6">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal">{lead.company || "Individual Lead"}</p>
-                              <h4 className="text-xl font-bold font-headline text-slate-900 tracking-normal">{lead.name}</h4>
-                            </div>
-                            <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
-                              {lead.priority || "Medium"}
-                            </Badge>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
-                            <div>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Budget</p>
-                              <p className="text-base font-bold mt-1 text-slate-900 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</p>
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Source</p>
-                              <p className="text-sm font-bold mt-1 text-slate-600 truncate tracking-normal">{lead.source || "N/A"}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
-                              <Clock className="h-3.5 w-3.5" />
-                              <span>Updated {lead.updatedAt ? new Date(lead.updatedAt.seconds * 1000).toLocaleDateString() : "Recently"}</span>
-                            </div>
-                            <Button asChild variant="ghost" className="h-10 rounded-xl bg-slate-50 text-slate-900 font-bold text-[10px] uppercase group-hover:bg-primary group-hover:text-white transition-all gap-2 tracking-normal">
-                              <Link href={`/pipeline/leads/${lead.id}`}>
-                                View Details
-                                <ArrowRight className="h-3 w-3" />
-                              </Link>
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )) : (
-                      <div className="col-span-full py-12 border-2 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center bg-slate-50/30">
-                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">No items in this phase</p>
-                      </div>
-                    )}
+                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-slate-50/50">
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Lead Name</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase tracking-normal">Company Entity</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase tracking-normal">Source</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase tracking-normal">Priority</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase tracking-normal">Budget (INR)</TableHead>
+                          <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {stageLeads.length > 0 ? stageLeads.map((lead) => (
+                          <TableRow key={lead.id} className="group hover:bg-slate-50/50 transition-colors">
+                            <TableCell className="px-10 font-bold text-slate-900 tracking-normal">{lead.name}</TableCell>
+                            <TableCell className="text-sm font-medium text-slate-600 tracking-normal">{lead.company || "—"}</TableCell>
+                            <TableCell className="text-sm font-medium text-slate-600 tracking-normal">{lead.source || "—"}</TableCell>
+                            <TableCell>
+                              <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
+                                {lead.priority || "Medium"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-bold text-slate-900 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</TableCell>
+                            <TableCell className="text-right px-10">
+                              <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                                <Link href={`/pipeline/leads/${lead.id}`}>
+                                  <ArrowRight className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        )) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-12 text-slate-300 text-[10px] font-bold uppercase tracking-normal">No items in this phase</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               );
