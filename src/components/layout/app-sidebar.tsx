@@ -50,7 +50,7 @@ const managementItems = [
 ];
 
 const footerItems = [
-  { title: "Settings", icon: Settings, url: "/settings", color: "text-slate-400" },
+  { title: "Settings", icon: Settings, url: "/settings", color: "text-slate-500" },
   { title: "Log out", icon: LogOut, url: "/logout", color: "text-primary" },
 ];
 
@@ -79,7 +79,7 @@ export function AppSidebar() {
             />
           </svg>
           <div className="text-center">
-            <h1 className="text-sm font-bold text-white uppercase">Marzelz</h1>
+            <h1 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Marzelz</h1>
             <p className="text-[10px] font-medium text-slate-400 uppercase -mt-1">Lifestyle</p>
           </div>
         </div>
@@ -109,12 +109,12 @@ export function AppSidebar() {
                     isActive={isActive}
                     className={`rounded-xl h-11 px-3 transition-all ${
                       isActive 
-                        ? "bg-white/10 text-white shadow-sm ring-1 ring-white/20" 
-                        : "text-slate-400 hover:bg-white/5 hover:text-white"
+                        ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100 dark:bg-white/10 dark:text-white dark:ring-white/20" 
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                     }`}
                   >
                     <Link href={item.url} className="flex items-center w-full">
-                      <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-500'}`} />
+                      <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
                       <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
                         {item.title}
                       </span>
@@ -139,10 +139,10 @@ export function AppSidebar() {
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
                   asChild
-                  className="rounded-xl h-11 px-3 text-slate-400 hover:bg-white/5 hover:text-white"
+                  className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                   <Link href={item.url} className="flex items-center">
-                    <item.icon className="h-[18px] w-[18px] text-slate-500" />
+                    <item.icon className="h-[18px] w-[18px] text-slate-400" />
                     <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
                       {item.title}
                     </span>
@@ -155,13 +155,13 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto">
-        <SidebarSeparator className="mb-4 bg-white/10" />
+        <SidebarSeparator className="mb-4 bg-slate-100 dark:bg-white/10" />
         <SidebarMenu className="space-y-1">
           {footerItems.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild
-                className={`rounded-xl h-11 px-3 hover:bg-white/5 ${item.color}`}
+                className={`rounded-xl h-11 px-3 hover:bg-slate-50 dark:hover:bg-white/5 ${item.color}`}
               >
                 <Link href={item.url} className="flex items-center">
                   <item.icon className="h-[18px] w-[18px]" />
