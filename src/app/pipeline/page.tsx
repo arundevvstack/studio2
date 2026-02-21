@@ -21,7 +21,9 @@ import {
   BarChart3,
   Globe,
   Star,
-  ArrowRight
+  ArrowRight,
+  Filter,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,25 +46,11 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { 
-  DndContext, 
-  closestCorners, 
-  PointerSensor, 
-  useSensor, 
-  useSensors, 
-  type DragEndEvent 
-} from "@dnd-kit/core";
-import { 
-  SortableContext, 
-  verticalListSortingStrategy, 
-  useSortable 
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp } from "firebase/firestore";
-import { addDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
 const STAGES = [
@@ -84,7 +72,8 @@ const PRIORITY_COLORS: Record<string, string> = {
 export default function PipelineEnginePage() {
   const db = useFirestore();
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState("kanban");
+  const [activeTab, setActiveTab] = useState("list");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // --- Data Streams ---
   const leadsQuery = useMemoFirebase(() => {
@@ -103,36 +92,13 @@ export default function PipelineEnginePage() {
     if (!user) return null;
     return query(collection(db, "followUps"), orderBy("scheduledAt", "asc"));
   }, [db, user]);
-  const { data: followUps, isLoading: followUpsLoading } = useCollection(followUpsQuery);
+  const { data: followUps } = useCollection(followUpsQuery);
 
   const campaignsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, "campaigns"), orderBy("createdAt", "desc"));
   }, [db, user]);
   const { data: campaigns } = useCollection(campaignsQuery);
-
-  // --- DND Handlers ---
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const leadId = active.id as string;
-    const newStage = over.id as string;
-
-    const lead = leads?.find(l => l.id === leadId);
-    if (lead && lead.status !== newStage) {
-      const leadRef = doc(db, "leads", leadId);
-      updateDocumentNonBlocking(leadRef, {
-        status: newStage,
-        updatedAt: serverTimestamp()
-      });
-      toast({ title: "Pipeline Stage Updated", description: `${lead.name} moved to ${newStage}` });
-    }
-  };
 
   // --- Analytics Logic ---
   const stats = useMemo(() => {
@@ -173,38 +139,13 @@ export default function PipelineEnginePage() {
     toast({ title: "Lead Created", description: `${newLead.name} added to the engine.` });
   };
 
-  const convertToProject = (lead: any) => {
-    const projectRef = doc(collection(db, "projects"));
-    const clientRef = doc(collection(db, "clients"));
-    
-    setDocumentNonBlocking(clientRef, {
-      id: clientRef.id,
-      name: lead.company || lead.name,
-      email: lead.email,
-      phone: lead.phone,
-      industry: lead.industry,
-      status: "Active",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    setDocumentNonBlocking(projectRef, {
-      id: projectRef.id,
-      name: `${lead.company || lead.name} - Initial Production`,
-      clientId: clientRef.id,
-      budget: lead.estimatedBudget,
-      status: "Lead",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    updateDocumentNonBlocking(doc(db, "leads", lead.id), {
-      status: "Won",
-      updatedAt: serverTimestamp()
-    });
-
-    toast({ title: "Conversion Successful", description: "Lead converted to Client and Project." });
-  };
+  const filteredLeads = useMemo(() => {
+    if (!leads) return [];
+    return leads.filter(l => 
+      l.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.company?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [leads, searchQuery]);
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-20">
@@ -351,11 +292,27 @@ export default function PipelineEnginePage() {
         </Card>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <Input 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal" 
+            placeholder="Search leads by name or company..." 
+          />
+        </div>
+        <Button variant="outline" className="h-14 px-6 bg-white border-slate-100 rounded-xl font-bold text-slate-600 gap-2 shadow-sm tracking-normal">
+          <Filter className="h-4 w-4" />
+          Refine
+        </Button>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
         <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1">
-          <TabsTrigger value="kanban" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
+          <TabsTrigger value="list" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Briefcase className="h-4 w-4" />
-            Pipeline Board
+            Pipeline List
           </TabsTrigger>
           <TabsTrigger value="followups" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Calendar className="h-4 w-4" />
@@ -371,26 +328,82 @@ export default function PipelineEnginePage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="kanban" className="m-0 animate-in slide-in-from-left-2 duration-300">
-          <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-            <div className="flex gap-6 overflow-x-auto pb-10 custom-scrollbar min-h-[600px]">
-              {STAGES.map((stage) => (
-                <BoardColumn 
-                  key={stage.id} 
-                  stage={stage} 
-                  leads={leads?.filter(l => l.status === stage.id) || []} 
-                  onConvert={convertToProject}
-                />
-              ))}
-            </div>
-          </DndContext>
+        <TabsContent value="list" className="m-0 animate-in slide-in-from-left-2 duration-300">
+          <div className="space-y-12">
+            {leadsLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                <p className="text-slate-400 font-bold text-sm uppercase mt-4 tracking-normal">Syncing Pipeline...</p>
+              </div>
+            ) : STAGES.map((stage) => {
+              const stageLeads = filteredLeads.filter(l => l.status === stage.id);
+              if (stageLeads.length === 0 && searchQuery) return null;
+
+              return (
+                <div key={stage.id} className="space-y-4">
+                  <div className="flex items-center gap-3 px-2">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{stage.title}</h3>
+                    <Badge variant="outline" className="text-[10px] font-bold rounded-md bg-white border-slate-100 tracking-normal">
+                      {stageLeads.length}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {stageLeads.length > 0 ? stageLeads.map((lead) => (
+                      <Card key={lead.id} className="border-none shadow-sm hover:shadow-md transition-all rounded-[2rem] bg-white overflow-hidden group">
+                        <CardContent className="p-8 space-y-6">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal">{lead.company || "Individual Lead"}</p>
+                              <h4 className="text-xl font-bold font-headline text-slate-900 tracking-normal">{lead.name}</h4>
+                            </div>
+                            <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
+                              {lead.priority || "Medium"}
+                            </Badge>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Budget</p>
+                              <p className="text-base font-bold mt-1 text-slate-900 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Source</p>
+                              <p className="text-sm font-bold mt-1 text-slate-600 truncate tracking-normal">{lead.source || "N/A"}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>Updated {lead.updatedAt ? new Date(lead.updatedAt.seconds * 1000).toLocaleDateString() : "Recently"}</span>
+                            </div>
+                            <Button asChild variant="ghost" className="h-10 rounded-xl bg-slate-50 text-slate-900 font-bold text-[10px] uppercase group-hover:bg-primary group-hover:text-white transition-all gap-2 tracking-normal">
+                              <Link href={`/pipeline/leads/${lead.id}`}>
+                                View Details
+                                <ArrowRight className="h-3 w-3" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )) : (
+                      <div className="col-span-full py-12 border-2 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center bg-slate-50/30">
+                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">No items in this phase</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </TabsContent>
 
         <TabsContent value="followups" className="m-0 animate-in slide-in-from-left-2 duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8 space-y-6">
               <h3 className="text-xl font-bold font-headline tracking-normal">Active Engagement Schedule</h3>
-              {followUps?.filter(f => !f.completed).length > 0 ? (
+              {followUps && followUps.filter(f => !f.completed).length > 0 ? (
                 <div className="space-y-4">
                   {followUps.filter(f => !f.completed).map((f) => (
                     <Card key={f.id} className="border-none shadow-sm rounded-[2rem] p-8 flex items-center justify-between group hover:shadow-md transition-all bg-white">
@@ -552,110 +565,5 @@ export default function PipelineEnginePage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-function BoardColumn({ stage, leads, onConvert }: { stage: any, leads: any[], onConvert: (l: any) => void }) {
-  return (
-    <div className="w-[320px] shrink-0 flex flex-col gap-4">
-      <div className="flex items-center justify-between px-2">
-        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{stage.title}</h3>
-        <Badge variant="outline" className="text-[10px] font-bold rounded-md bg-white border-slate-100 tracking-normal">
-          {leads.length}
-        </Badge>
-      </div>
-      
-      <SortableContext id={stage.id} items={leads.map(l => l.id)} strategy={verticalListSortingStrategy}>
-        <div className="flex-1 bg-slate-50/50 rounded-[2rem] p-3 border border-slate-100/50 space-y-3 min-h-[500px]">
-          {leads.map((lead) => (
-            <SortableLeadCard key={lead.id} lead={lead} onConvert={onConvert} />
-          ))}
-          {leads.length === 0 && (
-            <div className="h-32 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-              <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">Empty Stage</p>
-            </div>
-          )}
-        </div>
-      </SortableContext>
-    </div>
-  );
-}
-
-function SortableLeadCard({ lead, onConvert }: { lead: any, onConvert: (l: any) => void }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: lead.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.3 : 1,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Card className="p-6 bg-white border border-slate-100 shadow-sm rounded-2xl group hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden">
-        <div className="space-y-4">
-          <div className="flex justify-between items-start">
-            <div className="max-w-[180px]">
-              <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal truncate">{lead.company || "Individual"}</p>
-              <h4 className="text-sm font-bold text-slate-900 leading-snug tracking-normal truncate">{lead.name}</h4>
-            </div>
-            <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority]}`}>
-              {lead.priority}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Budget</p>
-              <p className="text-xs font-bold text-slate-900 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</p>
-            </div>
-            <div className="text-right space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Source</p>
-              <p className="text-[10px] font-bold text-slate-600 tracking-normal">{lead.source}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-4">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
-              <ClockIcon className="h-3 w-3" />
-              <span>{lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : "NO DATE"}</span>
-            </div>
-            <Button asChild variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-[9px] font-bold uppercase tracking-normal hover:bg-slate-100 gap-1" onPointerDown={(e) => e.stopPropagation()}>
-              <Link href={`/pipeline/leads/${lead.id}`}>
-                View
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-function ClockIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
   );
 }
