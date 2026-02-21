@@ -16,11 +16,13 @@ import {
   Target,
   BarChart3,
   Activity,
-  Zap
+  Zap,
+  LayoutGrid
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, limit } from "firebase/firestore";
@@ -149,17 +151,35 @@ export default function Dashboard() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-full animate-in fade-in duration-500">
-      <div className="lg:col-span-8 space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold font-headline tracking-normal text-slate-900">Workspace Hub</h1>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Production pipeline and strategic intelligence.</p>
-          </div>
+      <div className="lg:col-span-8 space-y-10">
+        {/* Compact Workspace Header */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-             <div className="flex items-center gap-3">
-               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{stats.percent}% items released</span>
-               <Progress value={stats.percent} className="h-2 w-32 bg-slate-100" />
-             </div>
+            <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+              <Zap className="h-6 w-6 text-white" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold font-headline tracking-normal text-slate-900 leading-tight">Workspace Hub</h1>
+                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 text-[8px] font-bold uppercase tracking-normal">Live Intelligence</Badge>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Production pipeline and strategic intelligence.</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-8">
+            <div className="hidden md:flex flex-col items-end">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Asset Release Velocity</span>
+              <div className="flex items-center gap-3 mt-1.5">
+                <Progress value={stats.percent} className="h-1 w-24 bg-slate-100" />
+                <span className="text-[10px] font-bold text-slate-900 tracking-normal">{stats.percent}%</span>
+              </div>
+            </div>
+            <Button asChild size="icon" className="h-10 w-10 rounded-xl bg-white border border-slate-100 text-slate-600 hover:bg-slate-50 shadow-sm shadow-slate-200/50">
+              <Link href="/projects/new">
+                <Plus className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -307,7 +327,7 @@ export default function Dashboard() {
 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold font-headline tracking-normal">Strategic Items</h2>
+            <h2 className="text-xl font-bold font-headline tracking-normal text-slate-900">Strategic Items</h2>
             <div className="flex items-center gap-2">
               <Button variant="outline" className="rounded-xl px-6 text-xs font-bold bg-white/50 border-slate-100 shadow-sm tracking-normal">Archive</Button>
               <Button className="rounded-xl px-6 text-xs font-bold shadow-lg shadow-primary/20 tracking-normal" asChild>
@@ -372,7 +392,7 @@ export default function Dashboard() {
         <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-50 space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-lg tracking-normal">Throughput Stats</h3>
+              <h3 className="font-bold text-lg tracking-normal text-slate-900">Throughput Stats</h3>
               <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 flex items-center gap-1 tracking-normal">
                  <Clock className="h-3 w-3" />
                  Global Records
@@ -384,7 +404,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 gap-8">
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Released</p>
-               <p className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.completed}</p>
+               <p className="text-3xl font-bold font-headline mt-1 tracking-normal text-slate-900">{stats.completed}</p>
             </div>
             <div>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Production</p>
@@ -419,7 +439,7 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-6">
-           <h2 className="text-xl font-bold font-headline tracking-normal">Quick Strategy</h2>
+           <h2 className="text-xl font-bold font-headline tracking-normal text-slate-900">Quick Strategy</h2>
            <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-6 relative overflow-hidden">
              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
              <div className="space-y-2">
