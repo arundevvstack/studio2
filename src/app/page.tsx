@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Plus, 
@@ -8,7 +9,9 @@ import {
   Grid,
   ChevronRight,
   ChevronLeft,
-  Search
+  Search,
+  Briefcase,
+  Loader2
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -16,58 +19,87 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
-
-const FEATURED_PROJECTS: any[] = [];
-const TASKS_TODAY: any[] = [];
-const TASKS_TOMORROW: any[] = [];
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy, limit } from "firebase/firestore";
 
 export default function Dashboard() {
+  const db = useFirestore();
+  const { user } = useUser();
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "projects"), orderBy("updatedAt", "desc"), limit(4));
+  }, [db, user]);
+  const { data: featuredProjects, isLoading: projectsLoading } = useCollection(projectsQuery);
+
+  const allProjectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "projects"));
+  }, [db, user]);
+  const { data: allProjects } = useCollection(allProjectsQuery);
+
+  const teamQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "team_members"));
+  }, [db, user]);
+  const { data: teamMembers } = useCollection(teamQuery);
+
+  const stats = useMemo(() => {
+    if (!allProjects) return { completed: 0, inProgress: 0, percent: 0 };
+    const completed = allProjects.filter(p => p.status === "Released").length;
+    const inProgress = allProjects.filter(p => p.status === "In Progress").length;
+    const total = allProjects.length;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { completed, inProgress, percent };
+  }, [allProjects]);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-full">
-      {/* Main Content Area */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-full animate-in fade-in duration-500">
       <div className="lg:col-span-8 space-y-8">
-        {/* Header Section */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold font-headline">Welcome back!</h1>
+            <h1 className="text-3xl font-bold font-headline tracking-normal text-slate-900">Welcome back!</h1>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Production pipeline overview.</p>
           </div>
           <div className="flex items-center gap-4">
              <div className="flex items-center gap-3">
-               <span className="text-xs font-bold text-muted-foreground">0% tasks completed</span>
-               <Progress value={0} className="h-2 w-32" />
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{stats.percent}% tasks completed</span>
+               <Progress value={stats.percent} className="h-2 w-32 bg-slate-100" />
              </div>
           </div>
         </div>
 
-        {/* Featured Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {FEATURED_PROJECTS.length > 0 ? (
-            FEATURED_PROJECTS.map((project) => (
-              <Card key={project.id} className={`${project.gradient} border-none shadow-xl shadow-primary/10 rounded-3xl overflow-hidden relative group cursor-pointer`}>
+          {projectsLoading ? (
+            <div className="col-span-full h-64 flex items-center justify-center bg-white rounded-3xl border border-slate-100 shadow-sm">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : featuredProjects && featuredProjects.length > 0 ? (
+            featuredProjects.map((project, idx) => (
+              <Card key={project.id} className={`${idx % 2 === 0 ? 'bg-slate-900' : 'bg-primary'} border-none shadow-xl rounded-3xl overflow-hidden relative group cursor-pointer`}>
                 <CardContent className="p-8 text-white h-64 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
-                    <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
-                      {project.icon}
+                    <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
+                      <Briefcase className="h-5 w-5" />
                     </div>
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
-                      <MoreHorizontal className="h-5 w-5" />
+                    <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-xl">
+                      <Link href={`/projects/${project.id}`}>
+                        <ChevronRight className="h-5 w-5" />
+                      </Link>
                     </Button>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold font-headline leading-tight max-w-[200px] mb-4">
-                      {project.title}
+                    <p className="text-[10px] font-bold text-white/60 uppercase mb-1 tracking-normal">Active Entity</p>
+                    <h3 className="text-xl font-bold font-headline leading-tight tracking-normal mb-4">
+                      {project.name}
                     </h3>
-                    <div className="flex -space-x-3">
-                      {project.team.map((user: string, i: number) => (
-                        <Avatar key={i} className="h-8 w-8 border-2 border-white/50">
-                          <AvatarImage src={`https://picsum.photos/seed/${user}/100/100`} />
-                          <AvatarFallback>U</AvatarFallback>
-                        </Avatar>
-                      ))}
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+                      <span className="text-[10px] font-bold uppercase tracking-normal">{project.status}</span>
                     </div>
                   </div>
-                  <div className="absolute right-0 bottom-0 opacity-40 group-hover:scale-110 transition-transform">
-                     <div className="w-24 h-24 bg-white/20 rounded-full blur-3xl" />
+                  <div className="absolute right-0 bottom-0 opacity-20 group-hover:scale-110 transition-transform">
+                     <div className="w-32 h-32 bg-white/20 rounded-full blur-3xl" />
                   </div>
                 </CardContent>
               </Card>
@@ -78,8 +110,8 @@ export default function Dashboard() {
                 <Grid className="h-full w-full text-slate-200" />
               </div>
               <div className="text-center">
-                <p className="text-xs font-bold text-slate-300 uppercase">No Featured Projects</p>
-                <Button variant="link" asChild className="text-primary font-bold text-xs p-0 h-auto mt-1">
+                <p className="text-xs font-bold text-slate-300 uppercase tracking-normal">No Featured Projects</p>
+                <Button variant="link" asChild className="text-primary font-bold text-xs p-0 h-auto mt-1 tracking-normal">
                   <Link href="/projects/new">Create a new pitch</Link>
                 </Button>
               </div>
@@ -87,190 +119,115 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Monthly Tasks Section */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold font-headline">Monthly Tasks</h2>
+            <h2 className="text-xl font-bold font-headline tracking-normal">Strategic Items</h2>
             <div className="flex items-center gap-2">
-              <Button variant="outline" className="rounded-full px-6 text-xs font-bold bg-white/50 border-none shadow-sm">Archive</Button>
-              <Button className="rounded-full px-6 text-xs font-bold shadow-lg shadow-primary/20" asChild>
+              <Button variant="outline" className="rounded-xl px-6 text-xs font-bold bg-white/50 border-slate-100 shadow-sm tracking-normal">Archive</Button>
+              <Button className="rounded-xl px-6 text-xs font-bold shadow-lg shadow-primary/20 tracking-normal" asChild>
                 <Link href="/projects/new">
                   <Plus className="h-4 w-4 mr-2" />
-                  New
+                  New Entity
                 </Link>
               </Button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pb-4 border-b">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-50">
             <Tabs defaultValue="active" className="w-auto">
               <TabsList className="bg-transparent gap-8 h-auto p-0">
-                <TabsTrigger value="active" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2">Active Tasks</TabsTrigger>
-                <TabsTrigger value="completed" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2">Completed</TabsTrigger>
+                <TabsTrigger value="active" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Production</TabsTrigger>
+                <TabsTrigger value="completed" className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none p-0 text-sm font-bold border-b-2 border-transparent data-[state=active]:border-primary rounded-none pb-2 tracking-normal">Released</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <span className="pl-9 text-sm font-bold text-muted-foreground cursor-pointer flex items-center gap-1">
-                Search
-              </span>
-            </div>
-          </div>
-
-          {/* Task List */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase">Today</h3>
-              <div className="space-y-3">
-                {TASKS_TODAY.length > 0 ? (
-                  TASKS_TODAY.map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-4 bg-white rounded-3xl shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 rounded-2xl shadow-inner border bg-muted/20">
-                          <AvatarImage src={task.icon} />
-                          <AvatarFallback>{task.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-bold text-base leading-none">{task.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{task.desc} - {task.time}</p>
-                        </div>
-                      </div>
-                      <div className="flex -space-x-3">
-                        {task.team.map((user: string, i: number) => (
-                          <Avatar key={i} className="h-8 w-8 border-2 border-white">
-                            <AvatarImage src={`https://picsum.photos/seed/${user}/100/100`} />
-                            <AvatarFallback>U</AvatarFallback>
-                          </Avatar>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center bg-white/50 rounded-3xl border-2 border-dashed border-slate-50">
-                    <p className="text-xs font-bold text-slate-300 uppercase">No tasks scheduled for today</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-muted-foreground uppercase">Tomorrow</h3>
-              <div className="space-y-3">
-                {TASKS_TOMORROW.length > 0 ? (
-                  TASKS_TOMORROW.map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-4 bg-white rounded-3xl shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 rounded-2xl shadow-inner border bg-muted/20">
-                          <AvatarImage src={task.icon} />
-                          <AvatarFallback>{task.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-bold text-base leading-none">{task.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{task.desc} - {task.time}</p>
-                        </div>
-                      </div>
-                      <div className="flex -space-x-3">
-                        {task.team.map((user: string, i: number) => (
-                          <Avatar key={i} className="h-8 w-8 border-2 border-white">
-                            <AvatarImage src={`https://picsum.photos/seed/${user}/100/100`} />
-                            <AvatarFallback>U</AvatarFallback>
-                          </Avatar>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center bg-white/50 rounded-3xl border-2 border-dashed border-slate-50">
-                    <p className="text-xs font-bold text-slate-300 uppercase">Clear schedule for tomorrow</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Column (Sidebar-like panel) */}
-      <div className="lg:col-span-4 space-y-8">
-        {/* Schedule */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold font-headline">Today's Schedule</h2>
-            <div className="flex items-center gap-2">
-               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground bg-white shadow-sm rounded-lg"><Grid className="h-4 w-4" /></Button>
-               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground bg-white shadow-sm rounded-lg"><Clock className="h-4 w-4" /></Button>
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
+              <Search className="h-3 w-3" />
+              <span>Filter Assets</span>
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="p-8 text-center bg-white rounded-3xl shadow-sm border border-slate-50">
-               <p className="text-xs font-bold text-slate-300 uppercase">No appointments today</p>
-            </div>
+            {allProjects && allProjects.length > 0 ? (
+              allProjects.slice(0, 5).map((project) => (
+                <div key={project.id} className="flex items-center justify-between p-6 bg-white rounded-3xl border border-slate-50 shadow-sm hover:shadow-md transition-all group cursor-pointer">
+                  <div className="flex items-center gap-6">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                      <Briefcase className="h-5 w-5 text-slate-300" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-base text-slate-900 tracking-normal leading-none">{project.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mt-2 tracking-normal">{project.status || "Planned"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-10">
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Budget</p>
+                      <p className="text-sm font-bold text-slate-900 tracking-normal">₹{(project.budget || 0).toLocaleString('en-IN')}</p>
+                    </div>
+                    <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-colors">
+                      <Link href={`/projects/${project.id}`}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-20 text-center bg-white/50 rounded-3xl border-2 border-dashed border-slate-100">
+                <p className="text-xs font-bold text-slate-300 uppercase tracking-normal">No production assets found</p>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Stats */}
-        <div className="bg-white rounded-[2.5rem] p-8 shadow-sm space-y-8">
+      <div className="lg:col-span-4 space-y-8">
+        <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-50 space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-lg">Production Stats</h3>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <h3 className="font-bold text-lg tracking-normal">Throughput Stats</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 flex items-center gap-1 tracking-normal">
                  <Clock className="h-3 w-3" />
-                 Last 30 Days
+                 Global Records
               </p>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"><MoreHorizontal className="h-4 w-4" /></Button>
+            <MoreHorizontal className="h-5 w-5 text-slate-300" />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-               <p className="text-xs font-bold text-muted-foreground uppercase">Completed</p>
-               <p className="text-3xl font-bold font-headline mt-1">0</p>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Released</p>
+               <p className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.completed}</p>
             </div>
             <div>
-               <p className="text-xs font-bold text-muted-foreground uppercase">In Progress</p>
-               <p className="text-3xl font-bold font-headline mt-1 text-primary relative">
-                 0
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Production</p>
+               <p className="text-3xl font-bold font-headline mt-1 text-primary tracking-normal">
+                 {stats.inProgress}
                </p>
             </div>
             <div>
-               <p className="text-xs font-bold text-muted-foreground uppercase">Active Team</p>
-               <div className="h-8 w-8 rounded-full bg-primary/10 text-primary border-2 border-white flex items-center justify-center text-[10px] font-bold mt-2">0</div>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Team</p>
+               <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary border-2 border-white flex items-center justify-center text-xs font-bold mt-2 shadow-sm">
+                 {teamMembers?.length || 0}
+               </div>
             </div>
           </div>
         </div>
 
-        {/* New Task Form */}
         <div className="space-y-6">
-           <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold font-headline">New Task</h2>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"><MoreHorizontal className="h-4 w-4" /></Button>
-           </div>
-           
-           <div className="space-y-4">
+           <h2 className="text-xl font-bold font-headline tracking-normal">Quick Strategy</h2>
+           <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-6 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
              <div className="space-y-2">
-               <label className="text-xs font-bold text-muted-foreground uppercase px-1">Task Title</label>
-               <Input className="rounded-2xl h-14 bg-muted/30 border-none shadow-inner" placeholder="Create new..." />
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">System Guidance</p>
+               <p className="text-sm font-medium leading-relaxed italic text-slate-300 tracking-normal">
+                 "Maintain strategic focus on {allProjects?.[0]?.status === 'In Progress' ? 'delivery' : 'client acquisition'} to optimize growth."
+               </p>
              </div>
-
-             <div className="flex items-center justify-between py-2 border-y border-dashed">
-                <Button variant="ghost" size="icon" className="text-muted-foreground"><ChevronLeft className="h-4 w-4" /></Button>
-                <div className="flex items-center gap-3">
-                   {["😊", "🎉", "👩‍💻", "🚀", "💡", "🔥", "🙌", "✨"].map((emoji, i) => (
-                     <span key={i} className="text-xl cursor-pointer hover:scale-125 transition-transform">{emoji}</span>
-                   ))}
-                </div>
-                <Button variant="ghost" size="icon" className="text-muted-foreground"><ChevronRight className="h-4 w-4" /></Button>
-             </div>
-
-             <div className="space-y-2">
-               <label className="text-xs font-bold text-muted-foreground uppercase px-1">Add Collaborators</label>
-               <div className="flex flex-wrap gap-2">
-                 <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-dashed border-2 text-muted-foreground">+</Button>
-                 <Button className="h-8 w-8 rounded-full bg-primary shadow-lg shadow-primary/20"><ChevronRight className="h-4 w-4" /></Button>
-               </div>
-             </div>
-           </div>
+             <Button asChild className="w-full bg-white text-slate-900 hover:bg-white/90 rounded-xl font-bold text-[10px] uppercase tracking-normal h-12 shadow-none border-none">
+               <Link href="/projects/new">New Campaign</Link>
+             </Button>
+           </Card>
         </div>
       </div>
     </div>

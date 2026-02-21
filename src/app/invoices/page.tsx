@@ -1,6 +1,9 @@
+"use client";
+
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Send, Filter, MoreHorizontal, FileText, CheckCircle2, Clock, AlertCircle, Search } from "lucide-react";
+import { Plus, Download, Send, Filter, MoreHorizontal, FileText, CheckCircle2, Clock, AlertCircle, Search, Loader2 } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -11,114 +14,126 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-
-const INVOICES: any[] = [];
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
 
 export default function InvoicesPage() {
+  const db = useFirestore();
+  const { user } = useUser();
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "projects"), orderBy("createdAt", "desc"));
+  }, [db, user]);
+
+  const { data: projects, isLoading } = useCollection(projectsQuery);
+
+  const stats = useMemo(() => {
+    if (!projects) return { total: 0, pending: 0, overdue: 0 };
+    const total = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
+    const pending = projects.filter(p => p.status !== "Released").length;
+    return { total, pending, overdue: 0 };
+  }, [projects]);
+
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+    <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Billing & Invoices</h1>
-          <p className="text-muted-foreground">Manage payments, send invoices, and track financial records.</p>
+        <div className="space-y-1">
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Billing & Revenue</h1>
+          <p className="text-sm text-slate-500 font-medium tracking-normal">Manage strategic financial records and project quotes.</p>
         </div>
-        <Button asChild className="gap-2 px-6 shadow-lg shadow-primary/20 font-bold">
+        <Button asChild className="h-12 px-6 shadow-lg shadow-primary/20 font-bold rounded-xl tracking-normal">
           <Link href="/invoices/new">
-            <Plus className="h-4 w-4" />
+            <Plus className="h-4 w-4 mr-2" />
             Create Invoice
           </Link>
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-none shadow-sm rounded-2xl bg-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue (YTD)</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹0</div>
-            <p className="text-xs text-muted-foreground mt-1">Starting a new cycle</p>
-          </CardContent>
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
+          <div className="space-y-4">
+            <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Asset Value (Portfolio)</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{stats.total.toLocaleString('en-IN')}</h3>
+            </div>
+          </div>
         </Card>
-        <Card className="border-none shadow-sm rounded-2xl bg-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
-            <Clock className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹0</div>
-            <p className="text-xs text-muted-foreground mt-1">No outstanding invoices</p>
-          </CardContent>
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
+          <div className="space-y-4">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Clock className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Contracts</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.pending}</h3>
+            </div>
+          </div>
         </Card>
-        <Card className="border-none shadow-sm rounded-2xl bg-white">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
-            <AlertCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹0</div>
-            <p className="text-xs text-muted-foreground mt-1">Portfolio is healthy</p>
-          </CardContent>
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8">
+          <div className="space-y-4">
+            <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">High Risk Entities</p>
+              <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">0</h3>
+            </div>
+          </div>
         </Card>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden rounded-[2rem] bg-white">
-        <div className="p-6 border-b flex items-center justify-between">
-          <h3 className="font-bold font-headline">Recent Activity</h3>
-          <Button variant="outline" size="sm" className="gap-2 border-slate-200">
-            <Filter className="h-4 w-4" />
-            Filter
+      <Card className="border-none shadow-sm overflow-hidden rounded-[2.5rem] bg-white">
+        <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+          <h3 className="font-bold font-headline text-slate-900 tracking-normal">Recent Production Ledger</h3>
+          <Button variant="outline" size="sm" className="gap-2 border-slate-200 rounded-xl font-bold text-[10px] uppercase tracking-normal">
+            <Filter className="h-3.5 w-3.5" />
+            Refine
           </Button>
         </div>
         
-        {INVOICES.length > 0 ? (
+        {isLoading ? (
+          <div className="p-24 flex items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        ) : projects && projects.length > 0 ? (
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="px-8 text-[10px] font-bold uppercase">Invoice ID</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase">Client</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase">Project</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase">Amount</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase">Date</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase">Status</TableHead>
-                <TableHead className="text-right px-8 text-[10px] font-bold uppercase">Actions</TableHead>
+                <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Entity ID</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-normal">Production Name</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-normal">Strategic Quote</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-normal">Phase</TableHead>
+                <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {INVOICES.map((inv) => (
-                <TableRow key={inv.id} className="group transition-colors">
-                  <TableCell className="font-medium text-primary px-8">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      {inv.id}
+              {projects.map((proj) => (
+                <TableRow key={proj.id} className="group transition-colors">
+                  <TableCell className="font-bold text-primary px-10 tracking-normal">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-slate-300" />
+                      #{proj.id.substring(0, 8).toUpperCase()}
                     </div>
                   </TableCell>
-                  <TableCell className="font-semibold">{inv.client}</TableCell>
-                  <TableCell className="text-muted-foreground">{inv.project}</TableCell>
-                  <TableCell className="font-bold">{inv.amount}</TableCell>
-                  <TableCell className="text-xs font-medium text-slate-500">{inv.date}</TableCell>
+                  <TableCell className="font-bold text-slate-900 tracking-normal">{proj.name}</TableCell>
+                  <TableCell className="font-bold text-slate-900 tracking-normal">₹{(proj.budget || 0).toLocaleString('en-IN')}</TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={inv.status === 'Paid' ? 'default' : 'outline'} 
-                      className={
-                        inv.status === 'Paid' ? 'bg-accent/10 text-accent hover:bg-accent/20 border-none px-3' : 
-                        inv.status === 'Overdue' ? 'bg-destructive/10 text-destructive hover:bg-destructive/20 border-none px-3' : 
-                        inv.status === 'Sent' ? 'bg-primary/10 text-primary hover:bg-primary/20 border-none px-3' : 'px-3'
-                      }
-                    >
-                      {inv.status}
+                    <Badge className={`border-none font-bold text-[10px] uppercase px-3 py-1 tracking-normal ${proj.status === 'Released' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'}`}>
+                      {proj.status || "Planned"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right px-8">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary">
-                        <Download className="h-4 w-4" />
+                  <TableCell className="text-right px-10">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                        <Link href={`/invoices/${proj.id}/view`}>
+                          <Download className="h-4 w-4" />
+                        </Link>
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary">
-                        <Send className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400">
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white transition-all">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </div>
@@ -128,14 +143,14 @@ export default function InvoicesPage() {
             </TableBody>
           </Table>
         ) : (
-          <div className="p-20 flex flex-col items-center justify-center space-y-4">
-            <div className="h-16 w-16 rounded-3xl bg-slate-50 flex items-center justify-center p-5">
+          <div className="p-24 flex flex-col items-center justify-center space-y-6">
+            <div className="h-20 w-20 rounded-3xl bg-slate-50 flex items-center justify-center p-6 shadow-inner">
               <Search className="h-full w-full text-slate-200" />
             </div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-slate-400 uppercase">No Invoices Found</p>
-              <Button asChild variant="link" className="text-primary font-bold text-xs mt-1">
-                <Link href="/invoices/new">Generate your first invoice</Link>
+            <div className="text-center space-y-2">
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Production Entities Found</p>
+              <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
+                <Link href="/projects/new">Initiate your first production pitch</Link>
               </Button>
             </div>
           </div>
