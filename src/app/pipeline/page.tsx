@@ -136,12 +136,13 @@ export default function PipelineEnginePage() {
 
   // --- Analytics Logic ---
   const stats = useMemo(() => {
-    if (!leads) return { totalLeads: 0, conversionRate: 0, activeValue: 0, forecast: 0 };
+    if (!leads) return { totalLeads: 0, conversionRate: 0, activeValue: 0, forecast: 0, pitchCount: 0 };
     const won = leads.filter(l => l.status === 'Won').length;
+    const pitch = leads.filter(l => l.status === 'Pitch').length;
     const total = leads.length;
     const conversionRate = total > 0 ? Math.round((won / total) * 100) : 0;
     const activeValue = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost').reduce((acc, curr) => acc + (curr.estimatedBudget || 0), 0);
-    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3 };
+    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3, pitchCount: pitch };
   }, [leads]);
 
   // --- Form Logic ---
@@ -309,7 +310,7 @@ export default function PipelineEnginePage() {
       </div>
 
       {/* Analytics Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
             <Users className="h-5 w-5 text-primary" />
@@ -317,6 +318,15 @@ export default function PipelineEnginePage() {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Leads</p>
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.totalLeads}</h3>
+          </div>
+        </Card>
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-blue-500" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pitch Assets</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.pitchCount}</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
@@ -329,8 +339,8 @@ export default function PipelineEnginePage() {
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-            <IndianRupee className="h-5 w-5 text-blue-500" />
+          <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center">
+            <IndianRupee className="h-5 w-5 text-slate-600" />
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pipeline Value</p>
