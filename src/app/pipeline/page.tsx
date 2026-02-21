@@ -1,31 +1,37 @@
+
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { 
+  Plus, 
+  Search, 
+  Filter, 
+  Sparkles, 
+  Target, 
+  TrendingUp, 
+  Calendar, 
+  Briefcase, 
+  IndianRupee, 
+  Loader2, 
+  ChevronRight, 
+  MoreVertical, 
+  Phone, 
+  MessageSquare, 
+  Mail, 
+  Users, 
+  CheckCircle2, 
+  Trash2,
+  ArrowRight,
+  Zap,
+  BarChart3,
+  Globe,
+  Star
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Sparkles,
-  ArrowRight,
-  Loader2,
-  Briefcase,
-  IndianRupee,
-  Phone,
-  Mail,
-  Calendar,
-  MessageSquare,
-  Clock,
-  CheckCircle2,
-  MoreVertical,
-  Trash2
-} from "lucide-react";
-import Link from "next/link";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, serverTimestamp } from "firebase/firestore";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   Dialog, 
   DialogContent, 
@@ -43,448 +49,598 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { 
+  DndContext, 
+  closestCorners, 
+  PointerSensor, 
+  useSensor, 
+  useSensors, 
+  DragOverlay,
+  type DragEndEvent 
+} from "@dnd-kit/core";
+import { 
+  SortableContext, 
+  verticalListSortingStrategy, 
+  useSortable 
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy, doc, serverTimestamp, where } from "firebase/firestore";
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
-export default function PipelinePage() {
+const STAGES = [
+  { id: "New", title: "NEW LEAD" },
+  { id: "Contacted", title: "CONTACTED" },
+  { id: "Proposal Sent", title: "PROPOSAL SENT" },
+  { id: "Negotiation", title: "NEGOTIATION" },
+  { id: "Won", title: "WON" },
+  { id: "Lost", title: "LOST" }
+];
+
+const PRIORITY_COLORS: Record<string, string> = {
+  Low: "bg-slate-100 text-slate-500",
+  Medium: "bg-blue-50 text-blue-500",
+  High: "bg-orange-50 text-orange-500",
+  Hot: "bg-primary/10 text-primary"
+};
+
+export default function PipelineEnginePage() {
   const db = useFirestore();
-  const { user, isUserLoading } = useUser();
-  const [activeTab, setActiveTab] = useState("pitches");
+  const { user } = useUser();
+  const [activeTab, setActiveTab] = useState("kanban");
+  const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
 
-  // --- Data Fetching ---
-  const allProjectsQuery = useMemoFirebase(() => {
+  // --- Data Streams ---
+  const leadsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "projects"), orderBy("createdAt", "desc"));
+    return query(collection(db, "leads"), orderBy("updatedAt", "desc"));
   }, [db, user]);
-  const { data: allProjects, isLoading: isProjectsLoading } = useCollection(allProjectsQuery);
-
-  const clientsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, "clients"), orderBy("name", "asc"));
-  }, [db, user]);
-  const { data: clients } = useCollection(clientsQuery);
+  const { data: leads, isLoading: leadsLoading } = useCollection(leadsQuery);
 
   const followUpsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "followUps"), orderBy("scheduledDate", "asc"));
+    return query(collection(db, "followUps"), orderBy("scheduledAt", "asc"));
   }, [db, user]);
-  const { data: followUps, isLoading: isFollowUpsLoading } = useCollection(followUpsQuery);
+  const { data: followUps, isLoading: followUpsLoading } = useCollection(followUpsQuery);
 
-  // --- Logic & Filtering ---
-  const pitchProjects = useMemo(() => {
-    if (!allProjects) return [];
-    return allProjects.filter(p => p.status === "Pitch");
-  }, [allProjects]);
+  const campaignsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "campaigns"), orderBy("createdAt", "desc"));
+  }, [db, user]);
+  const { data: campaigns } = useCollection(campaignsQuery);
 
-  const clientMap = useMemo(() => {
-    const map = new Map();
-    clients?.forEach(c => map.set(c.id, c.name));
-    return map;
-  }, [clients]);
+  // --- DND Handlers ---
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
-  // --- Follow-up Module State ---
-  const [newFollowUp, setNewFollowUp] = useState({
-    subject: "",
-    followUpType: "Call",
-    scheduledDate: "",
-    description: "",
-    clientId: "",
-    projectId: ""
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const leadId = active.id as string;
+    const newStage = over.id as string;
+
+    const lead = leads?.find(l => l.id === leadId);
+    if (lead && lead.status !== newStage) {
+      const leadRef = doc(db, "leads", leadId);
+      updateDocumentNonBlocking(leadRef, {
+        status: newStage,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: "Pipeline Stage Updated", description: `${lead.name} moved to ${newStage}` });
+    }
+  };
+
+  // --- Analytics Logic ---
+  const stats = useMemo(() => {
+    if (!leads) return { totalLeads: 0, conversionRate: 0, activeValue: 0, forecast: 0 };
+    const won = leads.filter(l => l.status === 'Won').length;
+    const total = leads.length;
+    const conversionRate = total > 0 ? Math.round((won / total) * 100) : 0;
+    const activeValue = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost').reduce((acc, curr) => acc + (curr.estimatedBudget || 0), 0);
+    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3 };
+  }, [leads]);
+
+  // --- Form Logic ---
+  const [isAddingLead, setIsAddingLead] = useState(false);
+  const [newLead, setNewLead] = useState({
+    name: "",
+    company: "",
+    email: "",
+    phone: "",
+    estimatedBudget: "",
+    source: "Instagram",
+    priority: "Medium",
+    industry: ""
   });
 
-  const handleAddFollowUp = () => {
-    if (!newFollowUp.subject || !newFollowUp.scheduledDate) return;
-    
-    const followUpsRef = collection(db, "followUps");
-    addDocumentNonBlocking(followUpsRef, {
-      ...newFollowUp,
-      status: "Scheduled",
-      assignedToId: user?.uid,
+  const handleCreateLead = () => {
+    if (!newLead.name || !newLead.email) return;
+    const leadsRef = collection(db, "leads");
+    addDocumentNonBlocking(leadsRef, {
+      ...newLead,
+      estimatedBudget: parseFloat(newLead.estimatedBudget) || 0,
+      status: "New",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-
-    setNewFollowUp({
-      subject: "",
-      followUpType: "Call",
-      scheduledDate: "",
-      description: "",
-      clientId: "",
-      projectId: ""
-    });
-
-    toast({
-      title: "Engagement Scheduled",
-      description: `Follow-up for ${newFollowUp.subject} has been added to the pipeline.`
-    });
+    setNewLead({ name: "", company: "", email: "", phone: "", estimatedBudget: "", source: "Instagram", priority: "Medium", industry: "" });
+    setIsAddingLead(false);
+    toast({ title: "Lead Ingested", description: `${newLead.name} added to the engine.` });
   };
 
-  const handleCompleteFollowUp = (id: string) => {
-    const ref = doc(db, "followUps", id);
-    updateDocumentNonBlocking(ref, {
-      status: "Completed",
-      completedDate: new Date().toISOString(),
+  const convertToProject = (lead: any) => {
+    const projectRef = doc(collection(db, "projects"));
+    const clientRef = doc(collection(db, "clients"));
+    
+    // 1. Create Client
+    setDocumentNonBlocking(clientRef, {
+      id: clientRef.id,
+      name: lead.company || lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      industry: lead.industry,
+      status: "Active",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    // 2. Create Project
+    setDocumentNonBlocking(projectRef, {
+      id: projectRef.id,
+      name: `${lead.company || lead.name} - Initial Production`,
+      clientId: clientRef.id,
+      budget: lead.estimatedBudget,
+      status: "Discussion",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    // 3. Mark lead as Won
+    updateDocumentNonBlocking(doc(db, "leads", lead.id), {
+      status: "Won",
       updatedAt: serverTimestamp()
     });
-    toast({ title: "Engagement Finalized", description: "Follow-up activity marked as completed." });
+
+    toast({ title: "Conversion Successful", description: "Lead converted to Client and Project." });
   };
 
-  const handleDeleteFollowUp = (id: string) => {
-    const ref = doc(db, "followUps", id);
-    deleteDocumentNonBlocking(ref);
-    toast({ variant: "destructive", title: "Activity Purged", description: "Follow-up has been removed from the schedule." });
-  };
-
-  const isLoading = isUserLoading || isProjectsLoading || isFollowUpsLoading;
+  const isLoading = leadsLoading || followUpsLoading;
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-      <div className="flex items-start justify-between">
+    <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-20">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">
-              Strategic Pipeline
+            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-none">
+              Strategic Pipeline Engine
             </h1>
             <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
-              <Sparkles className="h-3 w-3 mr-1" />
-              Intelligence Core
+              <Zap className="h-3 w-3 mr-1" />
+              Live Feed
             </Badge>
           </div>
           <p className="text-sm text-slate-500 font-medium tracking-normal">
-            Managing early-stage opportunities and critical sales engagement.
+            Marketing, sales, and follow-up operating system.
           </p>
         </div>
-        <div className="flex gap-3">
-          <Dialog>
+        <div className="flex gap-3 w-full md:w-auto">
+          <Dialog open={isAddingLead} onOpenChange={setIsAddingLead}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-12 px-6 border-slate-200 bg-white text-slate-600 font-bold rounded-xl gap-2 tracking-normal hover:bg-slate-50 transition-colors">
-                <Calendar className="h-4 w-4" />
-                Schedule Engagement
+              <Button className="h-12 flex-1 md:flex-none px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
+                <Plus className="h-4 w-4" />
+                Ingest Lead
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-[2.5rem] sm:max-w-[550px] p-0 border-none shadow-2xl overflow-hidden">
+            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden">
               <DialogHeader className="p-8 pb-4">
-                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Schedule Sales Engagement</DialogTitle>
+                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Lead Ingestion Portal</DialogTitle>
               </DialogHeader>
               <div className="p-8 pt-0 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Engagement Subject</label>
-                  <Input 
-                    value={newFollowUp.subject} 
-                    onChange={(e) => setNewFollowUp({...newFollowUp, subject: e.target.value})} 
-                    className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" 
-                    placeholder="e.g. Q3 Proposal Discussion"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Lead Name</label>
+                    <Input value={newLead.name} onChange={(e) => setNewLead({...newLead, name: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="John Doe" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Company Entity</label>
+                    <Input value={newLead.company} onChange={(e) => setNewLead({...newLead, company: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="Nike Global" />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Engagement Type</label>
-                    <Select value={newFollowUp.followUpType} onValueChange={(val) => setNewFollowUp({...newFollowUp, followUpType: val})}>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Email Address</label>
+                    <Input type="email" value={newLead.email} onChange={(e) => setNewLead({...newLead, email: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="j.doe@nike.com" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Phone Hotline</label>
+                    <Input value={newLead.phone} onChange={(e) => setNewLead({...newLead, phone: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="+1 555 0000" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Source</label>
+                    <Select value={newLead.source} onValueChange={(val) => setNewLead({...newLead, source: val})}>
                       <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none tracking-normal">
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue placeholder="Select Source" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                        <SelectItem value="Call" className="tracking-normal">Voice Call</SelectItem>
-                        <SelectItem value="Email" className="tracking-normal">Executive Email</SelectItem>
-                        <SelectItem value="Meeting" className="tracking-normal">Strategic Meeting</SelectItem>
-                        <SelectItem value="Proposal Submission" className="tracking-normal">Proposal Delivery</SelectItem>
+                        <SelectItem value="Instagram">Instagram</SelectItem>
+                        <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                        <SelectItem value="Referral">Referral</SelectItem>
+                        <SelectItem value="Website">Website</SelectItem>
+                        <SelectItem value="Ads">Ads</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Scheduled Date</label>
-                    <Input 
-                      type="datetime-local" 
-                      value={newFollowUp.scheduledDate} 
-                      onChange={(e) => setNewFollowUp({...newFollowUp, scheduledDate: e.target.value})} 
-                      className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" 
-                    />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Priority Level</label>
+                    <Select value={newLead.priority} onValueChange={(val) => setNewLead({...newLead, priority: val})}>
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none tracking-normal">
+                        <SelectValue placeholder="Select Priority" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectItem value="Low">Low</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Hot">Hot</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Related Entity (Optional)</label>
-                  <Select value={newFollowUp.clientId} onValueChange={(val) => setNewFollowUp({...newFollowUp, clientId: val})}>
-                    <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none tracking-normal">
-                      <SelectValue placeholder="Select client" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                      {clients?.map((c) => (
-                        <SelectItem key={c.id} value={c.id} className="tracking-normal">{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Context</label>
-                  <Textarea 
-                    value={newFollowUp.description} 
-                    onChange={(e) => setNewFollowUp({...newFollowUp, description: e.target.value})} 
-                    placeholder="Outline the objectives for this engagement..."
-                    className="min-h-[100px] rounded-xl bg-slate-50 border-none resize-none p-4 tracking-normal"
-                  />
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Estimated Budget (INR)</label>
+                  <Input type="number" value={newLead.estimatedBudget} onChange={(e) => setNewLead({...newLead, estimatedBudget: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="50000" />
                 </div>
               </div>
               <DialogFooter className="bg-slate-50 p-6">
                 <div className="flex gap-3 w-full">
-                  <DialogClose asChild>
-                    <Button variant="ghost" className="flex-1 font-bold text-xs uppercase tracking-normal">Cancel</Button>
-                  </DialogClose>
-                  <DialogClose asChild>
-                    <Button onClick={handleAddFollowUp} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold h-11 tracking-normal">
-                      Sync Schedule
-                    </Button>
-                  </DialogClose>
+                  <DialogClose asChild><Button variant="ghost" className="flex-1 font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
+                  <Button onClick={handleCreateLead} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold h-11 tracking-normal">Sync Ingestion</Button>
                 </div>
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button asChild className="h-12 px-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 gap-2 tracking-normal">
-            <Link href="/projects/new">
-              <Plus className="h-4 w-4" />
-              New Pitch
-            </Link>
-          </Button>
         </div>
+      </div>
+
+      {/* Analytics Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
+            <Users className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Leads</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.totalLeads}</h3>
+          </div>
+        </Card>
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
+            <Target className="h-5 w-5 text-accent" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Conversion Rate</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.conversionRate}%</h3>
+          </div>
+        </Card>
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <IndianRupee className="h-5 w-5 text-blue-500" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pipeline Value</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{(stats.activeValue / 1000).toFixed(0)}k</h3>
+          </div>
+        </Card>
+        <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Revenue Forecast</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{(stats.forecast / 1000).toFixed(0)}k</h3>
+          </div>
+        </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
         <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1">
-          <TabsTrigger value="pitches" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
-            <Sparkles className="h-4 w-4" />
-            Project Pitches
+          <TabsTrigger value="kanban" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
+            <Briefcase className="h-4 w-4" />
+            Pipeline Board
           </TabsTrigger>
           <TabsTrigger value="followups" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Calendar className="h-4 w-4" />
-            Strategic Engagement
+            Engagement
+          </TabsTrigger>
+          <TabsTrigger value="marketing" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
+            <Globe className="h-4 w-4" />
+            Campaigns
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
+            <BarChart3 className="h-4 w-4" />
+            Intelligence
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pitches" className="animate-in slide-in-from-left-2 duration-300">
-          <div className="flex gap-4 mb-8">
-            <div className="relative flex-1 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-              <Input 
-                className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal" 
-                placeholder="Search pending pitches..." 
-              />
+        <TabsContent value="kanban" className="m-0 animate-in slide-in-from-left-2 duration-300">
+          <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+            <div className="flex gap-6 overflow-x-auto pb-10 custom-scrollbar min-h-[600px]">
+              {STAGES.map((stage) => (
+                <BoardColumn 
+                  key={stage.id} 
+                  stage={stage} 
+                  leads={leads?.filter(l => l.status === stage.id) || []} 
+                  onConvert={convertToProject}
+                />
+              ))}
             </div>
-            <Button variant="outline" className="h-14 px-6 bg-white border-slate-100 rounded-xl font-bold text-slate-600 gap-2 shadow-sm tracking-normal">
-              <Filter className="h-4 w-4" />
-              Refine
-            </Button>
-          </div>
-
-          <div className="bg-white rounded-[2rem] border border-slate-50 shadow-sm overflow-hidden min-h-[400px] flex flex-col">
-            <div className="grid grid-cols-12 px-10 py-6 border-b border-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
-              <div className="col-span-2">Client</div>
-              <div className="col-span-3">Project</div>
-              <div className="col-span-2 text-center">Status</div>
-              <div className="col-span-3 text-center">Budget</div>
-              <div className="col-span-2 text-right">Details</div>
-            </div>
-            
-            <div className="flex-1">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
-              ) : pitchProjects.length > 0 ? (
-                <div className="divide-y divide-slate-50">
-                  {pitchProjects.map((project) => (
-                    <div key={project.id} className="grid grid-cols-12 px-10 py-8 items-center hover:bg-slate-50/50 transition-colors group">
-                      <div className="col-span-2">
-                        <span className="text-sm font-bold text-primary tracking-normal">
-                          {clientMap.get(project.clientId) || "Unknown Client"}
-                        </span>
-                      </div>
-                      <div className="col-span-3">
-                        <h4 className="font-bold text-lg text-slate-900 tracking-normal">{project.name}</h4>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 flex items-center gap-2 tracking-normal">
-                          <Briefcase className="h-3 w-3" />
-                          ID: {project.id.substring(0, 8).toUpperCase()}
-                        </p>
-                      </div>
-                      <div className="col-span-2 text-center">
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase border-slate-100 text-slate-500 bg-slate-50/50 px-3 py-1 tracking-normal">
-                          {project.status || "Pitch"}
-                        </Badge>
-                      </div>
-                      <div className="col-span-3 text-center flex items-center justify-center gap-1.5 text-slate-900 font-bold tracking-normal">
-                        <IndianRupee className="h-4 w-4 text-slate-400" />
-                        <span>{(project.budget || 0).toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="col-span-2 text-right">
-                        <Button asChild variant="ghost" size="sm" className="h-9 px-4 rounded-xl bg-slate-50 group-hover:bg-primary group-hover:text-white transition-all font-bold text-[10px] uppercase gap-2 tracking-normal">
-                          <Link href={`/projects/${project.id}`}>
-                            More
-                            <ArrowRight className="h-3 w-3" />
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center py-20">
-                  <div className="text-center space-y-4">
-                    <div className="bg-slate-50 h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-4 p-5 shadow-inner">
-                      <Search className="h-full w-full text-slate-300" />
-                    </div>
-                    <p className="text-slate-400 font-medium italic text-sm tracking-normal">
-                      No projects currently in the Pitch pipeline.
-                    </p>
-                    <Button asChild variant="link" className="text-primary font-bold text-xs tracking-normal">
-                      <Link href="/projects/new">Initiate a new production pitch</Link>
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          </DndContext>
         </TabsContent>
 
-        <TabsContent value="followups" className="animate-in slide-in-from-left-2 duration-300">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <TabsContent value="followups" className="m-0 animate-in slide-in-from-left-2 duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8 space-y-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Scheduled Engagement</h3>
-                <Badge className="bg-accent/10 text-accent border-none text-[10px] font-bold px-3 tracking-normal">Active Pipeline</Badge>
-              </div>
-
-              {isLoading ? (
-                <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 text-primary animate-spin" /></div>
-              ) : followUps && followUps.filter(f => f.status === 'Scheduled').length > 0 ? (
+              <h3 className="text-xl font-bold font-headline tracking-normal">Active Engagement Schedule</h3>
+              {followUps?.filter(f => !f.completed).length > 0 ? (
                 <div className="space-y-4">
-                  {followUps.filter(f => f.status === 'Scheduled').map((f) => (
-                    <div key={f.id} className="bg-white p-8 rounded-[2rem] border border-slate-50 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+                  {followUps.filter(f => !f.completed).map((f) => (
+                    <Card key={f.id} className="border-none shadow-sm rounded-[2rem] p-8 flex items-center justify-between group hover:shadow-md transition-all bg-white">
                       <div className="flex items-center gap-6">
-                        <div className="h-14 w-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                          {f.followUpType === 'Call' && <Phone className="h-6 w-6 text-slate-400 group-hover:text-primary transition-colors" />}
-                          {f.followUpType === 'Email' && <Mail className="h-6 w-6 text-slate-400 group-hover:text-primary transition-colors" />}
-                          {f.followUpType === 'Meeting' && <Users className="h-6 w-6 text-slate-400 group-hover:text-primary transition-colors" />}
-                          {f.followUpType === 'Proposal Submission' && <MessageSquare className="h-6 w-6 text-slate-400 group-hover:text-primary transition-colors" />}
+                        <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+                          {f.type === 'WhatsApp' && <MessageSquare className="h-6 w-6 text-green-500" />}
+                          {f.type === 'Call' && <Phone className="h-6 w-6 text-blue-500" />}
+                          {f.type === 'Email' && <Mail className="h-6 w-6 text-primary" />}
+                          {f.type === 'Meeting' && <Users className="h-6 w-6 text-orange-500" />}
                         </div>
                         <div>
-                          <div className="flex items-center gap-3">
-                            <h4 className="text-lg font-bold text-slate-900 tracking-normal">{f.subject}</h4>
-                            <Badge className="bg-slate-100 text-slate-500 border-none text-[9px] font-bold uppercase px-2 py-0.5 tracking-normal">{f.followUpType}</Badge>
-                          </div>
-                          <div className="flex items-center gap-4 mt-2">
-                            <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
-                              <Clock className="h-3 w-3" /> {new Date(f.scheduledDate).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                          <h4 className="text-lg font-bold text-slate-900 tracking-normal">
+                            {leads?.find(l => l.id === f.leadId)?.name || "Unknown Lead"}
+                          </h4>
+                          <div className="flex items-center gap-4 mt-1">
+                            <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-normal">{f.type}</Badge>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 tracking-normal">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(f.scheduledAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
                             </span>
-                            {f.clientId && (
-                              <span className="flex items-center gap-1.5 text-[10px] font-bold text-primary uppercase tracking-normal">
-                                <Briefcase className="h-3 w-3" /> {clientMap.get(f.clientId)}
-                              </span>
-                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleCompleteFollowUp(f.id)}
-                          className="h-11 w-11 rounded-xl bg-slate-50 hover:bg-accent hover:text-white transition-all"
-                        >
-                          <CheckCircle2 className="h-5 w-5" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleDeleteFollowUp(f.id)}
-                          className="h-11 w-11 rounded-xl bg-slate-50 hover:bg-destructive hover:text-white transition-all"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
+                      <Button variant="ghost" size="icon" className="rounded-xl h-11 w-11 bg-slate-50 hover:bg-accent hover:text-white transition-all">
+                        <CheckCircle2 className="h-5 w-5" />
+                      </Button>
+                    </Card>
                   ))}
                 </div>
               ) : (
                 <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] text-center bg-white/50">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No scheduled engagements</p>
-                  <p className="text-xs text-slate-300 mt-1 italic tracking-normal">Align with potential partners to maintain pipeline velocity.</p>
-                </div>
-              )}
-
-              {followUps && followUps.filter(f => f.status === 'Completed').length > 0 && (
-                <div className="pt-8 space-y-6">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-normal">Engagement History</h3>
-                  <div className="space-y-3 opacity-60">
-                    {followUps.filter(f => f.status === 'Completed').map((f) => (
-                      <div key={f.id} className="bg-white/50 p-6 rounded-2xl border border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <CheckCircle2 className="h-5 w-5 text-accent" />
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 tracking-normal">{f.subject}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-normal">Completed on {new Date(f.completedDate || "").toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-normal">Archived</Badge>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No scheduled activities</p>
                 </div>
               )}
             </div>
-
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-4">
               <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
                 <div className="space-y-2 relative z-10">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Sales Intelligence</p>
-                  <h4 className="text-xl font-bold font-headline tracking-normal">Pipeline Velocity</h4>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Follow-up Velocity</p>
+                  <h4 className="text-xl font-bold font-headline tracking-normal">Response Efficiency</h4>
                 </div>
                 <div className="space-y-6 relative z-10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-400 tracking-normal">Active Engagement</span>
-                    <span className="text-2xl font-bold font-headline tracking-normal">{followUps?.filter(f => f.status === 'Scheduled').length || 0}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-400 font-medium">Avg Response Time</span>
+                    <span className="text-2xl font-bold font-headline tracking-normal">2.4h</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-400 tracking-normal">Conversion Rate</span>
-                    <span className="text-2xl font-bold font-headline text-primary tracking-normal">18%</span>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400 italic leading-relaxed tracking-normal border-t border-white/5 pt-6">
-                  "Maintain a 48-hour follow-up window post-pitch to maximize conversion potential."
-                </p>
-              </Card>
-
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-8 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-900 uppercase tracking-normal">Industry Vertical Map</h4>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-normal">
-                    <span className="text-slate-400">Tech & SaaS</span>
-                    <span className="text-slate-900">45%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: '45%' }} />
-                  </div>
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-normal">
-                    <span className="text-slate-400">Lifestyle</span>
-                    <span className="text-slate-900">30%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                    <div className="h-full bg-accent" style={{ width: '30%' }} />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-400 font-medium">Weekly Activities</span>
+                    <span className="text-2xl font-bold font-headline text-primary tracking-normal">{followUps?.length || 0}</span>
                   </div>
                 </div>
               </Card>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="marketing" className="m-0 animate-in slide-in-from-left-2 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {campaigns && campaigns.length > 0 ? (
+              campaigns.map((c) => (
+                <Card key={c.id} className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-xl transition-all">
+                  <CardHeader className="p-10 pb-4">
+                    <div className="flex justify-between items-start">
+                      <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">
+                        <Globe className="h-6 w-6 text-primary" />
+                      </div>
+                      <Badge className="bg-slate-100 text-slate-500 border-none text-[10px] font-bold uppercase tracking-normal">{c.channel}</Badge>
+                    </div>
+                    <CardTitle className="text-xl font-bold font-headline tracking-normal">{c.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-10 pt-0 space-y-8">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Budget</p>
+                        <p className="text-lg font-bold text-slate-900 tracking-normal">₹{c.budget.toLocaleString('en-IN')}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Leads</p>
+                        <p className="text-lg font-bold text-slate-900 tracking-normal">{c.leadsGenerated}</p>
+                      </div>
+                    </div>
+                    <div className="pt-6 border-t border-slate-50">
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-normal mb-2">
+                        <span className="text-slate-400">ROI Performance</span>
+                        <span className="text-accent">+{c.ROI}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
+                        <div className="h-full bg-accent" style={{ width: `${Math.min(c.ROI / 2, 100)}%` }} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full p-24 border-2 border-dashed border-slate-100 rounded-[3rem] text-center bg-white/50">
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No active marketing campaigns</p>
+                <Button className="mt-4 rounded-xl font-bold text-xs uppercase tracking-normal h-10 px-6">Launch Campaign</Button>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="m-0 animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[3rem] bg-white p-12">
+            <div className="flex items-center justify-between mb-12">
+              <div>
+                <h3 className="text-2xl font-bold font-headline tracking-normal">Sales Intelligence Core</h3>
+                <p className="text-sm text-slate-500 font-medium tracking-normal">Visualizing pipeline performance and growth vectors.</p>
+              </div>
+              <Button variant="outline" className="rounded-xl h-11 px-6 font-bold text-xs uppercase gap-2 border-slate-100 tracking-normal">
+                <BarChart3 className="h-4 w-4" />
+                Export Brief
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Conversion Efficiency</p>
+                  <h4 className="text-5xl font-bold font-headline tracking-normal text-primary">{stats.conversionRate}%</h4>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-normal">
+                    <span className="text-slate-400">Benchmark Goal</span>
+                    <span className="text-slate-900">25%</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${stats.conversionRate}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Opportunity Value</p>
+                  <h4 className="text-5xl font-bold font-headline tracking-normal text-slate-900">₹{(stats.activeValue / 1000).toFixed(0)}k</h4>
+                </div>
+                <p className="text-sm text-slate-500 font-medium leading-relaxed tracking-normal italic">
+                  "Aggregate capital potential currently moving through strategic stages."
+                </p>
+              </div>
+
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Monthly Inflow Forecast</p>
+                  <h4 className="text-5xl font-bold font-headline tracking-normal text-accent">₹{(stats.forecast / 1000).toFixed(0)}k</h4>
+                </div>
+                <div className="p-6 rounded-2xl bg-accent/5 border border-accent/10">
+                  <p className="text-xs text-accent font-bold uppercase tracking-normal mb-1 flex items-center gap-2">
+                    <Star className="h-3 w-3" />
+                    Growth Vector
+                  </p>
+                  <p className="text-[11px] text-slate-600 font-medium tracking-normal">Predicted revenue based on 30% pipeline conversion probability.</p>
+                </div>
+              </div>
+            </div>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function TrendingUp(props: any) {
+function BoardColumn({ stage, leads, onConvert }: { stage: any, leads: any[], onConvert: (l: any) => void }) {
+  return (
+    <div className="w-[320px] shrink-0 flex flex-col gap-4">
+      <div className="flex items-center justify-between px-2">
+        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{stage.title}</h3>
+        <Badge variant="outline" className="text-[10px] font-bold rounded-md bg-white border-slate-100 tracking-normal">
+          {leads.length}
+        </Badge>
+      </div>
+      
+      <SortableContext id={stage.id} items={leads.map(l => l.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex-1 bg-slate-50/50 rounded-[2rem] p-3 border border-slate-100/50 space-y-3 min-h-[500px]">
+          {leads.map((lead) => (
+            <SortableLeadCard key={lead.id} lead={lead} onConvert={onConvert} />
+          ))}
+          {leads.length === 0 && (
+            <div className="h-32 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center">
+              <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">Empty Stage</p>
+            </div>
+          )}
+        </div>
+      </SortableContext>
+    </div>
+  );
+}
+
+function SortableLeadCard({ lead, onConvert }: { lead: any, onConvert: (l: any) => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lead.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <Card className="p-6 bg-white border border-slate-100 shadow-sm rounded-2xl group hover:shadow-md transition-all cursor-grab active:cursor-grabbing relative overflow-hidden">
+        <div className="space-y-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[10px] font-bold text-primary uppercase mb-1 tracking-normal">{lead.company || "Individual"}</p>
+              <h4 className="text-sm font-bold text-slate-900 leading-snug tracking-normal">{lead.name}</h4>
+            </div>
+            <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority]}`}>
+              {lead.priority}
+            </Badge>
+          </div>
+          
+          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Budget</p>
+              <p className="text-xs font-bold text-slate-900 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</p>
+            </div>
+            <div className="text-right space-y-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Source</p>
+              <p className="text-[10px] font-bold text-slate-600 tracking-normal">{lead.source}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-normal">
+              <Clock className="h-3 w-3" />
+              <span>{lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : "NO DATE"}</span>
+            </div>
+            {lead.status === 'Won' ? (
+              <Button size="sm" className="h-7 px-3 bg-accent text-white font-bold text-[9px] uppercase rounded-lg tracking-normal" onPointerDown={(e) => e.stopPropagation()} onClick={() => onConvert(lead)}>
+                Convert to Project
+              </Button>
+            ) : (
+              <Button variant="ghost" size="sm" className="h-7 px-3 rounded-lg text-[9px] font-bold uppercase tracking-normal hover:bg-slate-100" onPointerDown={(e) => e.stopPropagation()}>
+                Engagement
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function Clock(props: any) {
   return (
     <svg
       {...props}
@@ -498,8 +654,8 @@ function TrendingUp(props: any) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-      <polyline points="17 6 23 6 23 12" />
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
     </svg>
   );
 }

@@ -1,156 +1,40 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * CORE PHILOSOPHY
-     * This ruleset implements a robust, role-based and ownership-based security model for the MediaFlow production platform. 
-     * It prioritizes "Authorization Independence" by utilizing denormalized fields (like projectManagerId or projectMemberIds) 
-     * directly on documents to ensure high-performance security checks without excessive database lookups.
-     *
-     * DATA STRUCTURE
-     * - Personal profiles are stored under /teamMembers/{userId}.
-     * - Global administrative and managerial roles are managed via dedicated 'global_roles' collections for Database-Based Access Control (DBAC).
-     * - Business data (Clients, Projects, Leads, FollowUps) are top-level collections secured by a mix of global roles and specific ownership/participation fields.
-     * - Hierarchical data (Tasks, LineItems) are subcollections that inherit or verify access context from their parent documents.
-     *
-     * KEY SECURITY DECISIONS
-     * - PROTOTYPING MODE: This ruleset strictly enforces AUTHORIZATION (who can access) but is flexible on DATA SHAPE (field types/schemas) to allow rapid iteration.
-     * - AUTH-FIRST: All requests must be authenticated.
-     * - IMMUTABILITY: Critical relational fields (IDs, owner IDs) are enforced as immutable during updates to prevent data corruption or security bypasses.
-     * - GLOBAL ROLES: Admin, Sales Manager, and Global Project Manager roles are verified via the existence of documents in specific global role collections.
-     * - DENORMALIZATION: Authorization fields are duplicated onto sub-resources to allow for fast, direct security evaluations.
-     */
-
-    // --- HELPER FUNCTIONS ---
-
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    // DBAC Role Helpers
-    function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/global_roles_admin/$(request.auth.uid));
-    }
-
-    function isSalesManager() {
-      return isSignedIn() && exists(/databases/$(database)/documents/global_roles_salesManager/$(request.auth.uid));
-    }
-
-    function isGlobalPM() {
-      return isSignedIn() && exists(/databases/$(database)/documents/global_roles_projectManagerGlobal/$(request.auth.uid));
-    }
-
-    // Shared Access Helpers
-    function isProjectMember(data) {
-      return isSignedIn() && (request.auth.uid == data.projectManagerId || (data.projectMemberIds != null && request.auth.uid in data.projectMemberIds));
-    }
-
-    // --- COLLECTION RULES ---
-
-    /**
-     * @description Rules for individual team member profiles.
-     */
-    match /teamMembers/{teamMemberId} {
-      allow get: if isOwner(teamMemberId) || isAdmin();
-      allow list: if isSignedIn(); // Allow listing for project assignments
-      allow create: if isOwner(teamMemberId) && request.resource.data.id == teamMemberId;
-      allow update: if isExistingOwner(teamMemberId) && request.resource.data.id == resource.data.id;
-      allow delete: if isAdmin() && resource != null;
-    }
-
-    /**
-     * @description Reference collection for application-wide role definitions.
-     */
-    match /roles/{roleId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description DBAC collections for global role assignments.
-     */
-    match /global_roles_admin/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list, create, update, delete: if isAdmin();
-    }
-    match /global_roles_salesManager/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list, create, update, delete: if isAdmin();
-    }
-    match /global_roles_projectManagerGlobal/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list, create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Collection for client information.
-     */
-    match /clients/{clientId} {
-      allow get, list: if isSignedIn(); // Relaxed for prototype
-      allow create, update: if isSignedIn(); // Relaxed for prototype
-      allow delete: if isAdmin() && resource != null;
-    }
-
-    /**
-     * @description Media production projects.
-     */
-    match /projects/{projectId} {
-      allow get, list: if isSignedIn(); // Relaxed for prototype
-      allow create: if isSignedIn(); // Relaxed for prototype
-      allow update: if isSignedIn(); // Relaxed for prototype
-      allow delete: if isAdmin() && resource != null;
-
-      match /tasks/{taskId} {
-        allow get, list: if isSignedIn();
-        allow create, update, delete: if isSignedIn();
-      }
-    }
-
-    /**
-     * @description Time tracking entries for team members.
-     */
-    match /timeEntries/{timeEntryId} {
-      allow get: if isAdmin() || isOwner(resource.data.teamMemberId) || (resource.data.projectManagerId != null && request.auth.uid == resource.data.projectManagerId);
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.teamMemberId;
-      allow update: if resource != null && isOwner(resource.data.teamMemberId);
-      allow delete: if resource != null && (isAdmin() || isOwner(resource.data.teamMemberId));
-    }
-
-    /**
-     * @description Client invoices and associated line items.
-     */
-    match /invoices/{invoiceId} {
-      allow get, list: if isSignedIn(); // Relaxed for prototype
-      allow create, update: if isSignedIn(); // Relaxed for prototype
-      allow delete: if isAdmin() && resource != null;
-
-      match /lineItems/{lineItemId} {
-        allow get, list, create, update, delete: if isSignedIn();
-      }
-    }
-
-    /**
-     * @description Potential sales leads.
-     */
     match /leads/{leadId} {
-      allow get, list, create, update, delete: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
-    /**
-     * @description Marketing and sales follow-up activities.
-     */
     match /followUps/{followUpId} {
-      allow get, list, create, update, delete: if isSignedIn();
+      allow read, write: if isSignedIn();
+    }
+
+    match /campaigns/{campaignId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /clients/{clientId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /projects/{projectId} {
+      allow read, write: if isSignedIn();
+      match /tasks/{taskId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    match /team_members/{memberId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /roles/{roleId} {
+      allow read: if isSignedIn();
     }
   }
 }
