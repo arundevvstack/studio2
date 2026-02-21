@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, Suspense, use } from "react";
+import React, { Suspense, use } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Download, Printer, Loader2, FileText } from "lucide-react";
+import { ChevronLeft, Download, Printer, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc } from "firebase/firestore";
 
 /**
  * @fileOverview High-fidelity Invoice View viewport.
- * Consolidates production metadata into a strategic billing document.
+ * Consolidates production metadata into a professional billing document.
  */
 
 function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }> }) {
@@ -21,7 +21,7 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
 
   const paramDueDate = searchParams.get('dueDate');
 
-  // Retrieve project entity (the invoiceId in the URL corresponds to the projectId)
+  // Retrieve project entity
   const projectRef = useMemoFirebase(() => {
     if (!user || !invoiceId) return null;
     return doc(db, "projects", invoiceId);
@@ -253,7 +253,7 @@ function InvoiceViewContent({ params }: { params: Promise<{ invoiceId: string }>
   );
 }
 
-export default function InvoiceViewPage(props: { params: Promise<{ invoiceId: string }> }) {
+export default function InvoiceViewPage({ params }: { params: Promise<{ invoiceId: string }> }) {
   return (
     <Suspense fallback={
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
@@ -261,7 +261,7 @@ export default function InvoiceViewPage(props: { params: Promise<{ invoiceId: st
         <p className="text-slate-400 font-bold text-sm uppercase text-center tracking-normal">Initializing Viewport...</p>
       </div>
     }>
-      <InvoiceViewContent params={props.params} />
+      <InvoiceViewContent params={params} />
     </Suspense>
   );
 }
