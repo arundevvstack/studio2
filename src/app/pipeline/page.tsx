@@ -62,7 +62,7 @@ import {
   SortableContext, 
   verticalListSortingStrategy, 
   useSortable 
-} from "@dnd-kit/sortable";
+} from "@nd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
@@ -73,6 +73,7 @@ import { toast } from "@/hooks/use-toast";
 const STAGES = [
   { id: "New", title: "NEW LEAD" },
   { id: "Contacted", title: "CONTACTED" },
+  { id: "Pitch", title: "STRATEGIC PITCH" },
   { id: "Proposal Sent", title: "PROPOSAL SENT" },
   { id: "Negotiation", title: "NEGOTIATION" },
   { id: "Won", title: "WON" },

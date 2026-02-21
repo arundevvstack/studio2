@@ -14,7 +14,7 @@
         "source": { "type": "string", "enum": ["Instagram", "WhatsApp", "Referral", "Website", "Cold Call", "Ads"] },
         "industry": { "type": "string" },
         "estimatedBudget": { "type": "number" },
-        "status": { "type": "string", "enum": ["New", "Contacted", "Proposal Sent", "Negotiation", "Won", "Lost"] },
+        "status": { "type": "string", "enum": ["New", "Contacted", "Pitch", "Proposal Sent", "Negotiation", "Won", "Lost"] },
         "assignedTo": { "type": "string" },
         "priority": { "type": "string", "enum": ["Low", "Medium", "High", "Hot"] },
         "tags": { "type": "array", "items": { "type": "string" } },
