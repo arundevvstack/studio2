@@ -22,19 +22,12 @@ import { toast } from "@/hooks/use-toast";
 
 /**
  * @fileOverview High-fidelity Talent Card for the Shoot Network Repository.
- * Features derived thumbnails from Instagram handles for instant visual identity.
  */
 
 export function TalentCard({ talent }: { talent: any }) {
   const db = useFirestore();
-
-  // Instant Thumbnail Resolution: Derive from Instagram Handle if not explicitly synced
-  const instagramHandle = talent.socialMediaContact?.split('/').filter(Boolean).pop();
-  const derivedThumbnail = instagramHandle 
-    ? `https://picsum.photos/seed/${instagramHandle.toLowerCase()}-profile/400/400`
-    : null;
   
-  const displayThumbnail = talent.thumbnail || derivedThumbnail || `https://picsum.photos/seed/${talent.id}/200/200`;
+  const displayThumbnail = talent.thumbnail || `https://picsum.photos/seed/${talent.id}/200/200`;
 
   const handleArchive = (e: React.MouseEvent) => {
     e.preventDefault();

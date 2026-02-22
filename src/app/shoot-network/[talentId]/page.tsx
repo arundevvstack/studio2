@@ -21,11 +21,7 @@ import {
   Save,
   Loader2,
   ShieldCheck,
-  Sparkles,
   Zap,
-  Image as ImageIcon,
-  Heart,
-  BarChart3,
   Layers,
   Activity
 } from "lucide-react";
@@ -47,11 +43,10 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { TalentForm } from "@/components/shoot-network/TalentForm";
-import { fetchInstagramVisuals, type InstagramVisualsOutput } from "@/ai/flows/instagram-visuals-flow";
 
 /**
- * @fileOverview Talent Profile Page featuring visual intelligence and social reach extraction.
- * Integrates Instagram handle-based thumbnail persistence.
+ * @fileOverview Talent Profile Page.
+ * Streamlined to focus on core partner metadata and creative taxonomy.
  */
 
 export default function TalentProfilePage({ params }: { params: Promise<{ talentId: string }> }) {
@@ -66,41 +61,6 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
   }, [db, talentId, user]);
 
   const { data: talent, isLoading: isTalentLoading } = useDoc(talentRef);
-
-  // Instagram Visuals State
-  const [visuals, setVisuals] = useState<InstagramVisualsOutput | null>(null);
-  const [isSyncingVisuals, setIsSyncingVisuals] = useState(false);
-
-  useEffect(() => {
-    if (talent?.socialMediaContact && !visuals) {
-      handleSyncVisuals();
-    }
-  }, [talent]);
-
-  const handleSyncVisuals = async () => {
-    if (!talent?.socialMediaContact || !talentRef) return;
-    setIsSyncingVisuals(true);
-    try {
-      const data = await fetchInstagramVisuals({
-        instagramUrl: talent.socialMediaContact,
-        category: talent.category || "Creative"
-      });
-      setVisuals(data);
-
-      // Persistence Logic: Update the talent's primary thumbnail in Firestore after extraction
-      if (data.profilePictureUrl && data.profilePictureUrl !== talent.thumbnail) {
-        updateDocumentNonBlocking(talentRef, {
-          thumbnail: data.profilePictureUrl,
-          updatedAt: serverTimestamp()
-        });
-      }
-    } catch (error) {
-      console.error("Visual Sync Error:", error);
-      toast({ variant: "destructive", title: "Sync Failure", description: "Could not extract visuals from Instagram." });
-    } finally {
-      setIsSyncingVisuals(false);
-    }
-  };
 
   const handleArchive = () => {
     if (!talentRef) return;
@@ -144,9 +104,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
     );
   }
 
-  // Derived thumbnail for consistent visuals even before sync
-  const instagramHandle = talent.socialMediaContact?.split('/').filter(Boolean).pop();
-  const displayThumbnail = talent.thumbnail || (instagramHandle ? `https://picsum.photos/seed/${instagramHandle.toLowerCase()}-profile/400/400` : null) || `https://picsum.photos/seed/${talent.id}/400/400`;
+  const displayThumbnail = talent.thumbnail || `https://picsum.photos/seed/${talent.id}/400/400`;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -380,103 +338,6 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
             </div>
           </Card>
 
-          {/* Visual Intelligence: Instagram Feed Section */}
-          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
-            <CardHeader className="p-10 pb-6 flex flex-row items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
-                  <ImageIcon className="h-5 w-5 text-primary" />
-                  Visual Intelligence
-                </CardTitle>
-                <p className="text-xs text-slate-500 font-medium tracking-normal uppercase tracking-wider">Extracted professional metrics and grid</p>
-              </div>
-              <Button 
-                onClick={handleSyncVisuals} 
-                disabled={isSyncingVisuals || !talent.socialMediaContact}
-                variant="ghost" 
-                size="sm" 
-                className="rounded-xl font-bold text-[10px] uppercase gap-2 text-primary hover:bg-primary/5 tracking-normal"
-              >
-                {isSyncingVisuals ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                Sync Intelligence
-              </Button>
-            </CardHeader>
-            <CardContent className="px-10 pb-10 space-y-8">
-              {isSyncingVisuals ? (
-                <div className="py-20 flex flex-col items-center justify-center space-y-4">
-                  <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal animate-pulse">Extracting professional intelligence...</p>
-                </div>
-              ) : visuals ? (
-                <div className="space-y-10 animate-in fade-in duration-700">
-                  {/* Social Reach Metrics Bar */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Reach</p>
-                        <p className="text-lg font-bold text-slate-900 tracking-normal">{visuals.followers} Followers</p>
-                      </div>
-                    </div>
-                    <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                        <Layers className="h-5 w-5 text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Assets</p>
-                        <p className="text-lg font-bold text-slate-900 tracking-normal">{visuals.posts} Posts</p>
-                      </div>
-                    </div>
-                    <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-xl bg-accent/5 flex items-center justify-center">
-                        <Activity className="h-5 w-5 text-accent" />
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Vibe Rate</p>
-                        <p className="text-lg font-bold text-slate-900 tracking-normal">{visuals.engagementRate} Engagement</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100 italic">
-                    <p className="text-xs text-slate-600 font-medium leading-relaxed tracking-normal">
-                      "{visuals.styleAnalysis}"
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {visuals.visuals.map((v, i) => (
-                      <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-sm transition-all hover:shadow-xl">
-                        <img 
-                          src={v.url} 
-                          alt={v.description} 
-                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
-                          <div className="flex items-center gap-1.5 text-white mb-2">
-                            <Heart className="h-4 w-4 fill-white" />
-                            <span className="text-xs font-bold">{v.likes}</span>
-                          </div>
-                          <p className="text-[10px] text-white/80 font-medium line-clamp-2">{v.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="py-20 flex flex-col items-center justify-center space-y-4 border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/30">
-                  <ImageIcon className="h-12 w-12 text-slate-200" />
-                  <div className="text-center space-y-1">
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">Intelligence Offline</p>
-                    <p className="text-[10px] text-slate-300 font-medium tracking-normal">Provide a valid Instagram URL to sync professional metrics and assets.</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
             <div className="space-y-8">
               <div className="flex items-center justify-between">
@@ -494,7 +355,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                 </div>
                 <div className="h-8 w-px bg-slate-200 hidden md:block" />
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Last Intelligence Sync</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Last Update</p>
                   <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">
                     {talent.updatedAt ? new Date(talent.updatedAt.seconds * 1000).toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' }) : '—'}
                   </p>
