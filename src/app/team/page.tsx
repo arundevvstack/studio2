@@ -50,8 +50,8 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 /**
- * @fileOverview Enhanced Team Management Page.
- * Features real-time filtering, search, and Grid/List view modes.
+ * @fileOverview Optimized Team Management Page.
+ * Features a high-density 6-per-row grid, real-time filtering, and Grid/List view modes.
  */
 
 export default function TeamPage() {
@@ -161,49 +161,49 @@ export default function TeamPage() {
         </div>
       ) : filteredTeam && filteredTeam.length > 0 ? (
         viewMode === 'grid' ? (
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {filteredTeam.map((member) => (
-              <Card key={member.id} className="border-none shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all rounded-[2.5rem] bg-white overflow-hidden text-center group">
-                <CardHeader className="flex flex-col items-center pt-10 pb-4 relative">
-                  <Badge className={`absolute top-6 right-6 border-none font-bold text-[8px] uppercase px-2 py-0.5 rounded-lg tracking-normal ${member.type === 'Freelancer' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
-                    {member.type || "Expert"}
+              <Card key={member.id} className="border-none shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all rounded-[2rem] bg-white overflow-hidden text-center group">
+                <CardHeader className="flex flex-col items-center pt-8 pb-3 relative">
+                  <Badge className={`absolute top-4 right-4 border-none font-bold text-[7px] uppercase px-1.5 py-0.5 rounded-md tracking-normal ${member.type === 'Freelancer' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
+                    {member.type === 'Freelancer' ? 'Free' : 'Staff'}
                   </Badge>
-                  <Avatar className="h-24 w-24 border-4 border-slate-50 mb-6 shadow-md rounded-[2rem] group-hover:scale-105 transition-transform duration-500">
+                  <Avatar className="h-20 w-20 border-4 border-slate-50 mb-4 shadow-sm rounded-[1.5rem] group-hover:scale-105 transition-transform duration-500">
                     <AvatarImage src={`https://picsum.photos/seed/${member.id}/200/200`} />
-                    <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{member.firstName[0]}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/5 text-primary font-bold text-lg">{member.firstName[0]}</AvatarFallback>
                   </Avatar>
-                  <div className="space-y-1">
-                    <CardTitle className="font-headline text-xl text-slate-900 tracking-normal leading-none">{member.firstName} {member.lastName}</CardTitle>
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-normal pt-2">{member.roleId || "CREW MEMBER"}</p>
+                  <div className="space-y-1 px-2">
+                    <CardTitle className="font-headline text-lg text-slate-900 tracking-normal leading-tight truncate w-full">{member.firstName} {member.lastName}</CardTitle>
+                    <p className="text-[9px] font-bold text-primary uppercase tracking-normal pt-1 line-clamp-1">{member.roleId || "CREW MEMBER"}</p>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-8 p-8 pt-0">
+                <CardContent className="space-y-4 p-6 pt-0">
                   <div className="flex justify-center">
-                    <Badge className="bg-accent/10 text-accent border-none font-bold text-[10px] px-4 py-1 uppercase tracking-normal rounded-xl">
+                    <Badge className="bg-accent/10 text-accent border-none font-bold text-[8px] px-3 py-0.5 uppercase tracking-normal rounded-lg">
                       Available
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center justify-center gap-8 py-6 border-y border-slate-50">
+                  <div className="flex items-center justify-center gap-4 py-4 border-y border-slate-50">
                     <div className="text-center">
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-normal">Capacity</p>
-                      <p className="font-bold text-slate-900 mt-1">100%</p>
+                      <p className="text-[8px] text-slate-400 uppercase font-bold tracking-normal">CAP</p>
+                      <p className="font-bold text-slate-900 text-xs mt-0.5">100%</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-normal">Load</p>
-                      <p className="font-bold text-slate-900 mt-1">0</p>
+                      <p className="text-[8px] text-slate-400 uppercase font-bold tracking-normal">LOAD</p>
+                      <p className="font-bold text-slate-900 text-xs mt-0.5">0</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-3">
-                    <Button asChild variant="outline" className="flex-1 h-11 rounded-xl border-slate-100 font-bold text-[10px] uppercase gap-2 tracking-normal text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
+                  <div className="flex items-center justify-center gap-2">
+                    <Button asChild variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[8px] uppercase gap-1.5 tracking-normal text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
                       <a href={`mailto:${member.email}`}>
-                        <Mail className="h-3.5 w-3.5" />
-                        Email
+                        <Mail className="h-3 w-3" />
+                        Mail
                       </a>
                     </Button>
-                    <Button variant="outline" className="flex-1 h-11 rounded-xl border-slate-100 font-bold text-[10px] uppercase gap-2 tracking-normal text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
-                      <MessageSquare className="h-3.5 w-3.5" />
+                    <Button variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[8px] uppercase gap-1.5 tracking-normal text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
+                      <MessageSquare className="h-3 w-3" />
                       Chat
                     </Button>
                   </div>
