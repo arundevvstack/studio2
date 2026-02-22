@@ -74,7 +74,9 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         thumbnail: existingTalent.thumbnail || "",
       });
       setGallery(existingTalent.gallery || []);
-      if (existingTalent.thumbnail) setPreviewThumbnail(existingTalent.thumbnail);
+      if (existingTalent.thumbnail) {
+        setPreviewThumbnail(existingTalent.thumbnail);
+      }
     }
   }, [existingTalent]);
 
@@ -87,8 +89,9 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewThumbnail(reader.result as string);
-        setFormData(prev => ({ ...prev, thumbnail: reader.result as string }));
+        const base64String = reader.result as string;
+        setPreviewThumbnail(base64String);
+        setFormData(prev => ({ ...prev, thumbnail: base64String }));
       };
       reader.readAsDataURL(file);
     }
@@ -106,7 +109,11 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
   const handleSave = () => {
     if (!formData.name || !formData.district || !formData.category) {
-      toast({ variant: "destructive", title: "Validation Error", description: "Identity, Location, and Creative Category are required fields." });
+      toast({ 
+        variant: "destructive", 
+        title: "Validation Error", 
+        description: "Identity, Location, and Creative Category are required fields." 
+      });
       return;
     }
 
@@ -170,7 +177,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
             </AvatarFallback>
           </Avatar>
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Badge className="bg-black/50 text-white border-none">Change Photo</Badge>
+            <Badge className="bg-black/50 text-white border-none rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-normal">Change Photo</Badge>
           </div>
           <input 
             type="file" 
