@@ -52,6 +52,7 @@
         "roleId": { "type": "string" },
         "type": { "type": "string", "enum": ["In-house", "Freelancer"] },
         "status": { "type": "string" },
+        "thumbnail": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

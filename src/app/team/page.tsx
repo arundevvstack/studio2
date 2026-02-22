@@ -55,7 +55,7 @@ import Link from "next/link";
 
 /**
  * @fileOverview Optimized Team Management Page.
- * Features high-fidelity cards with big thumbnails, real-time filtering, and Grid/List view modes.
+ * Features high-fidelity cards with big thumbnails, real-time filtering, and 6-per-row Grid view.
  */
 
 export default function TeamPage() {
@@ -177,45 +177,44 @@ export default function TeamPage() {
         </div>
       ) : filteredTeam && filteredTeam.length > 0 ? (
         viewMode === 'grid' ? (
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {filteredTeam.map((member) => (
-              <Card key={member.id} className="border-none shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all rounded-[2.5rem] bg-white overflow-hidden group">
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Avatar className="h-full w-full rounded-none">
-                    <AvatarImage src={`https://picsum.photos/seed/${member.id}/600/450`} className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <AvatarFallback className="bg-primary/5 text-primary text-4xl font-bold">{member.firstName[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute top-6 right-6">
-                    <Badge className={`border-none font-bold text-[10px] uppercase px-3 py-1 rounded-xl shadow-lg tracking-normal ${member.type === 'Freelancer' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'}`}>
-                      {member.type}
-                    </Badge>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
-                  <div className="absolute bottom-6 left-8">
-                    <h3 className="text-2xl font-bold font-headline text-white tracking-normal leading-tight">{member.firstName} {member.lastName}</h3>
-                    <p className="text-[10px] font-bold text-primary-foreground/80 uppercase tracking-widest mt-1">{member.roleId || "CREW MEMBER"}</p>
-                  </div>
-                </div>
-
-                <CardContent className="p-8 space-y-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-normal">Production Load</p>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-3.5 w-3.5 text-accent" />
-                        <span className="font-bold text-slate-900 text-sm">{member.projectCount} Projects</span>
-                      </div>
+              <Card key={member.id} className="border-none shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all rounded-[2rem] bg-white overflow-hidden group">
+                <Link href={`/team/${member.id}`} className="block">
+                  <div className="relative aspect-square overflow-hidden">
+                    <Avatar className="h-full w-full rounded-none">
+                      <AvatarImage src={member.thumbnail || `https://picsum.photos/seed/${member.id}/400/400`} className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                      <AvatarFallback className="bg-primary/5 text-primary text-2xl font-bold">{member.firstName[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="absolute top-4 right-4">
+                      <Badge className={`border-none font-bold text-[8px] uppercase px-2 py-0.5 rounded-lg shadow-lg tracking-normal ${member.type === 'Freelancer' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'}`}>
+                        {member.type}
+                      </Badge>
                     </div>
-                    <Badge className="bg-accent/10 text-accent border-none font-bold text-[10px] px-3 py-1 uppercase tracking-normal rounded-lg">
-                      Available
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-60" />
+                    <div className="absolute bottom-4 left-6 right-6">
+                      <h3 className="text-lg font-bold font-headline text-white tracking-normal leading-tight line-clamp-1">{member.firstName} {member.lastName}</h3>
+                      <p className="text-[8px] font-bold text-primary-foreground/80 uppercase tracking-widest mt-0.5 line-clamp-1">{member.roleId || "CREW MEMBER"}</p>
+                    </div>
+                  </div>
+                </Link>
+
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="h-3 w-3 text-accent" />
+                      <span className="font-bold text-slate-900 text-[10px] tracking-normal">{member.projectCount} Projects</span>
+                    </div>
+                    <Badge className="bg-accent/10 text-accent border-none font-bold text-[8px] px-2 py-0.5 uppercase tracking-normal rounded-md">
+                      Live
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="h-11 rounded-xl border-slate-100 font-bold text-[10px] uppercase gap-2 tracking-normal hover:bg-slate-50 transition-all">
-                          <Edit2 className="h-3.5 w-3.5" />
+                        <Button variant="outline" className="h-8 rounded-lg border-slate-100 font-bold text-[8px] uppercase gap-1 tracking-normal hover:bg-slate-50 transition-all">
+                          <Edit2 className="h-2.5 w-2.5" />
                           Edit
                         </Button>
                       </DialogTrigger>
@@ -226,10 +225,10 @@ export default function TeamPage() {
                         <TeamMemberForm existingMember={member} />
                       </DialogContent>
                     </Dialog>
-                    <Button asChild className="h-11 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase gap-2 tracking-normal shadow-lg shadow-slate-200">
+                    <Button asChild className="h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-[8px] uppercase gap-1 tracking-normal shadow-md shadow-slate-200">
                       <Link href={`/team/${member.id}`}>
-                        Details
-                        <ArrowRight className="h-3.5 w-3.5" />
+                        View
+                        <ArrowRight className="h-2.5 w-2.5" />
                       </Link>
                     </Button>
                   </div>
@@ -255,7 +254,7 @@ export default function TeamPage() {
                     <TableCell className="px-10 py-6">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12 border-2 border-white shadow-sm rounded-xl shrink-0">
-                          <AvatarImage src={`https://picsum.photos/seed/${member.id}/100/100`} />
+                          <AvatarImage src={member.thumbnail || `https://picsum.photos/seed/${member.id}/100/100`} />
                           <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{member.firstName[0]}</AvatarFallback>
                         </Avatar>
                         <div>

@@ -19,7 +19,8 @@ import {
   MapPin,
   Clock,
   History,
-  MessageSquare
+  MessageSquare,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,11 @@ import {
 } from "@/components/ui/dialog";
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 import Link from "next/link";
+
+/**
+ * @fileOverview High-fidelity Team Member Detail View.
+ * Displays member identity, contact channels, capacity metrics, and production ledger.
+ */
 
 export default function TeamMemberDetailPage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = React.use(params);
@@ -134,7 +140,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ mem
           <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2.5rem] bg-white overflow-hidden">
             <div className="p-10 flex flex-col items-center text-center space-y-6">
               <Avatar className="h-48 w-48 border-8 border-slate-50 shadow-2xl rounded-[3rem]">
-                <AvatarImage src={`https://picsum.photos/seed/${member.id}/400/400`} className="object-cover" />
+                <AvatarImage src={member.thumbnail || `https://picsum.photos/seed/${member.id}/400/400`} className="object-cover" />
                 <AvatarFallback className="bg-primary/5 text-primary text-4xl font-bold">{member.firstName[0]}</AvatarFallback>
               </Avatar>
               <div>
@@ -168,7 +174,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ mem
           <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
             <div className="space-y-2 relative z-10">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Operational Load</p>
+              <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Operational Load</p>
               <h4 className="text-xl font-bold font-headline tracking-normal">Capacity Brief</h4>
             </div>
             <div className="space-y-6 relative z-10">

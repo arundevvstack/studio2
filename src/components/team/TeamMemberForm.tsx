@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,9 @@ import { collection, doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, Save, Mail, Phone, Briefcase, User } from "lucide-react";
+import { Loader2, Save, Mail, Phone, Briefcase, User, Upload } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 interface TeamMemberFormProps {
   existingMember?: any;
@@ -45,7 +47,9 @@ const MEMBER_TYPES = ["In-house", "Freelancer"];
 
 export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   const db = useFirestore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -54,6 +58,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
     phone: "",
     roleId: "",
     type: "In-house",
+    thumbnail: "",
   });
 
   useEffect(() => {
@@ -65,9 +70,30 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
         phone: existingMember.phone || "",
         roleId: existingMember.roleId || "",
         type: existingMember.type || "In-house",
+        thumbnail: existingMember.thumbnail || "",
       });
+      if (existingMember.thumbnail) {
+        setPreviewThumbnail(existingMember.thumbnail);
+      }
     }
   }, [existingMember]);
+
+  const handleThumbnailClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPreviewThumbnail(base64String);
+        setFormData(prev => ({ ...prev, thumbnail: base64String }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.roleId) {
@@ -106,7 +132,32 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   };
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+      <div className="flex flex-col items-center gap-4 py-4">
+        <div 
+          className="relative group cursor-pointer"
+          onClick={handleThumbnailClick}
+        >
+          <Avatar className="h-32 w-32 border-4 border-slate-50 shadow-xl rounded-[2.5rem] transition-all group-hover:opacity-80">
+            <AvatarImage src={previewThumbnail || ""} className="object-cover" />
+            <AvatarFallback className="bg-slate-100">
+              <Upload className="h-8 w-8 text-slate-300" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Badge className="bg-black/50 text-white border-none rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-normal">Change Photo</Badge>
+          </div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={handleFileChange}
+          />
+        </div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Member Portrait</p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">First Name</Label>
