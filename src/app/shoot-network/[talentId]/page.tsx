@@ -20,7 +20,11 @@ import {
   History,
   Save,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles,
+  Zap,
+  Image as ImageIcon,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +44,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { TalentForm } from "@/components/shoot-network/TalentForm";
+import { fetchInstagramVisuals, type InstagramVisualsOutput } from "@/ai/flows/instagram-visuals-flow";
 
 export default function TalentProfilePage({ params }: { params: Promise<{ talentId: string }> }) {
   const { talentId } = React.use(params);
@@ -53,6 +58,32 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
   }, [db, talentId, user]);
 
   const { data: talent, isLoading: isTalentLoading } = useDoc(talentRef);
+
+  // Instagram Visuals State
+  const [visuals, setVisuals] = useState<InstagramVisualsOutput | null>(null);
+  const [isSyncingVisuals, setIsSyncingVisuals] = useState(false);
+
+  useEffect(() => {
+    if (talent?.socialMediaContact && !visuals) {
+      handleSyncVisuals();
+    }
+  }, [talent]);
+
+  const handleSyncVisuals = async () => {
+    if (!talent?.socialMediaContact) return;
+    setIsSyncingVisuals(true);
+    try {
+      const data = await fetchInstagramVisuals({
+        instagramUrl: talent.socialMediaContact,
+        category: talent.category || "Creative"
+      });
+      setVisuals(data);
+    } catch (error) {
+      console.error("Visual Sync Error:", error);
+    } finally {
+      setIsSyncingVisuals(false);
+    }
+  };
 
   const handleArchive = () => {
     if (!talentRef) return;
@@ -213,7 +244,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Social Grid</p>
-                      <p className="text-sm font-bold text-slate-900 tracking-normal">@Link_Active</p>
+                      <p className="text-sm font-bold text-slate-900 tracking-normal">@{talent.socialMediaContact.split('/').filter(Boolean).pop() || 'Profile'}</p>
                     </div>
                   </div>
                   <ExternalLink className="h-3.5 w-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-all" />
@@ -326,6 +357,71 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                 </div>
               </div>
             </div>
+          </Card>
+
+          {/* Visual Intelligence: Instagram Feed Section */}
+          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
+            <CardHeader className="p-10 pb-6 flex flex-row items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
+                  <ImageIcon className="h-5 w-5 text-primary" />
+                  Visual Intelligence
+                </CardTitle>
+                <p className="text-xs text-slate-500 font-medium tracking-normal uppercase tracking-wider">Extracted professional feed from Instagram</p>
+              </div>
+              <Button 
+                onClick={handleSyncVisuals} 
+                disabled={isSyncingVisuals || !talent.socialMediaContact}
+                variant="ghost" 
+                size="sm" 
+                className="rounded-xl font-bold text-[10px] uppercase gap-2 text-primary hover:bg-primary/5 tracking-normal"
+              >
+                {isSyncingVisuals ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                Sync Feed
+              </Button>
+            </CardHeader>
+            <CardContent className="px-10 pb-10 space-y-8">
+              {isSyncingVisuals ? (
+                <div className="py-20 flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal animate-pulse">Extracting professional assets...</p>
+                </div>
+              ) : visuals ? (
+                <div className="space-y-8 animate-in fade-in duration-700">
+                  <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100 italic">
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed tracking-normal">
+                      "{visuals.styleAnalysis}"
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {visuals.visuals.map((v, i) => (
+                      <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-sm transition-all hover:shadow-xl">
+                        <img 
+                          src={v.url} 
+                          alt={v.description} 
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 text-center">
+                          <div className="flex items-center gap-1.5 text-white mb-2">
+                            <Heart className="h-4 w-4 fill-white" />
+                            <span className="text-xs font-bold">{v.likes}</span>
+                          </div>
+                          <p className="text-[10px] text-white/80 font-medium line-clamp-2">{v.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="py-20 flex flex-col items-center justify-center space-y-4 border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/30">
+                  <ImageIcon className="h-12 w-12 text-slate-200" />
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">Visual Feed Offline</p>
+                    <p className="text-[10px] text-slate-300 font-medium tracking-normal">Provide a valid Instagram URL to sync professional assets.</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
           </Card>
 
           <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
