@@ -24,7 +24,10 @@ import {
   Sparkles,
   Zap,
   Image as ImageIcon,
-  Heart
+  Heart,
+  BarChart3,
+  Layers,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -376,7 +379,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                   <ImageIcon className="h-5 w-5 text-primary" />
                   Visual Intelligence
                 </CardTitle>
-                <p className="text-xs text-slate-500 font-medium tracking-normal uppercase tracking-wider">Extracted professional feed from Instagram</p>
+                <p className="text-xs text-slate-500 font-medium tracking-normal uppercase tracking-wider">Extracted professional metrics and grid</p>
               </div>
               <Button 
                 onClick={handleSyncVisuals} 
@@ -386,22 +389,54 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                 className="rounded-xl font-bold text-[10px] uppercase gap-2 text-primary hover:bg-primary/5 tracking-normal"
               >
                 {isSyncingVisuals ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-                Sync Feed
+                Sync Intelligence
               </Button>
             </CardHeader>
             <CardContent className="px-10 pb-10 space-y-8">
               {isSyncingVisuals ? (
                 <div className="py-20 flex flex-col items-center justify-center space-y-4">
                   <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal animate-pulse">Extracting professional assets...</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal animate-pulse">Extracting professional intelligence...</p>
                 </div>
               ) : visuals ? (
-                <div className="space-y-8 animate-in fade-in duration-700">
+                <div className="space-y-10 animate-in fade-in duration-700">
+                  {/* Social Reach Metrics Bar */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Reach</p>
+                        <p className="text-lg font-bold text-slate-900 tracking-normal">{visuals.followers} Followers</p>
+                      </div>
+                    </div>
+                    <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                        <Layers className="h-5 w-5 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Assets</p>
+                        <p className="text-lg font-bold text-slate-900 tracking-normal">{visuals.posts} Posts</p>
+                      </div>
+                    </div>
+                    <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-accent/5 flex items-center justify-center">
+                        <Activity className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Vibe Rate</p>
+                        <p className="text-lg font-bold text-slate-900 tracking-normal">{visuals.engagementRate} Engagement</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100 italic">
                     <p className="text-xs text-slate-600 font-medium leading-relaxed tracking-normal">
                       "{visuals.styleAnalysis}"
                     </p>
                   </div>
+
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {visuals.visuals.map((v, i) => (
                       <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-sm transition-all hover:shadow-xl">
@@ -425,8 +460,8 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                 <div className="py-20 flex flex-col items-center justify-center space-y-4 border-2 border-dashed border-slate-100 rounded-[2rem] bg-slate-50/30">
                   <ImageIcon className="h-12 w-12 text-slate-200" />
                   <div className="text-center space-y-1">
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">Visual Feed Offline</p>
-                    <p className="text-[10px] text-slate-300 font-medium tracking-normal">Provide a valid Instagram URL to sync professional assets.</p>
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">Intelligence Offline</p>
+                    <p className="text-[10px] text-slate-300 font-medium tracking-normal">Provide a valid Instagram URL to sync professional metrics and assets.</p>
                   </div>
                 </div>
               )}
@@ -450,7 +485,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                 </div>
                 <div className="h-8 w-px bg-slate-200 hidden md:block" />
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Last Synchronized</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Last Intelligence Sync</p>
                   <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">
                     {talent.updatedAt ? new Date(talent.updatedAt.seconds * 1000).toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' }) : '—'}
                   </p>
