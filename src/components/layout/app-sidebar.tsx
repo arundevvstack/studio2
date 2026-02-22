@@ -17,7 +17,8 @@ import {
   ChevronRight,
   Briefcase,
   Globe,
-  Database
+  Database,
+  Clock
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const workspaceItems = [
   { title: "Board", icon: Trello, url: "/board" },
   { title: "Clients", icon: Briefcase, url: "/clients" },
   { title: "Schedule", icon: Calendar, url: "/schedule" },
+  { title: "Time Tracking", icon: Clock, url: "/time" },
   { title: "Team", icon: Users, url: "/team" },
   { title: "Billing", icon: FileText, url: "/invoices" },
   { title: "Intelligence", icon: BarChart3, url: "/sales-forecast" },
