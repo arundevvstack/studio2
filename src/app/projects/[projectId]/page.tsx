@@ -32,7 +32,9 @@ import {
   TrendingUp,
   Tag,
   ShieldCheck,
-  Briefcase
+  Briefcase,
+  List,
+  Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,8 +105,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const [progress, setProgress] = useState([0]);
-  const [recruitSearch, setRecruitSearch] = useState("");
+  
+  // Crew Management State
+  const [crewSearch, setCrewSearch] = useState("");
+  const [crewTypeFilter, setCrewTypeFilter] = useState("all");
+  const [crewViewMode, setCrewViewMode] = useState<"tile" | "list">("tile");
   const [teamFilter, setTeamFilter] = useState<"all" | "current">("all");
+  const [recruitSearch, setRecruitSearch] = useState("");
 
   const projectRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -343,11 +350,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   const filteredCrew = useMemo(() => {
     if (!project?.crew) return [];
-    if (teamFilter === 'current') {
-      return project.crew.filter((m: any) => m.stage === project.status || m.stage === 'All Phases');
-    }
-    return project.crew;
-  }, [project, teamFilter]);
+    return project.crew.filter((member: any) => {
+      const matchesSearch = member.name?.toLowerCase().includes(crewSearch.toLowerCase()) || 
+                           member.category?.toLowerCase().includes(crewSearch.toLowerCase());
+      const matchesType = crewTypeFilter === "all" || member.type === crewTypeFilter;
+      const matchesStage = teamFilter === "all" || 
+                          (teamFilter === "current" && (member.stage === project.status || member.stage === "All Phases"));
+      return matchesSearch && matchesType && matchesStage;
+    });
+  }, [project, crewSearch, crewTypeFilter, teamFilter]);
 
   if (isUserLoading || isProjectLoading) {
     return (
@@ -490,169 +501,304 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
           {/* Team Block */}
           <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10 space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Production Crew & Resources</p>
                 <div className="flex items-center gap-4">
                   <h3 className="text-xl font-bold font-headline tracking-normal">Project Team</h3>
-                  <Tabs value={teamFilter} onValueChange={(v: any) => setTeamFilter(v)} className="bg-slate-50 p-1 rounded-lg">
-                    <TabsList className="bg-transparent h-7 gap-1">
-                      <TabsTrigger value="all" className="text-[8px] font-bold uppercase px-3 h-5 rounded-md tracking-normal data-[state=active]:bg-white data-[state=active]:shadow-sm">Global</TabsTrigger>
-                      <TabsTrigger value="current" className="text-[8px] font-bold uppercase px-3 h-5 rounded-md tracking-normal data-[state=active]:bg-white data-[state=active]:shadow-sm">Phase Only</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+                  <div className="flex items-center bg-slate-50 p-1 rounded-xl shadow-sm border border-slate-100">
+                    <Button 
+                      variant={crewViewMode === 'tile' ? 'secondary' : 'ghost'} 
+                      size="icon" 
+                      onClick={() => setCrewViewMode('tile')}
+                      className={`h-8 w-8 rounded-lg transition-all ${crewViewMode === 'tile' ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}`}
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={crewViewMode === 'list' ? 'secondary' : 'ghost'} 
+                      size="icon" 
+                      onClick={() => setCrewViewMode('list')}
+                      className={`h-8 w-8 rounded-lg transition-all ${crewViewMode === 'list' ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}`}
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
               
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button className="h-10 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-[10px] uppercase gap-2 tracking-normal shadow-lg shadow-primary/20">
-                    <Plus className="h-4 w-4" /> Provision Member
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="sm:max-w-[550px] rounded-l-[3rem] p-0 border-none shadow-2xl flex flex-col bg-slate-50">
-                  <SheetHeader className="p-10 pb-6 bg-white border-b border-slate-100">
-                    <SheetTitle className="text-2xl font-bold font-headline tracking-normal">Deploy Production Resource</SheetTitle>
-                    <p className="text-sm text-slate-500 font-medium tracking-normal mt-1">Assign verified partners or internal staff to specific project stages.</p>
-                  </SheetHeader>
-                  
-                  <div className="flex-1 overflow-hidden flex flex-col">
-                    <div className="p-10 pb-0 space-y-6">
-                      <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                        <Input value={recruitSearch} onChange={(e) => setRecruitSearch(e.target.value)} placeholder="Identify expertise or identity..." className="pl-12 h-14 rounded-2xl bg-white border-none shadow-sm font-bold tracking-normal text-sm" />
-                      </div>
-                    </div>
-
-                    <Tabs defaultValue="network" className="flex-1 flex flex-col mt-6 overflow-hidden">
-                      <TabsList className="mx-10 bg-slate-100/50 p-1 h-auto rounded-xl gap-1 shrink-0">
-                        <TabsTrigger value="network" className="flex-1 rounded-lg py-2 text-[10px] font-bold uppercase tracking-normal">Talent Network</TabsTrigger>
-                        <TabsTrigger value="staff" className="flex-1 rounded-lg py-2 text-[10px] font-bold uppercase tracking-normal">Internal Staff</TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="network" className="flex-1 overflow-y-auto custom-scrollbar p-10 pt-6 space-y-4 m-0">
-                        {isTalentLoading ? (
-                          <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : suggestions.length > 0 ? (
-                          suggestions.map((talent) => (
-                            <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all group">
-                              <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                  <Avatar className="h-12 w-12 rounded-xl shadow-sm border-2 border-slate-50">
-                                    <AvatarImage src={talent.thumbnail} />
-                                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{talent.name?.[0]}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p>
-                                    <p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                                      <span className="text-[9px] font-bold text-slate-500">{talent.rank || 5}.0</span>
-                                      <span className="text-slate-200 text-[10px]">•</span>
-                                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">{talent.district}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button onClick={() => handleRecruit(talent)} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </Card>
-                          ))
-                        ) : (
-                          <div className="py-20 text-center bg-white/50 rounded-2xl border-2 border-dashed border-slate-100">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-normal">No talent matching criteria</p>
-                          </div>
-                        )}
-                      </TabsContent>
-
-                      <TabsContent value="staff" className="flex-1 overflow-y-auto custom-scrollbar p-10 pt-6 space-y-4 m-0">
-                        {isStaffLoading ? (
-                          <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                        ) : staffSuggestions.length > 0 ? (
-                          staffSuggestions.map((staff) => (
-                            <Card key={staff.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all group">
-                              <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                  <Avatar className="h-12 w-12 rounded-xl shadow-sm border-2 border-slate-50">
-                                    <AvatarFallback className="bg-blue-50 text-blue-600 text-xs font-bold">{staff.firstName[0]}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-bold text-sm text-slate-900 tracking-normal">{staff.name}</p>
-                                    <p className="text-[9px] font-bold text-blue-500 uppercase tracking-normal">{staff.roleId}</p>
-                                    <Badge className="bg-slate-50 text-slate-400 border-none text-[8px] font-bold uppercase mt-1 px-2 tracking-normal">Internal</Badge>
-                                  </div>
-                                </div>
-                                <Button onClick={() => handleRecruit(staff)} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-blue-500 hover:text-white transition-all">
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </Card>
-                          ))
-                        ) : (
-                          <div className="py-20 text-center bg-white/50 rounded-2xl border-2 border-dashed border-slate-100">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-normal">All staff members provisioned</p>
-                          </div>
-                        )}
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredCrew.length > 0 ? (
-                filteredCrew.map((member: any) => (
-                  <Card key={member.talentId} className="border-none shadow-sm rounded-3xl bg-white p-6 relative group hover:shadow-xl hover:-translate-y-1 transition-all duration-500 border border-slate-50 overflow-hidden">
-                    <Button onClick={() => handleRemoveRecruit(member.talentId)} variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-200 hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-all">
-                      <X className="h-4 w-4" />
+              <div className="flex items-center gap-3">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button className="h-10 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-[10px] uppercase gap-2 tracking-normal shadow-lg shadow-primary/20">
+                      <Plus className="h-4 w-4" /> Provision Member
                     </Button>
-                    <div className="flex flex-col items-center text-center space-y-4">
-                      <Avatar className="h-20 w-20 rounded-[1.5rem] shadow-lg border-4 border-slate-50 group-hover:scale-105 transition-transform duration-500">
-                        <AvatarImage src={member.thumbnail} />
-                        <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">{member.name?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="space-y-1">
-                        <h4 className="font-bold text-lg text-slate-900 tracking-normal leading-tight">{member.name}</h4>
-                        <div className="flex items-center justify-center gap-2">
-                          <p className="text-[10px] font-bold text-primary uppercase tracking-normal">{member.category}</p>
-                          {member.type === 'Internal' && <ShieldCheck className="h-3 w-3 text-blue-500" />}
+                  </SheetTrigger>
+                  <SheetContent side="right" className="sm:max-w-[550px] rounded-l-[3rem] p-0 border-none shadow-2xl flex flex-col bg-slate-50">
+                    <SheetHeader className="p-10 pb-6 bg-white border-b border-slate-100">
+                      <SheetTitle className="text-2xl font-bold font-headline tracking-normal">Deploy Production Resource</SheetTitle>
+                      <p className="text-sm text-slate-500 font-medium tracking-normal mt-1">Assign verified partners or internal staff to specific project stages.</p>
+                    </SheetHeader>
+                    
+                    <div className="flex-1 overflow-hidden flex flex-col">
+                      <div className="p-10 pb-0 space-y-6">
+                        <div className="relative group">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                          <Input value={recruitSearch} onChange={(e) => setRecruitSearch(e.target.value)} placeholder="Identify expertise or identity..." className="pl-12 h-14 rounded-2xl bg-white border-none shadow-sm font-bold tracking-normal text-sm" />
                         </div>
                       </div>
-                      
-                      <div className="w-full space-y-2 pt-2 border-t border-slate-50">
-                        <p className="text-[8px] font-bold text-slate-400 uppercase tracking-normal">Assigned Phase</p>
-                        <Select value={member.stage || "All Phases"} onValueChange={(val) => handleUpdateMemberStage(member.talentId, val)}>
-                          <SelectTrigger className="h-8 w-full border-none bg-slate-50/50 rounded-xl text-[9px] font-bold uppercase tracking-normal hover:bg-slate-100 transition-colors">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl shadow-xl">
-                            <SelectItem value="All Phases" className="text-[10px] font-bold uppercase tracking-normal">All Phases</SelectItem>
-                            {STAGES.map(s => <SelectItem key={s} value={s} className="text-[10px] font-bold uppercase tracking-normal">{s}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
 
-                      <div className="flex gap-2 w-full pt-2">
-                        <Button asChild variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[9px] uppercase tracking-normal hover:bg-slate-900 hover:text-white transition-all">
-                          <Link href={member.type === 'Internal' ? `/team` : `/shoot-network/${member.talentId}`}>Profile</Link>
-                        </Button>
-                        <Button variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[9px] uppercase tracking-normal hover:bg-slate-900 hover:text-white transition-all">Chat</Button>
-                      </div>
+                      <Tabs defaultValue="network" className="flex-1 flex flex-col mt-6 overflow-hidden">
+                        <TabsList className="mx-10 bg-slate-100/50 p-1 h-auto rounded-xl gap-1 shrink-0">
+                          <TabsTrigger value="network" className="flex-1 rounded-lg py-2 text-[10px] font-bold uppercase tracking-normal">Talent Network</TabsTrigger>
+                          <TabsTrigger value="staff" className="flex-1 rounded-lg py-2 text-[10px] font-bold uppercase tracking-normal">Internal Staff</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="network" className="flex-1 overflow-y-auto custom-scrollbar p-10 pt-6 space-y-4 m-0">
+                          {isTalentLoading ? (
+                            <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                          ) : suggestions.length > 0 ? (
+                            suggestions.map((talent) => (
+                              <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all group">
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                    <Avatar className="h-12 w-12 rounded-xl shadow-sm border-2 border-slate-50">
+                                      <AvatarImage src={talent.thumbnail} />
+                                      <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{talent.name?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p>
+                                      <p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                                        <span className="text-[9px] font-bold text-slate-500">{talent.rank || 5}.0</span>
+                                        <span className="text-slate-200 text-[10px]">•</span>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">{talent.district}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Button onClick={() => handleRecruit(talent)} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </Card>
+                            ))
+                          ) : (
+                            <div className="py-20 text-center bg-white/50 rounded-2xl border-2 border-dashed border-slate-100">
+                              <p className="text-xs font-bold text-slate-400 uppercase tracking-normal">No talent matching criteria</p>
+                            </div>
+                          )}
+                        </TabsContent>
+
+                        <TabsContent value="staff" className="flex-1 overflow-y-auto custom-scrollbar p-10 pt-6 space-y-4 m-0">
+                          {isStaffLoading ? (
+                            <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                          ) : staffSuggestions.length > 0 ? (
+                            staffSuggestions.map((staff) => (
+                              <Card key={staff.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all group">
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                    <Avatar className="h-12 w-12 rounded-xl shadow-sm border-2 border-slate-50">
+                                      <AvatarFallback className="bg-blue-50 text-blue-600 text-xs font-bold">{staff.firstName[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-bold text-sm text-slate-900 tracking-normal">{staff.name}</p>
+                                      <p className="text-[9px] font-bold text-blue-500 uppercase tracking-normal">{staff.roleId}</p>
+                                      <Badge className="bg-slate-50 text-slate-400 border-none text-[8px] font-bold uppercase mt-1 px-2 tracking-normal">Internal</Badge>
+                                    </div>
+                                  </div>
+                                  <Button onClick={() => handleRecruit(staff)} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-blue-500 hover:text-white transition-all">
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </Card>
+                            ))
+                          ) : (
+                            <div className="py-20 text-center bg-white/50 rounded-2xl border-2 border-dashed border-slate-100">
+                              <p className="text-xs font-bold text-slate-400 uppercase tracking-normal">All staff members provisioned</p>
+                            </div>
+                          )}
+                        </TabsContent>
+                      </Tabs>
                     </div>
-                  </Card>
-                ))
-              ) : (
-                <div className="col-span-full py-24 border-2 border-dashed border-slate-50 rounded-[3rem] text-center flex flex-col items-center justify-center space-y-6">
-                  <div className="h-16 w-16 rounded-[1.5rem] bg-slate-50 flex items-center justify-center"><Users className="h-8 w-8 text-slate-200" /></div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">{teamFilter === 'current' ? `No crew assigned to ${project.status}` : "No production crew provisioned"}</p>
-                    <p className="text-xs text-slate-300 italic tracking-normal">Deploy your first resource to start the mission.</p>
-                  </div>
-                </div>
-              )}
+                  </SheetContent>
+                </Sheet>
+              </div>
             </div>
+
+            {/* Team Block Toolbar: Search + Filters */}
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative flex-1 group w-full">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                <Input 
+                  value={crewSearch}
+                  onChange={(e) => setCrewSearch(e.target.value)}
+                  placeholder="Search crew by name or role..." 
+                  className="pl-12 h-12 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal text-sm" 
+                />
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <Select value={crewTypeFilter} onValueChange={setCrewTypeFilter}>
+                  <SelectTrigger className="h-12 w-[140px] rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-normal">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl shadow-xl">
+                    <SelectItem value="all" className="text-[10px] font-bold uppercase">All Types</SelectItem>
+                    <SelectItem value="Internal" className="text-[10px] font-bold uppercase">Internal</SelectItem>
+                    <SelectItem value="External" className="text-[10px] font-bold uppercase">External</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Tabs value={teamFilter} onValueChange={(v: any) => setTeamFilter(v)} className="bg-slate-50 p-1 rounded-xl border border-slate-100 shadow-inner">
+                  <TabsList className="bg-transparent h-10 gap-1 p-0">
+                    <TabsTrigger value="all" className="text-[10px] font-bold uppercase px-4 rounded-lg tracking-normal data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">Global</TabsTrigger>
+                    <TabsTrigger value="current" className="text-[10px] font-bold uppercase px-4 rounded-lg tracking-normal data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">Phase</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
+
+            {/* Crew Display Area */}
+            {crewViewMode === 'tile' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredCrew.length > 0 ? (
+                  filteredCrew.map((member: any) => (
+                    <Card key={member.talentId} className="border-none shadow-sm rounded-3xl bg-white p-6 relative group hover:shadow-xl hover:-translate-y-1 transition-all duration-500 border border-slate-50 overflow-hidden">
+                      <Button onClick={() => handleRemoveRecruit(member.talentId)} variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-200 hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-all">
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <div className="flex flex-col items-center text-center space-y-4">
+                        <Avatar className="h-20 w-20 rounded-[1.5rem] shadow-lg border-4 border-slate-50 group-hover:scale-105 transition-transform duration-500">
+                          <AvatarImage src={member.thumbnail} />
+                          <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">{member.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-1">
+                          <h4 className="font-bold text-lg text-slate-900 tracking-normal leading-tight">{member.name}</h4>
+                          <div className="flex items-center justify-center gap-2">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-normal">{member.category}</p>
+                            {member.type === 'Internal' && <ShieldCheck className="h-3 w-3 text-blue-500" />}
+                          </div>
+                        </div>
+                        
+                        <div className="w-full space-y-2 pt-2 border-t border-slate-50">
+                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-normal">Assigned Phase</p>
+                          <Select value={member.stage || "All Phases"} onValueChange={(val) => handleUpdateMemberStage(member.talentId, val)}>
+                            <SelectTrigger className="h-8 w-full border-none bg-slate-50/50 rounded-xl text-[9px] font-bold uppercase tracking-normal hover:bg-slate-100 transition-colors">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl shadow-xl">
+                              <SelectItem value="All Phases" className="text-[10px] font-bold uppercase tracking-normal">All Phases</SelectItem>
+                              {STAGES.map(s => <SelectItem key={s} value={s} className="text-[10px] font-bold uppercase tracking-normal">{s}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="flex gap-2 w-full pt-2">
+                          <Button asChild variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[9px] uppercase tracking-normal hover:bg-slate-900 hover:text-white transition-all">
+                            <Link href={member.type === 'Internal' ? `/team` : `/shoot-network/${member.talentId}`}>Profile</Link>
+                          </Button>
+                          <Button variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[9px] uppercase tracking-normal hover:bg-slate-900 hover:text-white transition-all">Chat</Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-full py-24 border-2 border-dashed border-slate-50 rounded-[3rem] text-center flex flex-col items-center justify-center space-y-6 bg-slate-50/20">
+                    <div className="h-16 w-16 rounded-[1.5rem] bg-white flex items-center justify-center shadow-sm"><Users className="h-8 w-8 text-slate-200" /></div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No crew matching filters</p>
+                      <p className="text-xs text-slate-300 italic tracking-normal">Adjust search or deploy a new resource.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-500">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/50 border-b border-slate-100">
+                        <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400 tracking-normal">Crew Identity</th>
+                        <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400 tracking-normal">Role / Category</th>
+                        <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400 tracking-normal">Resource Type</th>
+                        <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400 tracking-normal">Lifecycle Phase</th>
+                        <th className="px-8 py-5 text-[10px] font-bold uppercase text-slate-400 tracking-normal text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {filteredCrew.length > 0 ? (
+                        filteredCrew.map((member: any) => (
+                          <tr key={member.talentId} className="group hover:bg-slate-50/50 transition-colors">
+                            <td className="px-8 py-5">
+                              <div className="flex items-center gap-4">
+                                <Avatar className="h-10 w-10 border-2 border-white shadow-sm rounded-xl shrink-0">
+                                  <AvatarImage src={member.thumbnail} />
+                                  <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{member.name?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-bold text-sm text-slate-900 tracking-normal leading-none">{member.name}</p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-normal">ID: {member.talentId.substring(0, 6).toUpperCase()}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              <Badge className="bg-primary/5 text-primary border-none text-[9px] font-bold uppercase px-3 tracking-normal">
+                                {member.category}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className="flex items-center gap-2">
+                                {member.type === 'Internal' ? (
+                                  <Badge className="bg-blue-50 text-blue-600 border-none text-[9px] font-bold uppercase px-3 tracking-normal flex items-center gap-1">
+                                    <ShieldCheck className="h-3 w-3" /> Internal
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-orange-50 text-orange-600 border-none text-[9px] font-bold uppercase px-3 tracking-normal">
+                                    External
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              <Select value={member.stage || "All Phases"} onValueChange={(val) => handleUpdateMemberStage(member.talentId, val)}>
+                                <SelectTrigger className="h-9 w-[160px] border-none bg-slate-50/50 rounded-xl text-[9px] font-bold uppercase tracking-normal hover:bg-slate-100 transition-colors">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl shadow-xl">
+                                  <SelectItem value="All Phases" className="text-[10px] font-bold uppercase tracking-normal">All Phases</SelectItem>
+                                  {STAGES.map(s => <SelectItem key={s} value={s} className="text-[10px] font-bold uppercase tracking-normal">{s}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-8 py-5 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white transition-all">
+                                  <Link href={member.type === 'Internal' ? `/team` : `/shoot-network/${member.talentId}`}>
+                                    <ArrowRight className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                                <Button onClick={() => handleRemoveRecruit(member.talentId)} variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-slate-50 hover:bg-destructive hover:text-white transition-all">
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="py-24 text-center">
+                            <div className="flex flex-col items-center justify-center space-y-4">
+                              <Users className="h-10 w-10 text-slate-200" />
+                              <p className="text-xs font-bold text-slate-300 uppercase tracking-normal">No crew matching filters</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </Card>
 
           {/* Activity Hub */}
