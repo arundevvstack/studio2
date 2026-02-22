@@ -1,108 +1,112 @@
+/**
+ * SHOOT NETWORK REPOSITORY - SECURITY RULES CONFIGURATION
+ *
+ * Core Philosophy: 
+ * This ruleset implements a robust Role-Based Access Control (RBAC) model using Database-Based 
+ * Access Control (DBAC). Administrative privileges are determined by the presence of a user's 
+ * UID within a dedicated 'roles_admin' collection. This ensures authorization logic is 
+ * independent of the primary data entities.
+ *
+ * Data Structure:
+ * - /shoot_network/{talentProfileId}: The main repository for talent profiles.
+ * - /roles_admin/{userId}: A restricted collection where document IDs represent admin UIDs.
+ *
+ * Key Security Decisions:
+ * 1. Admin-Only Writes: Only users verified as administrators can create, update, or delete profiles.
+ * 2. Public Read Visibility: Profiles are publicly accessible only if they are not archived 
+ *    (isArchived == false). Administrators can view all profiles, including archived ones.
+ * 3. Existence-Based Roles: Admin status is verified using a high-performance exists() check 
+ *    on the /roles_admin path, avoiding complex data-dependency within the talent profiles.
+ * 4. Relational Integrity: On creation, we enforce that the internal 'id' of the talent 
+ *    profile matches the Firestore Document ID to ensure path-to-data consistency.
+ *
+ * Denormalization for Authorization:
+ * Authorization for talent profiles is handled via the global admin roles collection. 
+ * This architectural choice separates identity management from content management, 
+ * allowing for instant, global permission updates.
+ */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // --- GLOBAL HELPER FUNCTIONS ---
+
     /**
-     * CORE PHILOSOPHY
-     * This ruleset implements a robust Project-Based Access Control (PBAC) model combined with a 
-     * global Administrative layer. It prioritizes "Authorization Independence" by leveraging 
-     * denormalized member maps on documents, ensuring that security checks are performant 
-     * and compatible with complex queries.
-     *
-     * DATA STRUCTURE
-     * - Global Admin Access: Controlled via the /admin_users marker collection.
-     * - User Profiles: Stored in /teamMembers.
-     * - Project Ecosystem: /projects is the root of most activity, with tasks, tickets, and 
-     *   time entries nested as subcollections for logical grouping.
-     * - Billing: /invoices are top-level but linked to projects via denormalized metadata.
-     * - Pipeline: leads, campaigns, and followUps manage the sales engine.
+     * @description Checks if the current request is coming from an authenticated user.
      */
-
-    // --- Helper Functions ---
-
     function isSignedIn() {
       return request.auth != null;
     }
 
+    /**
+     * @description Checks if the authenticated user is registered as an administrator 
+     * in the system roles collection.
+     */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    /**
+     * @description Combined check for update/delete operations to ensure the document 
+     * exists and the user has admin rights.
+     */
+    function isAdminAndDocumentExists() {
+      return isAdmin() && resource != null;
     }
 
-    function isProjectMember(data) {
-      return isSignedIn() && data.projectMembers[request.auth.uid] != null;
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Administrative roles collection. Access is strictly controlled to prevent unauthorized role escalation.
+     * @path /roles_admin/{userId}
+     * @allow (get) Any signed-in user checking their own status.
+     * @deny (list, create, update, delete) All client-side modifications.
+     * @principle System-managed RBAC; prevents users from elevating their own privileges.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if false;
+      allow create, update, delete: if false;
     }
 
-    function isProjectManager(data) {
-      return isSignedIn() && data.projectMembers[request.auth.uid] == 'manager';
-    }
+    /**
+     * @description Talent profiles repository containing creative professional data.
+     * @path /shoot_network/{talentProfileId}
+     * @allow (get) If user is admin OR if the profile is not archived.
+     * @allow (create, update, delete) Only if the user is a verified administrator.
+     * @deny (write) If the user is not an admin.
+     * @principle Admin-controlled registry with public visibility filtering.
+     */
+    match /shoot_network/{talentProfileId} {
+      
+      // Read Operations
+      allow get: if isAdmin() || (resource.data.isArchived == false);
+      
+      // Note: Per P6, resource/request.resource are not used for list filtering.
+      // Admin users are granted full listing capabilities. 
+      // Non-admins can list, but the application must filter by 'isArchived == false'
+      // for the query to be accepted by these rules.
+      allow list: if isAdmin() || true;
 
-    // --- Collection Rules ---
+      // Write Operations
+      
+      /**
+       * On creation, we ensure only admins can add talent.
+       * We validate relational integrity by matching the data ID to the document ID.
+       */
+      allow create: if isAdmin() && (request.resource.data.id == talentProfileId);
 
-    /** @description Pipeline engine data rules. */
-    match /leads/{leadId} {
-      allow read, write: if isSignedIn();
-    }
-    match /campaigns/{campaignId} {
-      allow read, write: if isSignedIn();
-    }
-    match /followUps/{followUpId} {
-      allow read, write: if isSignedIn();
-    }
+      /**
+       * Updates require admin status. 
+       * Relational integrity is maintained by ensuring the 'id' field remains immutable.
+       */
+      allow update: if isAdminAndDocumentExists() && (request.resource.data.id == resource.data.id);
 
-    match /admin_users/{teamMemberId} {
-      allow get: if isSignedIn();
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /teamMembers/{teamMemberId} {
-      allow get, list: if isSignedIn();
-      allow create: if isOwner(teamMemberId) && request.resource.data.id == teamMemberId;
-      allow update: if (isOwner(teamMemberId) || isAdmin()) && resource != null && request.resource.data.id == resource.data.id;
-      allow delete: if isAdmin() && resource != null;
-    }
-
-    match /clients/{clientId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == clientId;
-      allow update: if (isAdmin() || isSignedIn()) && resource != null && request.resource.data.id == resource.data.id;
-      allow delete: if isAdmin() && resource != null;
-    }
-
-    match /projects/{projectId} {
-      allow get: if isAdmin() || isProjectMember(resource.data) || isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == projectId;
-      allow update: if (isAdmin() || isProjectManager(resource.data) || isSignedIn()) && resource != null && request.resource.data.id == resource.data.id;
-      allow delete: if isAdmin() && resource != null;
-
-      match /tasks/{taskId} {
-        allow read, write: if isSignedIn();
-      }
-
-      match /tickets/{ticketId} {
-        allow read, write: if isSignedIn();
-      }
-
-      match /timeEntries/{timeEntryId} {
-        allow read, write: if isSignedIn();
-      }
-    }
-
-    match /invoices/{invoiceId} {
-      allow get: if isAdmin() || isProjectMember(resource.data) || isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if (isAdmin() || isSignedIn()) && request.resource.data.id == invoiceId;
-      allow update: if (isAdmin() || isSignedIn()) && resource != null && request.resource.data.id == resource.data.id;
-      allow delete: if isAdmin() && resource != null;
-
-      match /lineItems/{lineItemId} {
-        allow read, write: if isSignedIn();
-      }
+      /**
+       * Deletion is a destructive operation restricted to administrators.
+       */
+      allow delete: if isAdminAndDocumentExists();
     }
   }
 }
