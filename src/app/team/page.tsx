@@ -18,7 +18,10 @@ import {
   ShieldCheck,
   X,
   ArrowRight,
-  MoreHorizontal
+  MoreHorizontal,
+  Edit2,
+  TrendingUp,
+  User
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -48,10 +51,11 @@ import {
   DialogTrigger 
 } from "@/components/ui/dialog";
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
+import Link from "next/link";
 
 /**
  * @fileOverview Optimized Team Management Page.
- * Features a high-density 6-per-row grid, real-time filtering, and Grid/List view modes.
+ * Features high-fidelity cards with big thumbnails, real-time filtering, and Grid/List view modes.
  */
 
 export default function TeamPage() {
@@ -65,12 +69,24 @@ export default function TeamPage() {
     if (!user) return null;
     return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
   }, [db, user]);
+  const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
 
-  const { data: team, isLoading } = useCollection(teamQuery);
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "projects"));
+  }, [db, user]);
+  const { data: projects } = useCollection(projectsQuery);
 
   const filteredTeam = useMemo(() => {
     if (!team) return [];
-    return team.filter((member) => {
+    return team.map(member => {
+      // Calculate project engagement
+      const projectCount = projects?.filter(p => 
+        p.crew?.some((c: any) => c.talentId === member.id)
+      ).length || 0;
+      
+      return { ...member, projectCount };
+    }).filter((member) => {
       const matchesSearch = 
         member.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         member.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,7 +96,7 @@ export default function TeamPage() {
       
       return matchesSearch && matchesType;
     });
-  }, [team, searchQuery, typeFilter]);
+  }, [team, searchQuery, typeFilter, projects]);
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-20">
@@ -154,57 +170,67 @@ export default function TeamPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {teamLoading ? (
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
           <Loader2 className="h-10 w-10 text-primary animate-spin" />
           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-normal">Syncing Production Crew...</p>
         </div>
       ) : filteredTeam && filteredTeam.length > 0 ? (
         viewMode === 'grid' ? (
-          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {filteredTeam.map((member) => (
-              <Card key={member.id} className="border-none shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all rounded-[2rem] bg-white overflow-hidden text-center group">
-                <CardHeader className="flex flex-col items-center pt-8 pb-3 relative">
-                  <Badge className={`absolute top-4 right-4 border-none font-bold text-[7px] uppercase px-1.5 py-0.5 rounded-md tracking-normal ${member.type === 'Freelancer' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
-                    {member.type === 'Freelancer' ? 'Free' : 'Staff'}
-                  </Badge>
-                  <Avatar className="h-20 w-20 border-4 border-slate-50 mb-4 shadow-sm rounded-[1.5rem] group-hover:scale-105 transition-transform duration-500">
-                    <AvatarImage src={`https://picsum.photos/seed/${member.id}/200/200`} />
-                    <AvatarFallback className="bg-primary/5 text-primary font-bold text-lg">{member.firstName[0]}</AvatarFallback>
+              <Card key={member.id} className="border-none shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all rounded-[2.5rem] bg-white overflow-hidden group">
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Avatar className="h-full w-full rounded-none">
+                    <AvatarImage src={`https://picsum.photos/seed/${member.id}/600/450`} className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <AvatarFallback className="bg-primary/5 text-primary text-4xl font-bold">{member.firstName[0]}</AvatarFallback>
                   </Avatar>
-                  <div className="space-y-1 px-2">
-                    <CardTitle className="font-headline text-lg text-slate-900 tracking-normal leading-tight truncate w-full">{member.firstName} {member.lastName}</CardTitle>
-                    <p className="text-[9px] font-bold text-primary uppercase tracking-normal pt-1 line-clamp-1">{member.roleId || "CREW MEMBER"}</p>
+                  <div className="absolute top-6 right-6">
+                    <Badge className={`border-none font-bold text-[10px] uppercase px-3 py-1 rounded-xl shadow-lg tracking-normal ${member.type === 'Freelancer' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'}`}>
+                      {member.type}
+                    </Badge>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4 p-6 pt-0">
-                  <div className="flex justify-center">
-                    <Badge className="bg-accent/10 text-accent border-none font-bold text-[8px] px-3 py-0.5 uppercase tracking-normal rounded-lg">
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-60" />
+                  <div className="absolute bottom-6 left-8">
+                    <h3 className="text-2xl font-bold font-headline text-white tracking-normal leading-tight">{member.firstName} {member.lastName}</h3>
+                    <p className="text-[10px] font-bold text-primary-foreground/80 uppercase tracking-widest mt-1">{member.roleId || "CREW MEMBER"}</p>
+                  </div>
+                </div>
+
+                <CardContent className="p-8 space-y-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-normal">Production Load</p>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-3.5 w-3.5 text-accent" />
+                        <span className="font-bold text-slate-900 text-sm">{member.projectCount} Projects</span>
+                      </div>
+                    </div>
+                    <Badge className="bg-accent/10 text-accent border-none font-bold text-[10px] px-3 py-1 uppercase tracking-normal rounded-lg">
                       Available
                     </Badge>
                   </div>
-                  
-                  <div className="flex items-center justify-center gap-4 py-4 border-y border-slate-50">
-                    <div className="text-center">
-                      <p className="text-[8px] text-slate-400 uppercase font-bold tracking-normal">CAP</p>
-                      <p className="font-bold text-slate-900 text-xs mt-0.5">100%</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[8px] text-slate-400 uppercase font-bold tracking-normal">LOAD</p>
-                      <p className="font-bold text-slate-900 text-xs mt-0.5">0</p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center justify-center gap-2">
-                    <Button asChild variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[8px] uppercase gap-1.5 tracking-normal text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
-                      <a href={`mailto:${member.email}`}>
-                        <Mail className="h-3 w-3" />
-                        Mail
-                      </a>
-                    </Button>
-                    <Button variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[8px] uppercase gap-1.5 tracking-normal text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
-                      <MessageSquare className="h-3 w-3" />
-                      Chat
+                  <div className="grid grid-cols-2 gap-3">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="h-11 rounded-xl border-slate-100 font-bold text-[10px] uppercase gap-2 tracking-normal hover:bg-slate-50 transition-all">
+                          <Edit2 className="h-3.5 w-3.5" />
+                          Edit
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+                        <DialogHeader className="p-8 pb-0">
+                          <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
+                        </DialogHeader>
+                        <TeamMemberForm existingMember={member} />
+                      </DialogContent>
+                    </Dialog>
+                    <Button asChild className="h-11 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase gap-2 tracking-normal shadow-lg shadow-slate-200">
+                      <Link href={`/team/${member.id}`}>
+                        Details
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -219,7 +245,7 @@ export default function TeamPage() {
                   <TableHead className="px-10 py-5 text-[10px] font-bold uppercase tracking-normal">Member Identity</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase tracking-normal">Resource Type</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase tracking-normal">Strategic Role</TableHead>
-                  <TableHead className="text-[10px] font-bold uppercase tracking-normal">Contact</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-normal text-center">Load</TableHead>
                   <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -249,24 +275,28 @@ export default function TeamPage() {
                         {member.roleId || "Expert"}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <p className="text-xs font-bold text-slate-900 tracking-normal">{member.email}</p>
-                        <p className="text-[10px] font-bold text-slate-400 tracking-normal">{member.phone || "No Hotline"}</p>
-                      </div>
+                    <TableCell className="text-center">
+                      <span className="font-bold text-slate-900 text-sm">{member.projectCount} Projects</span>
                     </TableCell>
                     <TableCell className="text-right px-10">
                       <div className="flex items-center justify-end gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+                            <DialogHeader className="p-8 pb-0">
+                              <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
+                            </DialogHeader>
+                            <TeamMemberForm existingMember={member} />
+                          </DialogContent>
+                        </Dialog>
                         <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-slate-900 hover:text-white transition-all">
-                          <a href={`mailto:${member.email}`}>
-                            <Mail className="h-4 w-4" />
-                          </a>
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
-                          <MessageSquare className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-slate-200 transition-all">
-                          <MoreHorizontal className="h-4 w-4" />
+                          <Link href={`/team/${member.id}`}>
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
                         </Button>
                       </div>
                     </TableCell>
