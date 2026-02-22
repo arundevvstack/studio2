@@ -356,9 +356,19 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                   <ImageIcon className="h-5 w-5 text-primary" />
                   Professional Gallery
                 </h3>
-                <Button variant="ghost" className="text-primary hover:text-primary/80 font-bold text-[10px] uppercase gap-2 tracking-normal">
-                  <Plus className="h-4 w-4" /> Manage Assets
-                </Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" className="text-primary hover:text-primary/80 font-bold text-[10px] uppercase gap-2 tracking-normal">
+                      <Plus className="h-4 w-4" /> Manage Assets
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+                    <DialogHeader className="p-8 pb-0">
+                      <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Partner Assets</DialogTitle>
+                    </DialogHeader>
+                    <TalentForm existingTalent={talent} />
+                  </DialogContent>
+                </Dialog>
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

@@ -16,7 +16,7 @@ import { collection, doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, Save, Mail, Phone, Upload, X, Star } from "lucide-react";
+import { Loader2, Save, Mail, Phone, Upload, X, Star, Plus, Trash2, Image as ImageIcon, Video } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -49,6 +49,10 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     thumbnail: "",
   });
 
+  const [gallery, setGallery] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
+  const [newItemUrl, setNewItemUrl] = useState("");
+  const [newItemType, setNewItemType] = useState<'image' | 'video'>('image');
+
   useEffect(() => {
     if (existingTalent) {
       setFormData({
@@ -69,6 +73,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         suitableTypesText: existingTalent.suitableProjectTypes?.join(', ') || "",
         thumbnail: existingTalent.thumbnail || "",
       });
+      setGallery(existingTalent.gallery || []);
       if (existingTalent.thumbnail) setPreviewThumbnail(existingTalent.thumbnail);
     }
   }, [existingTalent]);
@@ -87,6 +92,16 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleAddGalleryItem = () => {
+    if (!newItemUrl) return;
+    setGallery([...gallery, { url: newItemUrl, type: newItemType }]);
+    setNewItemUrl("");
+  };
+
+  const handleRemoveGalleryItem = (index: number) => {
+    setGallery(gallery.filter((_, i) => i !== index));
   };
 
   const handleSave = () => {
@@ -117,6 +132,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       rank: Number(formData.rank),
       projectCount: Number(formData.projectCount),
       thumbnail: formData.thumbnail,
+      gallery: gallery,
       updatedAt: serverTimestamp(),
     };
 
@@ -140,7 +156,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   };
 
   return (
-    <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+    <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
       {/* Thumbnail Upload Area */}
       <div className="flex flex-col items-center gap-4 py-4">
         <div 
@@ -238,6 +254,48 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
             onChange={(e) => setFormData({...formData, projectCount: Number(e.target.value)})}
             className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal"
           />
+        </div>
+      </div>
+
+      {/* Gallery Manager */}
+      <div className="space-y-4 pt-4 border-t border-slate-100">
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Professional Gallery Manager</Label>
+        <div className="flex gap-2">
+          <Input 
+            value={newItemUrl}
+            onChange={(e) => setNewItemUrl(e.target.value)}
+            placeholder="Asset URL (Image or Video)"
+            className="rounded-xl bg-slate-50 border-none h-12 flex-1 font-bold tracking-normal focus-visible:ring-primary/20"
+          />
+          <Select value={newItemType} onValueChange={(val: any) => setNewItemType(val)}>
+            <SelectTrigger className="h-12 w-32 rounded-xl bg-slate-50 border-none font-bold tracking-normal">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="image">Image</SelectItem>
+              <SelectItem value="video">Video</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={handleAddGalleryItem} type="button" className="h-12 w-12 rounded-xl bg-slate-900 text-white">
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
+          {gallery.map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-100 group">
+              <div className="flex items-center gap-3 overflow-hidden">
+                {item.type === 'image' ? <ImageIcon className="h-4 w-4 text-primary" /> : <Video className="h-4 w-4 text-blue-500" />}
+                <span className="text-xs font-bold text-slate-600 truncate max-w-[250px]">{item.url}</span>
+              </div>
+              <Button onClick={() => handleRemoveGalleryItem(idx)} type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-destructive">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {gallery.length === 0 && (
+            <p className="text-[10px] text-slate-300 italic text-center py-2">No assets added to the portfolio gallery.</p>
+          )}
         </div>
       </div>
 
