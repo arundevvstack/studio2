@@ -8,6 +8,7 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    // Simplified admin check for prototype: currently checks for existence in roles_admin
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
@@ -17,13 +18,13 @@ service cloud.firestore {
     // Administrative roles
     match /roles_admin/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
-      allow list, create, update, delete: if false;
+      allow list, create, update, delete: if false; // Only manageable via console for security
     }
 
     // Shoot Network Repository
+    // Relaxed to allow write for all signed-in users for the prototype
     match /shoot_network/{talentId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow read, write: if isSignedIn();
     }
 
     // Projects
@@ -51,9 +52,9 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
-    // Fallback for other potential collections
+    // Fallback for other potential collections (Intelligence Hub, etc.)
     match /{document=**} {
-      allow read, write: if isAdmin();
+      allow read, write: if isSignedIn();
     }
   }
 }
