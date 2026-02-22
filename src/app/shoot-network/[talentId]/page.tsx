@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -29,6 +28,7 @@ import {
   Star,
   Briefcase,
   Play,
+  Plus,
   Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
