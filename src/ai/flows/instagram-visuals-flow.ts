@@ -17,6 +17,7 @@ const InstagramVisualsInputSchema = z.object({
 export type InstagramVisualsInput = z.infer<typeof InstagramVisualsInputSchema>;
 
 const InstagramVisualsOutputSchema = z.object({
+  profilePictureUrl: z.string().describe('The primary profile thumbnail extracted from Instagram.'),
   styleAnalysis: z.string().describe('A briefing on the talent\'s visual identity and style.'),
   visuals: z.array(z.object({
     url: z.string().describe('The URL of the image asset.'),
@@ -40,12 +41,13 @@ const instagramVisualsFlow = ai.defineFlow(
     // Strategic Simulation: In a production environment, this would interface with a professional scraping service.
     // Here, we use the Gemini model to "describe" the expected style based on the category and mock the results.
     
-    const seed = input.instagramUrl.split('/').pop() || 'creative';
+    const seed = input.instagramUrl.split('/').filter(Boolean).pop() || 'creative';
     
     // We simulate a delay for the "extraction" process
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     return {
+      profilePictureUrl: `https://picsum.photos/seed/${seed}-profile/400/400`,
       styleAnalysis: `Visual architecture for this ${input.category} profile demonstrates high-fidelity production values. The feed maintains a consistent chromatic temperature with a professional focus on cinematic framing and modern ${input.category} aesthetics.`,
       visuals: Array.from({ length: 9 }).map((_, i) => ({
         url: `https://picsum.photos/seed/${seed}-${i}/600/600`,

@@ -70,7 +70,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
   }, [talent]);
 
   const handleSyncVisuals = async () => {
-    if (!talent?.socialMediaContact) return;
+    if (!talent?.socialMediaContact || !talentRef) return;
     setIsSyncingVisuals(true);
     try {
       const data = await fetchInstagramVisuals({
@@ -78,8 +78,17 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
         category: talent.category || "Creative"
       });
       setVisuals(data);
+
+      // Persistence Logic: Update the talent's primary thumbnail in Firestore
+      if (data.profilePictureUrl && data.profilePictureUrl !== talent.thumbnail) {
+        updateDocumentNonBlocking(talentRef, {
+          thumbnail: data.profilePictureUrl,
+          updatedAt: serverTimestamp()
+        });
+      }
     } catch (error) {
       console.error("Visual Sync Error:", error);
+      toast({ variant: "destructive", title: "Sync Failure", description: "Could not extract visuals from Instagram." });
     } finally {
       setIsSyncingVisuals(false);
     }
