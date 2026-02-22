@@ -16,13 +16,28 @@ import { collection, doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, Save, Mail, Phone, Upload, X, Star, Plus, Trash2, Image as ImageIcon, Video } from "lucide-react";
+import { Loader2, Save, Mail, Phone, Upload, X, Star, Plus, Trash2, Image as ImageIcon, Video, Tag, MapPin, Grid } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 interface TalentFormProps {
   existingTalent?: any;
 }
+
+const KERALA_DISTRICTS = [
+  "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",
+  "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", "Kozhikode",
+  "Wayanad", "Kannur", "Kasaragod"
+];
+
+const CATEGORIES = [
+  "Models", "Make-up Artist", "Stylist", "Costume Partner", "DOP",
+  "Editor", "Drone Operator", "Set Designer", "Photographer", "Influencer"
+];
+
+const PROJECT_TAGS = [
+  "Commercial", "Film", "Music Video", "Fashion", "Editorial", "Wedding", "Social Media", "Corporate"
+];
 
 export function TalentForm({ existingTalent }: TalentFormProps) {
   const db = useFirestore();
@@ -46,10 +61,10 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     portfolio: "",
     rank: 5,
     projectCount: 0,
-    suitableTypesText: "",
     thumbnail: "",
   });
 
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [gallery, setGallery] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
   const [newItemUrl, setNewItemUrl] = useState("");
   const [newItemType, setNewItemType] = useState<'image' | 'video'>('image');
@@ -71,10 +86,10 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         portfolio: existingTalent.portfolio || "",
         rank: existingTalent.rank || 5,
         projectCount: existingTalent.projectCount || 0,
-        suitableTypesText: existingTalent.suitableProjectTypes?.join(', ') || "",
         thumbnail: existingTalent.thumbnail || "",
       });
       setGallery(existingTalent.gallery || []);
+      setSelectedTags(existingTalent.suitableProjectTypes || []);
       if (existingTalent.thumbnail) {
         setPreviewThumbnail(existingTalent.thumbnail);
       }
@@ -109,6 +124,12 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     setGallery(gallery.filter((_, i) => i !== index));
   };
 
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
   const handleSave = () => {
     if (!formData.name || !formData.district || !formData.category) {
       toast({ 
@@ -122,7 +143,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     setIsSubmitting(true);
     
     const colabCategories = formData.colabText.split(',').map(s => s.trim()).filter(s => s);
-    const suitableProjectTypes = formData.suitableTypesText.split(',').map(s => s.trim()).filter(s => s);
 
     const talentData = {
       name: formData.name,
@@ -133,7 +153,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       category: formData.category,
       gender: formData.gender,
       colabCategories,
-      suitableProjectTypes,
+      suitableProjectTypes: selectedTags,
       paymentStage: formData.paymentStage,
       referredBy: formData.referredBy,
       socialMediaContact: formData.social,
@@ -203,12 +223,65 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
         <div className="space-y-2">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Creative Vertical</Label>
-          <Input 
-            value={formData.category} 
-            onChange={(e) => setFormData({...formData, category: e.target.value})}
-            placeholder="e.g. Models, DOP, Stylist"
-            className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
-          />
+          <Select value={formData.category} onValueChange={(val) => setFormData({...formData, category: val})}>
+            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
+              <SelectValue placeholder="Identify vertical..." />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              {CATEGORIES.map(cat => (
+                <SelectItem key={cat} value={cat} className="font-medium">{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">District Hub</Label>
+          <Select value={formData.district} onValueChange={(val) => setFormData({...formData, district: val})}>
+            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
+              <SelectValue placeholder="Select Kerala district..." />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[300px]">
+              {KERALA_DISTRICTS.map(district => (
+                <SelectItem key={district} value={district} className="font-medium">{district}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Gender Identity</Label>
+          <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
+            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              <SelectItem value="Male" className="tracking-normal font-medium">Male</SelectItem>
+              <SelectItem value="Female" className="tracking-normal font-medium">Female</SelectItem>
+              <SelectItem value="Other" className="tracking-normal font-medium">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-4 border-t border-slate-100">
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
+          <Tag className="h-3 w-3" /> Project Verticals (Tags)
+        </Label>
+        <div className="flex flex-wrap gap-2">
+          {PROJECT_TAGS.map(tag => (
+            <Badge 
+              key={tag} 
+              onClick={() => toggleTag(tag)}
+              variant={selectedTags.includes(tag) ? "default" : "outline"}
+              className={`cursor-pointer px-4 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-normal transition-all ${
+                selectedTags.includes(tag) ? "bg-primary border-none text-white shadow-md shadow-primary/20" : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"
+              }`}
+            >
+              {tag}
+            </Badge>
+          ))}
         </div>
       </div>
 
@@ -303,41 +376,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           {gallery.length === 0 && (
             <p className="text-[10px] text-slate-300 italic text-center py-2">No assets added to the portfolio gallery.</p>
           )}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Suitable Project Types (Comma Separated)</Label>
-        <Input 
-          value={formData.suitableTypesText} 
-          onChange={(e) => setFormData({...formData, suitableTypesText: e.target.value})}
-          placeholder="e.g. Commercial, Film, Fashion Show, Social Media"
-          className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">District Hub</Label>
-          <Input 
-            value={formData.district} 
-            onChange={(e) => setFormData({...formData, district: e.target.value})}
-            className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
-            placeholder="Kerala District"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Gender Identity</Label>
-          <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
-            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-              <SelectItem value="Male" className="tracking-normal font-medium">Male</SelectItem>
-              <SelectItem value="Female" className="tracking-normal font-medium">Female</SelectItem>
-              <SelectItem value="Other" className="tracking-normal font-medium">Other</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
