@@ -49,6 +49,11 @@ import {
 import { TalentForm } from "@/components/shoot-network/TalentForm";
 import { fetchInstagramVisuals, type InstagramVisualsOutput } from "@/ai/flows/instagram-visuals-flow";
 
+/**
+ * @fileOverview Talent Profile Page featuring visual intelligence and social reach extraction.
+ * Integrates Instagram handle-based thumbnail persistence.
+ */
+
 export default function TalentProfilePage({ params }: { params: Promise<{ talentId: string }> }) {
   const { talentId } = React.use(params);
   const router = useRouter();
@@ -82,7 +87,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
       });
       setVisuals(data);
 
-      // Persistence Logic: Update the talent's primary thumbnail in Firestore
+      // Persistence Logic: Update the talent's primary thumbnail in Firestore after extraction
       if (data.profilePictureUrl && data.profilePictureUrl !== talent.thumbnail) {
         updateDocumentNonBlocking(talentRef, {
           thumbnail: data.profilePictureUrl,
@@ -138,6 +143,10 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
       </div>
     );
   }
+
+  // Derived thumbnail for consistent visuals even before sync
+  const instagramHandle = talent.socialMediaContact?.split('/').filter(Boolean).pop();
+  const displayThumbnail = talent.thumbnail || (instagramHandle ? `https://picsum.photos/seed/${instagramHandle.toLowerCase()}-profile/400/400` : null) || `https://picsum.photos/seed/${talent.id}/400/400`;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -210,7 +219,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
             <div className="p-10 flex flex-col items-center text-center space-y-6">
               <div className="relative group">
                 <Avatar className="h-40 w-40 border-8 border-slate-50 shadow-2xl rounded-[3rem] transition-transform duration-500 group-hover:scale-105">
-                  <AvatarImage src={talent.thumbnail || `https://picsum.photos/seed/${talent.id}/400/400`} />
+                  <AvatarImage src={displayThumbnail} />
                   <AvatarFallback className="bg-primary/5 text-primary text-4xl font-bold">{talent.name?.[0]}</AvatarFallback>
                 </Avatar>
                 {talent.paymentStage === 'Yes' && (
