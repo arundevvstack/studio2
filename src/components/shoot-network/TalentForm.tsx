@@ -28,6 +28,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   const db = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
@@ -54,7 +55,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   const [newItemType, setNewItemType] = useState<'image' | 'video'>('image');
 
   useEffect(() => {
-    if (existingTalent) {
+    if (existingTalent && !isInitialized) {
       setFormData({
         name: existingTalent.name || "",
         email: existingTalent.email || "",
@@ -77,8 +78,9 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       if (existingTalent.thumbnail) {
         setPreviewThumbnail(existingTalent.thumbnail);
       }
+      setIsInitialized(true);
     }
-  }, [existingTalent]);
+  }, [existingTalent, isInitialized]);
 
   const handleThumbnailClick = () => {
     fileInputRef.current?.click();
@@ -164,7 +166,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
   return (
     <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
-      {/* Thumbnail Upload Area */}
       <div className="flex flex-col items-center gap-4 py-4">
         <div 
           className="relative group cursor-pointer"
@@ -264,7 +265,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      {/* Gallery Manager */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
         <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Professional Gallery Manager</Label>
         <div className="flex gap-2">
