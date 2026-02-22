@@ -79,7 +79,9 @@
               "name": { "type": "string" },
               "category": { "type": "string" },
               "role": { "type": "string" },
-              "thumbnail": { "type": "string" }
+              "stage": { "type": "string" },
+              "thumbnail": { "type": "string" },
+              "type": { "type": "string", "enum": ["External", "Internal"] }
             }
           }
         },
