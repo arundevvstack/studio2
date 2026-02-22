@@ -490,6 +490,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-9 space-y-8">
+          {/* Throughput Analysis Block */}
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white">
             <CardHeader className="flex flex-row items-center justify-between px-10 pt-10 pb-6">
               <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Throughput Analysis</CardTitle>
@@ -536,12 +537,148 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             </CardContent>
           </Card>
 
+          {/* Dedicated Project Team Block */}
+          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden p-10 space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Recruitment & Deployment</p>
+                <h3 className="text-xl font-bold font-headline mt-1 tracking-normal">Production Crew</h3>
+              </div>
+              
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button className="h-10 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-[10px] uppercase gap-2 tracking-normal shadow-lg shadow-primary/20">
+                    <Plus className="h-4 w-4" /> Recruit Talent
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="sm:max-w-[500px] rounded-l-[3rem] p-0 border-none shadow-2xl overflow-hidden bg-slate-50">
+                  <SheetHeader className="p-8 pb-4 bg-white border-b border-slate-100">
+                    <SheetTitle className="text-2xl font-bold font-headline tracking-normal">Recruit Partner</SheetTitle>
+                    <p className="text-xs text-slate-500 font-medium tracking-normal">Discover and assign verified professionals from the Shoot Network.</p>
+                  </SheetHeader>
+                  <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
+                    <div className="relative group">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                      <Input 
+                        value={recruitSearch}
+                        onChange={(e) => setRecruitSearch(e.target.value)}
+                        placeholder="Search by name or category..." 
+                        className="pl-12 h-12 rounded-xl bg-white border-none shadow-sm font-bold tracking-normal"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
+                          <Zap className="h-3 w-3 text-primary" /> Intelligence Suggestions
+                        </h4>
+                        <Badge className="bg-primary/5 text-primary border-none text-[8px] font-bold uppercase px-2 tracking-normal">Optimized</Badge>
+                      </div>
+                      
+                      {isTalentLoading ? (
+                        <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                      ) : suggestions.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-4">
+                          {suggestions.slice(0, 15).map((talent) => (
+                            <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-4 hover:shadow-md transition-all group">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-4">
+                                  <Avatar className="h-12 w-12 rounded-xl shadow-sm border-2 border-slate-50">
+                                    <AvatarImage src={talent.thumbnail || `https://picsum.photos/seed/${talent.id}/100/100`} />
+                                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{talent.name?.[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p>
+                                    <p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <div className="flex items-center gap-1">
+                                        <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                                        <span className="text-[9px] font-bold text-slate-500">{talent.rank || 5}.0</span>
+                                      </div>
+                                      <span className="text-[9px] text-slate-200">•</span>
+                                      <div className="flex items-center gap-1">
+                                        <MapPin className="h-2.5 w-2.5 text-slate-300" />
+                                        <span className="text-[9px] font-bold text-slate-500 uppercase">{talent.district}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button 
+                                  onClick={() => handleRecruit(talent)}
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all shadow-sm"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-20 text-center space-y-2 bg-white/50 rounded-2xl border-2 border-dashed border-slate-100">
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-normal">No talent matching search</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {project.crew && project.crew.length > 0 ? (
+                project.crew.map((member: any) => (
+                  <Card key={member.talentId} className="border-none shadow-sm rounded-3xl bg-white p-6 relative group hover:shadow-xl hover:-translate-y-1 transition-all duration-500 border border-slate-50">
+                    <Button 
+                      onClick={() => handleRemoveRecruit(member.talentId)}
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-300 hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    <div className="flex flex-col items-center text-center space-y-4">
+                      <Avatar className="h-20 w-20 rounded-[1.5rem] shadow-lg border-4 border-slate-50 group-hover:scale-105 transition-transform">
+                        <AvatarImage src={member.thumbnail} />
+                        <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">{member.name?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-bold text-lg text-slate-900 tracking-normal leading-tight">{member.name}</h4>
+                        <p className="text-[10px] font-bold text-primary uppercase mt-1 tracking-normal">{member.category}</p>
+                      </div>
+                      <Badge className="bg-slate-50 text-slate-500 border-none text-[9px] font-bold uppercase px-4 py-1 rounded-lg tracking-normal">
+                        {member.role || "Recruited"}
+                      </Badge>
+                      <div className="flex gap-2 w-full pt-2">
+                        <Button asChild variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[9px] uppercase tracking-normal">
+                          <Link href={`/shoot-network/${member.talentId}`}>Profile</Link>
+                        </Button>
+                        <Button variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[9px] uppercase tracking-normal">
+                          Chat
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full py-20 border-2 border-dashed border-slate-50 rounded-[3rem] text-center space-y-6 flex flex-col items-center">
+                  <div className="h-16 w-16 rounded-[1.5rem] bg-slate-50 flex items-center justify-center">
+                    <Users className="h-8 w-8 text-slate-200" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No crew members assigned</p>
+                    <p className="text-xs text-slate-300 italic tracking-normal">Launch recruitment to build your production team.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Activity Tabs Hub */}
           <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-50 overflow-hidden">
-            <Tabs defaultValue="team" className="w-full">
+            <Tabs defaultValue="objectives" className="w-full">
               <TabsList className="h-auto bg-transparent px-10 pt-6 gap-8 border-b rounded-none p-0 overflow-x-auto custom-scrollbar">
-                <TabsTrigger value="team" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2 tracking-normal">
-                  <Users className="h-3.5 w-3.5" /> Project Team
-                </TabsTrigger>
                 <TabsTrigger value="objectives" className="bg-transparent data-[state=active]:border-primary border-b-2 border-transparent rounded-none px-0 pb-4 text-[10px] font-bold uppercase gap-2 tracking-normal">
                   <LayoutGrid className="h-3.5 w-3.5" /> Production Objectives
                 </TabsTrigger>
@@ -552,143 +689,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <History className="h-3.5 w-3.5" /> Log History
                 </TabsTrigger>
               </TabsList>
-
-              <TabsContent value="team" className="p-10 space-y-8 m-0 animate-in fade-in duration-300">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Recruitment & Deployment</p>
-                    <h3 className="text-xl font-bold font-headline mt-1 tracking-normal">Production Crew</h3>
-                  </div>
-                  
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button className="h-10 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-[10px] uppercase gap-2 tracking-normal shadow-lg shadow-primary/20">
-                        <Plus className="h-4 w-4" /> Recruit Talent
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="right" className="sm:max-w-[500px] rounded-l-[3rem] p-0 border-none shadow-2xl overflow-hidden bg-slate-50">
-                      <SheetHeader className="p-8 pb-4 bg-white border-b border-slate-100">
-                        <SheetTitle className="text-2xl font-bold font-headline tracking-normal">Recruit Partner</SheetTitle>
-                        <p className="text-xs text-slate-500 font-medium tracking-normal">Discover and assign verified professionals from the Shoot Network.</p>
-                      </SheetHeader>
-                      <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
-                        <div className="relative group">
-                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                          <Input 
-                            value={recruitSearch}
-                            onChange={(e) => setRecruitSearch(e.target.value)}
-                            placeholder="Search by name or category..." 
-                            className="pl-12 h-12 rounded-xl bg-white border-none shadow-sm font-bold tracking-normal"
-                          />
-                        </div>
-
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-                              <Zap className="h-3 w-3 text-primary" /> Intelligence Suggestions
-                            </h4>
-                            <Badge className="bg-primary/5 text-primary border-none text-[8px] font-bold uppercase px-2 tracking-normal">Optimized</Badge>
-                          </div>
-                          
-                          {isTalentLoading ? (
-                            <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                          ) : suggestions.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-4">
-                              {suggestions.slice(0, 15).map((talent) => (
-                                <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-4 hover:shadow-md transition-all group">
-                                  <div className="flex items-center justify-between gap-4">
-                                    <div className="flex items-center gap-4">
-                                      <Avatar className="h-12 w-12 rounded-xl shadow-sm border-2 border-slate-50">
-                                        <AvatarImage src={talent.thumbnail || `https://picsum.photos/seed/${talent.id}/100/100`} />
-                                        <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{talent.name?.[0]}</AvatarFallback>
-                                      </Avatar>
-                                      <div>
-                                        <p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p>
-                                        <p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                          <div className="flex items-center gap-1">
-                                            <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                                            <span className="text-[9px] font-bold text-slate-500">{talent.rank || 5}.0</span>
-                                          </div>
-                                          <span className="text-[9px] text-slate-200">•</span>
-                                          <div className="flex items-center gap-1">
-                                            <MapPin className="h-2.5 w-2.5 text-slate-300" />
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase">{talent.district}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <Button 
-                                      onClick={() => handleRecruit(talent)}
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all shadow-sm"
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </Card>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="py-20 text-center space-y-2 bg-white/50 rounded-2xl border-2 border-dashed border-slate-100">
-                              <p className="text-xs font-bold text-slate-400 uppercase tracking-normal">No talent matching search</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {project.crew && project.crew.length > 0 ? (
-                    project.crew.map((member: any) => (
-                      <Card key={member.talentId} className="border-none shadow-sm rounded-3xl bg-white p-6 relative group hover:shadow-xl hover:-translate-y-1 transition-all duration-500 border border-slate-50">
-                        <Button 
-                          onClick={() => handleRemoveRecruit(member.talentId)}
-                          variant="ghost" 
-                          size="icon" 
-                          className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-300 hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-all"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                        <div className="flex flex-col items-center text-center space-y-4">
-                          <Avatar className="h-20 w-20 rounded-[1.5rem] shadow-lg border-4 border-slate-50 group-hover:scale-105 transition-transform">
-                            <AvatarImage src={member.thumbnail} />
-                            <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">{member.name?.[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h4 className="font-bold text-lg text-slate-900 tracking-normal leading-tight">{member.name}</h4>
-                            <p className="text-[10px] font-bold text-primary uppercase mt-1 tracking-normal">{member.category}</p>
-                          </div>
-                          <Badge className="bg-slate-50 text-slate-500 border-none text-[9px] font-bold uppercase px-4 py-1 rounded-lg tracking-normal">
-                            {member.role || "Recruited"}
-                          </Badge>
-                          <div className="flex gap-2 w-full pt-2">
-                            <Button asChild variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[9px] uppercase tracking-normal">
-                              <Link href={`/shoot-network/${member.talentId}`}>Profile</Link>
-                            </Button>
-                            <Button variant="outline" className="flex-1 h-9 rounded-xl border-slate-100 font-bold text-[9px] uppercase tracking-normal">
-                              Chat
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-32 border-2 border-dashed border-slate-50 rounded-[3rem] text-center space-y-6 flex flex-col items-center">
-                      <div className="h-16 w-16 rounded-[1.5rem] bg-slate-50 flex items-center justify-center">
-                        <Users className="h-8 w-8 text-slate-200" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No crew members assigned</p>
-                        <p className="text-xs text-slate-300 italic tracking-normal">Launch recruitment to build your production team.</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
 
               <TabsContent value="objectives" className="p-10 space-y-8 m-0 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between">
