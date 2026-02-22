@@ -313,13 +313,13 @@ export default function MarketResearchPage() {
                           <ul className="space-y-1.5">
                             {pkg.deliverables.map((item, idx) => (
                               <li key={idx} className="text-[11px] font-medium text-slate-600 flex items-center gap-2">
-                                <CheckCircle2 className="h-3 w-3 text-accent shrink-0" /> {item}
+                                <CheckCircle2 className="h-3.5 w-3.5 text-accent shrink-0" /> {item}
                               </li>
                             ))}
                           </ul>
                         </div>
                         <div className="pt-4">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Target</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Target Audience</p>
                           <p className="text-[11px] font-bold text-slate-900 mt-1 tracking-normal">{pkg.targetAudience}</p>
                         </div>
                       </div>
