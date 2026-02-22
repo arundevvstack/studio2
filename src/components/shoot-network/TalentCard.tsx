@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -12,7 +13,9 @@ import {
   User,
   CheckCircle2,
   Trash2,
-  ArrowRight
+  ArrowRight,
+  Star,
+  Briefcase
 } from "lucide-react";
 import Link from "next/link";
 import { useFirestore } from "@/firebase";
@@ -22,6 +25,7 @@ import { toast } from "@/hooks/use-toast";
 
 /**
  * @fileOverview High-fidelity Talent Card for the Shoot Network Repository.
+ * Updated with Rank and Project Count indicators.
  */
 
 export function TalentCard({ talent }: { talent: any }) {
@@ -45,8 +49,8 @@ export function TalentCard({ talent }: { talent: any }) {
 
   return (
     <Link href={`/shoot-network/${talent.id}`} className="block group">
-      <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
-        <div className="p-8 space-y-6">
+      <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 h-full">
+        <div className="p-8 space-y-6 flex flex-col h-full">
           <div className="flex items-start justify-between">
             <Avatar className="h-20 w-20 border-4 border-slate-50 shadow-md rounded-[2rem] group-hover:scale-105 transition-transform duration-500">
               <AvatarImage src={displayThumbnail} />
@@ -54,13 +58,14 @@ export function TalentCard({ talent }: { talent: any }) {
                 {talent.name?.[0]}
               </AvatarFallback>
             </Avatar>
-            <div className="flex gap-2">
+            <div className="flex flex-col items-end gap-2">
               <Badge className={`border-none font-bold text-[8px] uppercase px-2 py-0.5 rounded-lg tracking-normal ${talent.paymentStage === 'Yes' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}`}>
                 {talent.paymentStage === 'Yes' ? 'Verified' : 'Pending'}
               </Badge>
-              <Button variant="ghost" size="icon" onClick={handleArchive} className="h-8 w-8 rounded-xl text-slate-300 hover:text-destructive hover:bg-destructive/5 transition-colors">
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                <span className="text-[10px] font-bold text-slate-600">{talent.rank || 5}.0</span>
+              </div>
             </div>
           </div>
 
@@ -78,20 +83,17 @@ export function TalentCard({ talent }: { talent: any }) {
               <span className="text-[11px] font-bold uppercase tracking-normal">{talent.district}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-500">
-              <User className="h-3.5 w-3.5" />
-              <span className="text-[11px] font-bold uppercase tracking-normal">{talent.gender}</span>
+              <Briefcase className="h-3.5 w-3.5" />
+              <span className="text-[11px] font-bold uppercase tracking-normal">{talent.projectCount || 0} Projects</span>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 min-h-[40px]">
-            {talent.colabCategories?.slice(0, 3).map((tag: string, i: number) => (
+          <div className="flex flex-wrap gap-1.5 min-h-[40px] flex-grow">
+            {talent.suitableProjectTypes?.slice(0, 3).map((tag: string, i: number) => (
               <Badge key={i} variant="outline" className="border-slate-100 text-slate-400 text-[8px] font-bold uppercase px-2 py-0.5 rounded-lg tracking-normal">
                 {tag}
               </Badge>
             ))}
-            {talent.colabCategories?.length > 3 && (
-              <span className="text-[8px] font-bold text-slate-300 uppercase pl-1">+{talent.colabCategories.length - 3} More</span>
-            )}
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-2">

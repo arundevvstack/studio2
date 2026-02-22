@@ -15,11 +15,24 @@
         "category": { "type": "string" },
         "gender": { "type": "string" },
         "colabCategories": { "type": "array", "items": { "type": "string" } },
+        "suitableProjectTypes": { "type": "array", "items": { "type": "string" } },
         "paymentStage": { "type": "string" },
         "referredBy": { "type": "string" },
         "socialMediaContact": { "type": "string" },
         "portfolio": { "type": "string" },
         "thumbnail": { "type": "string" },
+        "rank": { "type": "number", "minimum": 1, "maximum": 5 },
+        "projectCount": { "type": "number" },
+        "gallery": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "url": { "type": "string" },
+              "type": { "type": "string", "enum": ["image", "video"] }
+            }
+          } 
+        },
         "isArchived": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }

@@ -25,7 +25,11 @@ import {
   Zap,
   Layers,
   Activity,
-  MessageSquare
+  MessageSquare,
+  Star,
+  Briefcase,
+  Play,
+  Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +52,7 @@ import { TalentForm } from "@/components/shoot-network/TalentForm";
 
 /**
  * @fileOverview Talent Profile Page.
- * Enhanced with direct contact intelligence and high-fidelity glassmorphic sections.
+ * Enhanced with professional metrics, project count, rank, and media gallery.
  */
 
 export default function TalentProfilePage({ params }: { params: Promise<{ talentId: string }> }) {
@@ -194,7 +198,13 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                 <p className="text-[10px] font-bold text-primary uppercase mt-3 tracking-normal tracking-widest">{talent.category}</p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-2 pt-4">
+              <div className="flex items-center gap-1 justify-center py-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className={`h-4 w-4 ${i < (talent.rank || 5) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'}`} />
+                ))}
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-2 pt-2">
                 <Badge className={`border-none font-bold text-[10px] uppercase px-4 py-1.5 rounded-xl tracking-normal ${talent.paymentStage === 'Yes' ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
                   {talent.paymentStage === 'Yes' ? 'Verified Elite' : 'Verification Pending'}
                 </Badge>
@@ -217,6 +227,18 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                 </div>
               </div>
 
+              <div className="flex items-center justify-between group cursor-pointer">
+                <div className="flex items-center gap-4 text-slate-600">
+                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                    <Briefcase className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Total Engagements</p>
+                    <p className="text-sm font-bold text-slate-900 tracking-normal">{talent.projectCount || 0} Successful Projects</p>
+                  </div>
+                </div>
+              </div>
+
               {talent.socialMediaContact && (
                 <a href={talent.socialMediaContact} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between group cursor-pointer">
                   <div className="flex items-center gap-4 text-slate-600">
@@ -226,21 +248,6 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Social Grid</p>
                       <p className="text-sm font-bold text-slate-900 tracking-normal">@{talent.socialMediaContact.split('/').filter(Boolean).pop() || 'Profile'}</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-3.5 w-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-all" />
-                </a>
-              )}
-
-              {talent.portfolio && (
-                <a href={talent.portfolio} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between group cursor-pointer">
-                  <div className="flex items-center gap-4 text-slate-600">
-                    <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                      <ExternalLink className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Talent Portfolio</p>
-                      <p className="text-sm font-bold text-slate-900 tracking-normal">View Showreel</p>
                     </div>
                   </div>
                   <ExternalLink className="h-3.5 w-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-all" />
@@ -274,11 +281,6 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                   </div>
                 </a>
               )}
-              {!talent.email && !talent.phone && (
-                <div className="p-6 text-center border-2 border-dashed border-slate-50 rounded-2xl">
-                  <p className="text-xs text-slate-400 font-medium tracking-normal italic">No direct contact details recorded.</p>
-                </div>
-              )}
             </div>
           </Card>
         </div>
@@ -290,29 +292,30 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
               <div>
                 <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
                   <User className="h-5 w-5 text-primary" />
-                  Professional Profile
+                  Professional Matrix
                 </h3>
-                <p className="text-sm text-slate-500 mt-1 font-medium tracking-normal">Detailed partner demographics and creative taxonomy.</p>
+                <p className="text-sm text-slate-500 mt-1 font-medium tracking-normal">Assessment of skill depth and project compatibility.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                 <div className="space-y-8">
                   <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Identity Meta</p>
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Partner Age</p>
-                        <p className="text-xl font-bold text-slate-900 mt-1 tracking-normal">{talent.age || "—"}</p>
-                      </div>
-                      <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Gender</p>
-                        <p className="text-xl font-bold text-slate-900 mt-1 tracking-normal">{talent.gender}</p>
-                      </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Deployment Suitability</p>
+                    <div className="flex flex-wrap gap-2">
+                      {talent.suitableProjectTypes && talent.suitableProjectTypes.length > 0 ? (
+                        talent.suitableProjectTypes.map((type: string, i: number) => (
+                          <Badge key={i} className="bg-primary/5 text-primary border-none font-bold text-[10px] uppercase px-4 py-1.5 rounded-xl tracking-normal">
+                            {type}
+                          </Badge>
+                        ))
+                      ) : (
+                        <p className="text-sm text-slate-400 italic font-medium tracking-normal">No specific project verticals recorded.</p>
+                      )}
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Collab Categories</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Collaboration Tier</p>
                     <div className="flex flex-wrap gap-2">
                       {talent.colabCategories && talent.colabCategories.length > 0 ? (
                         talent.colabCategories.map((cat: string, i: number) => (
@@ -321,7 +324,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                           </Badge>
                         ))
                       ) : (
-                        <p className="text-sm text-slate-400 italic font-medium tracking-normal">No specific collab tiers recorded.</p>
+                        <p className="text-sm text-slate-400 italic font-medium tracking-normal">General Collab.</p>
                       )}
                     </div>
                   </div>
@@ -329,23 +332,15 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
 
                 <div className="space-y-8">
                   <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Deployment Metrics</p>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-bold text-slate-600 tracking-normal uppercase text-[10px]">Payment Stage</span>
-                        </div>
-                        <Badge className={`border-none font-bold text-[10px] uppercase px-3 py-1 tracking-normal ${talent.paymentStage === 'Yes' ? 'bg-green-50 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
-                          {talent.paymentStage === 'Yes' ? 'Verified' : 'Pending'}
-                        </Badge>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Demographics</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Age</p>
+                        <p className="text-xl font-bold text-slate-900 mt-1 tracking-normal">{talent.age || "—"}</p>
                       </div>
-                      <div className="flex items-center justify-between p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <Users className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-bold text-slate-600 tracking-normal uppercase text-[10px]">Referred By</span>
-                        </div>
-                        <span className="text-sm font-bold text-slate-900 tracking-normal">{talent.referredBy || "Organic Entry"}</span>
+                      <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Status</p>
+                        <p className="text-xl font-bold text-slate-900 mt-1 tracking-normal">Verified</p>
                       </div>
                     </div>
                   </div>
@@ -358,29 +353,62 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
-                  <History className="h-5 w-5 text-primary" />
-                  Audit Trail
+                  <ImageIcon className="h-5 w-5 text-primary" />
+                  Professional Gallery
                 </h3>
+                <Button variant="ghost" className="text-primary hover:text-primary/80 font-bold text-[10px] uppercase gap-2 tracking-normal">
+                  <Plus className="h-4 w-4" /> Manage Assets
+                </Button>
               </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {talent.gallery && talent.gallery.length > 0 ? (
+                  talent.gallery.map((asset: any, i: number) => (
+                    <div key={i} className="aspect-square rounded-2xl bg-slate-100 overflow-hidden relative group">
+                      <img src={asset.url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="Talent Asset" />
+                      {asset.type === 'video' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <Play className="h-8 w-8 text-white fill-white" />
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-50 rounded-[2rem] text-center space-y-4">
+                    <ImageIcon className="h-12 w-12 text-slate-200" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No assets uploaded</p>
+                      <p className="text-xs text-slate-300 italic tracking-normal">Showcase professional stills and video reels here.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
+            <div className="space-y-8">
+              <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
+                <History className="h-5 w-5 text-primary" />
+                Partner Audit Trail
+              </h3>
               <div className="p-8 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Created On</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Registered</p>
                   <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">
-                    {talent.createdAt ? new Date(talent.createdAt.seconds * 1000).toLocaleString('en-GB', { dateStyle: 'long' }) : '—'}
+                    {talent.createdAt ? new Date(talent.createdAt.seconds * 1000).toLocaleDateString('en-GB') : '—'}
                   </p>
                 </div>
                 <div className="h-8 w-px bg-slate-200 hidden md:block" />
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Last Update</p>
-                  <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">
-                    {talent.updatedAt ? new Date(talent.updatedAt.seconds * 1000).toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' }) : '—'}
-                  </p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Engagement Score</p>
+                  <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">High Mobility</p>
                 </div>
                 <div className="h-8 w-px bg-slate-200 hidden md:block" />
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Status</p>
                   <Badge className={`border-none font-bold text-[10px] uppercase px-3 tracking-normal mt-1 ${talent.isArchived ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
-                    {talent.isArchived ? 'ARCHIVED' : 'ACTIVE IN ENGINE'}
+                    {talent.isArchived ? 'ARCHIVED' : 'ACTIVE'}
                   </Badge>
                 </div>
               </div>

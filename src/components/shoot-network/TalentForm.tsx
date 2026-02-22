@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,8 @@ import { collection, doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, Save, Mail, Phone } from "lucide-react";
+import { Loader2, Save, Mail, Phone, Upload, X, Star } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TalentFormProps {
   existingTalent?: any;
@@ -25,7 +26,10 @@ interface TalentFormProps {
 
 export function TalentForm({ existingTalent }: TalentFormProps) {
   const db = useFirestore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -39,6 +43,10 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     referredBy: "",
     social: "",
     portfolio: "",
+    rank: 5,
+    projectCount: 0,
+    suitableTypesText: "",
+    thumbnail: "",
   });
 
   useEffect(() => {
@@ -56,9 +64,30 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         referredBy: existingTalent.referredBy || "",
         social: existingTalent.socialMediaContact || "",
         portfolio: existingTalent.portfolio || "",
+        rank: existingTalent.rank || 5,
+        projectCount: existingTalent.projectCount || 0,
+        suitableTypesText: existingTalent.suitableProjectTypes?.join(', ') || "",
+        thumbnail: existingTalent.thumbnail || "",
       });
+      if (existingTalent.thumbnail) setPreviewThumbnail(existingTalent.thumbnail);
     }
   }, [existingTalent]);
+
+  const handleThumbnailClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewThumbnail(reader.result as string);
+        setFormData(prev => ({ ...prev, thumbnail: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = () => {
     if (!formData.name || !formData.district || !formData.category) {
@@ -69,6 +98,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     setIsSubmitting(true);
     
     const colabCategories = formData.colabText.split(',').map(s => s.trim()).filter(s => s);
+    const suitableProjectTypes = formData.suitableTypesText.split(',').map(s => s.trim()).filter(s => s);
 
     const talentData = {
       name: formData.name,
@@ -79,10 +109,14 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       category: formData.category,
       gender: formData.gender,
       colabCategories,
+      suitableProjectTypes,
       paymentStage: formData.paymentStage,
       referredBy: formData.referredBy,
       socialMediaContact: formData.social,
       portfolio: formData.portfolio,
+      rank: Number(formData.rank),
+      projectCount: Number(formData.projectCount),
+      thumbnail: formData.thumbnail,
       updatedAt: serverTimestamp(),
     };
 
@@ -97,7 +131,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         ...talentData,
         id: newDocRef.id,
         isArchived: false,
-        thumbnail: "",
         createdAt: serverTimestamp(),
       }, { merge: true });
       toast({ title: "Profile Initialized", description: `${formData.name} added to the repository.` });
@@ -107,7 +140,33 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   };
 
   return (
-    <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+    <div className="p-8 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+      {/* Thumbnail Upload Area */}
+      <div className="flex flex-col items-center gap-4 py-4">
+        <div 
+          className="relative group cursor-pointer"
+          onClick={handleThumbnailClick}
+        >
+          <Avatar className="h-32 w-32 border-4 border-slate-50 shadow-xl rounded-[2.5rem] transition-all group-hover:opacity-80">
+            <AvatarImage src={previewThumbnail || ""} />
+            <AvatarFallback className="bg-slate-100">
+              <Upload className="h-8 w-8 text-slate-300" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Badge className="bg-black/50 text-white border-none">Change Photo</Badge>
+          </div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={handleFileChange}
+          />
+        </div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Primary Identity Thumbnail</p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Full Identity Name</Label>
@@ -154,6 +213,42 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
             />
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Performance Rank (1-5)</Label>
+          <div className="relative">
+            <Star className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+            <Input 
+              type="number"
+              min="1"
+              max="5"
+              value={formData.rank} 
+              onChange={(e) => setFormData({...formData, rank: Number(e.target.value)})}
+              className="rounded-xl bg-slate-50 border-none h-12 pl-12 font-bold tracking-normal"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Associated Projects</Label>
+          <Input 
+            type="number"
+            value={formData.projectCount} 
+            onChange={(e) => setFormData({...formData, projectCount: Number(e.target.value)})}
+            className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Suitable Project Types (Comma Separated)</Label>
+        <Input 
+          value={formData.suitableTypesText} 
+          onChange={(e) => setFormData({...formData, suitableTypesText: e.target.value})}
+          placeholder="e.g. Commercial, Film, Fashion Show, Social Media"
+          className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
