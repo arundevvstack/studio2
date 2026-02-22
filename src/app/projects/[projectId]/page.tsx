@@ -166,7 +166,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     }
   }, [project]);
 
-  const activeViewPhase = editData?.status || project?.status || "Lead";
+  const activeViewPhase = project?.status || "Lead";
 
   const currentPhaseTasks = useMemo(() => {
     if (!allTasks) return [];
@@ -248,9 +248,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   };
 
   const handleStatusChange = (val: string) => {
-    setEditData((prev: any) => ({ ...prev, status: val }));
-    const newProgress = STATUS_PROGRESS_MAP[val] || 0;
-    setProgress([newProgress]);
+    if (!projectRef) return;
+    updateDocumentNonBlocking(projectRef, {
+      status: val,
+      progress: STATUS_PROGRESS_MAP[val] || 0,
+      updatedAt: serverTimestamp()
+    });
+    toast({
+      title: "Stage Updated",
+      description: `Project phase advanced to ${val}.`
+    });
   };
 
   const handleTransition = () => {
@@ -415,7 +422,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Phase</label>
-                    <Select value={editData?.status} onValueChange={handleStatusChange}>
+                    <Select value={editData?.status} onValueChange={(val) => setEditData({...editData, status: val})}>
                       <SelectTrigger className="rounded-xl bg-slate-50 border-none h-12 shadow-none focus:ring-0 tracking-normal">
                         <SelectValue placeholder="Select phase" />
                       </SelectTrigger>
@@ -486,7 +493,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white">
             <CardHeader className="flex flex-row items-center justify-between px-10 pt-10 pb-6">
               <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Throughput Analysis</CardTitle>
-              {canTransition && NEXT_PHASE_MAP[project.status] && (editData?.status === project.status) && (
+              {canTransition && NEXT_PHASE_MAP[project.status] && (
                 <Button onClick={handleTransition} className="h-9 px-4 rounded-xl bg-accent text-white font-bold text-[10px] gap-2 hover:bg-accent/90 transition-all animate-bounce tracking-normal uppercase shadow-lg shadow-accent/20">
                   Advance to {NEXT_PHASE_MAP[project.status]} <ArrowRight className="h-3 w-3" />
                 </Button>
@@ -496,7 +503,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Lifecycle Stage</label>
-                  <p className="text-xl font-bold font-headline text-slate-900 tracking-normal">{project.status || "Lead"}</p>
+                  <Select value={project.status || "Lead"} onValueChange={handleStatusChange}>
+                    <SelectTrigger className="h-8 w-full bg-transparent border-none p-0 font-bold font-headline text-xl shadow-none focus:ring-0 tracking-normal">
+                      <SelectValue placeholder="Select Stage" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                      <SelectItem value="Lead" className="font-bold">Lead</SelectItem>
+                      <SelectItem value="Discussion" className="font-bold">Discussion</SelectItem>
+                      <SelectItem value="Pre Production" className="font-bold">Pre Production</SelectItem>
+                      <SelectItem value="In Progress" className="font-bold">Production</SelectItem>
+                      <SelectItem value="Post Production" className="font-bold">Post Production</SelectItem>
+                      <SelectItem value="Released" className="font-bold">Released</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-3 p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Team</label>
