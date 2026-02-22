@@ -1,112 +1,59 @@
-/**
- * SHOOT NETWORK REPOSITORY - SECURITY RULES CONFIGURATION
- *
- * Core Philosophy: 
- * This ruleset implements a robust Role-Based Access Control (RBAC) model using Database-Based 
- * Access Control (DBAC). Administrative privileges are determined by the presence of a user's 
- * UID within a dedicated 'roles_admin' collection. This ensures authorization logic is 
- * independent of the primary data entities.
- *
- * Data Structure:
- * - /shoot_network/{talentProfileId}: The main repository for talent profiles.
- * - /roles_admin/{userId}: A restricted collection where document IDs represent admin UIDs.
- *
- * Key Security Decisions:
- * 1. Admin-Only Writes: Only users verified as administrators can create, update, or delete profiles.
- * 2. Public Read Visibility: Profiles are publicly accessible only if they are not archived 
- *    (isArchived == false). Administrators can view all profiles, including archived ones.
- * 3. Existence-Based Roles: Admin status is verified using a high-performance exists() check 
- *    on the /roles_admin path, avoiding complex data-dependency within the talent profiles.
- * 4. Relational Integrity: On creation, we enforce that the internal 'id' of the talent 
- *    profile matches the Firestore Document ID to ensure path-to-data consistency.
- *
- * Denormalization for Authorization:
- * Authorization for talent profiles is handled via the global admin roles collection. 
- * This architectural choice separates identity management from content management, 
- * allowing for instant, global permission updates.
- */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- GLOBAL HELPER FUNCTIONS ---
-
-    /**
-     * @description Checks if the current request is coming from an authenticated user.
-     */
+    
+    // --- GLOBAL HELPERS ---
     function isSignedIn() {
       return request.auth != null;
     }
-
-    /**
-     * @description Checks if the authenticated user is registered as an administrator 
-     * in the system roles collection.
-     */
+    
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    /**
-     * @description Combined check for update/delete operations to ensure the document 
-     * exists and the user has admin rights.
-     */
-    function isAdminAndDocumentExists() {
-      return isAdmin() && resource != null;
-    }
-
     // --- COLLECTION RULES ---
 
-    /**
-     * @description Administrative roles collection. Access is strictly controlled to prevent unauthorized role escalation.
-     * @path /roles_admin/{userId}
-     * @allow (get) Any signed-in user checking their own status.
-     * @deny (list, create, update, delete) All client-side modifications.
-     * @principle System-managed RBAC; prevents users from elevating their own privileges.
-     */
+    // Administrative roles
     match /roles_admin/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
-      allow list: if false;
-      allow create, update, delete: if false;
+      allow list, create, update, delete: if false;
     }
 
-    /**
-     * @description Talent profiles repository containing creative professional data.
-     * @path /shoot_network/{talentProfileId}
-     * @allow (get) If user is admin OR if the profile is not archived.
-     * @allow (create, update, delete) Only if the user is a verified administrator.
-     * @deny (write) If the user is not an admin.
-     * @principle Admin-controlled registry with public visibility filtering.
-     */
-    match /shoot_network/{talentProfileId} {
-      
-      // Read Operations
-      allow get: if isAdmin() || (resource.data.isArchived == false);
-      
-      // Note: Per P6, resource/request.resource are not used for list filtering.
-      // Admin users are granted full listing capabilities. 
-      // Non-admins can list, but the application must filter by 'isArchived == false'
-      // for the query to be accepted by these rules.
-      allow list: if isAdmin() || true;
+    // Shoot Network Repository
+    match /shoot_network/{talentId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
 
-      // Write Operations
+    // Projects
+    match /projects/{projectId} {
+      allow read, write: if isSignedIn();
       
-      /**
-       * On creation, we ensure only admins can add talent.
-       * We validate relational integrity by matching the data ID to the document ID.
-       */
-      allow create: if isAdmin() && (request.resource.data.id == talentProfileId);
+      // Sub-collections for projects
+      match /tasks/{taskId} { allow read, write: if isSignedIn(); }
+      match /tickets/{ticketId} { allow read, write: if isSignedIn(); }
+    }
 
-      /**
-       * Updates require admin status. 
-       * Relational integrity is maintained by ensuring the 'id' field remains immutable.
-       */
-      allow update: if isAdminAndDocumentExists() && (request.resource.data.id == resource.data.id);
+    // Clients
+    match /clients/{clientId} {
+      allow read, write: if isSignedIn();
+      match /invoices/{invoiceId} { allow read, write: if isSignedIn(); }
+    }
 
-      /**
-       * Deletion is a destructive operation restricted to administrators.
-       */
-      allow delete: if isAdminAndDocumentExists();
+    // Pipeline Leads
+    match /leads/{leadId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Team Members
+    match /teamMembers/{memberId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Fallback for other potential collections
+    match /{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

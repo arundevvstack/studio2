@@ -1,139 +1,57 @@
+
 {
   "entities": {
     "TalentProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TalentProfile",
       "type": "object",
-      "description": "Represents a profile of a creative professional, containing their details, professional categorization, contact information, and administrative metadata within the Shoot Network Repository.",
+      "description": "A creative professional profile within the Shoot Network.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the TalentProfile entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The full name of the creative professional as provided in the source data."
-        },
-        "age": {
-          "type": "string",
-          "description": "The age of the creative professional. Stored as a string to accommodate various input formats from the Google Sheet."
-        },
-        "district": {
-          "type": "string",
-          "description": "The primary district or region where the creative professional is based."
-        },
-        "category": {
-          "type": "string",
-          "description": "The primary creative category or specialization of the professional (e.g., 'Photographer', 'Videographer', 'Editor')."
-        },
-        "gender": {
-          "type": "string",
-          "description": "The gender of the creative professional."
-        },
-        "colabCategories": {
-          "type": "array",
-          "description": "A list of collaboration categories, skills, or sub-specializations indicating areas where the professional is available to work.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "paymentStage": {
-          "type": "string",
-          "description": "The current payment stage or status associated with the professional."
-        },
-        "referredBy": {
-          "type": "string",
-          "description": "The name or identifier of the person or entity who referred this professional to the network."
-        },
-        "socialMediaContact": {
-          "type": "string",
-          "description": "A link or identifier for the professional's social media presence or primary contact method."
-        },
-        "portfolio": {
-          "type": "string",
-          "description": "A URL linking to the professional's online portfolio or work samples.",
-          "format": "uri"
-        },
-        "thumbnail": {
-          "type": "string",
-          "description": "A URL pointing to the professional's profile thumbnail image.",
-          "format": "uri"
-        },
-        "isArchived": {
-          "type": "boolean",
-          "description": "A flag indicating if the profile has been soft-deleted or archived, making it inactive but not permanently removed."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "The timestamp indicating when this talent profile was first created in the system.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "The timestamp indicating when this talent profile was last updated in the system.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "string" },
+        "district": { "type": "string" },
+        "category": { "type": "string" },
+        "gender": { "type": "string" },
+        "colabCategories": { "type": "array", "items": { "type": "string" } },
+        "paymentStage": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "socialMediaContact": { "type": "string" },
+        "portfolio": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "isArchived": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "name",
-        "age",
-        "district",
-        "category",
-        "gender",
-        "colabCategories",
-        "paymentStage",
-        "referredBy",
-        "socialMediaContact",
-        "portfolio",
-        "thumbnail",
-        "isArchived",
-        "createdAt",
-        "updatedAt"
-      ]
+      "required": ["name", "district", "category"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/shoot_network/{talentProfileId}",
-        "definition": {
-          "entityName": "TalentProfile",
-          "schema": {
-            "$ref": "#/backend/entities/TalentProfile"
-          },
-          "description": "Collection for storing individual creative professional profiles. Documents include fields for name, contact, professional categories, and administrative flags like 'isArchived' for soft-deletion and public visibility control. No denormalized authorization fields are required within this collection itself for primary access control beyond 'isArchived', as write access is managed via global admin roles and public read is conditional on 'isArchived'.",
-          "params": [
-            {
-              "name": "talentProfileId",
-              "description": "The unique identifier for a specific talent profile, typically derived from the 'id' field of the TalentProfile entity."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "user",
-          "schema": {
-            "$ref": "#/backend/entities/user"
-          },
-          "description": "A collection used for Role-Based Access Control (DBAC). Each document in this collection represents a user who possesses 'admin' privileges. The existence of a document with a user's UID as its ID signifies their admin status, allowing for efficient security rule checks without custom claims. This collection is for authorization purposes only; documents typically contain minimal data, such as a creation timestamp, or can be empty. While a specific 'user' entity schema was not provided in the input, it is referenced as a common implicit entity for authentication contexts.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The Firebase Authentication User ID (UID) of a user designated as an administrator."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The recommended Firestore structure for the Shoot Network Repository prioritizes security, scalability, and debuggability in alignment with all core design principles and strategy mandates. \n\n**Authorization Independence (CRITICAL):** This design achieves authorization independence by clearly separating data from authorization metadata. Write operations (add, edit, delete, bulk import) on `/shoot_network` documents are authorized by checking the *existence* of the `request.auth.uid` within the `/roles_admin/{userId}` collection. This approach avoids any `get()` calls that would traverse hierarchical data or create complex dependencies, making security rules atomic, robust, and easy to debug. Each `TalentProfile` document in `/shoot_network` does not require denormalized owner or member fields for primary write authorization, as access is based on a global admin status. Public read access, if enabled, is controlled by the document's `isArchived` state, which is a direct field on the document itself, further ensuring atomic rule evaluation.\n\n**QAPs (Secure List Operations):**\n1.  **Admin Access:** Administrators (users whose UID exists in `/roles_admin`) have full read/write access to all documents in `/shoot_network`. Their list queries are inherently secure as the rules grant them blanket access, allowing them to retrieve all profiles (including archived ones) without issues. The security rules will explicitly permit `list` operations for authenticated admins.\n2.  **Public Read Access:** For public, unauthenticated users (if read access is globally enabled via application logic or rule deployment), read-only access is conditionally granted to documents where `isArchived` is `false`. The security rules will enforce this condition for both `get` and `list` operations. This enables secure `list` queries for the 'Talent Grid' by allowing clients to query `shoot_network` documents `where('isArchived', '==', false)`. The rule will ensure that only non-archived profiles are accessible to unauthenticated users, fully supporting QAPs by preventing over-fetching of unauthorized data.\n\n**Structural Segregation:** All documents within the `/shoot_network` collection share a homogeneous security posture: either an admin can write, or public users can read (non-archived). The `isArchived` field is used for logical segregation (soft-delete) within this consistent security model, not for different access types. The `/roles_admin` collection serves as a distinct, segregated store for role information, further simplifying security posture.\n\n**Access Modeling (DBAC):** Role-Based Access Control is implemented via Database Access Control (DBAC). An authenticated user is identified as an 'admin' simply by the existence of their `uid` as a document ID in the `/roles_admin` collection. This standardizes global role management efficiently without relying on custom claims or complex database queries. This approach adheres to the 'Existence over Content' principle for global roles."
+    "/shoot_network/{talentId}": {
+      "schema": "TalentProfile",
+      "description": "Collection of verified creative talent profiles."
+    },
+    "/projects/{projectId}": {
+      "schema": "any",
+      "description": "Production project entities."
+    },
+    "/clients/{clientId}": {
+      "schema": "any",
+      "description": "Client entities."
+    },
+    "/leads/{leadId}": {
+      "schema": "any",
+      "description": "Pipeline leads."
+    },
+    "/teamMembers/{memberId}": {
+      "schema": "any",
+      "description": "Internal team members."
+    },
+    "/roles_admin/{userId}": {
+      "schema": "any",
+      "description": "Administrative roles mapping."
+    }
   }
 }
