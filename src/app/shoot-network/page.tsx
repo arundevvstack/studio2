@@ -15,7 +15,8 @@ import {
   MapPin,
   Briefcase,
   Star,
-  ArrowRight
+  ArrowRight,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +39,7 @@ import Link from "next/link";
 
 /**
  * @fileOverview Shoot Network Repository.
- * Enhanced with Grid and List view modes for high-density intelligence management.
+ * Enhanced with Grid/List modes and advanced Tag Filtering.
  */
 
 export default function ShootNetworkPage() {
@@ -51,6 +52,7 @@ export default function ShootNetworkPage() {
     district: "All",
     gender: "All",
     paymentStage: "All",
+    tags: []
   });
 
   const talentQuery = useMemoFirebase(() => {
@@ -70,10 +72,27 @@ export default function ShootNetworkPage() {
       const matchesDistrict = filters.district === "All" || t.district === filters.district;
       const matchesGender = filters.gender === "All" || t.gender === filters.gender;
       const matchesPayment = filters.paymentStage === "All" || t.paymentStage === filters.paymentStage;
+      
+      const matchesTags = filters.tags.length === 0 || 
+                         (t.suitableProjectTypes && filters.tags.every((tag: string) => t.suitableProjectTypes.includes(tag)));
 
-      return matchesSearch && matchesCategory && matchesDistrict && matchesGender && matchesPayment;
+      return matchesSearch && matchesCategory && matchesDistrict && matchesGender && matchesPayment && matchesTags;
     });
   }, [talent, searchQuery, filters]);
+
+  const removeFilter = (key: string, value?: string) => {
+    if (key === 'district') setFilters({ ...filters, district: 'All' });
+    if (key === 'gender') setFilters({ ...filters, gender: 'All' });
+    if (key === 'paymentStage') setFilters({ ...filters, paymentStage: 'All' });
+    if (key === 'category' && value) setFilters({ ...filters, category: filters.category.filter((c: string) => c !== value) });
+    if (key === 'tags' && value) setFilters({ ...filters, tags: filters.tags.filter((t: string) => t !== value) });
+  };
+
+  const hasActiveFilters = filters.category.length > 0 || 
+                          filters.district !== "All" || 
+                          filters.gender !== "All" || 
+                          filters.paymentStage !== "All" ||
+                          filters.tags.length > 0;
 
   return (
     <div className="flex h-full gap-8 animate-in fade-in duration-500">
@@ -124,34 +143,73 @@ export default function ShootNetworkPage() {
         </div>
 
         {/* Action Bar: Search + View Toggle */}
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative flex-1 group w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-            <Input 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal" 
-              placeholder="Search by name, skill, or creative category..." 
-            />
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative flex-1 group w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <Input 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal" 
+                placeholder="Search by name, skill, or creative category..." 
+              />
+            </div>
+            <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 shrink-0">
+              <Button 
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
+                size="icon" 
+                onClick={() => setViewMode('grid')}
+                className={`h-11 w-11 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}
+              >
+                <LayoutGrid className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
+                size="icon" 
+                onClick={() => setViewMode('list')}
+                className={`h-11 w-11 rounded-xl transition-all ${viewMode === 'list' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}
+              >
+                <List className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 shrink-0">
-            <Button 
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
-              size="icon" 
-              onClick={() => setViewMode('grid')}
-              className={`h-11 w-11 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}
-            >
-              <LayoutGrid className="h-5 w-5" />
-            </Button>
-            <Button 
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
-              size="icon" 
-              onClick={() => setViewMode('list')}
-              className={`h-11 w-11 rounded-xl transition-all ${viewMode === 'list' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}
-            >
-              <List className="h-5 w-5" />
-            </Button>
-          </div>
+
+          {/* Active Filter Tags */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 p-4 bg-slate-50/50 rounded-2xl border border-slate-100/50 animate-in fade-in duration-300">
+              <span className="text-[10px] font-bold text-slate-400 uppercase mr-2 ml-1">Active Filters:</span>
+              
+              {filters.district !== "All" && (
+                <Badge className="bg-white text-slate-600 border border-slate-100 font-bold text-[10px] rounded-lg pl-3 pr-1 py-1 gap-1">
+                  {filters.district}
+                  <Button variant="ghost" size="icon" onClick={() => removeFilter('district')} className="h-4 w-4 p-0 hover:bg-slate-100 rounded-md"><X className="h-2 w-2" /></Button>
+                </Badge>
+              )}
+              
+              {filters.category.map((cat: string) => (
+                <Badge key={cat} className="bg-white text-primary border border-primary/10 font-bold text-[10px] rounded-lg pl-3 pr-1 py-1 gap-1">
+                  {cat}
+                  <Button variant="ghost" size="icon" onClick={() => removeFilter('category', cat)} className="h-4 w-4 p-0 hover:bg-primary/5 rounded-md"><X className="h-2 w-2" /></Button>
+                </Badge>
+              ))}
+
+              {filters.tags.map((tag: string) => (
+                <Badge key={tag} className="bg-slate-900 text-white border-none font-bold text-[10px] rounded-lg pl-3 pr-1 py-1 gap-1">
+                  {tag}
+                  <Button variant="ghost" size="icon" onClick={() => removeFilter('tags', tag)} className="h-4 w-4 p-0 hover:bg-white/10 rounded-md text-white"><X className="h-2 w-2" /></Button>
+                </Badge>
+              ))}
+
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All", tags: [] })}
+                className="text-[10px] font-bold text-primary uppercase hover:bg-primary/5 h-7 px-3 rounded-lg"
+              >
+                Clear All
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Grid Area */}
@@ -245,7 +303,7 @@ export default function ShootNetworkPage() {
             </div>
             <div className="space-y-1">
               <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No talent matching these criteria</p>
-              <Button variant="link" onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All" })} className="text-primary font-bold text-xs tracking-normal p-0">Clear all filters</Button>
+              <Button variant="link" onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All", tags: [] })} className="text-primary font-bold text-xs tracking-normal p-0">Clear all filters</Button>
             </div>
           </div>
         )}

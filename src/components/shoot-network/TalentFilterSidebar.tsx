@@ -12,7 +12,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Filter, MapPin, Grid, User, CreditCard } from "lucide-react";
+import { Filter, MapPin, Grid, User, CreditCard, Tag } from "lucide-react";
 
 const KERALA_DISTRICTS = [
   "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",
@@ -25,6 +25,10 @@ const CATEGORIES = [
   "Editor", "Drone Operator", "Set Designer", "Photographer", "Influencer"
 ];
 
+const PROJECT_TAGS = [
+  "Commercial", "Film", "Music Video", "Fashion", "Editorial", "Wedding", "Social Media", "Corporate"
+];
+
 export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
   const toggleCategory = (cat: string) => {
     setFilters((prev: any) => ({
@@ -32,6 +36,15 @@ export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
       category: prev.category.includes(cat)
         ? prev.category.filter((c: string) => c !== cat)
         : [...prev.category, cat]
+    }));
+  };
+
+  const toggleTag = (tag: string) => {
+    setFilters((prev: any) => ({
+      ...prev,
+      tags: (prev.tags || []).includes(tag)
+        ? prev.tags.filter((t: string) => t !== tag)
+        : [...(prev.tags || []), tag]
     }));
   };
 
@@ -72,12 +85,31 @@ export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
             {CATEGORIES.map(cat => (
               <div key={cat} className="flex items-center gap-3">
                 <Checkbox 
-                  id={cat} 
+                  id={`cat-${cat}`} 
                   checked={filters.category.includes(cat)}
                   onCheckedChange={() => toggleCategory(cat)}
                   className="rounded-md border-slate-200" 
                 />
-                <label htmlFor={cat} className="text-xs font-bold text-slate-600 cursor-pointer">{cat}</label>
+                <label htmlFor={`cat-${cat}`} className="text-xs font-bold text-slate-600 cursor-pointer">{cat}</label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
+            <Tag className="h-3 w-3" /> Project Verticals
+          </Label>
+          <div className="grid grid-cols-1 gap-2.5">
+            {PROJECT_TAGS.map(tag => (
+              <div key={tag} className="flex items-center gap-3">
+                <Checkbox 
+                  id={`tag-${tag}`} 
+                  checked={(filters.tags || []).includes(tag)}
+                  onCheckedChange={() => toggleTag(tag)}
+                  className="rounded-md border-slate-200" 
+                />
+                <label htmlFor={`tag-${tag}`} className="text-xs font-bold text-slate-600 cursor-pointer">{tag}</label>
               </div>
             ))}
           </div>
