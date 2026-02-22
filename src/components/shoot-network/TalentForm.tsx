@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -11,13 +12,12 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useFirestore } from "@/firebase";
 import { collection, doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Mail, Phone } from "lucide-react";
 
 interface TalentFormProps {
   existingTalent?: any;
@@ -28,6 +28,8 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
+    phone: "",
     age: "",
     district: "",
     category: "",
@@ -43,6 +45,8 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     if (existingTalent) {
       setFormData({
         name: existingTalent.name || "",
+        email: existingTalent.email || "",
+        phone: existingTalent.phone || "",
         age: existingTalent.age || "",
         district: existingTalent.district || "",
         category: existingTalent.category || "",
@@ -68,6 +72,8 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
     const talentData = {
       name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
       age: formData.age,
       district: formData.district,
       category: formData.category,
@@ -120,6 +126,33 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
             placeholder="e.g. Models, DOP, Stylist"
             className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
           />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Communication Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+            <Input 
+              value={formData.email} 
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="rounded-xl bg-slate-50 border-none h-12 pl-12 font-bold tracking-normal focus-visible:ring-primary/20"
+              placeholder="name@agency.com"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Contact Hotline</Label>
+          <div className="relative">
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+            <Input 
+              value={formData.phone} 
+              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              className="rounded-xl bg-slate-50 border-none h-12 pl-12 font-bold tracking-normal focus-visible:ring-primary/20"
+              placeholder="+91 0000 000 000"
+            />
+          </div>
         </div>
       </div>
 

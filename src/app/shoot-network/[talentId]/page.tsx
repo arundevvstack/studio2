@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -23,7 +24,8 @@ import {
   ShieldCheck,
   Zap,
   Layers,
-  Activity
+  Activity,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +48,7 @@ import { TalentForm } from "@/components/shoot-network/TalentForm";
 
 /**
  * @fileOverview Talent Profile Page.
- * Streamlined to focus on core partner metadata and creative taxonomy.
+ * Enhanced with direct contact intelligence and high-fidelity glassmorphic sections.
  */
 
 export default function TalentProfilePage({ params }: { params: Promise<{ talentId: string }> }) {
@@ -247,22 +249,36 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
             </div>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
-            <div className="space-y-2 relative z-10">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">System Guidance</p>
-              <p className="text-sm font-medium leading-relaxed italic text-slate-300 tracking-normal">
-                "Profile optimized for {talent.category} deployments in {talent.district}."
-              </p>
-            </div>
-            <div className="pt-6 border-t border-white/10 relative z-10">
-               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-500 mb-2 tracking-normal">
-                 <span>Partner Vitality</span>
-                 <span className="text-primary">Nominal</span>
-               </div>
-               <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                 <div className="h-full bg-primary" style={{ width: '92%' }} />
-               </div>
+          <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-6">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Communication Hub</h4>
+            <div className="space-y-4">
+              {talent.email && (
+                <a href={`mailto:${talent.email}`} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+                  <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:text-primary">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Email Channel</p>
+                    <p className="text-sm font-bold text-slate-900 truncate tracking-normal">{talent.email}</p>
+                  </div>
+                </a>
+              )}
+              {talent.phone && (
+                <a href={`tel:${talent.phone}`} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-accent/5 hover:border-accent/20 transition-all group">
+                  <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:text-accent">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Direct Hotline</p>
+                    <p className="text-sm font-bold text-slate-900 tracking-normal">{talent.phone}</p>
+                  </div>
+                </a>
+              )}
+              {!talent.email && !talent.phone && (
+                <div className="p-6 text-center border-2 border-dashed border-slate-50 rounded-2xl">
+                  <p className="text-xs text-slate-400 font-medium tracking-normal italic">No direct contact details recorded.</p>
+                </div>
+              )}
             </div>
           </Card>
         </div>
