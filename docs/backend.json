@@ -38,6 +38,36 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "district", "category"]
+    },
+    "Project": {
+      "title": "Project",
+      "type": "object",
+      "description": "A media production project entity.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "clientId": { "type": "string" },
+        "description": { "type": "string" },
+        "budget": { "type": "number" },
+        "status": { "type": "string" },
+        "location": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "crew": { 
+          "type": "array", 
+          "items": {
+            "type": "object",
+            "properties": {
+              "talentId": { "type": "string" },
+              "name": { "type": "string" },
+              "category": { "type": "string" },
+              "role": { "type": "string" },
+              "thumbnail": { "type": "string" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -49,7 +79,7 @@
       "description": "Collection of verified creative talent profiles."
     },
     "/projects/{projectId}": {
-      "schema": "any",
+      "schema": "Project",
       "description": "Production project entities."
     },
     "/clients/{clientId}": {
