@@ -39,6 +39,24 @@
       },
       "required": ["name", "district", "category"]
     },
+    "TeamMember": {
+      "title": "TeamMember",
+      "type": "object",
+      "description": "An internal staff member or regular freelance collaborator.",
+      "properties": {
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "roleId": { "type": "string" },
+        "type": { "type": "string", "enum": ["In-house", "Freelancer"] },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["firstName", "lastName", "email", "roleId"]
+    },
     "Project": {
       "title": "Project",
       "type": "object",
@@ -91,7 +109,7 @@
       "description": "Pipeline leads."
     },
     "/teamMembers/{memberId}": {
-      "schema": "any",
+      "schema": "TeamMember",
       "description": "Internal team members."
     },
     "/roles_admin/{userId}": {

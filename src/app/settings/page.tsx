@@ -19,7 +19,8 @@ import {
   BadgeCheck,
   Moon,
   Sun,
-  Monitor
+  Monitor,
+  Edit2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -41,6 +42,14 @@ import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebas
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 export default function SettingsPage() {
   const db = useFirestore();
@@ -212,10 +221,21 @@ export default function SettingsPage() {
                 <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Production Crew</CardTitle>
                 <CardDescription className="tracking-normal">Provision and manage internal resources and access permissions.</CardDescription>
               </div>
-              <Button className="h-11 px-6 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white gap-2 tracking-normal dark:bg-white dark:text-slate-900">
-                <Plus className="h-4 w-4" />
-                Invite Member
-              </Button>
+              
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="h-11 px-6 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white gap-2 tracking-normal dark:bg-white dark:text-slate-900">
+                    <Plus className="h-4 w-4" />
+                    Invite Member
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+                  <DialogHeader className="p-8 pb-0">
+                    <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Member</DialogTitle>
+                  </DialogHeader>
+                  <TeamMemberForm />
+                </DialogContent>
+              </Dialog>
             </div>
             
             <CardContent className="p-0">
@@ -226,7 +246,7 @@ export default function SettingsPage() {
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
                     <TableRow className="hover:bg-transparent border-slate-50 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Crew Member</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Status</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Type</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-normal">Strategic Role</TableHead>
                       <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
                     </TableRow>
@@ -247,7 +267,9 @@ export default function SettingsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className="bg-accent/10 text-accent border-none font-bold text-[10px] uppercase px-3 py-1 tracking-normal">Available</Badge>
+                          <Badge className={`border-none font-bold text-[10px] uppercase px-3 py-1 tracking-normal ${member.type === 'Freelancer' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
+                            {member.type || "Expert"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm font-bold text-slate-600 tracking-normal dark:text-slate-400">
@@ -256,14 +278,29 @@ export default function SettingsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right px-10">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleDeleteMember(member.id, member.firstName)}
-                            className="h-10 w-10 rounded-xl text-slate-300 hover:text-destructive hover:bg-destructive/5 transition-all"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-300 hover:text-primary hover:bg-primary/5 transition-all">
+                                  <Edit2 className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+                                <DialogHeader className="p-8 pb-0">
+                                  <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
+                                </DialogHeader>
+                                <TeamMemberForm existingMember={member} />
+                              </DialogContent>
+                            </Dialog>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleDeleteMember(member.id, member.firstName)}
+                              className="h-10 w-10 rounded-xl text-slate-300 hover:text-destructive hover:bg-destructive/5 transition-all"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

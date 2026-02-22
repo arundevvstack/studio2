@@ -4,11 +4,19 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Mail, MessageSquare, Briefcase, Plus, Search, Loader2, User as UserIcon } from "lucide-react";
+import { Users, Mail, MessageSquare, Briefcase, Plus, Search, Loader2, User as UserIcon, ShieldCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 export default function TeamPage() {
   const db = useFirestore();
@@ -25,13 +33,28 @@ export default function TeamPage() {
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Team Collaboration</h1>
-          <p className="text-sm text-slate-500 font-medium tracking-normal">Manage your production crew and high-performance resources.</p>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-none">
+            Team Collaboration
+          </h1>
+          <p className="text-sm text-slate-500 font-medium tracking-normal mt-2">
+            Manage your production crew and high-performance resources.
+          </p>
         </div>
-        <Button className="h-12 px-6 rounded-xl font-bold shadow-lg shadow-primary/20 gap-2 tracking-normal">
-          <Plus className="h-4 w-4" />
-          Invite Member
-        </Button>
+        
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
+              <Plus className="h-4 w-4" />
+              Invite Member
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+            <DialogHeader className="p-8 pb-0">
+              <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Member</DialogTitle>
+            </DialogHeader>
+            <TeamMemberForm />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {isLoading ? (
@@ -43,19 +66,22 @@ export default function TeamPage() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {team.map((member) => (
             <Card key={member.id} className="border-none shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all rounded-[2.5rem] bg-white overflow-hidden text-center group">
-              <CardHeader className="flex flex-col items-center pt-10 pb-4">
-                <Avatar className="h-24 w-24 border-4 border-slate-50 mb-6 shadow-md rounded-[2rem] group-hover:scale-105 transition-transform">
+              <CardHeader className="flex flex-col items-center pt-10 pb-4 relative">
+                <Badge className="absolute top-6 right-6 border-none font-bold text-[8px] uppercase px-2 py-0.5 rounded-lg tracking-normal bg-slate-50 text-slate-400">
+                  {member.type || "Expert"}
+                </Badge>
+                <Avatar className="h-24 w-24 border-4 border-slate-50 mb-6 shadow-md rounded-[2rem] group-hover:scale-105 transition-transform duration-500">
                   <AvatarImage src={`https://picsum.photos/seed/${member.id}/200/200`} />
                   <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{member.firstName[0]}</AvatarFallback>
                 </Avatar>
                 <div className="space-y-1">
-                  <CardTitle className="font-headline text-xl text-slate-900 tracking-normal">{member.firstName} {member.lastName}</CardTitle>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{member.roleId || "CREW MEMBER"}</p>
+                  <CardTitle className="font-headline text-xl text-slate-900 tracking-normal leading-none">{member.firstName} {member.lastName}</CardTitle>
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-normal pt-2">{member.roleId || "CREW MEMBER"}</p>
                 </div>
               </CardHeader>
               <CardContent className="space-y-8 p-8 pt-0">
                 <div className="flex justify-center">
-                  <Badge className="bg-accent/10 text-accent border-none font-bold text-[10px] px-4 py-1 uppercase tracking-normal">
+                  <Badge className="bg-accent/10 text-accent border-none font-bold text-[10px] px-4 py-1 uppercase tracking-normal rounded-xl">
                     Available
                   </Badge>
                 </div>
@@ -66,17 +92,19 @@ export default function TeamPage() {
                     <p className="font-bold text-slate-900 mt-1">100%</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-normal">Asset Load</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-normal">Load</p>
                     <p className="font-bold text-slate-900 mt-1">0</p>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-center gap-3">
-                  <Button variant="outline" className="flex-1 h-11 rounded-xl border-slate-100 font-bold text-[10px] uppercase gap-2 tracking-normal text-slate-600 hover:bg-slate-50">
-                    <Mail className="h-3.5 w-3.5" />
-                    Email
+                  <Button asChild variant="outline" className="flex-1 h-11 rounded-xl border-slate-100 font-bold text-[10px] uppercase gap-2 tracking-normal text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
+                    <a href={`mailto:${member.email}`}>
+                      <Mail className="h-3.5 w-3.5" />
+                      Email
+                    </a>
                   </Button>
-                  <Button variant="outline" className="flex-1 h-11 rounded-xl border-slate-100 font-bold text-[10px] uppercase gap-2 tracking-normal text-slate-600 hover:bg-slate-50">
+                  <Button variant="outline" className="flex-1 h-11 rounded-xl border-slate-100 font-bold text-[10px] uppercase gap-2 tracking-normal text-slate-600 hover:bg-slate-900 hover:text-white transition-all">
                     <MessageSquare className="h-3.5 w-3.5" />
                     Chat
                   </Button>
@@ -93,7 +121,17 @@ export default function TeamPage() {
           <div className="space-y-2">
             <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No Active Crew Records</p>
             <p className="text-xs text-slate-300 italic tracking-normal max-w-sm mx-auto">Build your high-performance team to manage global production throughput.</p>
-            <Button variant="link" className="text-primary font-bold text-xs mt-4 tracking-normal">Register your first production expert</Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="link" className="text-primary font-bold text-xs mt-4 tracking-normal p-0">Register your first production expert</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+                <DialogHeader className="p-8 pb-0">
+                  <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Member</DialogTitle>
+                </DialogHeader>
+                <TeamMemberForm />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       )}
