@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
@@ -12,26 +11,18 @@ import {
   ArrowUpDown,
   User,
   Clock,
-  Pencil,
   Loader2,
   Columns,
   ChevronRight,
   Briefcase,
-  IndianRupee,
-  Activity,
-  MapPin,
   TrendingUp,
-  X
+  X,
+  Target,
+  GitBranch
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -68,24 +59,33 @@ export default function ProjectsPage() {
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
     return projects.filter(p => {
-      const clientName = clientMap.get(p.clientId) || "";
+      const clientName = clientMap.get(p.clientId) || p.clientName || "";
       return p.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
              clientName.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [projects, searchQuery, clientMap]);
 
+  // Separate "In Production" vs "Pipeline Intelligence" (Discussion phase)
+  const productionProjects = useMemo(() => 
+    filteredProjects.filter(p => p.status !== "Discussion"), 
+  [filteredProjects]);
+
+  const pipelineProjects = useMemo(() => 
+    filteredProjects.filter(p => p.status === "Discussion"), 
+  [filteredProjects]);
+
   const clientGroups = useMemo(() => {
-    if (!clients || !filteredProjects) return [];
+    if (!clients || !productionProjects) return [];
 
     return clients.map(client => {
-      const clientProjects = filteredProjects.filter(p => p.clientId === client.id);
+      const clientProjects = productionProjects.filter(p => p.clientId === client.id);
       return {
         ...client,
         projects: clientProjects,
         activeCount: clientProjects.length
       };
     }).filter(group => group.projects.length > 0);
-  }, [clients, filteredProjects]);
+  }, [clients, productionProjects]);
 
   const isLoading = isLoadingClients || isLoadingProjects;
 
@@ -110,12 +110,12 @@ export default function ProjectsPage() {
   }, [projects, selectedProjectId]);
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+    <div className="space-y-12 max-w-[1600px] mx-auto animate-in fade-in duration-500">
       {/* Strategic Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1">
-          <h1 className="text-4xl font-bold font-headline tracking-normal text-slate-900">Projects</h1>
-          <p className="text-sm text-slate-500 font-medium tracking-normal">
+          <h1 className="text-4xl font-bold font-headline tracking-normal text-slate-900 leading-none">Projects</h1>
+          <p className="text-sm text-slate-500 font-medium tracking-normal mt-2">
             Managing global production assets and strategic deliverables.
           </p>
         </div>
@@ -166,32 +166,58 @@ export default function ProjectsPage() {
             placeholder="Filter projects by entity name or client..." 
           />
         </div>
-        
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Results: {filteredProjects.length} Entities</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="h-10 rounded-xl border-slate-100 text-xs font-bold gap-2 text-slate-600 bg-white tracking-normal shadow-sm">
-              <ArrowUpDown className="h-3.5 w-3.5" />
-              Sort
-            </Button>
-            <Button variant="outline" className="h-10 rounded-xl border-slate-100 text-xs font-bold gap-2 text-slate-600 bg-white tracking-normal shadow-sm">
-              <Filter className="h-3.5 w-3.5" />
-              Refine
-            </Button>
-          </div>
-        </div>
       </div>
 
+      {/* Pipeline Intelligence Block (Shared with leads in Discussion) */}
+      {pipelineProjects.length > 0 && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 px-2">
+            <div className="h-10 w-10 rounded-[1rem] bg-blue-50 border border-blue-100 flex items-center justify-center shadow-sm">
+              <GitBranch className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Pipeline Intelligence</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Entities currently in phase: DISCUSSION</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {pipelineProjects.map((p) => (
+              <Card key={p.id} className="border-none shadow-sm rounded-[2rem] bg-white overflow-hidden group hover:shadow-md transition-all border border-slate-50">
+                <div className="p-8 space-y-6">
+                  <div className="flex justify-between items-start">
+                    <Badge className="bg-blue-50 text-blue-600 border-none text-[8px] font-bold uppercase tracking-normal px-2 py-0.5 rounded-lg">
+                      Pipeline Active
+                    </Badge>
+                    <Target className="h-4 w-4 text-blue-200" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal mb-1">{p.clientName || clientMap.get(p.clientId)}</p>
+                    <h4 className="text-lg font-bold text-slate-900 tracking-normal leading-tight line-clamp-2">{p.name}</h4>
+                  </div>
+                  <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                    <div className="text-sm font-bold text-slate-900 tracking-normal">₹{(p.budget || 0).toLocaleString('en-IN')}</div>
+                    <Button asChild variant="ghost" size="sm" className="h-8 rounded-lg text-[10px] font-bold uppercase tracking-normal gap-2 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
+                      <Link href={`/pipeline/leads/${p.id}`}>
+                        Lead Details <ChevronRight className="h-3 w-3" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Workspace Area */}
-      <div className="min-h-[600px]">
+      <div className="min-h-[400px]">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-normal">Synchronizing Pipeline Intelligence...</p>
           </div>
-        ) : filteredProjects.length > 0 ? (
+        ) : productionProjects.length > 0 ? (
           viewMode === 'list' ? (
             <div className="space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
               {clientGroups.map((group) => (
@@ -257,7 +283,7 @@ export default function ProjectsPage() {
             </div>
           ) : viewMode === 'grid' ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              {filteredProjects.map((project) => (
+              {productionProjects.map((project) => (
                 <Card key={project.id} className="border-none shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all rounded-[2.5rem] bg-white overflow-hidden group">
                   <Link href={`/projects/${project.id}`} className="block">
                     <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
@@ -322,7 +348,7 @@ export default function ProjectsPage() {
                   </div>
                   <ScrollArea className="flex-1">
                     <div className="p-4 space-y-2">
-                      {filteredProjects.map((p) => (
+                      {productionProjects.map((p) => (
                         <div 
                           key={p.id}
                           onClick={() => setSelectedProjectId(p.id)}
@@ -431,7 +457,7 @@ export default function ProjectsPage() {
                         <div className="pt-10 border-t border-slate-50 flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Partner</p>
-                            <h4 className="text-lg font-bold text-slate-900 tracking-normal">{clientMap.get(selectedProject.clientId)}</h4>
+                            <h4 className="text-lg font-bold text-slate-900 tracking-normal">{clientMap.get(selectedProject.clientId) || selectedProject.clientName}</h4>
                           </div>
                           <Button asChild className="h-14 px-10 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold gap-3 group tracking-normal">
                             <Link href={`/projects/${selectedProject.id}`}>

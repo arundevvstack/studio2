@@ -79,31 +79,37 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     }
   }, [lead]);
 
+  const syncProjectMirror = (status: string, currentLead: any) => {
+    if (!db || !currentLead) return;
+    const projectDocRef = doc(db, "projects", currentLead.id);
+    
+    if (status === "Discussion") {
+      setDocumentNonBlocking(projectDocRef, {
+        id: currentLead.id,
+        name: `[DISCUSSION] ${currentLead.name}`,
+        clientName: currentLead.company || currentLead.name,
+        clientId: "PIPELINE", // Sentinel ID for projects still in sales
+        budget: currentLead.estimatedBudget || 0,
+        status: "Discussion",
+        description: `Lead from pipeline source: ${currentLead.source}. Industry: ${currentLead.industry}`,
+        updatedAt: serverTimestamp(),
+        createdAt: currentLead.createdAt || serverTimestamp()
+      }, { merge: true });
+    } else {
+      // If it moves OUT of discussion, we remove the mirror
+      deleteDocumentNonBlocking(projectDocRef);
+    }
+  };
+
   const handleUpdateLead = () => {
     if (!editData?.name || !leadRef || !lead) return;
     
-    const prevStatus = lead.status;
-    const newStatus = editData.status;
-
     updateDocumentNonBlocking(leadRef, {
       ...editData,
       updatedAt: serverTimestamp()
     });
 
-    // Mirror logic: Provision project if in Discussion, remove if exiting Discussion
-    const projectDocRef = doc(db, "projects", lead.id);
-    if (newStatus === "Discussion") {
-      setDocumentNonBlocking(projectDocRef, {
-        id: lead.id,
-        name: `[DISCUSSION] ${editData.name}`,
-        clientName: editData.company || editData.name,
-        budget: editData.estimatedBudget || 0,
-        status: "Discussion",
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-    } else if (prevStatus === "Discussion" && newStatus !== "Discussion") {
-      deleteDocumentNonBlocking(projectDocRef);
-    }
+    syncProjectMirror(editData.status, { ...lead, ...editData });
 
     toast({ title: "Intelligence Synchronized", description: `${editData.name} profile has been updated.` });
   };
@@ -111,27 +117,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
   const handleStatusChange = (newStatus: string) => {
     if (!leadRef || !lead) return;
     
-    const prevStatus = lead.status;
-
     updateDocumentNonBlocking(leadRef, {
       status: newStatus,
       updatedAt: serverTimestamp()
     });
 
-    // Mirror logic: Provision project if in Discussion, remove if exiting Discussion
-    const projectDocRef = doc(db, "projects", lead.id);
-    if (newStatus === "Discussion") {
-      setDocumentNonBlocking(projectDocRef, {
-        id: lead.id,
-        name: `[DISCUSSION] ${lead.name}`,
-        clientName: lead.company || lead.name,
-        budget: lead.estimatedBudget || 0,
-        status: "Discussion",
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-    } else if (prevStatus === "Discussion" && newStatus !== "Discussion") {
-      deleteDocumentNonBlocking(projectDocRef);
-    }
+    syncProjectMirror(newStatus, lead);
 
     toast({ 
       title: "Phase Advanced", 
@@ -142,10 +133,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
   const handleDeleteLead = () => {
     if (!leadRef || !lead) return;
     
-    // Cleanup mirror if it exists
-    if (lead.status === "Discussion") {
-      deleteDocumentNonBlocking(doc(db, "projects", lead.id));
-    }
+    // Always attempt to cleanup mirror on delete
+    deleteDocumentNonBlocking(doc(db, "projects", lead.id));
 
     deleteDocumentNonBlocking(leadRef);
     toast({ variant: "destructive", title: "Lead Purged", description: "Entity removed from the engine." });
@@ -156,9 +145,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     if (!lead) return;
     
     // Cleanup temporary mirror before permanent conversion
-    if (lead.status === "Discussion") {
-      deleteDocumentNonBlocking(doc(db, "projects", lead.id));
-    }
+    deleteDocumentNonBlocking(doc(db, "projects", lead.id));
 
     const projectRef = doc(collection(db, "projects"));
     const clientRef = doc(collection(db, "clients"));
@@ -220,7 +207,6 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-6">
           <Button 
