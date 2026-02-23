@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -15,7 +14,7 @@ import {
   Sparkles,
   Layers
 } from "lucide-react";
-import { useRouter } from "navigation";
+import { useRouter } from "next/navigation";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { 
@@ -205,7 +204,7 @@ export default function AddProjectPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Strategic Client</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Client</label>
               <Select onValueChange={(val) => setFormData({...formData, clientId: val})} value={formData.clientId}>
                 <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
                   <SelectValue placeholder={isLoadingClients ? "Syncing partners..." : "Identify client..."} />
@@ -232,7 +231,7 @@ export default function AddProjectPage() {
               <div className="relative">
                 <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
                 <Select value={formData.location} onValueChange={(val) => setFormData({...formData, location: val})}>
-                  <SelectTrigger className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
+                  <SelectTrigger className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20">
                     <SelectValue placeholder="Select hub location..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[300px]">
