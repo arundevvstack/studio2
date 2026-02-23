@@ -139,6 +139,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const [progress, setProgress] = useState([0]);
   const [activeTab, setActiveTab] = useState("objectives");
   const [recruitSearch, setRecruitSearch] = useState("");
+  const [crewViewMode, setCrewViewMode] = useState<"grid" | "list">("grid");
 
   const projectRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -335,7 +336,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
         </div>
       </div>
 
-      {/* Strategic Phase Selector Ribbon */}
       <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden p-2">
         <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
           {STAGES.map((stage, idx) => {
@@ -474,74 +474,131 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <h3 className="text-xl font-bold font-headline tracking-normal">Production Crew</h3>
                   <p className="text-xs font-medium text-slate-500 tracking-normal">Assigned internal staff and external partners.</p>
                 </div>
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button className="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-[10px] uppercase gap-2 tracking-normal shadow-lg shadow-primary/20"><Plus className="h-4 w-4" /> Provision Resource</Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="sm:max-w-[500px] rounded-l-[3rem] p-0 border-none shadow-2xl flex flex-col bg-slate-50">
-                    <div className="p-10 bg-white border-b border-slate-100">
-                      <SheetTitle className="text-2xl font-bold font-headline tracking-normal">Deploy Team Member</SheetTitle>
-                      <div className="relative mt-6">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input value={recruitSearch} onChange={(e) => setRecruitSearch(e.target.value)} placeholder="Identify expertise or identity..." className="pl-12 h-14 rounded-2xl bg-slate-50 border-none font-bold" />
-                      </div>
-                    </div>
-                    <ScrollArea className="flex-1">
-                      <div className="p-10 pt-6 space-y-8">
-                        <div className="space-y-4">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Internal Experts</p>
-                          {staffSuggestions.filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(recruitSearch.toLowerCase())).map((staff) => (
-                            <Card key={staff.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
-                                    <AvatarImage src={staff.thumbnail || `https://picsum.photos/seed/${staff.id}/100/100`} className="object-cover" />
-                                    <AvatarFallback className="bg-blue-50 text-blue-500 font-bold">{staff.firstName[0]}</AvatarFallback>
-                                  </Avatar>
-                                  <div><p className="font-bold text-sm text-slate-900 tracking-normal">{staff.firstName} {staff.lastName}</p><p className="text-[9px] font-bold text-blue-500 uppercase tracking-normal">{staff.roleId}</p></div>
-                                </div>
-                                <Button onClick={() => handleRecruit(staff, 'Internal')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-blue-500 hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
-                              </div>
-                            </Card>
-                          ))}
-                        </div>
-                        <div className="space-y-4">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Talent Network Partners</p>
-                          {suggestions.filter(t => t.name?.toLowerCase().includes(recruitSearch.toLowerCase())).map((talent) => (
-                            <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
-                                    <AvatarImage src={talent.thumbnail || `https://picsum.photos/seed/${talent.id}/100/100`} className="object-cover" />
-                                    <AvatarFallback className="bg-primary/5 text-primary font-bold">{talent.name?.[0]}</AvatarFallback>
-                                  </Avatar>
-                                  <div><p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p><p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p></div>
-                                </div>
-                                <Button onClick={() => handleRecruit(talent, 'External')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
-                              </div>
-                            </Card>
-                          ))}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center bg-white border border-slate-100 rounded-2xl p-1 shadow-sm shrink-0">
+                    <Button 
+                      variant={crewViewMode === 'grid' ? 'secondary' : 'ghost'} 
+                      size="icon" 
+                      onClick={() => setCrewViewMode('grid')}
+                      className={`h-9 w-9 rounded-xl transition-all ${crewViewMode === 'grid' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={crewViewMode === 'list' ? 'secondary' : 'ghost'} 
+                      size="icon" 
+                      onClick={() => setCrewViewMode('list')}
+                      className={`h-9 w-9 rounded-xl transition-all ${crewViewMode === 'list' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button className="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-[10px] uppercase gap-2 tracking-normal shadow-lg shadow-primary/20"><Plus className="h-4 w-4" /> Provision Resource</Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="sm:max-w-[500px] rounded-l-[3rem] p-0 border-none shadow-2xl flex flex-col bg-slate-50">
+                      <div className="p-10 bg-white border-b border-slate-100">
+                        <SheetTitle className="text-2xl font-bold font-headline tracking-normal">Deploy Team Member</SheetTitle>
+                        <div className="relative mt-6">
+                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <Input value={recruitSearch} onChange={(e) => setRecruitSearch(e.target.value)} placeholder="Identify expertise or identity..." className="pl-12 h-14 rounded-2xl bg-slate-50 border-none font-bold" />
                         </div>
                       </div>
-                    </ScrollArea>
-                  </SheetContent>
-                </Sheet>
+                      <ScrollArea className="flex-1">
+                        <div className="p-10 pt-6 space-y-8">
+                          <div className="space-y-4">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Internal Experts</p>
+                            {staffSuggestions.filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(recruitSearch.toLowerCase())).map((staff) => (
+                              <Card key={staff.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4">
+                                    <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
+                                      <AvatarImage src={staff.thumbnail || `https://picsum.photos/seed/${staff.id}/100/100`} className="object-cover" />
+                                      <AvatarFallback className="bg-blue-50 text-blue-500 font-bold">{staff.firstName[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div><p className="font-bold text-sm text-slate-900 tracking-normal">{staff.firstName} {staff.lastName}</p><p className="text-[9px] font-bold text-blue-500 uppercase tracking-normal">{staff.roleId}</p></div>
+                                  </div>
+                                  <Button onClick={() => handleRecruit(staff, 'Internal')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-blue-500 hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                          <div className="space-y-4">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Talent Network Partners</p>
+                            {suggestions.filter(t => t.name?.toLowerCase().includes(recruitSearch.toLowerCase())).map((talent) => (
+                              <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-4">
+                                    <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
+                                      <AvatarImage src={talent.thumbnail || `https://picsum.photos/seed/${talent.id}/100/100`} className="object-cover" />
+                                      <AvatarFallback className="bg-primary/5 text-primary font-bold">{talent.name?.[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div><p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p><p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p></div>
+                                  </div>
+                                  <Button onClick={() => handleRecruit(talent, 'External')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      </ScrollArea>
+                    </SheetContent>
+                  </Sheet>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {(project.crew || []).map((member: any) => (
-                  <Card key={member.talentId} className="border-none shadow-sm rounded-[2rem] bg-white p-8 relative group hover:shadow-xl transition-all duration-500 border border-slate-50">
-                    <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-4 w-4" /></Button>
-                    <div className="flex flex-col items-center text-center space-y-4">
-                      <Avatar className="h-20 w-20 rounded-3xl shadow-lg border-4 border-slate-50"><AvatarImage src={member.thumbnail} className="object-cover" /><AvatarFallback>{member.name?.[0]}</AvatarFallback></Avatar>
-                      <div>
-                        <h4 className="font-bold text-lg text-slate-900 tracking-normal leading-tight">{member.name}</h4>
-                        <p className={`text-[10px] font-bold uppercase tracking-normal mt-1 ${member.type === 'Internal' ? 'text-blue-500' : 'text-primary'}`}>{member.category}</p>
+              {crewViewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {(project.crew || []).map((member: any) => (
+                    <Card key={member.talentId} className="border-none shadow-sm rounded-[2rem] bg-white p-8 relative group hover:shadow-xl transition-all duration-500 border border-slate-50">
+                      <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-4 w-4" /></Button>
+                      <div className="flex flex-col items-center text-center space-y-4">
+                        <Avatar className="h-20 w-20 rounded-3xl shadow-lg border-4 border-slate-50"><AvatarImage src={member.thumbnail} className="object-cover" /><AvatarFallback>{member.name?.[0]}</AvatarFallback></Avatar>
+                        <div>
+                          <h4 className="font-bold text-lg text-slate-900 tracking-normal leading-tight">{member.name}</h4>
+                          <p className={`text-[10px] font-bold uppercase tracking-normal mt-1 ${member.type === 'Internal' ? 'text-blue-500' : 'text-primary'}`}>{member.category}</p>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                  <div className="divide-y divide-slate-50">
+                    {(project.crew || []).map((member: any) => (
+                      <div key={member.talentId} className="flex items-center justify-between px-8 py-6 group hover:bg-slate-50/50 transition-colors">
+                        <div className="flex items-center gap-6">
+                          <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
+                            <AvatarImage src={member.thumbnail} className="object-cover" />
+                            <AvatarFallback>{member.name?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-bold text-slate-900 tracking-normal leading-none">{member.name}</p>
+                            <div className="flex items-center gap-3 mt-1.5">
+                              <Badge variant="outline" className={`text-[8px] font-bold uppercase border-none tracking-normal px-2 ${member.type === 'Internal' ? 'bg-blue-50 text-blue-600' : 'bg-primary/5 text-primary'}`}>
+                                {member.type}
+                              </Badge>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{member.category}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 rounded-xl text-slate-200 hover:text-destructive hover:bg-destructive/5 transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    {(!project.crew || project.crew.length === 0) && (
+                      <div className="p-20 text-center text-slate-300 italic font-medium text-sm tracking-normal">No crew members assigned to this production strategy.</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="brief" className="space-y-8 m-0 animate-in fade-in duration-300">
