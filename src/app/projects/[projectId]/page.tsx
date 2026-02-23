@@ -97,6 +97,8 @@ const NEXT_PHASE_MAP: Record<string, string | null> = {
   "Social Media": null
 };
 
+const CAST_CATEGORIES = ["Models", "Influencer"];
+
 const SOCIAL_MEDIA_SUGGESTIONS = [
   { title: "Viral BTS Loop", strategy: "Create a 15-second high-energy edit showing behind-the-scenes chaos.", platform: "Instagram Reels", impact: "High Reach" },
   { title: "Talent Reveal", strategy: "Highlight key talent profile with a 'Get to Know' carousel.", platform: "Instagram", impact: "High Engagement" },
@@ -185,6 +187,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   const suggestions = useMemo(() => shootNetwork?.filter(t => !project?.crew?.some((c: any) => c.talentId === t.id)) || [], [shootNetwork, project]);
   const staffSuggestions = useMemo(() => staffMembers?.filter(s => !project?.crew?.some((c: any) => c.talentId === s.id)) || [], [staffMembers, project]);
+
+  // Section Filtering Logic
+  const categorizedCrew = useMemo(() => {
+    const crew = project?.crew || [];
+    return {
+      production: crew.filter((c: any) => c.type === 'Internal'),
+      freelancers: crew.filter((c: any) => c.type === 'External' && !CAST_CATEGORIES.includes(c.category)),
+      cast: crew.filter((c: any) => c.type === 'External' && CAST_CATEGORIES.includes(c.category))
+    };
+  }, [project?.crew]);
 
   const handleRecruit = (member: any, type: 'Internal' | 'External') => {
     if (!projectRef || !project) return;
@@ -468,18 +480,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               )}
             </TabsContent>
 
-            <TabsContent value="crew" className="space-y-8 m-0 animate-in fade-in duration-300">
+            <TabsContent value="crew" className="space-y-12 m-0 animate-in fade-in duration-300">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-1">
-                  <h3 className="text-xl font-bold font-headline tracking-normal">Production Crew</h3>
-                  <p className="text-xs font-medium text-slate-500 tracking-normal">Assigned internal staff and external partners.</p>
+                  <h3 className="text-xl font-bold font-headline tracking-normal">Production Personnel</h3>
+                  <p className="text-xs font-medium text-slate-500 tracking-normal">Strategic segmentation of internal experts, freelancers, and cast.</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center bg-white border border-slate-100 rounded-2xl p-1 shadow-sm shrink-0">
                     <Button 
                       variant={crewViewMode === 'grid' ? 'secondary' : 'ghost'} 
                       size="icon" 
-                      onClick={() => setCrewViewMode('grid')}
+                      onClick={() => setViewMode('grid')}
                       className={`h-9 w-9 rounded-xl transition-all ${crewViewMode === 'grid' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}
                     >
                       <LayoutGrid className="h-4 w-4" />
@@ -487,7 +499,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     <Button 
                       variant={crewViewMode === 'list' ? 'secondary' : 'ghost'} 
                       size="icon" 
-                      onClick={() => setCrewViewMode('list')}
+                      onClick={() => setViewMode('list')}
                       className={`h-9 w-9 rounded-xl transition-all ${crewViewMode === 'list' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}
                     >
                       <List className="h-4 w-4" />
@@ -548,57 +560,40 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 </div>
               </div>
 
-              {crewViewMode === 'grid' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                  {(project.crew || []).map((member: any) => (
-                    <Card key={member.talentId} className="border-none shadow-sm rounded-[2rem] bg-white p-8 relative group hover:shadow-xl transition-all duration-500 border border-slate-50">
-                      <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-4 w-4" /></Button>
-                      <div className="flex flex-col items-center text-center space-y-4">
-                        <Avatar className="h-20 w-20 rounded-3xl shadow-lg border-4 border-slate-50"><AvatarImage src={member.thumbnail} className="object-cover" /><AvatarFallback>{member.name?.[0]}</AvatarFallback></Avatar>
-                        <div>
-                          <h4 className="font-bold text-lg text-slate-900 tracking-normal leading-tight">{member.name}</h4>
-                          <p className={`text-[10px] font-bold uppercase tracking-normal mt-1 ${member.type === 'Internal' ? 'text-blue-500' : 'text-primary'}`}>{member.category}</p>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-                  <div className="divide-y divide-slate-50">
-                    {(project.crew || []).map((member: any) => (
-                      <div key={member.talentId} className="flex items-center justify-between px-8 py-6 group hover:bg-slate-50/50 transition-colors">
-                        <div className="flex items-center gap-6">
-                          <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
-                            <AvatarImage src={member.thumbnail} className="object-cover" />
-                            <AvatarFallback>{member.name?.[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-bold text-slate-900 tracking-normal leading-none">{member.name}</p>
-                            <div className="flex items-center gap-3 mt-1.5">
-                              <Badge variant="outline" className={`text-[8px] font-bold uppercase border-none tracking-normal px-2 ${member.type === 'Internal' ? 'bg-blue-50 text-blue-600' : 'bg-primary/5 text-primary'}`}>
-                                {member.type}
-                              </Badge>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{member.category}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <Button 
-                          onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-10 w-10 rounded-xl text-slate-200 hover:text-destructive hover:bg-destructive/5 transition-all"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    {(!project.crew || project.crew.length === 0) && (
-                      <div className="p-20 text-center text-slate-300 italic font-medium text-sm tracking-normal">No crew members assigned to this production strategy.</div>
-                    )}
+              {/* Sections: Production Crew, Freelancers, Cast */}
+              <div className="space-y-12">
+                <PersonnelSection 
+                  title="Production Crew" 
+                  description="Internal staff experts managing central production logistics."
+                  members={categorizedCrew.production} 
+                  viewMode={crewViewMode} 
+                  projectRef={projectRef!} 
+                  allCrew={project.crew}
+                />
+                <PersonnelSection 
+                  title="Freelancers" 
+                  description="External creative and technical collaborators assigned to specific project tasks."
+                  members={categorizedCrew.freelancers} 
+                  viewMode={crewViewMode} 
+                  projectRef={projectRef!} 
+                  allCrew={project.crew}
+                />
+                <PersonnelSection 
+                  title="Cast" 
+                  description="On-camera talent, models, and influencers deployed for the production."
+                  members={categorizedCrew.cast} 
+                  viewMode={crewViewMode} 
+                  projectRef={projectRef!} 
+                  allCrew={project.crew}
+                />
+                
+                {(!project.crew || project.crew.length === 0) && (
+                  <div className="p-32 border-2 border-dashed border-slate-50 rounded-[3rem] text-center bg-slate-50/20">
+                    <p className="text-sm font-bold text-slate-300 uppercase tracking-normal">No personnel deployed to this strategy</p>
+                    <p className="text-xs text-slate-400 mt-2">Identify and provision experts from the repository.</p>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="brief" className="space-y-8 m-0 animate-in fade-in duration-300">
@@ -681,6 +676,81 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PersonnelSection({ title, description, members, viewMode, projectRef, allCrew }: any) {
+  if (members.length === 0) return null;
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="px-2">
+        <div className="flex items-center gap-3">
+          <h4 className="text-lg font-bold font-headline text-slate-900 tracking-normal">{title}</h4>
+          <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-2.5 py-0.5 rounded-lg">{members.length}</Badge>
+        </div>
+        <p className="text-xs text-slate-400 font-medium mt-1">{description}</p>
+      </div>
+
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {members.map((member: any) => (
+            <Card key={member.talentId} className="border-none shadow-sm rounded-[2rem] bg-white p-8 relative group hover:shadow-xl transition-all duration-500 border border-slate-50">
+              <Button 
+                onClick={() => updateDocumentNonBlocking(projectRef, { crew: allCrew.filter((c: any) => c.talentId !== member.talentId) })} 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <div className="flex flex-col items-center text-center space-y-4">
+                <Avatar className="h-20 w-20 rounded-3xl shadow-lg border-4 border-slate-50">
+                  <AvatarImage src={member.thumbnail} className="object-cover" />
+                  <AvatarFallback>{member.name?.[0]}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h4 className="font-bold text-base text-slate-900 tracking-normal leading-tight line-clamp-1">{member.name}</h4>
+                  <p className={`text-[10px] font-bold uppercase tracking-normal mt-1.5 ${member.type === 'Internal' ? 'text-blue-500' : 'text-primary'}`}>{member.category}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="divide-y divide-slate-50">
+            {members.map((member: any) => (
+              <div key={member.talentId} className="flex items-center justify-between px-8 py-6 group hover:bg-slate-50/50 transition-colors">
+                <div className="flex items-center gap-6">
+                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
+                    <AvatarImage src={member.thumbnail} className="object-cover" />
+                    <AvatarFallback>{member.name?.[0]}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-bold text-slate-900 tracking-normal leading-none">{member.name}</p>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <Badge variant="outline" className={`text-[8px] font-bold uppercase border-none tracking-normal px-2 ${member.type === 'Internal' ? 'bg-blue-50 text-blue-600' : 'bg-primary/5 text-primary'}`}>
+                        {member.type}
+                      </Badge>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{member.category}</span>
+                    </div>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => updateDocumentNonBlocking(projectRef, { crew: allCrew.filter((c: any) => c.talentId !== member.talentId) })} 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 rounded-xl text-slate-200 hover:text-destructive hover:bg-destructive/5 transition-all"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
