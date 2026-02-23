@@ -433,7 +433,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                             <Card key={staff.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm"><AvatarFallback>{staff.firstName[0]}</AvatarFallback></Avatar>
+                                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
+                                    <AvatarImage src={staff.thumbnail || `https://picsum.photos/seed/${staff.id}/100/100`} />
+                                    <AvatarFallback className="bg-blue-50 text-blue-500 font-bold">{staff.firstName[0]}</AvatarFallback>
+                                  </Avatar>
                                   <div><p className="font-bold text-sm text-slate-900 tracking-normal">{staff.firstName} {staff.lastName}</p><p className="text-[9px] font-bold text-blue-500 uppercase tracking-normal">{staff.roleId}</p></div>
                                 </div>
                                 <Button onClick={() => handleRecruit(staff, 'Internal')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-blue-500 hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
@@ -447,7 +450,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                             <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm"><AvatarFallback>{talent.name?.[0]}</AvatarFallback></Avatar>
+                                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
+                                    <AvatarImage src={talent.thumbnail || `https://picsum.photos/seed/${talent.id}/100/100`} />
+                                    <AvatarFallback className="bg-primary/5 text-primary font-bold">{talent.name?.[0]}</AvatarFallback>
+                                  </Avatar>
                                   <div><p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p><p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p></div>
                                 </div>
                                 <Button onClick={() => handleRecruit(talent, 'External')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
@@ -496,7 +502,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-6 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
                     <div className="space-y-2 relative z-10">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Visual Alignment</p>
+                      <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Visual Alignment</p>
                       <h4 className="text-xl font-bold font-headline tracking-normal">Style Direction</h4>
                     </div>
                     <div className="p-4 rounded-xl bg-white/5 border border-white/5 relative z-10">
