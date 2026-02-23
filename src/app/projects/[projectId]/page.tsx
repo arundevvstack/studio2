@@ -32,7 +32,10 @@ import {
   RotateCcw,
   MessageSquare,
   ShieldCheck,
-  Search
+  Search,
+  Users,
+  Film,
+  Type
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,6 +101,34 @@ const SOCIAL_MEDIA_SUGGESTIONS = [
   { title: "Talent Reveal", strategy: "Highlight key talent profile with a 'Get to Know' carousel.", platform: "Instagram", impact: "High Engagement" },
   { title: "The Countdown", strategy: "Story series with countdown stickers to build anticipation.", platform: "Instagram Stories", impact: "Medium Conversion" }
 ];
+
+const PHASE_ROADMAP_PRESETS: Record<string, any[]> = {
+  "Pre Production": [
+    { name: "Project Planning & Scope Finalization", priority: "High", assignedRole: "Producer / Project Manager", subActivities: ["Finalize creative brief", "Confirm deliverables & formats", "Lock budget approval", "Define production timeline", "Risk assessment"] },
+    { name: "Script & Concept Approval", priority: "High", assignedRole: "Creative Director", subActivities: ["Script draft review", "Client discussion", "Revisions", "Final approval", "Storyboard creation"] },
+    { name: "Team & Resource Allocation", priority: "High", assignedRole: "Production Manager", subActivities: ["Assign crew members", "Equipment booking", "Location confirmation", "Vendor confirmation", "Contract agreements"] },
+    { name: "Scheduling & Logistics", priority: "Medium", assignedRole: "Line Producer", subActivities: ["Shoot schedule", "Call sheet creation", "Travel arrangements", "Permission approvals", "Backup planning"] }
+  ],
+  "Production": [
+    { name: "Shoot Execution", priority: "High", assignedRole: "Director", subActivities: ["Setup lighting & camera", "Sound check", "Scene execution", "Multiple takes", "Quality monitoring"] },
+    { name: "Daily Production Monitoring", priority: "High", assignedRole: "Production Manager", subActivities: ["Track timeline adherence", "Budget tracking", "Issue resolution", "Client update", "Daily wrap report"] },
+    { name: "Data Backup & Media Management", priority: "High", assignedRole: "DIT / Editor", subActivities: ["Backup footage", "Verify file integrity", "Organize folder structure", "Cloud upload", "Create editing notes"] },
+    { name: "Review & Alignment Meeting", priority: "Medium", assignedRole: "Project Manager", subActivities: ["Internal discussion", "Client review call", "Feedback documentation", "Change confirmation", "Next step approval"] }
+  ],
+  "Post Production": [
+    { name: "Editing & Rough Cut", priority: "High", assignedRole: "Editor", subActivities: ["Footage review", "Rough cut creation", "Internal review", "Revisions", "Export draft"] },
+    { name: "Sound Design & Music", priority: "Medium", assignedRole: "Sound Designer", subActivities: ["Clean audio", "Add background score", "Add sound effects", "Voice over sync", "Final mix"] },
+    { name: "Color Grading & Visual Enhancement", priority: "Medium", assignedRole: "Colorist", subActivities: ["Color correction", "Look development", "Skin tone balance", "Final export test"] },
+    { name: "Client Review & Final Delivery", priority: "High", assignedRole: "Project Manager", subActivities: ["Send preview link", "Collect feedback", "Implement changes", "Final approval", "Deliver master files"] }
+  ],
+  "Release": [
+    { name: "Internal Preview & Review", priority: "High", assignedRole: "Creative Director", subActivities: ["Screening session", "Quality check", "Fix final errors", "Export master", "Metadata validation"] },
+    { name: "Strategic Rollout & Ready to Release", priority: "High", assignedRole: "Producer", subActivities: ["Platform check", "Release schedule finalization", "Client final signoff", "Publicity check"] }
+  ],
+  "Social Media": [
+    { name: "Review & Alignment Meeting", priority: "Medium", assignedRole: "Social Media Lead", subActivities: ["Internal discussion", "Client review call", "Feedback documentation", "Change confirmation", "Next step approval"] }
+  ]
+};
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = React.use(params);
@@ -179,6 +210,27 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     toast({ title: "Intelligence Synced", description: "Project parameters updated." });
   };
 
+  const handleApplyPresets = (phase: string) => {
+    if (!PHASE_ROADMAP_PRESETS[phase]) return;
+    const batch = writeBatch(db);
+    PHASE_ROADMAP_PRESETS[phase].forEach(obj => {
+      const taskRef = doc(collection(db, "projects", projectId, "tasks"));
+      batch.set(taskRef, {
+        ...obj,
+        id: taskRef.id,
+        phase,
+        status: "Active",
+        dueDate: "",
+        comments: "",
+        subActivities: obj.subActivities.map((title: string) => ({ title, completed: false })),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    });
+    batch.commit();
+    toast({ title: "Roadmap Provisioned", description: `Presets applied for ${phase} phase.` });
+  };
+
   if (isUserLoading || isProjectLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
@@ -234,9 +286,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Briefing</Label>
-                  <Textarea value={editData?.description} onChange={(e) => setEditData({...editData, description: e.target.value})} className="rounded-xl bg-slate-50 border-none min-h-[120px] resize-none p-4" />
+                <div className="pt-4 border-t border-slate-50">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Roadmap Presets</Label>
+                      <p className="text-xs font-medium text-slate-500">Apply standard production roadmap for current phase.</p>
+                    </div>
+                    <Button onClick={() => handleApplyPresets(editData.status)} size="sm" className="bg-slate-900 text-white rounded-lg h-9 font-bold gap-2 text-[10px]">
+                      <RotateCcw className="h-3.5 w-3.5" /> Apply
+                    </Button>
+                  </div>
                 </div>
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between">
@@ -277,7 +336,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-[2rem] shadow-sm gap-1 mb-8">
               <TabsTrigger value="objectives" className="rounded-xl px-10 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal"><List className="h-4 w-4" /> Phase Roadmap</TabsTrigger>
               <TabsTrigger value="crew" className="rounded-xl px-10 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal"><Users className="h-4 w-4" /> Production Crew</TabsTrigger>
-              <TabsTrigger value="brief" className="rounded-xl px-10 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal"><Briefcase className="h-4 w-4" /> Strategic Brief</TabsTrigger>
+              <TabsTrigger value="brief" className="rounded-xl px-10 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal"><Briefcase className="h-4 w-4" /> Creative Soul</TabsTrigger>
             </TabsList>
 
             <TabsContent value="objectives" className="space-y-6 m-0 animate-in fade-in duration-300">
@@ -343,6 +402,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               ) : (
                 <div className="p-32 border-2 border-dashed border-slate-50 rounded-[3rem] text-center bg-slate-50/20">
                   <p className="text-sm font-bold text-slate-300 uppercase tracking-normal">No roadmap objectives for {activePhase}</p>
+                  <Button onClick={() => handleApplyPresets(activePhase)} variant="link" className="text-primary font-bold text-xs uppercase tracking-normal mt-2">Load standardized roadmap</Button>
                 </div>
               )}
             </TabsContent>
@@ -418,15 +478,44 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
             </TabsContent>
 
             <TabsContent value="brief" className="space-y-8 m-0 animate-in fade-in duration-300">
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-12">
-                <div className="space-y-10">
-                  <h3 className="text-2xl font-bold font-headline tracking-normal">Mission Intelligence</h3>
-                  <div className="p-10 rounded-[3rem] bg-slate-50/50 border border-slate-100 relative">
-                    <div className="absolute top-10 right-10 opacity-10"><Zap className="h-20 w-20 text-primary" /></div>
-                    <p className="text-lg font-medium leading-relaxed text-slate-600 italic tracking-normal relative z-10 whitespace-pre-wrap">"{project.description || "Briefing pending executive synthesis."}"</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <Card className="md:col-span-2 border-none shadow-sm rounded-[2.5rem] bg-white p-12">
+                  <div className="space-y-10">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center">
+                        <Zap className="h-6 w-6 text-primary" />
+                      </div>
+                      <h3 className="text-2xl font-bold font-headline tracking-normal">Creative Soul</h3>
+                    </div>
+                    <div className="p-10 rounded-[3rem] bg-slate-50/50 border border-slate-100 relative">
+                      <p className="text-lg font-medium leading-relaxed text-slate-600 italic tracking-normal relative z-10 whitespace-pre-wrap">"{project.description || "Briefing pending executive synthesis."}"</p>
+                    </div>
                   </div>
+                </Card>
+                <div className="space-y-6">
+                  <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
+                    <div className="space-y-2 relative z-10">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Visual Alignment</p>
+                      <h4 className="text-xl font-bold font-headline tracking-normal">Style Direction</h4>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 relative z-10">
+                      <p className="text-xs font-medium text-slate-300 italic">"Ensure the color palette reflects the high-fidelity கேரள cultural aesthetic requested."</p>
+                    </div>
+                  </Card>
+                  <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Core Deliverables</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                        <Film className="h-3 w-3 text-primary" /> 1x Main Film (TVC)
+                      </div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                        <Type className="h-3 w-3 text-primary" /> 3x Script Drafts
+                      </div>
+                    </div>
+                  </Card>
                 </div>
-              </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

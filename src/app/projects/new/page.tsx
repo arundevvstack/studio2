@@ -15,7 +15,7 @@ import {
   Sparkles,
   Layers
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "navigation";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { 
@@ -50,6 +50,9 @@ const PROJECT_TYPES = [
 ];
 
 const PHASE_ROADMAP = {
+  "Discussion": [
+    { name: "Initial Alignment Meeting", priority: "High", assignedRole: "Producer", subActivities: ["Internal discussion", "Client review call", "Feedback documentation", "Change confirmation", "Next step approval"] }
+  ],
   "Pre Production": [
     { name: "Project Planning & Scope Finalization", priority: "High", assignedRole: "Producer / Project Manager", subActivities: ["Finalize creative brief", "Confirm deliverables & formats", "Lock budget approval", "Define production timeline", "Risk assessment"] },
     { name: "Script & Concept Approval", priority: "High", assignedRole: "Creative Director", subActivities: ["Script draft review", "Client discussion", "Revisions", "Final approval", "Storyboard creation"] },
@@ -68,8 +71,11 @@ const PHASE_ROADMAP = {
     { name: "Color Grading & Visual Enhancement", priority: "Medium", assignedRole: "Colorist", subActivities: ["Color correction", "Look development", "Skin tone balance", "Final export test"] },
     { name: "Client Review & Final Delivery", priority: "High", assignedRole: "Project Manager", subActivities: ["Send preview link", "Collect feedback", "Implement changes", "Final approval", "Deliver master files"] }
   ],
+  "Release": [
+    { name: "Preview & Final Audit", priority: "High", assignedRole: "Creative Director", subActivities: ["Internal preview", "Ready to release check", "Format validation", "Asset verification"] }
+  ],
   "Social Media": [
-    { name: "Review & Alignment Meeting", priority: "Medium", assignedRole: "Social Media Lead", subActivities: ["Internal discussion", "Client review call", "Feedback documentation", "Change confirmation", "Next step approval"] }
+    { name: "Engagement Strategy Review", priority: "Medium", assignedRole: "Social Media Lead", subActivities: ["Internal discussion", "Client review call", "Feedback documentation", "Change confirmation", "Next step approval"] }
   ]
 };
 
@@ -144,7 +150,7 @@ export default function AddProjectPage() {
             status: "Active",
             dueDate: "",
             comments: "",
-            subActivities: obj.subActivities.map(title => ({ title, completed: false })),
+            subActivities: obj.subActivities.map((title: string) => ({ title, completed: false })),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           });
