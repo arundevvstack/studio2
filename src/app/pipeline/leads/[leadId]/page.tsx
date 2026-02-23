@@ -284,6 +284,23 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Status phase</label>
+                  <Select value={editData?.status} onValueChange={(val) => setEditData({...editData, status: val})}>
+                    <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none tracking-normal">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                      <SelectItem value="Lead">Lead</SelectItem>
+                      <SelectItem value="Contacted">Contacted</SelectItem>
+                      <SelectItem value="Discussion">Discussion</SelectItem>
+                      <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
+                      <SelectItem value="Negotiation">Negotiation</SelectItem>
+                      <SelectItem value="Won">Won</SelectItem>
+                      <SelectItem value="Lost">Lost</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Estimated Budget (INR)</label>
                   <Input 
                     type="number"
@@ -347,6 +364,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
               <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                 <SelectItem value="Lead" className="text-xs font-bold uppercase">Lead</SelectItem>
                 <SelectItem value="Contacted" className="text-xs font-bold uppercase">Contacted</SelectItem>
+                <SelectItem value="Discussion" className="text-xs font-bold uppercase">Discussion</SelectItem>
                 <SelectItem value="Proposal Sent" className="text-xs font-bold uppercase">Proposal Sent</SelectItem>
                 <SelectItem value="Negotiation" className="text-xs font-bold uppercase">Negotiation</SelectItem>
                 <SelectItem value="Won" className="text-xs font-bold uppercase">Won</SelectItem>
@@ -461,8 +479,11 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
             <div className="p-6 rounded-2xl bg-white/5 border border-white/5 relative z-10">
               <p className="text-sm font-medium leading-relaxed text-slate-300 tracking-normal mb-6">
                 {lead.status === 'Lead' ? "Initiate contact through WhatsApp or Email to gauge immediate requirements." : 
-                 lead.status === 'Contacted' ? "Schedule a meeting to present the creative direction and value brief." :
-                 "Finalize proposal details and secure budget approval."}
+                 lead.status === 'Contacted' ? "Schedule a detailed discussion to explore creative requirements." :
+                 lead.status === 'Discussion' ? "Prepare and transmit a strategic proposal based on the brief." :
+                 lead.status === 'Proposal Sent' ? "Initiate negotiation on budget and deliverables." :
+                 lead.status === 'Negotiation' ? "Finalize proposal details and secure budget approval." :
+                 "Review engagement outcomes."}
               </p>
               <Button onClick={() => router.push('/pipeline')} className="w-full h-12 rounded-xl bg-white text-slate-900 hover:bg-white/90 font-bold text-[10px] uppercase gap-2 tracking-normal">
                 Go to Workspace <ArrowRight className="h-3 w-3" />

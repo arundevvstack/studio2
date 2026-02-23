@@ -64,6 +64,7 @@ import { toast } from "@/hooks/use-toast";
 const STAGES = [
   { id: "Lead", title: "Lead" },
   { id: "Contacted", title: "Contacted" },
+  { id: "Discussion", title: "Discussion" },
   { id: "Proposal Sent", title: "Proposal Sent" },
   { id: "Negotiation", title: "Negotiation" },
   { id: "Won", title: "Won" },
@@ -319,7 +320,7 @@ export default function PipelineEnginePage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1">
+        <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1 dark:bg-slate-900 dark:border-slate-800">
           <TabsTrigger value="list" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Briefcase className="h-4 w-4" />
             Pipeline Ledger
