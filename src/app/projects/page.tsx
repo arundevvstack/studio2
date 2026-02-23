@@ -136,7 +136,7 @@ export default function ProjectsPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
             {pipelineProjects.map((p) => (
               <Card key={p.id} className="border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 border border-slate-50 h-64 flex flex-col justify-between p-10">
                 <div className="space-y-4">
@@ -168,7 +168,7 @@ export default function ProjectsPage() {
           </div>
         ) : productionProjects.length > 0 ? (
           viewMode === 'grid' ? (
-            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
               {productionProjects.map((project) => (
                 <Card key={project.id} className="border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
                   <div className="p-4 flex-grow">
