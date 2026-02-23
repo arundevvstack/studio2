@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -81,20 +80,59 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
   }, [lead]);
 
   const handleUpdateLead = () => {
-    if (!editData?.name || !leadRef) return;
+    if (!editData?.name || !leadRef || !lead) return;
+    
+    const prevStatus = lead.status;
+    const newStatus = editData.status;
+
     updateDocumentNonBlocking(leadRef, {
       ...editData,
       updatedAt: serverTimestamp()
     });
+
+    // Mirror logic: Provision project if in Discussion, remove if exiting Discussion
+    const projectDocRef = doc(db, "projects", lead.id);
+    if (newStatus === "Discussion") {
+      setDocumentNonBlocking(projectDocRef, {
+        id: lead.id,
+        name: `[DISCUSSION] ${editData.name}`,
+        clientName: editData.company || editData.name,
+        budget: editData.estimatedBudget || 0,
+        status: "Discussion",
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } else if (prevStatus === "Discussion" && newStatus !== "Discussion") {
+      deleteDocumentNonBlocking(projectDocRef);
+    }
+
     toast({ title: "Intelligence Synchronized", description: `${editData.name} profile has been updated.` });
   };
 
   const handleStatusChange = (newStatus: string) => {
-    if (!leadRef) return;
+    if (!leadRef || !lead) return;
+    
+    const prevStatus = lead.status;
+
     updateDocumentNonBlocking(leadRef, {
       status: newStatus,
       updatedAt: serverTimestamp()
     });
+
+    // Mirror logic: Provision project if in Discussion, remove if exiting Discussion
+    const projectDocRef = doc(db, "projects", lead.id);
+    if (newStatus === "Discussion") {
+      setDocumentNonBlocking(projectDocRef, {
+        id: lead.id,
+        name: `[DISCUSSION] ${lead.name}`,
+        clientName: lead.company || lead.name,
+        budget: lead.estimatedBudget || 0,
+        status: "Discussion",
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } else if (prevStatus === "Discussion" && newStatus !== "Discussion") {
+      deleteDocumentNonBlocking(projectDocRef);
+    }
+
     toast({ 
       title: "Phase Advanced", 
       description: `Lead has been moved to ${newStatus}.` 
@@ -102,7 +140,13 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
   };
 
   const handleDeleteLead = () => {
-    if (!leadRef) return;
+    if (!leadRef || !lead) return;
+    
+    // Cleanup mirror if it exists
+    if (lead.status === "Discussion") {
+      deleteDocumentNonBlocking(doc(db, "projects", lead.id));
+    }
+
     deleteDocumentNonBlocking(leadRef);
     toast({ variant: "destructive", title: "Lead Purged", description: "Entity removed from the engine." });
     router.push("/pipeline");
@@ -110,6 +154,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
 
   const convertToProject = () => {
     if (!lead) return;
+    
+    // Cleanup temporary mirror before permanent conversion
+    if (lead.status === "Discussion") {
+      deleteDocumentNonBlocking(doc(db, "projects", lead.id));
+    }
+
     const projectRef = doc(collection(db, "projects"));
     const clientRef = doc(collection(db, "clients"));
     
