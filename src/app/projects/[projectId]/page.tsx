@@ -335,6 +335,40 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
         </div>
       </div>
 
+      {/* Strategic Phase Selector Ribbon */}
+      <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden p-2">
+        <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+          {STAGES.map((stage, idx) => {
+            const isActive = project.status === stage;
+            const currentIdx = STAGES.indexOf(project.status);
+            const isPast = currentIdx > idx;
+            
+            return (
+              <button
+                key={stage}
+                onClick={() => handleStatusChange(stage)}
+                className={`flex-1 min-w-[140px] py-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all group ${
+                  isActive 
+                    ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                    : isPast 
+                      ? "bg-primary/5 text-primary" 
+                      : "bg-transparent text-slate-400 hover:bg-slate-50"
+                }`}
+              >
+                <div className={`h-6 w-6 rounded-full flex items-center justify-center border-2 transition-all ${
+                  isActive ? "border-white bg-white/20" : isPast ? "border-primary bg-primary text-white" : "border-slate-200"
+                }`}>
+                  {isPast ? <CheckCircle2 className="h-3.5 w-3.5" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                </div>
+                <span className={`text-[10px] font-bold uppercase tracking-wider transition-all ${isActive ? "text-white" : isPast ? "text-primary" : "text-slate-400 group-hover:text-slate-600"}`}>
+                  {stage}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-9 space-y-8">
           <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10 space-y-10">
@@ -533,7 +567,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                       <h4 className="text-xl font-bold font-headline tracking-normal">Style Direction</h4>
                     </div>
                     <div className="p-4 rounded-xl bg-white/5 border border-white/5 relative z-10">
-                      <p className="text-xs font-medium text-slate-300 italic">"Ensure the color palette reflects the high-fidelity கேரள cultural aesthetic requested."</p>
+                      <p className="text-xs font-medium text-slate-300 italic">"Ensure the color palette reflects the high-fidelity കേരള cultural aesthetic requested."</p>
                     </div>
                   </Card>
                   <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
