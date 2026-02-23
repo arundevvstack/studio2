@@ -91,6 +91,24 @@ export default function MarketResearchPage() {
     }
   };
 
+  const getContactLink = (lead: any) => {
+    const businessEncoded = encodeURIComponent(lead.businessType);
+    const locationEncoded = encodeURIComponent(location);
+    
+    switch (lead.contactStrategy) {
+      case 'Instagram DM':
+        return `https://www.instagram.com/explore/tags/${lead.businessType.replace(/\s+/g, '')}/`;
+      case 'Email':
+        return `mailto:?subject=Strategic Media Collaboration: ${lead.businessType}&body=Hello, I saw a production gap for ${lead.businessType} in ${location} and would like to discuss a content strategy.`;
+      case 'WhatsApp':
+        return `https://wa.me/?text=Hello, I am interested in discussing media services for your ${lead.businessType} business.`;
+      case 'Phone Call':
+        return `tel:`;
+      default:
+        return "#";
+    }
+  };
+
   const PRESET_TOPICS = [
     "Short-form Content",
     "Real Estate Virtual Tours",
@@ -360,9 +378,11 @@ export default function MarketResearchPage() {
                           </div>
                           <div className="text-right space-y-2">
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Best Contact Method</p>
-                            <Button variant="outline" size="sm" className="h-8 rounded-lg font-bold text-[10px] uppercase gap-2 border-slate-100 text-slate-600 bg-white">
-                              {getContactIcon(lead.contactStrategy)}
-                              {lead.contactStrategy}
+                            <Button asChild variant="outline" size="sm" className="h-8 rounded-lg font-bold text-[10px] uppercase gap-2 border-slate-100 text-slate-600 bg-white">
+                              <a href={getContactLink(lead)} target="_blank" rel="noopener noreferrer">
+                                {getContactIcon(lead.contactStrategy)}
+                                {lead.contactStrategy}
+                              </a>
                             </Button>
                           </div>
                         </div>

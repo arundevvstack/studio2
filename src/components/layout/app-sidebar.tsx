@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -67,7 +66,6 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-6 pb-2 space-y-6">
-        {/* Brand Logo */}
         <div className="flex flex-col items-center gap-1 group-data-[collapsible=icon]:hidden">
           <svg
             width="40"
@@ -91,7 +89,6 @@ export function AppSidebar() {
           </div>
         </div>
 
-        {/* Add Projects Action */}
         <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-6 font-bold text-sm shadow-lg shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
           <Link href="/projects/new">
             <Plus className="h-5 w-5 mr-2 group-data-[collapsible=icon]:mr-0" />
@@ -101,7 +98,6 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-4 py-4">
-        {/* Workspace Section */}
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
             Workspace
@@ -136,7 +132,6 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* Management Section */}
         <SidebarGroup className="mt-4">
           <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
             Management
