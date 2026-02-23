@@ -35,7 +35,8 @@ import {
   Search,
   Users,
   Film,
-  Type
+  Type,
+  LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -210,6 +211,21 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     toast({ title: "Intelligence Synced", description: "Project parameters updated." });
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    if (!projectRef) return;
+    const newProgress = STATUS_PROGRESS_MAP[newStatus] || 0;
+    updateDocumentNonBlocking(projectRef, { 
+      status: newStatus, 
+      progress: newProgress,
+      updatedAt: serverTimestamp() 
+    });
+    setProgress([newProgress]);
+    toast({ 
+      title: "Lifecycle Advanced", 
+      description: `Project phase transitioned to ${newStatus}.` 
+    });
+  };
+
   const handleApplyPresets = (phase: string) => {
     if (!PHASE_ROADMAP_PRESETS[phase]) return;
     const batch = writeBatch(db);
@@ -252,7 +268,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           <div className="space-y-1">
             <div className="flex items-center gap-3">
               <h1 className="text-4xl font-bold font-headline text-slate-900 leading-none tracking-normal">{project.name}</h1>
-              <Badge className="bg-primary/5 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">{project.status}</Badge>
+              <div className="flex items-center gap-2">
+                <Select value={project.status} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="h-8 rounded-xl bg-primary/5 border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal text-primary hover:bg-primary/10 transition-colors w-auto shadow-none focus:ring-0">
+                    <SelectValue placeholder="Phase" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl shadow-xl border-slate-100">
+                    {STAGES.map(s => (
+                      <SelectItem key={s} value={s} className="text-[10px] font-bold uppercase tracking-normal">{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <p className="text-sm font-bold text-slate-500 tracking-normal flex items-center gap-2">
               <MapPin className="h-4 w-4" /> {project.location || "Kerala Hub"} • <Briefcase className="h-4 w-4" /> {project.type}
@@ -317,7 +344,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 <h3 className="text-xl font-bold font-headline mt-1 tracking-normal">Production Lifecycle</h3>
               </div>
               {NEXT_PHASE_MAP[project.status] && (
-                <Button onClick={() => updateDocumentNonBlocking(projectRef!, { status: NEXT_PHASE_MAP[project.status], progress: STATUS_PROGRESS_MAP[NEXT_PHASE_MAP[project.status]!], updatedAt: serverTimestamp() })} className="h-10 px-6 rounded-xl bg-accent text-white font-bold text-[10px] gap-2 tracking-normal uppercase shadow-lg shadow-accent/20">
+                <Button onClick={() => handleStatusChange(NEXT_PHASE_MAP[project.status]!)} className="h-10 px-6 rounded-xl bg-accent text-white font-bold text-[10px] gap-2 tracking-normal uppercase shadow-lg shadow-accent/20">
                   Advance to {NEXT_PHASE_MAP[project.status]} <ArrowRight className="h-3 w-3" />
                 </Button>
               )}
@@ -425,8 +452,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         <Input value={recruitSearch} onChange={(e) => setRecruitSearch(e.target.value)} placeholder="Identify expertise or identity..." className="pl-12 h-14 rounded-2xl bg-slate-50 border-none font-bold" />
                       </div>
                     </div>
-                    <ScrollArea className="flex-1 p-10 pt-6">
-                      <div className="space-y-8">
+                    <ScrollArea className="flex-1">
+                      <div className="p-10 pt-6 space-y-8">
                         <div className="space-y-4">
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Internal Experts</p>
                           {staffSuggestions.filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(recruitSearch.toLowerCase())).map((staff) => (
@@ -434,7 +461,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                   <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
-                                    <AvatarImage src={staff.thumbnail || `https://picsum.photos/seed/${staff.id}/100/100`} />
+                                    <AvatarImage src={staff.thumbnail || `https://picsum.photos/seed/${staff.id}/100/100`} className="object-cover" />
                                     <AvatarFallback className="bg-blue-50 text-blue-500 font-bold">{staff.firstName[0]}</AvatarFallback>
                                   </Avatar>
                                   <div><p className="font-bold text-sm text-slate-900 tracking-normal">{staff.firstName} {staff.lastName}</p><p className="text-[9px] font-bold text-blue-500 uppercase tracking-normal">{staff.roleId}</p></div>
@@ -451,7 +478,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                   <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
-                                    <AvatarImage src={talent.thumbnail || `https://picsum.photos/seed/${talent.id}/100/100`} />
+                                    <AvatarImage src={talent.thumbnail || `https://picsum.photos/seed/${talent.id}/100/100`} className="object-cover" />
                                     <AvatarFallback className="bg-primary/5 text-primary font-bold">{talent.name?.[0]}</AvatarFallback>
                                   </Avatar>
                                   <div><p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p><p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p></div>
@@ -472,7 +499,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                   <Card key={member.talentId} className="border-none shadow-sm rounded-[2rem] bg-white p-8 relative group hover:shadow-xl transition-all duration-500 border border-slate-50">
                     <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-lg text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-4 w-4" /></Button>
                     <div className="flex flex-col items-center text-center space-y-4">
-                      <Avatar className="h-20 w-20 rounded-3xl shadow-lg border-4 border-slate-50"><AvatarImage src={member.thumbnail} /><AvatarFallback>{member.name?.[0]}</AvatarFallback></Avatar>
+                      <Avatar className="h-20 w-20 rounded-3xl shadow-lg border-4 border-slate-50"><AvatarImage src={member.thumbnail} className="object-cover" /><AvatarFallback>{member.name?.[0]}</AvatarFallback></Avatar>
                       <div>
                         <h4 className="font-bold text-lg text-slate-900 tracking-normal leading-tight">{member.name}</h4>
                         <p className={`text-[10px] font-bold uppercase tracking-normal mt-1 ${member.type === 'Internal' ? 'text-blue-500' : 'text-primary'}`}>{member.category}</p>
