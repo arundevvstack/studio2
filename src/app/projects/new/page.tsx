@@ -12,7 +12,8 @@ import {
   MapPin,
   Tag,
   Sparkles,
-  Layers
+  Layers,
+  Zap
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
@@ -34,18 +35,44 @@ const KERALA_DISTRICTS = [
 ];
 
 const PROJECT_TYPES = [
-  "TV Commercials (TVC)", "Digital Ad Film Production", "Performance Marketing Ads", 
-  "Brand Commercials", "Product Launch Videos", "Campaign Ads", "AI VFX Production", 
-  "Explainer Videos", "Motion Graphics", "AI 3D Animation", "AI 2D Animation", 
-  "AI Video Production", "AI Avatar Videos", "AI Image Generation", 
-  "AI Ad Creative Production", "AI Content Repurposing", "AI Voice Cloning", 
-  "Synthetic Media Production", "Reels / Shorts Production", "Influencer Content Production", 
-  "UGC (User Generated Content)", "YouTube Content Production", "Trend Content Production", 
-  "Product Photography", "Product Demo Videos", "Amazon / Flipkart Listing Media", 
-  "360° Product Spin Videos", "Lifestyle Product Shoots", "Corporate Profile Films", 
-  "Company Overview Videos", "Internal Training Videos", "CSR Films", 
-  "Property Walkthrough Videos", "Virtual Tours", "Architectural Visualization", 
-  "Builder Branding Films", "Podcast Production"
+  "TV Commercials (TVC)",
+  "Digital Ad Film Production",
+  "Performance Marketing Ads",
+  "Brand Commercials",
+  "Product Launch Videos",
+  "Campaign Ads",
+  "AI VFX Production",
+  "Explainer Videos",
+  "Motion Graphics",
+  "AI 3D Animation",
+  "AI 2D Animation",
+  "AI Video Production",
+  "AI Avatar Videos",
+  "AI Image Generation",
+  "AI Ad Creative Production",
+  "AI Content Repurposing",
+  "AI Voice Cloning",
+  "Synthetic Media Production",
+  "Reels / Shorts Production",
+  "Influencer Content Production",
+  "UGC (User Generated Content)",
+  "YouTube Content Production",
+  "Trend Content Production",
+  "Product Photography",
+  "Product Demo Videos",
+  "Amazon / Flipkart Listing Media",
+  "360° Product Spin Videos",
+  "Lifestyle Product Shoots",
+  "Corporate Profile Films",
+  "Company Overview Videos",
+  "Internal Training Videos",
+  "CSR Films",
+  "Property Walkthrough Videos",
+  "Virtual Tours",
+  "Architectural Visualization",
+  "Builder Branding Films",
+  "Podcast Production",
+  "Other (Custom Vertical)"
 ];
 
 const PHASE_ROADMAP = {
@@ -92,6 +119,7 @@ export default function AddProjectPage() {
   const [formData, setFormData] = useState({
     name: "",
     type: "",
+    customType: "",
     clientId: "",
     description: "",
     budget: "",
@@ -105,11 +133,13 @@ export default function AddProjectPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.clientId || !formData.type) {
+    const finalType = formData.type === "Other (Custom Vertical)" ? formData.customType : formData.type;
+
+    if (!formData.name || !formData.clientId || !finalType) {
       toast({
         variant: "destructive",
         title: "Information Required",
-        description: "Please provide a project name, select a vertical, and identify a client."
+        description: "Please provide a production identity, select a vertical, and identify a client."
       });
       return;
     }
@@ -124,7 +154,7 @@ export default function AddProjectPage() {
       const projectData = {
         id: projectId,
         name: formData.name,
-        type: formData.type,
+        type: finalType,
         clientId: formData.clientId,
         description: formData.description,
         budget: parseFloat(formData.budget) || 0,
@@ -173,8 +203,8 @@ export default function AddProjectPage() {
           <ChevronLeft className="h-5 w-5 text-slate-600" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-tight">Initiate Project</h1>
-          <p className="text-slate-500 mt-1 font-medium tracking-normal">Deploy a new high-growth media production entity.</p>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-tight">Initiate Entity</h1>
+          <p className="text-slate-500 mt-1 font-medium tracking-normal">Deploy a new high-growth media production strategy.</p>
         </div>
       </div>
 
@@ -184,14 +214,14 @@ export default function AddProjectPage() {
         <div className="p-10 space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Project Title</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Production Entity</label>
               <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="e.g. Nike Summer '24" className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20" required />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Project Vertical</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Execution Vertical</label>
               <Select value={formData.type} onValueChange={(val) => setFormData({...formData, type: val})}>
                 <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
-                  <SelectValue placeholder="Identify production type..." />
+                  <SelectValue placeholder="Identify vertical..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[400px]">
                   {PROJECT_TYPES.map(type => (
@@ -202,9 +232,27 @@ export default function AddProjectPage() {
             </div>
           </div>
 
+          {formData.type === "Other (Custom Vertical)" && (
+            <div className="animate-in slide-in-from-top-2 duration-300">
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-primary uppercase px-1 tracking-normal flex items-center gap-2">
+                  <Zap className="h-3 w-3" /> Define Custom Vertical
+                </label>
+                <Input 
+                  name="customType" 
+                  value={formData.customType} 
+                  onChange={handleInputChange} 
+                  placeholder="e.g. Cinematic Wedding Narrative" 
+                  className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20" 
+                  required
+                />
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Client</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Strategic Client</label>
               <Select onValueChange={(val) => setFormData({...formData, clientId: val})} value={formData.clientId}>
                 <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
                   <SelectValue placeholder={isLoadingClients ? "Syncing partners..." : "Identify client..."} />
