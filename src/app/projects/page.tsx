@@ -65,13 +65,13 @@ export default function ProjectsPage() {
     });
   }, [projects, searchQuery, clientMap]);
 
-  // Separate "In Production" vs "Pipeline Intelligence" (Discussion phase)
+  // Strategic Differentiator: Use sentinel ID "PIPELINE" to identify mirrored leads
   const productionProjects = useMemo(() => 
-    filteredProjects.filter(p => p.status !== "Discussion"), 
+    filteredProjects.filter(p => p.clientId !== "PIPELINE"), 
   [filteredProjects]);
 
   const pipelineProjects = useMemo(() => 
-    filteredProjects.filter(p => p.status === "Discussion"), 
+    filteredProjects.filter(p => p.clientId === "PIPELINE"), 
   [filteredProjects]);
 
   const clientGroups = useMemo(() => {
@@ -96,9 +96,12 @@ export default function ProjectsPage() {
         return 'bg-blue-50 text-blue-500';
       case 'pre production':
         return 'bg-slate-100 text-slate-500';
-      case 'in progress':
+      case 'production':
         return 'bg-primary/10 text-primary';
+      case 'post production':
+        return 'bg-orange-50 text-orange-600';
       case 'released':
+      case 'release':
         return 'bg-accent/10 text-accent';
       default:
         return 'bg-slate-100 text-slate-500';
@@ -111,7 +114,6 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-12 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-      {/* Strategic Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1">
           <h1 className="text-4xl font-bold font-headline tracking-normal text-slate-900 leading-none">Projects</h1>
@@ -155,7 +157,6 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Intelligence Toolbar */}
       <div className="space-y-4">
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
@@ -168,7 +169,6 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Pipeline Intelligence Block (Shared with leads in Discussion) */}
       {pipelineProjects.length > 0 && (
         <div className="space-y-6">
           <div className="flex items-center gap-3 px-2">
@@ -177,7 +177,7 @@ export default function ProjectsPage() {
             </div>
             <div>
               <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Pipeline Intelligence</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Entities currently in phase: DISCUSSION</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Entities currently in lead phase</p>
             </div>
           </div>
           
@@ -187,7 +187,7 @@ export default function ProjectsPage() {
                 <div className="p-8 space-y-6">
                   <div className="flex justify-between items-start">
                     <Badge className="bg-blue-50 text-blue-600 border-none text-[8px] font-bold uppercase tracking-normal px-2 py-0.5 rounded-lg">
-                      Pipeline Active
+                      Pipeline Sync
                     </Badge>
                     <Target className="h-4 w-4 text-blue-200" />
                   </div>
@@ -199,7 +199,7 @@ export default function ProjectsPage() {
                     <div className="text-sm font-bold text-slate-900 tracking-normal">₹{(p.budget || 0).toLocaleString('en-IN')}</div>
                     <Button asChild variant="ghost" size="sm" className="h-8 rounded-lg text-[10px] font-bold uppercase tracking-normal gap-2 group-hover:bg-blue-50 group-hover:text-blue-600 transition-all">
                       <Link href={`/pipeline/leads/${p.id}`}>
-                        Lead Details <ChevronRight className="h-3 w-3" />
+                        Lead Intelligence <ChevronRight className="h-3 w-3" />
                       </Link>
                     </Button>
                   </div>
@@ -210,12 +210,11 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Workspace Area */}
       <div className="min-h-[400px]">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-normal">Synchronizing Pipeline Intelligence...</p>
+            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-normal">Synchronizing Global Workspace...</p>
           </div>
         ) : productionProjects.length > 0 ? (
           viewMode === 'list' ? (
@@ -257,7 +256,7 @@ export default function ProjectsPage() {
                           </div>
                           <div className="col-span-3 flex justify-center">
                             <Badge className={`rounded-xl px-4 py-1.5 text-[10px] font-bold border-none shadow-none tracking-normal ${getStatusBadge(project.status)}`}>
-                              {project.status || "LEAD"}
+                              {project.status || "DISCUSSION"}
                             </Badge>
                           </div>
                           <div className="col-span-2">
@@ -295,7 +294,7 @@ export default function ProjectsPage() {
                       />
                       <div className="absolute top-6 left-6 z-20">
                         <Badge className={`rounded-xl px-4 py-1.5 text-[10px] font-bold border-none shadow-lg tracking-normal ${getStatusBadge(project.status)}`}>
-                          {project.status || "LEAD"}
+                          {project.status || "DISCUSSION"}
                         </Badge>
                       </div>
                       <div className="absolute bottom-6 left-8 right-8 z-20">
@@ -340,7 +339,6 @@ export default function ProjectsPage() {
             </div>
           ) : (
             <div className="flex h-[750px] gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              {/* Left Panel: Master List */}
               <div className="w-1/3 flex flex-col gap-4">
                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex-1 flex flex-col">
                   <div className="p-6 border-b border-slate-50 bg-slate-50/30">
@@ -368,7 +366,7 @@ export default function ProjectsPage() {
                             <Badge className={`text-[8px] font-bold uppercase rounded-lg border-none ${
                               selectedProjectId === p.id ? 'bg-white/20 text-white' : getStatusBadge(p.status)
                             }`}>
-                              {p.status || "Lead"}
+                              {p.status || "DISCUSSION"}
                             </Badge>
                             <span className={`text-[10px] font-bold ${selectedProjectId === p.id ? 'text-white/80' : 'text-slate-400'}`}>
                               ₹{(p.budget || 0).toLocaleString('en-IN')}
@@ -381,7 +379,6 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              {/* Right Panel: Detail Preview */}
               <div className="flex-1">
                 {selectedProject ? (
                   <Card className="h-full border-none shadow-xl rounded-[3rem] bg-white overflow-hidden flex flex-col animate-in fade-in slide-in-from-right-4 duration-500">
@@ -494,7 +491,7 @@ export default function ProjectsPage() {
               <p className="text-lg font-bold text-slate-400 uppercase tracking-normal">No Production Entities Found</p>
               <p className="text-xs text-slate-300 italic tracking-normal max-w-sm mx-auto">Your pipeline is currently empty. Initiate a new project to start tracking your production throughput.</p>
               <Button asChild className="mt-6 rounded-xl px-10 h-12 font-bold tracking-normal">
-                <Link href="/projects/new">Initiate First Lead</Link>
+                <Link href="/projects/new">Initiate First Project</Link>
               </Button>
             </div>
           </div>

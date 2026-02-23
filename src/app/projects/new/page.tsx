@@ -151,6 +151,7 @@ export default function AddProjectPage() {
       const projectRef = doc(collection(db, "projects"));
       const projectId = projectRef.id;
 
+      // Manually created projects start at "Pre Production" (30% progress)
       const projectData = {
         id: projectId,
         name: formData.name,
@@ -159,8 +160,8 @@ export default function AddProjectPage() {
         description: formData.description,
         budget: parseFloat(formData.budget) || 0,
         location: formData.location,
-        status: "Discussion",
-        progress: 10,
+        status: "Pre Production",
+        progress: 30,
         crew: [],
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -168,7 +169,7 @@ export default function AddProjectPage() {
 
       batch.set(projectRef, projectData);
 
-      // Provision Roadmap Objectives
+      // Provision Roadmap Objectives for all phases
       Object.entries(PHASE_ROADMAP).forEach(([phase, objectives]) => {
         objectives.forEach(obj => {
           const taskRef = doc(collection(db, "projects", projectId, "tasks"));
@@ -188,7 +189,7 @@ export default function AddProjectPage() {
 
       await batch.commit();
       
-      toast({ title: "Success", description: `${formData.name} has been initiated with a strategic roadmap.` });
+      toast({ title: "Entity Initiated", description: `${formData.name} has been deployed to the Pre-Production workspace.` });
       router.push("/projects");
     } catch (error) {
       console.error("Error initiating project:", error);
@@ -308,7 +309,7 @@ export default function AddProjectPage() {
         <div className="px-10 py-8 border-t border-slate-50 flex items-center justify-end gap-10">
           <Button type="button" variant="ghost" className="text-slate-900 font-bold text-sm hover:bg-transparent tracking-normal" onClick={() => router.back()}>Discard</Button>
           <Button type="submit" disabled={isSubmitting || !formData.clientId || !formData.type} className="h-14 px-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-lg shadow-primary/20 gap-3 group tracking-normal transition-all active:scale-[0.98]">
-            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Initiate Roadmap <SendHorizontal className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></>}
+            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Initiate Workspace <SendHorizontal className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></>}
           </Button>
         </div>
       </form>
