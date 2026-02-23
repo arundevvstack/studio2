@@ -65,11 +65,13 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
+        "type": { "type": "string" },
         "clientId": { "type": "string" },
         "description": { "type": "string" },
         "budget": { "type": "number" },
         "status": { "type": "string" },
         "location": { "type": "string" },
+        "progress": { "type": "number" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "crew": { 
           "type": "array", 
@@ -83,6 +85,34 @@
               "stage": { "type": "string" },
               "thumbnail": { "type": "string" },
               "type": { "type": "string", "enum": ["External", "Internal"] }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Task": {
+      "title": "Task",
+      "type": "object",
+      "description": "A production objective or milestone.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phase": { "type": "string" },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High"] },
+        "status": { "type": "string", "enum": ["Active", "Completed"] },
+        "assignedRole": { "type": "string" },
+        "assignedMemberId": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "comments": { "type": "string" },
+        "subActivities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "completed": { "type": "boolean" }
             }
           }
         },
@@ -103,6 +133,10 @@
       "schema": "Project",
       "description": "Production project entities."
     },
+    "/projects/{projectId}/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Phase-specific production objectives."
+    },
     "/clients/{clientId}": {
       "schema": "any",
       "description": "Client entities."
@@ -114,10 +148,6 @@
     "/teamMembers/{memberId}": {
       "schema": "TeamMember",
       "description": "Internal team members."
-    },
-    "/roles_admin/{userId}": {
-      "schema": "any",
-      "description": "Administrative roles mapping."
     }
   }
 }
