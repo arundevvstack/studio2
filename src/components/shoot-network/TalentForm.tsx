@@ -44,7 +44,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -90,9 +89,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       });
       setGallery(existingTalent.gallery || []);
       setSelectedTags(existingTalent.suitableProjectTypes || []);
-      if (existingTalent.thumbnail) {
-        setPreviewThumbnail(existingTalent.thumbnail);
-      }
       setIsInitialized(true);
     }
   }, [existingTalent, isInitialized]);
@@ -107,11 +103,12 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        setPreviewThumbnail(base64String);
         setFormData(prev => ({ ...prev, thumbnail: base64String }));
       };
       reader.readAsDataURL(file);
     }
+    // Reset input to allow selecting the same file again if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleAddGalleryItem = () => {
@@ -192,7 +189,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           onClick={handleThumbnailClick}
         >
           <Avatar className="h-32 w-32 border-4 border-slate-50 shadow-xl rounded-[2.5rem] transition-all group-hover:opacity-80">
-            <AvatarImage src={previewThumbnail || ""} />
+            <AvatarImage src={formData.thumbnail || ""} className="object-cover" />
             <AvatarFallback className="bg-slate-100">
               <Upload className="h-8 w-8 text-slate-300" />
             </AvatarFallback>

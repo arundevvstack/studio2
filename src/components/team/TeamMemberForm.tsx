@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -49,7 +48,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   const db = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -62,7 +61,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   });
 
   useEffect(() => {
-    if (existingMember) {
+    if (existingMember && !isInitialized) {
       setFormData({
         firstName: existingMember.firstName || "",
         lastName: existingMember.lastName || "",
@@ -72,11 +71,9 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
         type: existingMember.type || "In-house",
         thumbnail: existingMember.thumbnail || "",
       });
-      if (existingMember.thumbnail) {
-        setPreviewThumbnail(existingMember.thumbnail);
-      }
+      setIsInitialized(true);
     }
-  }, [existingMember]);
+  }, [existingMember, isInitialized]);
 
   const handleThumbnailClick = () => {
     fileInputRef.current?.click();
@@ -88,11 +85,12 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        setPreviewThumbnail(base64String);
         setFormData(prev => ({ ...prev, thumbnail: base64String }));
       };
       reader.readAsDataURL(file);
     }
+    // Reset input to allow selecting the same file again if needed
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSave = () => {
@@ -139,7 +137,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
           onClick={handleThumbnailClick}
         >
           <Avatar className="h-32 w-32 border-4 border-slate-50 shadow-xl rounded-[2.5rem] transition-all group-hover:opacity-80">
-            <AvatarImage src={previewThumbnail || ""} className="object-cover" />
+            <AvatarImage src={formData.thumbnail || ""} className="object-cover" />
             <AvatarFallback className="bg-slate-100">
               <Upload className="h-8 w-8 text-slate-300" />
             </AvatarFallback>
