@@ -39,7 +39,8 @@ import {
   Rocket,
   Camera,
   Scissors,
-  Share2
+  Share2,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +75,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, doc, serverTimestamp, orderBy, where } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -133,11 +135,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const [progress, setProgress] = useState([0]);
+  const [activeTab, setActiveTab] = useState("objectives");
   
   // UI State
   const [crewSearch, setCrewSearch] = useState("");
-  const [crewTypeFilter, setCrewTypeFilter] = useState("all");
-  const [crewViewMode, setCrewViewMode] = useState<"tile" | "list">("tile");
   const [recruitSearch, setRecruitSearch] = useState("");
 
   const projectRef = useMemoFirebase(() => {
@@ -313,8 +314,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <DialogHeader className="p-8 pb-0"><DialogTitle className="text-2xl font-bold font-headline tracking-normal">Project Context</DialogTitle></DialogHeader>
               <div className="p-8 space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Identity</Label>
-                  <Input value={editData?.name} onChange={(e) => setEditData({...editData, name: e.target.value})} className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal" />
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Title</Label>
+                  <Input value={editData?.name} onChange={(e) => setEditData({...editData, name: e.target.value})} className="rounded-xl bg-slate-50 border-none h-12 tracking-normal font-bold" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -436,7 +437,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           )}
 
           {/* Activity Workspaces */}
-          <Tabs defaultValue="objectives" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-[2rem] shadow-sm gap-1 mb-8">
               <TabsTrigger value="objectives" className="rounded-xl px-10 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
                 <List className="h-4 w-4" /> Stage Checklist
