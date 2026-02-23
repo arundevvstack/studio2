@@ -40,7 +40,9 @@ import {
   Camera,
   Scissors,
   Share2,
-  ChevronRight
+  ChevronRight,
+  RotateCcw,
+  Circle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,7 +79,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, doc, serverTimestamp, orderBy, where } from "firebase/firestore";
+import { collection, query, doc, serverTimestamp, orderBy, where, writeBatch } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
@@ -106,6 +108,172 @@ const NEXT_PHASE_MAP: Record<string, string | null> = {
   "Post Production": "Release",
   "Release": "Social Media",
   "Social Media": null
+};
+
+const PHASE_PRESETS: Record<string, any[]> = {
+  "Pre Production": [
+    {
+      name: "Project Planning & Scope Finalization",
+      priority: "High",
+      assignedRole: "Producer / Project Manager",
+      subActivities: [
+        "Finalize creative brief",
+        "Confirm deliverables & formats",
+        "Lock budget approval",
+        "Define production timeline",
+        "Risk assessment"
+      ]
+    },
+    {
+      name: "Script & Concept Approval",
+      priority: "High",
+      assignedRole: "Creative Director",
+      subActivities: [
+        "Script draft review",
+        "Client discussion (Common “Discussion” stage link)",
+        "Revisions",
+        "Final approval",
+        "Storyboard creation"
+      ]
+    },
+    {
+      name: "Team & Resource Allocation",
+      priority: "High",
+      assignedRole: "Production Manager",
+      subActivities: [
+        "Assign crew members",
+        "Equipment booking",
+        "Location confirmation",
+        "Vendor confirmation",
+        "Contract agreements"
+      ]
+    },
+    {
+      name: "Scheduling & Logistics",
+      priority: "Medium",
+      assignedRole: "Line Producer",
+      subActivities: [
+        "Shoot schedule",
+        "Call sheet creation",
+        "Travel arrangements",
+        "Permission approvals",
+        "Backup planning"
+      ]
+    }
+  ],
+  "Production": [
+    {
+      name: "Shoot Execution",
+      priority: "High",
+      assignedRole: "Director",
+      subActivities: [
+        "Setup lighting & camera",
+        "Sound check",
+        "Scene execution",
+        "Multiple takes",
+        "Quality monitoring"
+      ]
+    },
+    {
+      name: "Daily Production Monitoring",
+      priority: "High",
+      assignedRole: "Production Manager",
+      subActivities: [
+        "Track timeline adherence",
+        "Budget tracking",
+        "Issue resolution",
+        "Client update",
+        "Daily wrap report"
+      ]
+    },
+    {
+      name: "Data Backup & Media Management",
+      priority: "High",
+      assignedRole: "DIT / Editor",
+      subActivities: [
+        "Backup footage",
+        "Verify file integrity",
+        "Organize folder structure",
+        "Cloud upload",
+        "Create editing notes"
+      ]
+    },
+    {
+      name: "Review & Alignment Meeting",
+      priority: "Medium",
+      assignedRole: "Project Manager",
+      subActivities: [
+        "Internal discussion",
+        "Client review call",
+        "Feedback documentation",
+        "Change confirmation",
+        "Next step approval"
+      ]
+    }
+  ],
+  "Post Production": [
+    {
+      name: "Editing & Rough Cut",
+      priority: "High",
+      assignedRole: "Editor",
+      subActivities: [
+        "Footage review",
+        "Rough cut creation",
+        "Internal review",
+        "Revisions",
+        "Export draft"
+      ]
+    },
+    {
+      name: "Sound Design & Music",
+      priority: "Medium",
+      assignedRole: "Sound Designer",
+      subActivities: [
+        "Clean audio",
+        "Add background score",
+        "Add sound effects",
+        "Voice over sync",
+        "Final mix"
+      ]
+    },
+    {
+      name: "Color Grading & Visual Enhancement",
+      priority: "Medium",
+      assignedRole: "Colorist",
+      subActivities: [
+        "Color correction",
+        "Look development",
+        "Skin tone balance",
+        "Final export test"
+      ]
+    },
+    {
+      name: "Client Review & Final Delivery",
+      priority: "High",
+      assignedRole: "Project Manager",
+      subActivities: [
+        "Send preview link",
+        "Collect feedback",
+        "Implement changes",
+        "Final approval",
+        "Deliver master files"
+      ]
+    }
+  ],
+  "Social Media": [
+    {
+      name: "Review & Alignment Meeting",
+      priority: "Medium",
+      assignedRole: "Social Media Lead",
+      subActivities: [
+        "Internal discussion",
+        "Client review call",
+        "Feedback documentation",
+        "Change confirmation",
+        "Next step approval"
+      ]
+    }
+  ]
 };
 
 const SOCIAL_MEDIA_SUGGESTIONS = [
@@ -138,7 +306,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const [activeTab, setActiveTab] = useState("objectives");
   
   // UI State
-  const [crewSearch, setCrewSearch] = useState("");
   const [recruitSearch, setRecruitSearch] = useState("");
 
   const projectRef = useMemoFirebase(() => {
@@ -173,9 +340,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const [editData, setEditData] = useState<any>(null);
   const [newObjective, setNewObjective] = useState({ 
     name: "", 
-    description: "", 
+    priority: "Medium",
     dueDate: "", 
-    assignedMemberId: "" 
+    assignedMemberId: "",
+    subActivities: [] as string[]
   });
 
   useEffect(() => {
@@ -257,18 +425,40 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     toast({ title: "Phase Shifted", description: `Lifecycle advanced to ${val}.` });
   };
 
-  const handleAddObjective = () => {
-    if (!newObjective.name) return;
+  const handleApplyPresets = (phase: string) => {
+    if (!db || !projectId || !PHASE_PRESETS[phase]) return;
+    
+    const batch = writeBatch(db);
     const tasksRef = collection(db, "projects", projectId, "tasks");
-    addDocumentNonBlocking(tasksRef, {
-      ...newObjective,
-      status: "Active",
-      phase: activePhase,
-      createdAt: serverTimestamp(),
+    
+    PHASE_PRESETS[phase].forEach(preset => {
+      const newDocRef = doc(tasksRef);
+      batch.set(newDocRef, {
+        ...preset,
+        status: "Active",
+        phase: phase,
+        subActivities: preset.subActivities.map((title: string) => ({ title, completed: false })),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    });
+
+    batch.commit();
+    toast({ title: "Roadmap Loaded", description: `Standard ${phase} objectives have been provisioned.` });
+  };
+
+  const toggleSubActivity = (taskId: string, subIndex: number) => {
+    const task = allTasks?.find(t => t.id === taskId);
+    if (!task || !task.subActivities) return;
+
+    const updatedSubs = [...task.subActivities];
+    updatedSubs[subIndex].completed = !updatedSubs[subIndex].completed;
+
+    const taskRef = doc(db, "projects", projectId, "tasks", taskId);
+    updateDocumentNonBlocking(taskRef, {
+      subActivities: updatedSubs,
       updatedAt: serverTimestamp()
     });
-    setNewObjective({ name: "", description: "", dueDate: "", assignedMemberId: "" });
-    toast({ title: "Objective Logged", description: "Goal added to phase checklist." });
   };
 
   if (isUserLoading || isProjectLoading) {
@@ -332,6 +522,17 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                     </Select>
                   </div>
                 </div>
+                
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Operational Presets</Label>
+                  <div className="p-6 rounded-2xl bg-slate-50 flex items-center justify-between">
+                    <p className="text-xs font-medium text-slate-500 leading-relaxed">Apply industry-standard production roadmap for the current phase.</p>
+                    <Button onClick={() => handleApplyPresets(editData.status)} size="sm" className="bg-slate-900 text-white rounded-lg h-9 font-bold gap-2 text-[10px] uppercase tracking-normal ml-4">
+                      <RotateCcw className="h-3.5 w-3.5" /> Apply
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Briefing</Label>
                   <Textarea value={editData?.description} onChange={(e) => setEditData({...editData, description: e.target.value})} className="rounded-xl bg-slate-50 border-none min-h-[120px] resize-none p-4" />
@@ -452,7 +653,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
             <TabsContent value="objectives" className="space-y-6 m-0 animate-in fade-in duration-300">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold font-headline tracking-normal">{activePhase} Objectives</h3>
+                <div className="flex items-center gap-4">
+                  <h3 className="text-xl font-bold font-headline tracking-normal">{activePhase} Objectives</h3>
+                  {PHASE_PRESETS[activePhase] && phaseTasks.length === 0 && (
+                    <Button onClick={() => handleApplyPresets(activePhase)} variant="outline" size="sm" className="h-8 rounded-lg text-[10px] font-bold uppercase gap-2 tracking-normal border-slate-100 bg-white">
+                      <RotateCcw className="h-3 w-3" /> Load Phase Roadmap
+                    </Button>
+                  )}
+                </div>
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="ghost" className="text-primary font-bold text-[10px] uppercase gap-2 tracking-normal hover:bg-primary/5 rounded-xl px-4">
@@ -485,28 +693,54 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 </Dialog>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {isTasksLoading ? (
                   <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                 ) : phaseTasks.length > 0 ? (
                   phaseTasks.map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-8 bg-white rounded-[2rem] border border-slate-50 group hover:shadow-md transition-all">
-                      <div className="flex items-center gap-8">
-                        <Checkbox checked={task.status === "Completed"} onCheckedChange={() => updateDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id), { status: task.status === 'Completed' ? 'Active' : 'Completed' })} className="h-6 w-6 rounded-lg border-slate-200" />
-                        <div>
-                          <p className={`text-xl font-bold tracking-normal ${task.status === "Completed" ? "line-through text-slate-300" : "text-slate-900"}`}>{task.name}</p>
-                          <div className="flex items-center gap-6 mt-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2"><CalendarIcon className="h-3 w-3" /> {task.dueDate || "TBD"}</span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2"><User className="h-3 w-3" /> {project.crew?.find((m: any) => m.talentId === task.assignedMemberId)?.name || "Not Assigned"}</span>
+                    <Card key={task.id} className="border-none shadow-sm rounded-[2rem] bg-white overflow-hidden group hover:shadow-md transition-all border border-slate-50">
+                      <div className="p-8 space-y-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-6">
+                            <Checkbox checked={task.status === "Completed"} onCheckedChange={() => updateDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id), { status: task.status === 'Completed' ? 'Active' : 'Completed' })} className="h-6 w-6 rounded-lg border-slate-200" />
+                            <div>
+                              <p className={`text-xl font-bold tracking-normal ${task.status === "Completed" ? "line-through text-slate-300" : "text-slate-900"}`}>{task.name}</p>
+                              <div className="flex items-center gap-6 mt-2">
+                                <Badge variant="outline" className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${task.priority === 'High' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-500'}`}>
+                                  {task.priority || "Medium"}
+                                </Badge>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2"><CalendarIcon className="h-3 w-3" /> {task.dueDate || "TBD"}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2"><User className="h-3 w-3" /> {task.assignedRole || project.crew?.find((m: any) => m.talentId === task.assignedMemberId)?.name || "Not Assigned"}</span>
+                              </div>
+                            </div>
                           </div>
+                          <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id))} className="text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="h-4 w-4" /></Button>
                         </div>
+
+                        {task.subActivities && task.subActivities.length > 0 && (
+                          <div className="pl-12 space-y-3 pt-4 border-t border-slate-50">
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal mb-4">Sub-Activity Ledger</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {task.subActivities.map((sub: any, idx: number) => (
+                                <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => toggleSubActivity(task.id, idx)}>
+                                  <div className={`h-4 w-4 rounded-md flex items-center justify-center border transition-all ${sub.completed ? 'bg-primary border-primary' : 'bg-white border-slate-200'}`}>
+                                    {sub.completed && <CheckCircle2 className="h-3 w-3 text-white" />}
+                                  </div>
+                                  <span className={`text-xs font-medium tracking-normal ${sub.completed ? 'text-slate-300 line-through' : 'text-slate-600'}`}>
+                                    {sub.title}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id))} className="text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="h-4 w-4" /></Button>
-                    </div>
+                    </Card>
                   ))
                 ) : (
                   <div className="p-32 border-2 border-dashed border-slate-50 rounded-[3rem] text-center bg-slate-50/20">
                     <p className="text-sm font-bold text-slate-300 uppercase tracking-normal">No objectives defined for {activePhase}</p>
+                    <p className="text-xs text-slate-400 mt-2 font-medium tracking-normal italic">Use the Roadmap tool to load standardized objectives.</p>
                   </div>
                 )}
               </div>
@@ -532,46 +766,48 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         <Input value={recruitSearch} onChange={(e) => setRecruitSearch(e.target.value)} placeholder="Identify expertise or identity..." className="pl-12 h-14 rounded-2xl bg-slate-50 border-none font-bold" />
                       </div>
                     </div>
-                    <ScrollArea className="flex-1 p-10 pt-6 space-y-8">
-                      <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Internal Experts</p>
-                        {staffSuggestions.map((staff) => (
-                          <Card key={staff.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
-                                  <AvatarImage src={staff.thumbnail} />
-                                  <AvatarFallback className="bg-blue-50 text-blue-600 font-bold">{staff.firstName[0]}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="font-bold text-sm text-slate-900 tracking-normal">{staff.firstName} {staff.lastName}</p>
-                                  <p className="text-[9px] font-bold text-blue-500 uppercase tracking-normal">{staff.roleId}</p>
+                    <ScrollArea className="flex-1 p-10 pt-6">
+                      <div className="space-y-8">
+                        <div className="space-y-4">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Internal Experts</p>
+                          {staffSuggestions.map((staff) => (
+                            <Card key={staff.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
+                                    <AvatarImage src={staff.thumbnail} />
+                                    <AvatarFallback className="bg-blue-50 text-blue-600 font-bold">{staff.firstName[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-900 tracking-normal">{staff.firstName} {staff.lastName}</p>
+                                    <p className="text-[9px] font-bold text-blue-500 uppercase tracking-normal">{staff.roleId}</p>
+                                  </div>
                                 </div>
+                                <Button onClick={() => handleRecruit(staff, 'Internal')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-blue-500 hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
                               </div>
-                              <Button onClick={() => handleRecruit(staff, 'Internal')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-blue-500 hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                      <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Talent Network Partners</p>
-                        {suggestions.map((talent) => (
-                          <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
-                                  <AvatarImage src={talent.thumbnail} />
-                                  <AvatarFallback className="bg-primary/5 text-primary font-bold">{talent.name?.[0]}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p>
-                                  <p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p>
+                            </Card>
+                          ))}
+                        </div>
+                        <div className="space-y-4">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal px-2">Talent Network Partners</p>
+                          {suggestions.map((talent) => (
+                            <Card key={talent.id} className="border-none shadow-sm rounded-2xl bg-white p-5 hover:shadow-md transition-all">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                  <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-50 shadow-sm">
+                                    <AvatarImage src={talent.thumbnail} />
+                                    <AvatarFallback className="bg-primary/5 text-primary font-bold">{talent.name?.[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-900 tracking-normal">{talent.name}</p>
+                                    <p className="text-[9px] font-bold text-primary uppercase tracking-normal">{talent.category}</p>
+                                  </div>
                                 </div>
+                                <Button onClick={() => handleRecruit(talent, 'External')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
                               </div>
-                              <Button onClick={() => handleRecruit(talent, 'External')} variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all"><Plus className="h-4 w-4" /></Button>
-                            </div>
-                          </Card>
-                        ))}
+                            </Card>
+                          ))}
+                        </div>
                       </div>
                     </ScrollArea>
                   </SheetContent>
@@ -701,4 +937,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
       </div>
     </div>
   );
+
+  function handleAddObjective() {
+    if (!newObjective.name) return;
+    const tasksRef = collection(db, "projects", projectId, "tasks");
+    addDocumentNonBlocking(tasksRef, {
+      ...newObjective,
+      status: "Active",
+      phase: activePhase,
+      subActivities: newObjective.subActivities.map(title => ({ title, completed: false })),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    setNewObjective({ name: "", priority: "Medium", dueDate: "", assignedMemberId: "", subActivities: [] });
+    toast({ title: "Objective Logged", description: "Goal added to phase checklist." });
+  }
 }
