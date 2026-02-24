@@ -26,7 +26,10 @@ import {
   EyeOff,
   MoveVertical,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Layers,
+  ChevronRight,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -44,8 +47,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp } from "firebase/firestore";
+import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp, setDoc } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -72,6 +75,26 @@ const DEFAULT_WORKSPACE_ITEMS = [
   { title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 10, isVisible: true },
   { title: "Market Research", iconName: "Globe", url: "/market-research", order: 11, isVisible: true },
 ];
+
+const DEFAULT_PROJECT_TYPES = [
+  "TV Commercials (TVC)",
+  "Digital Ad Film Production",
+  "Performance Marketing Ads",
+  "Brand Commercials",
+  "AI VFX Production",
+  "AI Video Production",
+  "Reels / Shorts Production",
+  "UGC (User Generated Content)",
+  "Property Walkthrough Videos"
+];
+
+const DEFAULT_DISTRICTS = [
+  "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",
+  "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", "Kozhikode",
+  "Wayanad", "Kannur", "Kasaragod"
+];
+
+const DEFAULT_PHASES = ["Discussion", "Pre Production", "Production", "Post Production", "Release", "Social Media"];
 
 export default function SettingsPage() {
   const db = useFirestore();
@@ -115,6 +138,16 @@ export default function SettingsPage() {
   }, [db, user]);
   const { data: navItems, isLoading: navLoading } = useCollection(navQuery);
 
+  // Project Settings Data
+  const projectSettingsRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "settings", "projects");
+  }, [db, user]);
+  const { data: projectSettings, isLoading: projectSettingsLoading } = useDoc(projectSettingsRef);
+
+  const [newVertical, setNewVertical] = useState("");
+  const [newHub, setNewHub] = useState("");
+
   const handleSaveProfile = () => {
     setIsGenerating(true);
     setTimeout(() => {
@@ -148,12 +181,52 @@ export default function SettingsPage() {
     toast({ title: "Navigation Synchronized", description: "Standard workspace modules have been provisioned." });
   };
 
+  const handleInitializeProjectDefaults = async () => {
+    if (!projectSettingsRef) return;
+    setIsGenerating(true);
+    setDocumentNonBlocking(projectSettingsRef, {
+      projectTypes: DEFAULT_PROJECT_TYPES,
+      districts: DEFAULT_DISTRICTS,
+      phases: DEFAULT_PHASES,
+      defaultCurrency: "INR",
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    setIsGenerating(false);
+    toast({ title: "Project Strategy Synchronized", description: "Standard execution verticals and hubs have been provisioned." });
+  };
+
   const handleToggleNavVisibility = (id: string, current: boolean) => {
     updateDocumentNonBlocking(doc(db, "sidebar_items", id), { isVisible: !current });
   };
 
   const handleUpdateNavTitle = (id: string, newTitle: string) => {
     updateDocumentNonBlocking(doc(db, "sidebar_items", id), { title: newTitle });
+  };
+
+  const handleAddProjectVertical = () => {
+    if (!newVertical || !projectSettingsRef) return;
+    const updated = [...(projectSettings?.projectTypes || []), newVertical];
+    updateDocumentNonBlocking(projectSettingsRef, { projectTypes: updated });
+    setNewVertical("");
+  };
+
+  const handleRemoveProjectVertical = (vertical: string) => {
+    if (!projectSettingsRef) return;
+    const updated = projectSettings?.projectTypes.filter((v: string) => v !== vertical);
+    updateDocumentNonBlocking(projectSettingsRef, { projectTypes: updated });
+  };
+
+  const handleAddProjectHub = () => {
+    if (!newHub || !projectSettingsRef) return;
+    const updated = [...(projectSettings?.districts || []), newHub];
+    updateDocumentNonBlocking(projectSettingsRef, { districts: updated });
+    setNewHub("");
+  };
+
+  const handleRemoveProjectHub = (hub: string) => {
+    if (!projectSettingsRef) return;
+    const updated = projectSettings?.districts.filter((h: string) => h !== hub);
+    updateDocumentNonBlocking(projectSettingsRef, { districts: updated });
   };
 
   if (isUserLoading) {
@@ -181,6 +254,10 @@ export default function SettingsPage() {
           <TabsTrigger value="team" className="rounded-xl px-6 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Users className="h-4 w-4" />
             Team Members
+          </TabsTrigger>
+          <TabsTrigger value="projects" className="rounded-xl px-6 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
+            <Briefcase className="h-4 w-4" />
+            Projects
           </TabsTrigger>
           <TabsTrigger value="navigation" className="rounded-xl px-6 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <LayoutGrid className="h-4 w-4" />
@@ -358,6 +435,116 @@ export default function SettingsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="projects" className="animate-in slide-in-from-left-2 duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8 space-y-8">
+              <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+                <CardHeader className="p-10 pb-6 border-b border-slate-50 dark:border-slate-800">
+                  <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Execution Verticals</CardTitle>
+                  <CardDescription className="tracking-normal">Define the specialized production categories available for initiation.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-10 space-y-8">
+                  <div className="flex gap-3">
+                    <Input 
+                      value={newVertical} 
+                      onChange={(e) => setNewVertical(e.target.value)}
+                      placeholder="e.g. Cinematic Wedding Story" 
+                      className="h-12 rounded-xl bg-slate-50 border-none shadow-inner dark:bg-slate-800 dark:text-white"
+                    />
+                    <Button onClick={handleAddProjectVertical} className="h-12 rounded-xl font-bold px-6">
+                      Add Vertical
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {projectSettings?.projectTypes?.map((type: string) => (
+                      <Badge key={type} className="bg-slate-100 text-slate-600 border-none px-4 py-2 rounded-xl font-bold text-[10px] uppercase gap-2 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer group">
+                        {type}
+                        <X className="h-3 w-3 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveProjectVertical(type)} />
+                      </Badge>
+                    ))}
+                    {(!projectSettings?.projectTypes || projectSettings.projectTypes.length === 0) && (
+                      <p className="text-sm text-slate-400 italic">No production verticals defined.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+                <CardHeader className="p-10 pb-6 border-b border-slate-50 dark:border-slate-800">
+                  <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Project Hubs (Districts)</CardTitle>
+                  <CardDescription className="tracking-normal">Manage the regional hubs for localized production tracking.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-10 space-y-8">
+                  <div className="flex gap-3">
+                    <Input 
+                      value={newHub} 
+                      onChange={(e) => setNewHub(e.target.value)}
+                      placeholder="e.g. Dubai, UAE" 
+                      className="h-12 rounded-xl bg-slate-50 border-none shadow-inner dark:bg-slate-800 dark:text-white"
+                    />
+                    <Button onClick={handleAddProjectHub} className="h-12 rounded-xl font-bold px-6">
+                      Add Hub
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {projectSettings?.districts?.map((district: string) => (
+                      <Badge key={district} className="bg-primary/5 text-primary border-none px-4 py-2 rounded-xl font-bold text-[10px] uppercase gap-2 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer group">
+                        <MapPin className="h-3 w-3" />
+                        {district}
+                        <X className="h-3 w-3 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveProjectHub(district)} />
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-4 space-y-8">
+              <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
+                <div className="space-y-2 relative z-10">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Production Intelligence</p>
+                  <h4 className="text-xl font-bold font-headline tracking-normal">Phase Lifecycle</h4>
+                </div>
+                <div className="space-y-4 relative z-10">
+                  {projectSettings?.phases?.map((phase: string, idx: number) => (
+                    <div key={idx} className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-400 group cursor-default">
+                      <span className="text-primary">{idx + 1}</span>
+                      <span className="group-hover:text-white transition-colors">{phase}</span>
+                    </div>
+                  ))}
+                  {(!projectSettings?.phases || projectSettings.phases.length === 0) && (
+                    <p className="text-xs text-slate-500 italic">No phases initialized.</p>
+                  )}
+                </div>
+                <div className="pt-6 border-t border-white/5 relative z-10">
+                  <Button 
+                    onClick={handleInitializeProjectDefaults} 
+                    disabled={isSaving}
+                    variant="outline" 
+                    className="w-full h-12 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10 font-bold text-[10px] uppercase gap-2 tracking-widest"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reset Strategy Defaults
+                  </Button>
+                </div>
+              </Card>
+
+              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white dark:bg-slate-900 p-10 flex flex-col items-center justify-center text-center space-y-6">
+                <div className="h-16 w-16 rounded-[1.5rem] bg-accent/10 flex items-center justify-center">
+                  <Sparkles className="h-8 w-8 text-accent" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white tracking-normal">AI Auto-Provisioning</h4>
+                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                    Custom verticals defined here will automatically provision the standard roadmap objectives.
+                  </p>
+                </div>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="navigation" className="animate-in slide-in-from-left-2 duration-300">

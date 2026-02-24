@@ -95,6 +95,17 @@
         "isVisible": { "type": "boolean" }
       },
       "required": ["title", "url", "iconName"]
+    },
+    "ProjectSettings": {
+      "title": "ProjectSettings",
+      "type": "object",
+      "description": "Global configuration for project workflows and metadata.",
+      "properties": {
+        "projectTypes": { "type": "array", "items": { "type": "string" } },
+        "districts": { "type": "array", "items": { "type": "string" } },
+        "phases": { "type": "array", "items": { "type": "string" } },
+        "defaultCurrency": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -124,6 +135,10 @@
     "/sidebar_items/{itemId}": {
       "schema": "SidebarItem",
       "description": "Dynamic sidebar navigation items."
+    },
+    "/settings/projects": {
+      "schema": "ProjectSettings",
+      "description": "Global project configuration."
     }
   }
 }
