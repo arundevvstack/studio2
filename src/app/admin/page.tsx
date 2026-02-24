@@ -15,27 +15,21 @@ import {
   Loader2,
   ArrowRight,
   UserCheck,
-  Key
+  Key,
+  LayoutGrid
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, limit } from "firebase/firestore";
 import Link from "next/link";
 
 /**
  * @fileOverview Strategic Admin Console.
- * Manages system-wide roles, permissions, and operational status.
+ * Manages system-wide metrics, operational status, and global audit logs.
+ * Identity-specific RBAC has been moved to the User Management hub.
  */
 
 export default function AdminConsolePage() {
@@ -44,9 +38,15 @@ export default function AdminConsolePage() {
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
+    return query(collection(db, "teamMembers"), orderBy("updatedAt", "desc"), limit(5));
   }, [db, user]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
+
+  const rolesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "roles"));
+  }, [db, user]);
+  const { data: roles } = useCollection(rolesQuery);
 
   if (isUserLoading) {
     return (
@@ -68,12 +68,12 @@ export default function AdminConsolePage() {
               Root Access
             </Badge>
           </div>
-          <p className="text-sm text-slate-500 font-medium tracking-normal">Manage global system policies, role hierarchy, and organization security.</p>
+          <p className="text-sm text-slate-500 font-medium tracking-normal">High-level system oversight, operational health, and organization security.</p>
         </div>
         <Button asChild className="rounded-xl font-bold h-12 px-6 shadow-lg shadow-slate-200">
           <Link href="/admin/users">
             <Users className="h-4 w-4 mr-2" />
-            User Management
+            Manage Identities & RBAC
           </Link>
         </Button>
       </div>
@@ -96,7 +96,7 @@ export default function AdminConsolePage() {
             <Users className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Provisioned Users</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Identities</p>
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{team?.length || 0}</h3>
           </div>
         </Card>
@@ -106,7 +106,7 @@ export default function AdminConsolePage() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Roles</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">14</h3>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{roles?.length || 0}</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
@@ -121,11 +121,11 @@ export default function AdminConsolePage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="permissions" className="space-y-8">
+      <Tabs defaultValue="governance" className="space-y-8">
         <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1">
-          <TabsTrigger value="permissions" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
-            <UserCheck className="h-4 w-4" />
-            Access Matrix
+          <TabsTrigger value="governance" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
+            <LayoutGrid className="h-4 w-4" />
+            System Governance
           </TabsTrigger>
           <TabsTrigger value="audit" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Activity className="h-4 w-4" />
@@ -137,103 +137,79 @@ export default function AdminConsolePage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="permissions" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
-            <CardHeader className="p-10 pb-6 border-b border-slate-50 bg-slate-50/30">
-              <CardTitle className="text-xl font-bold font-headline tracking-normal">Role-Based Access Control</CardTitle>
-              <CardDescription className="tracking-normal">Audit and manage entitlements for all provisioned production experts.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {teamLoading ? (
-                <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-              ) : (
-                <Table>
-                  <TableHeader className="bg-slate-50/50">
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Executive Identity</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Assigned Role</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal text-center">Status</TableHead>
-                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Access Policy</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {team?.map((member) => (
-                      <TableRow key={member.id} className="group hover:bg-slate-50/50 transition-colors">
-                        <TableCell className="px-10 py-6">
-                          <div>
-                            <p className="font-bold text-slate-900 tracking-normal leading-none">{member.firstName} {member.lastName}</p>
-                            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-normal">{member.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="border-slate-100 text-slate-600 font-bold text-[9px] uppercase tracking-normal">
-                            {member.roleId || "General Access"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1.5 text-green-600 font-bold text-[10px] uppercase tracking-normal">
-                            <div className="h-1.5 w-1.5 rounded-full bg-green-500" /> Active
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right px-10">
-                          <Button asChild variant="ghost" size="sm" className="rounded-lg font-bold text-[10px] uppercase tracking-normal gap-2 hover:bg-primary hover:text-white transition-all">
-                            <Link href={`/admin/users?highlight=${member.id}`}>
-                              Override Rules <ArrowRight className="h-3 w-3" />
-                            </Link>
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="governance" className="animate-in slide-in-from-left-2 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="md:col-span-2 border-none shadow-sm rounded-[2.5rem] bg-white p-10 space-y-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold font-headline tracking-normal">Identity Governance</h3>
+                  <p className="text-sm text-slate-500 mt-1">Summary of recent access and provisioning activity.</p>
+                </div>
+                <Button asChild variant="outline" size="sm" className="rounded-xl font-bold text-[10px] uppercase">
+                  <Link href="/admin/users">View Hub</Link>
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {team?.slice(0, 3).map((member) => (
+                  <div key={member.id} className="flex items-center justify-between p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                        <UserCheck className="h-5 w-5 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">{member.firstName} {member.lastName}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">{member.email}</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-white text-slate-600 border-slate-100 text-[8px] font-bold uppercase">{member.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
+              <div className="space-y-2 relative z-10">
+                <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Global Watchdog</p>
+                <h4 className="text-xl font-bold font-headline tracking-normal">Security Posture</h4>
+              </div>
+              <div className="p-6 rounded-2xl bg-white/5 border border-white/5 relative z-10">
+                <p className="text-xs font-medium leading-relaxed text-slate-300 tracking-normal">
+                  "RBAC enforcement is active. All system verticals are restricted to provisioned roles with verified credentials."
+                </p>
+              </div>
+              <div className="space-y-4 relative z-10 pt-4">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-normal">
+                  <span className="text-slate-500">System Integrity</span>
+                  <span className="text-primary">100%</span>
+                </div>
+                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary w-full" />
+                </div>
+              </div>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="audit" className="animate-in slide-in-from-left-2 duration-300">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 space-y-6">
-              <h3 className="text-xl font-bold font-headline tracking-normal px-2">Recent Security Events</h3>
-              <div className="space-y-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <Card key={i} className="border-none shadow-sm rounded-2xl bg-white p-6 flex items-center justify-between group hover:shadow-md transition-all">
-                    <div className="flex items-center gap-5">
-                      <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                        <Lock className="h-5 w-5 text-slate-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 tracking-normal">Identity Verification Success</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-normal">24 Feb 2026 • 14:32:01</p>
-                      </div>
+          <div className="grid grid-cols-1 gap-6">
+            <h3 className="text-xl font-bold font-headline tracking-normal px-2">Recent Security Events</h3>
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="border-none shadow-sm rounded-2xl bg-white p-6 flex items-center justify-between group hover:shadow-md transition-all">
+                  <div className="flex items-center gap-5">
+                    <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+                      <Lock className="h-5 w-5 text-slate-400" />
                     </div>
-                    <Badge variant="outline" className="border-green-100 text-green-600 text-[8px] font-bold uppercase tracking-normal">System Pass</Badge>
-                  </Card>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-6">
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
-                <div className="space-y-2 relative z-10">
-                  <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Global Watchdog</p>
-                  <h4 className="text-xl font-bold font-headline tracking-normal">Threat Prevention</h4>
-                </div>
-                <div className="p-6 rounded-2xl bg-white/5 border border-white/5 relative z-10">
-                  <p className="text-xs font-medium leading-relaxed text-slate-300 tracking-normal">
-                    "Artificial intelligence patterns detect zero suspicious entry points across all regional hubs in the last 24 hours."
-                  </p>
-                </div>
-                <div className="space-y-4 relative z-10 pt-4">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-normal">
-                    <span className="text-slate-500">System Integrity</span>
-                    <span className="text-primary">100%</span>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 tracking-normal">Identity Verification Success</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-normal">24 Feb 2026 • 14:32:01</p>
+                    </div>
                   </div>
-                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary w-full" />
-                  </div>
-                </div>
-              </Card>
+                  <Badge variant="outline" className="border-green-100 text-green-600 text-[8px] font-bold uppercase tracking-normal">System Pass</Badge>
+                </Card>
+              ))}
             </div>
           </div>
         </TabsContent>

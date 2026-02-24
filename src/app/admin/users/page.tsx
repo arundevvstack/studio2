@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -18,7 +19,8 @@ import {
   ShieldAlert,
   ChevronLeft,
   UserPlus,
-  Clock
+  Clock,
+  Shield
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,9 +58,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 /**
- * @fileOverview Strategic User Management Module.
+ * @fileOverview Role-Based Access Control (RBAC) Hub.
  * Provides high-level administrative oversight of all system users and their roles.
- * Includes explicit validation workflows for "Pending" accounts.
+ * This is the central repository for managing strategic titles and activation policies.
  */
 
 export default function UserManagementPage() {
@@ -117,7 +119,7 @@ export default function UserManagementPage() {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Authorizing Admin Suite...</p>
+        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Authorizing RBAC Suite...</p>
       </div>
     );
   }
@@ -136,13 +138,13 @@ export default function UserManagementPage() {
           </Button>
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">User Management</h1>
+              <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Identity & RBAC Hub</h1>
               <Badge className="bg-slate-900 text-white border-none text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
                 <ShieldCheck className="h-3 w-3 mr-1" />
-                Root Identity
+                Root Authority
               </Badge>
             </div>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Validate new sign-ups, manage role hierarchies, and account policies.</p>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage Role-Based Access Control, verify identities, and enforce system policies.</p>
           </div>
         </div>
       </div>
@@ -153,7 +155,7 @@ export default function UserManagementPage() {
             <UserPlus className="h-5 w-5 text-orange-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Validation</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Activation</p>
             <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{pendingCount}</h3>
           </div>
         </Card>
@@ -162,7 +164,7 @@ export default function UserManagementPage() {
             <Users className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Executives</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Identities</p>
             <h3 className="text-3xl font-bold font-headline mt-1">{team?.filter(m => m.status === 'Active').length || 0}</h3>
           </div>
         </Card>
@@ -171,18 +173,18 @@ export default function UserManagementPage() {
             <Key className="h-5 w-5 text-blue-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Roles</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Roles</p>
             <h3 className="text-3xl font-bold font-headline mt-1">{roles?.length || 0}</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
           <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center relative z-10">
-            <ShieldAlert className="h-5 w-5 text-primary" />
+            <Shield className="h-5 w-5 text-primary" />
           </div>
           <div className="relative z-10">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Security State</p>
-            <h3 className="text-2xl font-bold font-headline mt-1">ENFORCED</h3>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Access Protocol</p>
+            <h3 className="text-2xl font-bold font-headline mt-1 uppercase">RBAC Active</h3>
           </div>
         </Card>
       </div>
@@ -205,7 +207,7 @@ export default function UserManagementPage() {
 
       <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
         <CardHeader className="p-10 pb-6 border-b border-slate-50 bg-slate-50/30">
-          <CardTitle className="text-xl font-bold font-headline tracking-normal">Global Identity Ledger</CardTitle>
+          <CardTitle className="text-xl font-bold font-headline tracking-normal">Role-Based Access Control Hub</CardTitle>
           <CardDescription className="tracking-normal">Audit and manage system-wide entitlements for all provisioned production experts.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
