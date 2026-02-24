@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -21,7 +22,8 @@ import {
   Clock,
   HelpCircle,
   Key,
-  Shield
+  Shield,
+  User
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,6 +43,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Icon Map for Dynamic Sidebar
 const ICON_MAP: Record<string, any> = {
@@ -222,6 +225,24 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto">
+        {user && (
+          <div className="mb-4 px-3 flex items-center gap-3 group-data-[collapsible=icon]:hidden">
+            <Avatar className="h-9 w-9 rounded-xl border-2 border-white shadow-sm shrink-0">
+              <AvatarImage src={member?.thumbnail} />
+              <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
+                {member?.firstName?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="overflow-hidden">
+              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                {member?.firstName ? `${member.firstName} ${member.lastName}` : "Executive"}
+              </p>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">
+                {role?.name || "General Access"}
+              </p>
+            </div>
+          </div>
+        )}
         <SidebarSeparator className="mb-4 bg-slate-100 dark:bg-white/10" />
         <SidebarMenu className="space-y-1">
           <SidebarMenuItem>

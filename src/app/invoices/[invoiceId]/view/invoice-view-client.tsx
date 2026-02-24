@@ -115,9 +115,6 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
             </div>
 
             <div className="text-right space-y-1">
-              <h2 className="text-2xl font-bold text-primary tracking-normal">
-                {globalSettings?.companyName || "Marzelz Lifestyle PVT LTD"}
-              </h2>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-normal">CIN: {globalSettings?.cinNumber || "U60200KL2023PTC081308"}</p>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-normal">GSTIN: {globalSettings?.taxId || "32AAQCM8450P1ZQ"}</p>
               <h3 className="text-5xl font-bold text-slate-900 pt-4 tracking-normal">Invoice</h3>

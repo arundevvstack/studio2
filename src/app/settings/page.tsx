@@ -323,12 +323,18 @@ export default function SettingsPage() {
   };
 
   const handleSavePersonalProfile = () => {
-    if (!memberRef) return;
+    if (!memberRef || !user) return;
     setIsGenerating(true);
-    updateDocumentNonBlocking(memberRef, {
+    
+    // Use setDocumentNonBlocking with merge to ensure it works even if the teamMember doc doesn't exist yet
+    setDocumentNonBlocking(memberRef, {
       ...profileForm,
+      email: user.email,
+      id: user.uid,
+      status: "Active",
       updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
+
     setTimeout(() => {
       setIsGenerating(false);
       toast({ title: "Identity Synchronized", description: "Your personal profile has been updated." });
@@ -402,7 +408,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">System Email</Label>
-                  <Input value={currentUserMember?.email} disabled className="h-14 rounded-xl bg-slate-100 border-none font-bold tracking-normal text-slate-400" />
+                  <Input value={user?.email || "No Email Provided"} disabled className="h-14 rounded-xl bg-slate-100 border-none font-bold tracking-normal text-slate-400" />
                 </div>
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Direct Hotline (Phone)</Label>
