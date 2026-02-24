@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { Suspense } from "react";
@@ -33,7 +34,12 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
   }, [db, project?.clientId]);
   const { data: client, isLoading: isClientLoading } = useDoc(clientRef);
 
-  if (isProjectLoading || isClientLoading) {
+  const billingSettingsRef = useMemoFirebase(() => {
+    return doc(db, "companyBillingSettings", "global");
+  }, [db]);
+  const { data: globalSettings, isLoading: isBillingLoading } = useDoc(billingSettingsRef);
+
+  if (isProjectLoading || isClientLoading || isBillingLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -84,34 +90,42 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
           {/* Brand Identity */}
           <div className="flex justify-between items-start">
             <div className="flex flex-col items-center">
-              <svg
-                width="80"
-                height="60"
-                viewBox="0 0 40 30"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-slate-300"
-              >
-                <path
-                  d="M5 25L15 5L25 25M15 25L25 5L35 25"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <div className="text-center mt-2">
-                <h1 className="text-xl font-bold text-slate-800 uppercase leading-none tracking-normal">MARZELZ</h1>
-                <p className="text-[10px] font-medium text-slate-400 uppercase mt-1 tracking-normal">LIFESTYLE</p>
-              </div>
+              {globalSettings?.logo ? (
+                <div className="h-20 w-auto mb-2 flex items-center justify-center">
+                  <img src={globalSettings.logo} alt="Brand Logo" className="h-full w-auto object-contain" />
+                </div>
+              ) : (
+                <>
+                  <svg
+                    width="80"
+                    height="60"
+                    viewBox="0 0 40 30"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-slate-300"
+                  >
+                    <path
+                      d="M5 25L15 5L25 25M15 25L25 5L35 25"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <div className="text-center mt-2">
+                    <h1 className="text-xl font-bold text-slate-800 uppercase leading-none tracking-normal">MARZELZ</h1>
+                    <p className="text-[10px] font-medium text-slate-400 uppercase mt-1 tracking-normal">LIFESTYLE</p>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="text-right space-y-1">
               <h2 className="text-2xl font-bold text-primary tracking-normal">
-                <span className="text-primary/70">Marzelz</span> Lifestyle PVT LTD
+                {globalSettings?.companyName || "Marzelz Lifestyle PVT LTD"}
               </h2>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-normal">CIN: U60200KL2023PTC081308</p>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-normal">GSTIN: 32AAQCM8450P1ZQ</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-normal">CIN: {globalSettings?.cinNumber || "U60200KL2023PTC081308"}</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-normal">GSTIN: {globalSettings?.taxId || "32AAQCM8450P1ZQ"}</p>
               <h3 className="text-5xl font-bold text-slate-900 pt-4 tracking-normal">Invoice</h3>
             </div>
           </div>
@@ -133,7 +147,7 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium tracking-normal">Payable To :</span>
-                <span className="text-slate-900 font-bold tracking-normal">Marzelz Lifestyle PVT LTD</span>
+                <span className="text-slate-900 font-bold tracking-normal">{globalSettings?.companyName || "Marzelz Lifestyle PVT LTD"}</span>
               </div>
               <div className="grid grid-cols-[100px_1fr] text-sm">
                 <span className="text-slate-400 font-medium tracking-normal">Due Date :</span>
@@ -197,10 +211,10 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
               <div className="flex justify-center pt-8 pb-4">
                 <div className="relative h-24 w-24 border-2 border-blue-600 rounded-full flex items-center justify-center p-2 opacity-80 rotate-[-12deg]">
                   <div className="text-[7px] font-bold text-blue-600 text-center uppercase tracking-normal">
-                    MARZELZ LIFESTYLE PVT LTD<br />
+                    {globalSettings?.companyName || "MARZELZ LIFESTYLE PVT LTD"}<br />
                     <span className="text-[10px]">TRIVANDRUM</span><br />
                     695003<br />
-                    CIN: U60200KL2023PTC081308
+                    CIN: {globalSettings?.cinNumber || "U60200KL2023PTC081308"}
                   </div>
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-16 pointer-events-none opacity-60">
                     <svg viewBox="0 0 100 40" className="w-full h-full text-blue-800">
@@ -216,15 +230,15 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
           <div className="pt-12 border-t border-slate-900/10">
             <h4 className="text-sm font-bold text-slate-900 mb-4 tracking-normal">Settlement Details</h4>
             <div className="space-y-3">
-              <h5 className="text-[13px] font-bold text-slate-900 tracking-normal">Axis Bank</h5>
+              <h5 className="text-[13px] font-bold text-slate-900 tracking-normal">{globalSettings?.bankName || "Axis Bank"}</h5>
               <div className="grid grid-cols-[120px_1fr] text-[13px] gap-y-1">
-                <span className="text-slate-500 tracking-normal">Acc No</span><span className="font-medium tracking-normal">: 922020014850667</span>
-                <span className="text-slate-500 tracking-normal">Phone</span><span className="font-medium tracking-normal">: 9947109143</span>
-                <span className="text-slate-500 tracking-normal">Name</span><span className="font-medium tracking-normal">: Marzelz Lifestyle Private Limited.</span>
-                <span className="text-slate-500 tracking-normal">IFSC</span><span className="font-medium tracking-normal">: UTIB0003042</span>
-                <span className="text-slate-500 tracking-normal">Branch</span><span className="font-medium tracking-normal">: Sasthamangalam</span>
-                <span className="text-slate-500 tracking-normal">PAN</span><span className="font-medium tracking-normal">: AAQCM8450P</span>
-                <span className="text-slate-500 tracking-normal">GSTIN</span><span className="font-medium tracking-normal">: 32AAQCM8450P1ZQ</span>
+                <span className="text-slate-500 tracking-normal">Acc No</span><span className="font-medium tracking-normal">: {globalSettings?.bankAccountNumber || "922020014850667"}</span>
+                <span className="text-slate-500 tracking-normal">Phone</span><span className="font-medium tracking-normal">: {globalSettings?.companyPhone || "9947109143"}</span>
+                <span className="text-slate-500 tracking-normal">Name</span><span className="font-medium tracking-normal">: {globalSettings?.companyName || "Marzelz Lifestyle Private Limited."}</span>
+                <span className="text-slate-500 tracking-normal">IFSC</span><span className="font-medium tracking-normal">: {globalSettings?.bankSwiftCode || "UTIB0003042"}</span>
+                <span className="text-slate-500 tracking-normal">Branch</span><span className="font-medium tracking-normal">: {globalSettings?.bankIban || "Sasthamangalam"}</span>
+                <span className="text-slate-500 tracking-normal">PAN</span><span className="font-medium tracking-normal">: {globalSettings?.panNumber || "AAQCM8450P"}</span>
+                <span className="text-slate-500 tracking-normal">GSTIN</span><span className="font-medium tracking-normal">: {globalSettings?.taxId || "32AAQCM8450P1ZQ"}</span>
               </div>
             </div>
           </div>
@@ -232,9 +246,9 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
           {/* Strategic Footer */}
           <div className="pt-20 flex flex-col md:flex-row justify-between items-end border-t border-slate-100 gap-6">
             <div className="space-y-2">
-              <h5 className="text-[12px] font-bold text-slate-900 uppercase tracking-normal">MARZELZ LIFESTYLE PRIVATE LIMITED</h5>
+              <h5 className="text-[12px] font-bold text-slate-900 uppercase tracking-normal">{globalSettings?.companyName || "MARZELZ LIFESTYLE PRIVATE LIMITED"}</h5>
               <p className="text-[10px] text-slate-500 font-medium max-w-[400px] tracking-normal">
-                Dotspace Business Center TC 24/3088 Ushasandya Building, Kowdiar - Devasom Board Road, Kowdiar, Trivandrum, Pin : 695003
+                {globalSettings?.companyAddress || "Dotspace Business Center TC 24/3088 Ushasandya Building, Kowdiar - Devasom Board Road, Kowdiar, Trivandrum, Pin : 695003"}
               </p>
             </div>
             <div className="text-right space-y-1">

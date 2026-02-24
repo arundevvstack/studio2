@@ -37,8 +37,8 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy, doc } from "firebase/firestore";
 
 // Icon Map for Dynamic Sidebar
 const ICON_MAP: Record<string, any> = {
@@ -92,14 +92,17 @@ export function AppSidebar() {
     return query(collection(db, "sidebar_items"), orderBy("order", "asc"));
   }, [db]);
 
-  const { data: remoteItems, isLoading } = useCollection(navQuery);
+  const { data: remoteItems } = useCollection(navQuery);
+
+  const billingRef = useMemoFirebase(() => {
+    return doc(db, "companyBillingSettings", "global");
+  }, [db]);
+  const { data: globalSettings } = useDoc(billingRef);
 
   const displayItems = React.useMemo(() => {
-    // If we have remote items and not loading, use them filtered by visibility
     if (remoteItems && remoteItems.length > 0) {
       return remoteItems.filter(item => item.isVisible !== false);
     }
-    // Fallback to defaults if no remote items yet
     return DEFAULT_WORKSPACE_ITEMS;
   }, [remoteItems]);
 
@@ -107,25 +110,35 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-6 pb-2 space-y-6">
         <div className="flex flex-col items-center gap-1 group-data-[collapsible=icon]:hidden">
-          <svg
-            width="40"
-            height="30"
-            viewBox="0 0 40 30"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="text-primary"
-          >
-            <path
-              d="M5 25L15 5L25 25M15 25L25 5L35 25"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          {globalSettings?.logo ? (
+            <div className="h-12 w-auto mb-1 flex items-center justify-center">
+              <img src={globalSettings.logo} alt="Organization Logo" className="h-full w-auto object-contain" />
+            </div>
+          ) : (
+            <svg
+              width="40"
+              height="30"
+              viewBox="0 0 40 30"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-primary"
+            >
+              <path
+                d="M5 25L15 5L25 25M15 25L25 5L35 25"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
           <div className="text-center">
-            <h1 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Marzelz</h1>
-            <p className="text-[10px] font-medium text-slate-400 uppercase -mt-1">Lifestyle</p>
+            <h1 className="text-sm font-bold text-slate-900 uppercase dark:text-white">
+              {globalSettings?.companyName ? globalSettings.companyName.split(' ')[0] : "Marzelz"}
+            </h1>
+            <p className="text-[10px] font-medium text-slate-400 uppercase -mt-1">
+              {globalSettings?.companyName ? "Organization" : "Lifestyle"}
+            </p>
           </div>
         </div>
 
