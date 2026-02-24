@@ -156,25 +156,38 @@ export default function ShootNetworkPage() {
               {filters.district !== "All" && (
                 <Badge className="bg-white text-slate-600 border border-slate-100 font-bold text-[10px] rounded-full px-4 py-1.5 gap-2 shadow-sm">
                   {filters.district}
-                  <Button variant="ghost" size="icon" onClick={() => removeFilter('district')} className="h-4 w-4 p-0 hover:bg-transparent"><X className="h-3 w-3 text-slate-300" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => removeFilter('district')} className="h-4 w-4 p-0 hover:bg-transparent">
+                    <X className="h-3 w-3 text-slate-300" />
+                  </Button>
                 </Badge>
               )}
 
               {filters.category.map((cat: string) => (
                 <Badge key={cat} className="bg-white text-primary border border-primary/10 font-bold text-[10px] rounded-full px-4 py-1.5 gap-2 shadow-sm">
                   {cat}
-                  <Button variant="ghost" size="icon" onClick={() => removeFilter('category', cat)} className="h-4 w-4 p-0 hover:bg-transparent"><X className="h-3 w-3 text-primary/30" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => removeFilter('category', cat)} className="h-4 w-4 p-0 hover:bg-transparent">
+                    <X className="h-3 w-3 text-primary/30" />
+                  </Button>
                 </Badge>
               ))}
 
               {filters.tags?.map((tag: string) => (
                 <Badge key={tag} className="bg-white text-accent border border-accent/10 font-bold text-[10px] rounded-full px-4 py-1.5 gap-2 shadow-sm">
                   {tag}
-                  <Button variant="ghost" size="icon" onClick={() => removeFilter('tags', tag)} className="h-4 w-4 p-0 hover:bg-transparent"><X className="h-3 w-3 text-accent/30" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => removeFilter('tags', tag)} className="h-4 w-4 p-0 hover:bg-transparent">
+                    <X className="h-3 w-3 text-accent/30" />
+                  </Button>
                 </Badge>
               ))}
 
-              <Button variant="ghost" size="sm" onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All", tags: [] })} className="text-[10px] font-bold text-primary uppercase hover:bg-primary/5 h-8 px-4 rounded-full tracking-widest ml-auto">Clear All</Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All", tags: [] })} 
+                className="text-[10px] font-bold text-primary uppercase hover:bg-primary/5 h-8 px-4 rounded-full tracking-widest ml-auto"
+              >
+                Clear All
+              </Button>
             </div>
           )}
         </div>
@@ -186,7 +199,7 @@ export default function ShootNetworkPage() {
           </div>
         ) : talent && filteredTalent.length > 0 ? (
           viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
               {filteredTalent.map((t: any) => <TalentCard key={t.id} talent={t} />)}
             </div>
           ) : (
