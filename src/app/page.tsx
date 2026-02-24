@@ -22,8 +22,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, where } from "firebase/firestore";
+import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy, limit, doc } from "firebase/firestore";
 import { 
   XAxis, 
   YAxis, 
@@ -31,8 +31,7 @@ import {
   Tooltip, 
   ResponsiveContainer,
   AreaChart,
-  Area,
-  Bar
+  Area
 } from "recharts";
 
 export default function Dashboard() {
@@ -47,12 +46,23 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
-  // Strategic Redirect: Ensure only authenticated executives access the core dashboard
+  // Fetch user record status for access guard
+  const memberRef = useMemoFirebase(() => {
+    if (!user || user.isAnonymous) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member, isLoading: memberLoading } = useDoc(memberRef);
+
+  // Strategic Access Guard
   useEffect(() => {
-    if (!isUserLoading && !user && mounted) {
-      router.push("/login");
+    if (!isUserLoading && mounted) {
+      if (!user) {
+        router.push("/login");
+      } else if (!user.isAnonymous && member && member.status !== "Active") {
+        router.push("/login");
+      }
     }
-  }, [user, isUserLoading, router, mounted]);
+  }, [user, isUserLoading, member, router, mounted]);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -92,7 +102,7 @@ export default function Dashboard() {
     }));
   }, [mounted]);
 
-  if (!mounted || isUserLoading) {
+  if (!mounted || isUserLoading || memberLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />

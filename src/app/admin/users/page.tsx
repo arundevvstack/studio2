@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -17,7 +16,9 @@ import {
   AlertCircle,
   Mail,
   ShieldAlert,
-  ChevronLeft
+  ChevronLeft,
+  UserPlus,
+  Clock
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ import { useRouter } from "next/navigation";
 /**
  * @fileOverview Strategic User Management Module.
  * Provides high-level administrative oversight of all system users and their roles.
+ * Includes explicit validation workflows for "Pending" accounts.
  */
 
 export default function UserManagementPage() {
@@ -67,7 +69,7 @@ export default function UserManagementPage() {
 
   const teamQuery = useMemoFirebase(() => {
     if (!currentUser) return null;
-    return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
+    return query(collection(db, "teamMembers"), orderBy("updatedAt", "desc"));
   }, [db, currentUser]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
 
@@ -86,6 +88,8 @@ export default function UserManagementPage() {
     );
   }, [team, searchQuery]);
 
+  const pendingCount = useMemo(() => team?.filter(m => m.status === 'Pending').length || 0, [team]);
+
   const handleUpdateRole = (userId: string, roleId: string) => {
     const userRef = doc(db, "teamMembers", userId);
     updateDocumentNonBlocking(userRef, { roleId, updatedAt: serverTimestamp() });
@@ -101,6 +105,12 @@ export default function UserManagementPage() {
       title: `Identity ${newStatus}`, 
       description: `Access policy updated for the selected account.` 
     });
+  };
+
+  const handleActivate = (userId: string) => {
+    const userRef = doc(db, "teamMembers", userId);
+    updateDocumentNonBlocking(userRef, { status: "Active", updatedAt: serverTimestamp() });
+    toast({ title: "Access Granted", description: "User has been activated in the workspace." });
   };
 
   if (isUserLoading) {
@@ -132,19 +142,28 @@ export default function UserManagementPage() {
                 Root Identity
               </Badge>
             </div>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage executive access, role hierarchies, and account policies.</p>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Validate new sign-ups, manage role hierarchies, and account policies.</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
+            <UserPlus className="h-5 w-5 text-orange-500" />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Validation</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{pendingCount}</h3>
+          </div>
+        </Card>
+        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
             <Users className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Provisioned Accounts</p>
-            <h3 className="text-3xl font-bold font-headline mt-1">{team?.length || 0}</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Executives</p>
+            <h3 className="text-3xl font-bold font-headline mt-1">{team?.filter(m => m.status === 'Active').length || 0}</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
@@ -154,15 +173,6 @@ export default function UserManagementPage() {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Roles</p>
             <h3 className="text-3xl font-bold font-headline mt-1">{roles?.length || 0}</h3>
-          </div>
-        </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-green-50 flex items-center justify-center">
-            <UserCheck className="h-5 w-5 text-green-600" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Operational Status</p>
-            <h3 className="text-3xl font-bold font-headline mt-1">100%</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
@@ -208,7 +218,7 @@ export default function UserManagementPage() {
                   <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Identity</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase tracking-widest">Strategic Role</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase tracking-widest">Status</TableHead>
-                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Organization ID</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Joined</TableHead>
                   <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -219,7 +229,7 @@ export default function UserManagementPage() {
                       <div className="flex items-center gap-4">
                         <Avatar className="h-12 w-12 rounded-xl border-2 border-white shadow-md">
                           <AvatarImage src={member.thumbnail} />
-                          <AvatarFallback className="bg-primary/5 text-primary font-bold">{member.firstName[0]}</AvatarFallback>
+                          <AvatarFallback className="bg-primary/5 text-primary font-bold">{member.firstName?.[0] || 'U'}</AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
@@ -231,11 +241,11 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell>
                       <Select 
-                        value={member.roleId} 
+                        value={member.roleId || "none"} 
                         onValueChange={(val) => handleUpdateRole(member.id, val)}
                       >
                         <SelectTrigger className="h-10 w-48 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
-                          <SelectValue />
+                          <SelectValue placeholder="Assign Role" />
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl shadow-2xl">
                           {roles?.map(role => (
@@ -245,38 +255,52 @@ export default function UserManagementPage() {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${member.status === 'Active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                      <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
+                        member.status === 'Active' ? 'bg-green-50 text-green-600' : 
+                        member.status === 'Pending' ? 'bg-orange-50 text-orange-600' :
+                        'bg-red-50 text-red-600'
+                      }`}>
                         {member.status || "Active"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-[10px] text-slate-400">
-                      {member.id.substring(0, 12).toUpperCase()}...
+                    <TableCell className="text-[10px] font-bold text-slate-400 uppercase">
+                      {member.createdAt ? new Date(member.createdAt.seconds * 1000).toLocaleDateString('en-GB') : '—'}
                     </TableCell>
                     <TableCell className="text-right px-10">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
-                          <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-3">Administrative Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild>
-                            <Link href={`/team/${member.id}`} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                              <UserCheck className="h-4 w-4 text-blue-500" />
-                              <span className="font-bold text-xs">View Full Intel</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleToggleStatus(member.id, member.status)}
-                            className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                      <div className="flex items-center justify-end gap-2">
+                        {member.status === 'Pending' && (
+                          <Button 
+                            onClick={() => handleActivate(member.id)}
+                            className="h-9 px-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase gap-2"
                           >
-                            {member.status === 'Active' ? <UserMinus className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                            <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                          </Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
+                            <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-3">Administrative Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                              <Link href={`/team/${member.id}`} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                                <UserCheck className="h-4 w-4 text-blue-500" />
+                                <span className="font-bold text-xs">View Full Intel</span>
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleToggleStatus(member.id, member.status)}
+                              className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                            >
+                              {member.status === 'Active' ? <UserMinus className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                              <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
