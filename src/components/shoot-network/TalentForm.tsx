@@ -33,7 +33,8 @@ import {
   Linkedin,
   Twitter,
   Facebook,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle2
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -60,16 +61,15 @@ const PROJECT_TAGS = [
   "Music Video", 
   "Fashion", 
   "Wedding Narrative", 
-  "Social Media", 
-  "Corporate Branding",
   "Instagram Reels",
   "TikTok / Shorts",
   "UGC Production",
   "Influencer Collab",
   "Product Story",
-  "Documentary",
   "VFX / Animation",
-  "AI Generated Content"
+  "AI Generated Content",
+  "Performance Marketing",
+  "Digital Ad Films"
 ];
 
 const SOCIAL_PLATFORMS = [

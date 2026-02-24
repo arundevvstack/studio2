@@ -52,7 +52,6 @@ export default function ShootNetworkPage() {
   });
 
   const talentQuery = useMemoFirebase(() => {
-    // We only query if the user is authenticated to match the new strict rules
     if (!user) return null;
     return query(
       collection(db, "shoot_network"), 
@@ -72,7 +71,7 @@ export default function ShootNetworkPage() {
       const matchesDistrict = filters.district === "All" || t.district === filters.district;
       const matchesGender = filters.gender === "All" || t.gender === filters.gender;
       const matchesPayment = filters.paymentStage === "All" || t.paymentStage === filters.paymentStage;
-      const matchesTags = filters.tags.length === 0 || 
+      const matchesTags = !filters.tags || filters.tags.length === 0 || 
                          (t.suitableProjectTypes && filters.tags.every((tag: string) => t.suitableProjectTypes.includes(tag)));
 
       return matchesSearch && matchesCategory && matchesDistrict && matchesGender && matchesPayment && matchesTags;
@@ -168,7 +167,14 @@ export default function ShootNetworkPage() {
                 </Badge>
               ))}
 
-              <Button variant="ghost" size="sm" onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All", tags: [] })} className="text-[10px] font-bold text-primary uppercase hover:bg-primary/5 h-8 px-4 rounded-full tracking-widest">Clear All</Button>
+              {filters.tags?.map((tag: string) => (
+                <Badge key={tag} className="bg-white text-accent border border-accent/10 font-bold text-[10px] rounded-full px-4 py-1.5 gap-2 shadow-sm">
+                  {tag}
+                  <Button variant="ghost" size="icon" onClick={() => removeFilter('tags', tag)} className="h-4 w-4 p-0 hover:bg-transparent"><X className="h-3 w-3 text-accent/30" /></Button>
+                </Badge>
+              ))}
+
+              <Button variant="ghost" size="sm" onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All", tags: [] })} className="text-[10px] font-bold text-primary uppercase hover:bg-primary/5 h-8 px-4 rounded-full tracking-widest ml-auto">Clear All</Button>
             </div>
           )}
         </div>
