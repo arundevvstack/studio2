@@ -1,9 +1,8 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/app-sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from "@/firebase";
+import { LayoutShell } from "@/components/layout/layout-shell";
 
 export const metadata: Metadata = {
   title: 'MediaFlow - Production Project Management',
@@ -24,14 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <FirebaseClientProvider>
-          <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-              <AppSidebar />
-              <main className="flex-1 overflow-auto bg-background p-6 md:p-8">
-                {children}
-              </main>
-            </div>
-          </SidebarProvider>
+          <LayoutShell>
+            {children}
+          </LayoutShell>
         </FirebaseClientProvider>
         <Toaster />
       </body>
