@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -10,14 +9,11 @@ import {
   Lock, 
   ArrowRight, 
   Loader2,
-  Sparkles,
-  CheckCircle2,
   ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { 
   initiateAnonymousSignIn, 
@@ -56,28 +52,54 @@ export default function LoginPage() {
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast({ variant: "destructive", title: "Incomplete Credentials", description: "Please provide both executive email and secure password." });
+      toast({ 
+        variant: "destructive", 
+        title: "Incomplete Credentials", 
+        description: "Please provide both executive email and secure password." 
+      });
       return;
     }
     
     setIsProcessing(true);
-    try {
-      if (mode === "login") {
-        initiateEmailSignIn(auth, email, password);
-      } else {
-        initiateEmailSignUp(auth, email, password);
+    
+    const authPromise = mode === "login" 
+      ? initiateEmailSignIn(auth, email, password)
+      : initiateEmailSignUp(auth, email, password);
+
+    authPromise.catch((err: any) => {
+      // Handle Firebase Auth errors gracefully
+      let errorMessage = "An unexpected authentication error occurred.";
+      if (err.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid email or password. Please verify your credentials.";
+      } else if (err.code === 'auth/user-not-found') {
+        errorMessage = "No account found with this email. Please sign up.";
+      } else if (err.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already registered. Please log in.";
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = "The password is too weak. Please use at least 6 characters.";
       }
-      // Redirect handled by useEffect on user state change
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Authentication Failure", description: err.message });
+
+      toast({ 
+        variant: "destructive", 
+        title: "Authentication Failure", 
+        description: errorMessage 
+      });
       setIsProcessing(false);
-    }
+    });
   };
 
   const handleRootAccess = () => {
     setIsProcessing(true);
     toast({ title: "Authorizing Root Identity", description: "Provisioning full-tier administrative access..." });
-    initiateAnonymousSignIn(auth);
+    
+    initiateAnonymousSignIn(auth).catch((err: any) => {
+      toast({ 
+        variant: "destructive", 
+        title: "Root Access Failed", 
+        description: "Anonymous authentication is not enabled or failed. " + err.message 
+      });
+      setIsProcessing(false);
+    });
   };
 
   if (isUserLoading) {
@@ -188,7 +210,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-4">
           <div className="flex items-center gap-2 text-slate-400">
             <ShieldAlert className="h-4 w-4 text-primary" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Secure Kerala Infrastructure</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Secure Infrastructure</span>
           </div>
           <p className="text-[10px] text-slate-300 font-medium tracking-normal text-center max-w-[300px]">
             This portal is restricted to authorized media production personnel. Unauthorized access attempts are monitored and logged.
