@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -211,7 +210,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-10 animate-in fade-in duration-700 pb-20">
-      {/* Header: Rounded Pill Identity */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <div className="flex items-center gap-8">
           <Button variant="outline" size="icon" className="h-14 w-14 rounded-full bg-white border-slate-100 shadow-xl shadow-slate-200/30" onClick={() => router.push("/projects")}>
@@ -235,7 +233,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
         </div>
       </div>
 
-      {/* Phase Ribbon: Ultra Rounded Multi-Stage */}
       <Card className="border-none shadow-2xl shadow-slate-200/50 rounded-[3.5rem] bg-white overflow-hidden p-3">
         <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
           {STAGES.map((stage, idx) => {
@@ -417,7 +414,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 </div>
               </div>
 
-              {/* Tiered Personnel Layout: Production Crew, Freelancers, Cast */}
               <div className="space-y-16">
                 {[
                   { title: "Production Crew", desc: "Internal experts managing central production logistics.", members: categorizedCrew.production },
