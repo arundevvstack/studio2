@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -39,11 +38,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
-/**
- * @fileOverview Talent Onboarding Form.
- * Features ultra-rounded design, social hub registry, and Base64 gallery uploader.
- */
 
 interface TalentFormProps {
   existingTalent?: any;
@@ -144,7 +138,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       });
       setGallery(existingTalent.gallery || []);
       setSelectedTags(existingTalent.suitableProjectTypes || []);
-      setSocialLinks(existingTalent.socialLinks || (existingTalent.socialMediaContact ? [{ platform: "Instagram", url: existingTalent.socialMediaContact }] : []));
+      setSocialLinks(existingTalent.socialLinks || []);
       setIsInitialized(true);
     }
   }, [existingTalent, isInitialized]);
@@ -219,7 +213,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       paymentStage: formData.paymentStage,
       referredBy: formData.referredBy,
       socialLinks: socialLinks,
-      socialMediaContact: socialLinks.find(l => l.platform === 'Instagram')?.url || "",
       portfolio: formData.portfolio,
       rank: Number(formData.rank),
       projectCount: Number(formData.projectCount),

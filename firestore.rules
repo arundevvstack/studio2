@@ -1,13 +1,13 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Strategic Production Collections
+    // Allow authenticated users full access to shoot_network
     match /shoot_network/{docId} {
       allow get, list, create, update, delete: if request.auth != null;
     }
-    
+
+    // Provision access for other essential production collections
     match /projects/{docId} {
       allow get, list, create, update, delete: if request.auth != null;
     }
@@ -28,7 +28,7 @@ service cloud.firestore {
       allow get, list, create, update, delete: if request.auth != null;
     }
 
-    // Deny all other access
+    // Block access to everything else
     match /{document=**} {
       allow read, write: if false;
     }

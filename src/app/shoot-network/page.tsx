@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -34,12 +33,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 
-/**
- * @fileOverview Shoot Network Repository.
- * High-density grid (4 items line) with ultra-rounded Sophie Bennett style cards.
- * Synchronized with user session to prevent permission errors.
- */
-
 export default function ShootNetworkPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -54,7 +47,6 @@ export default function ShootNetworkPage() {
   });
 
   const talentQuery = useMemoFirebase(() => {
-    // Only query when user is authenticated to prevent permission errors
     if (!user) return null;
     return query(
       collection(db, "shoot_network"), 
@@ -68,8 +60,8 @@ export default function ShootNetworkPage() {
   const filteredTalent = useMemo(() => {
     if (!talent) return [];
     return talent.filter((t: any) => {
-      const matchesSearch = t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           t.category?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = (t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           t.category?.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesCategory = filters.category.length === 0 || filters.category.includes(t.category);
       const matchesDistrict = filters.district === "All" || t.district === filters.district;
       const matchesGender = filters.gender === "All" || t.gender === filters.gender;
@@ -82,11 +74,13 @@ export default function ShootNetworkPage() {
   }, [talent, searchQuery, filters]);
 
   const removeFilter = (key: string, value?: string) => {
-    if (key === 'district') setFilters({ ...filters, district: 'All' });
-    if (key === 'gender') setFilters({ ...filters, gender: 'All' });
-    if (key === 'paymentStage') setFilters({ ...filters, paymentStage: 'All' });
-    if (key === 'category' && value) setFilters({ ...filters, category: filters.category.filter((c: string) => c !== value) });
-    if (key === 'tags' && value) setFilters({ ...filters, tags: filters.tags.filter((t: string) => t !== value) });
+    const updated = { ...filters };
+    if (key === 'district') updated.district = 'All';
+    if (key === 'gender') updated.gender = 'All';
+    if (key === 'paymentStage') updated.paymentStage = 'All';
+    if (key === 'category' && value) updated.category = filters.category.filter((c: string) => c !== value);
+    if (key === 'tags' && value) updated.tags = filters.tags.filter((t: string) => t !== value);
+    setFilters(updated);
   };
 
   const hasActiveFilters = filters.category.length > 0 || 
