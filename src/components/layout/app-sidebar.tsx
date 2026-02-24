@@ -111,7 +111,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-6 pb-2 space-y-6">
         <div className="flex flex-col items-center gap-1 group-data-[collapsible=icon]:hidden">
           {globalSettings?.logo ? (
-            <div className="h-12 w-auto mb-1 flex items-center justify-center">
+            <div className="h-14 w-auto mb-1 flex items-center justify-center">
               <img src={globalSettings.logo} alt="Organization Logo" className="h-full w-auto object-contain" />
             </div>
           ) : (
@@ -132,14 +132,6 @@ export function AppSidebar() {
               />
             </svg>
           )}
-          <div className="text-center">
-            <h1 className="text-sm font-bold text-slate-900 uppercase dark:text-white">
-              {globalSettings?.companyName ? globalSettings.companyName.split(' ')[0] : "Marzelz"}
-            </h1>
-            <p className="text-[10px] font-medium text-slate-400 uppercase -mt-1">
-              {globalSettings?.companyName ? "Organization" : "Lifestyle"}
-            </p>
-          </div>
         </div>
 
         <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-6 font-bold text-sm shadow-lg shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">

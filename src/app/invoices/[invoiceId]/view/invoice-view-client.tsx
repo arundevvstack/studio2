@@ -91,32 +91,26 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
           <div className="flex justify-between items-start">
             <div className="flex flex-col items-center">
               {globalSettings?.logo ? (
-                <div className="h-20 w-auto mb-2 flex items-center justify-center">
+                <div className="h-24 w-auto mb-2 flex items-center justify-center">
                   <img src={globalSettings.logo} alt="Brand Logo" className="h-full w-auto object-contain" />
                 </div>
               ) : (
-                <>
-                  <svg
-                    width="80"
-                    height="60"
-                    viewBox="0 0 40 30"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="text-slate-300"
-                  >
-                    <path
-                      d="M5 25L15 5L25 25M15 25L25 5L35 25"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <div className="text-center mt-2">
-                    <h1 className="text-xl font-bold text-slate-800 uppercase leading-none tracking-normal">MARZELZ</h1>
-                    <p className="text-[10px] font-medium text-slate-400 uppercase mt-1 tracking-normal">LIFESTYLE</p>
-                  </div>
-                </>
+                <svg
+                  width="80"
+                  height="60"
+                  viewBox="0 0 40 30"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-slate-300"
+                >
+                  <path
+                    d="M5 25L15 5L25 25M15 25L25 5L35 25"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               )}
             </div>
 
