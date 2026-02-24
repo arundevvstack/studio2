@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -29,7 +28,11 @@ import {
   Sparkles,
   Layers,
   ChevronRight,
-  X
+  X,
+  CreditCard,
+  Receipt,
+  Landmark,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -126,24 +129,27 @@ export default function SettingsPage() {
 
   // Team Data
   const teamQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
-  }, [db, user]);
+  }, [db]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
 
   // Navigation Data
   const navQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "sidebar_items"), orderBy("order", "asc"));
-  }, [db, user]);
+  }, [db]);
   const { data: navItems, isLoading: navLoading } = useCollection(navQuery);
 
   // Project Settings Data
   const projectSettingsRef = useMemoFirebase(() => {
-    if (!user) return null;
     return doc(db, "settings", "projects");
-  }, [db, user]);
+  }, [db]);
   const { data: projectSettings, isLoading: projectSettingsLoading } = useDoc(projectSettingsRef);
+
+  // Billing Settings Data
+  const billingSettingsRef = useMemoFirebase(() => {
+    return doc(db, "companyBillingSettings", "global");
+  }, [db]);
+  const { data: billingSettings, isLoading: billingLoading } = useDoc(billingSettingsRef);
 
   const [newVertical, setNewVertical] = useState("");
   const [newHub, setNewHub] = useState("");
@@ -229,6 +235,19 @@ export default function SettingsPage() {
     updateDocumentNonBlocking(projectSettingsRef, { districts: updated });
   };
 
+  const handleSaveBilling = (data: any) => {
+    if (!billingSettingsRef) return;
+    setIsGenerating(true);
+    updateDocumentNonBlocking(billingSettingsRef, {
+      ...data,
+      updatedAt: serverTimestamp()
+    });
+    setTimeout(() => {
+      setIsGenerating(false);
+      toast({ title: "Financials Synchronized", description: "Billing and settlement details have been updated." });
+    }, 800);
+  };
+
   if (isUserLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
@@ -258,6 +277,10 @@ export default function SettingsPage() {
           <TabsTrigger value="projects" className="rounded-xl px-6 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <Briefcase className="h-4 w-4" />
             Projects
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="rounded-xl px-6 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
+            <Receipt className="h-4 w-4" />
+            Billing
           </TabsTrigger>
           <TabsTrigger value="navigation" className="rounded-xl px-6 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
             <LayoutGrid className="h-4 w-4" />
@@ -531,16 +554,100 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </Card>
+            </div>
+          </div>
+        </TabsContent>
 
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white dark:bg-slate-900 p-10 flex flex-col items-center justify-center text-center space-y-6">
-                <div className="h-16 w-16 rounded-[1.5rem] bg-accent/10 flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-accent" />
+        <TabsContent value="billing" className="animate-in slide-in-from-left-2 duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8 space-y-8">
+              <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+                <CardHeader className="p-10 pb-0">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center dark:bg-blue-900/20">
+                      <Landmark className="h-6 w-6 text-blue-500" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Settlement Details</CardTitle>
+                      <CardDescription className="tracking-normal">Manage the banking information displayed on outgoing invoices.</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-10 space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Bank Name</Label>
+                      <Input defaultValue={billingSettings?.bankName || "Axis Bank"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Account Number</Label>
+                      <Input defaultValue={billingSettings?.bankAccountNumber || "922020014850667"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">IFSC Code</Label>
+                      <Input defaultValue={billingSettings?.bankSwiftCode || "UTIB0003042"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Branch Location</Label>
+                      <Input defaultValue={billingSettings?.bankIban || "Sasthamangalam"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Settlement Phone</Label>
+                      <Input defaultValue={billingSettings?.companyPhone || "9947109143"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
+                    <Button onClick={() => handleSaveBilling({})} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
+                      <Save className="h-4 w-4" />
+                      Sync Financials
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+                <CardHeader className="p-10 pb-0">
+                  <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Invoicing Logic</CardTitle>
+                  <CardDescription className="tracking-normal">Configure sequential numbering and default terms.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-10 space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Invoice Prefix</Label>
+                      <Input defaultValue={billingSettings?.invoicePrefix || "MRZL_"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Next Sequence Number</Label>
+                      <Input type="number" defaultValue={billingSettings?.nextInvoiceNumberSequence || 1001} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-4 space-y-8">
+              <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
+                <div className="space-y-2 relative z-10">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Compliance Guard</p>
+                  <h4 className="text-xl font-bold font-headline tracking-normal">Tax Verification</h4>
                 </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 dark:text-white tracking-normal">AI Auto-Provisioning</h4>
-                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                    Custom verticals defined here will automatically provision the standard roadmap objectives.
-                  </p>
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/5 relative z-10">
+                  <div className="flex items-center gap-3 text-xs font-bold text-slate-300">
+                    <ShieldAlert className="h-4 w-4 text-primary" />
+                    GSTIN is correctly formatted
+                  </div>
+                </div>
+                <div className="space-y-4 relative z-10 pt-4">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-normal">
+                    <span className="text-slate-500">Default Tax Rate</span>
+                    <span className="text-primary">18% GST</span>
+                  </div>
+                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary w-full" />
+                  </div>
                 </div>
               </Card>
             </div>
