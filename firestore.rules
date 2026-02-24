@@ -3,13 +3,194 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * STRATEGIC TEST MODE (v2026.02.24.0915)
-     * Authorizes all authenticated users (request.auth != null) to perform 
-     * any operation on any collection. This eliminates permission blockers
-     * during the prototyping and testing phase.
+     * MEDIAFLOW SECURITY RULES PHILOSOPHY
+     * 
+     * Core Philosophy: This ruleset implements a hybrid security model combining strict ownership,
+     * administrative overrides, and collaborative project-based access. It is designed for 
+     * high performance by relying on denormalized authorization data (like project member maps)
+     * directly on the documents being secured.
+     * 
+     * Data Structure: 
+     * - Top-level collections: /users, /roles_admin, /clients, /projects.
+     * - User-specific data: Nested under /users/{userId}.
+     * - Project-specific data: Nested under /projects/{projectId}.
+     * - Client-specific data: Nested under /clients/{clientId}.
+     * 
+     * Key Security Decisions:
+     * - Administrative Access: A "root" user capability is managed via the /roles_admin collection. 
+     *   Any UID present in this collection bypasses standard ownership checks.
+     * - Collaborative Access: Projects and their sub-resources (Tasks, Files, Logs) use a 
+     *   denormalized 'projectMembers' map for instant, non-recursive authorization checks.
+     * - Path-Based Integrity: Rules enforce that internal document IDs and parent IDs match the 
+     *   Firestore path to prevent data cross-linking.
+     * - Prototyping Flexibility: Logic enforces "who" can access data and "relational" links, 
+     *   but allows for rapid schema evolution by not enforcing specific data types for content.
      */
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Checks if the user is an administrator via the existence of a document in /roles_admin
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Used for updates and deletes to ensure the document exists and the user owns it
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // Checks for ownership based on a field within the document data
+    function isResourceOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    // Checks if the user is part of a collaborative project member map (UID -> Role)
+    function isProjectMember(projectMembers) {
+      return isSignedIn() && projectMembers != null && request.auth.uid in projectMembers;
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for the User collection. Supports self-management and administrative access.
+     * @path /users/{userId}
+     * @allow (get, list) if the user is the owner or an admin.
+     * @deny (create) if the UID in the path does not match the authenticated user's UID.
+     * @principle Path-based ownership and administrative override.
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if (isOwner(userId) || isAdmin()) && resource != null && request.resource.data.id == userId;
+      allow delete: if (isOwner(userId) || isAdmin()) && resource != null;
+
+      /**
+       * @description Time entries logged by users. Enforces path-based ownership.
+       * @path /users/{userId}/timeEntries/{timeEntryId}
+       * @allow (create) if the authenticated user matches the path's userId.
+       * @deny (update) if the user attempts to change the userId field.
+       * @principle Path-based ownership with relational integrity checks.
+       */
+      match /timeEntries/{timeEntryId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == userId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Administrative roles collection. Existence of a UID here grants root access.
+     * @path /roles_admin/{adminId}
+     * @allow (get, list, write) only for users who are already admins.
+     * @deny (all) for non-authenticated or non-admin users.
+     * @principle Existence-over-content for authorization independence.
+     */
+    match /roles_admin/{adminId} {
+      allow read, write: if isAdmin();
+    }
+
+    /**
+     * @description Client records. Managed by team members/admins.
+     * @path /clients/{clientId}
+     * @allow (get, list) if the user is signed in.
+     * @deny (update) if the user is not the record owner or an admin.
+     * @principle Ownership-based writes for company data.
+     */
+    match /clients/{clientId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if resource != null && (isResourceOwner(resource.data.ownerId) || isAdmin());
+
+      /**
+       * @description Invoices associated with clients.
+       * @path /clients/{clientId}/invoices/{invoiceId}
+       * @allow (create) if the clientId field matches the path parameter.
+       * @principle Relational integrity and ownership validation.
+       */
+      match /invoices/{invoiceId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.clientId == clientId && request.resource.data.ownerId == request.auth.uid;
+        allow update, delete: if resource != null && (isResourceOwner(resource.data.ownerId) || isAdmin());
+
+        match /invoiceItems/{invoiceItemId} {
+          allow get, list: if isSignedIn();
+          allow create: if isSignedIn() && request.resource.data.invoiceId == invoiceId;
+          allow update, delete: if resource != null && (isResourceOwner(resource.data.ownerId) || isAdmin());
+        }
+
+        match /payments/{paymentId} {
+          allow get, list: if isSignedIn();
+          allow create: if isSignedIn() && request.resource.data.invoiceId == invoiceId;
+          allow update, delete: if resource != null && (isResourceOwner(resource.data.ownerId) || isAdmin());
+        }
+      }
+
+      /**
+       * @description Communication logs associated with clients.
+       */
+      match /communicationLogs/{logId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.clientId == clientId;
+        allow update, delete: if resource != null && (isResourceOwner(resource.data.ownerId) || isAdmin());
+      }
+    }
+
+    /**
+     * @description Project entities. Uses denormalized projectMembers map for shared access.
+     * @path /projects/{projectId}
+     * @allow (read) if user is in projectMembers or is admin.
+     * @deny (update) if user is not a member or admin.
+     * @principle Shared collaborative access via maps.
+     */
+    match /projects/{projectId} {
+      allow get, list: if isAdmin() || isProjectMember(resource.data.projectMembers);
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if resource != null && (isAdmin() || isProjectMember(resource.data.projectMembers));
+
+      /**
+       * @description Tasks within a project. Uses denormalized members from parent for access.
+       * @path /projects/{projectId}/tasks/{taskId}
+       * @allow (create) if user is a member of the project.
+       * @principle Resource-specific role inheritance through denormalization.
+       */
+      match /tasks/{taskId} {
+        allow get, list: if isAdmin() || isProjectMember(resource.data.projectMembers);
+        allow create: if isSignedIn() && request.resource.data.projectId == projectId;
+        allow update, delete: if resource != null && (isAdmin() || isProjectMember(resource.data.projectMembers));
+
+        match /communicationLogs/{logId} {
+          allow get, list: if isAdmin() || isProjectMember(resource.data.projectMembers);
+          allow create: if isSignedIn() && request.resource.data.taskId == taskId;
+          allow update, delete: if resource != null && (isAdmin() || isProjectMember(resource.data.projectMembers));
+        }
+      }
+
+      /**
+       * @description Metadata for files uploaded to projects.
+       */
+      match /files/{fileId} {
+        allow get, list: if isAdmin() || isProjectMember(resource.data.projectMembers);
+        allow create: if isSignedIn() && request.resource.data.projectId == projectId && request.resource.data.uploadedByUserId == request.auth.uid;
+        allow update, delete: if resource != null && (isAdmin() || isProjectMember(resource.data.projectMembers) || isResourceOwner(resource.data.uploadedByUserId));
+      }
+
+      /**
+       * @description Communication logs associated with projects.
+       */
+      match /communicationLogs/{logId} {
+        allow get, list: if isAdmin() || isProjectMember(resource.data.projectMembers);
+        allow create: if isSignedIn() && request.resource.data.projectId == projectId;
+        allow update, delete: if resource != null && (isAdmin() || isProjectMember(resource.data.projectMembers));
+      }
     }
 
   }
