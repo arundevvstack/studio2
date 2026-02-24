@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -533,7 +534,12 @@ export default function SettingsPage() {
                           <div className="flex items-center justify-end gap-2">
                             <Dialog>
                               <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-300 hover:text-primary transition-all"><Edit2 className="h-4 w-4" /></Button></DialogTrigger>
-                              <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden"><TeamMemberForm existingMember={member} /></DialogContent>
+                              <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+                                <DialogHeader className="p-8 pb-0">
+                                  <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
+                                </DialogHeader>
+                                <TeamMemberForm existingMember={member} />
+                              </DialogContent>
                             </Dialog>
                             <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "teamMembers", member.id))} className="h-10 w-10 rounded-xl text-slate-300 hover:text-destructive transition-all"><Trash2 className="h-4 w-4" /></Button>
                           </div>
