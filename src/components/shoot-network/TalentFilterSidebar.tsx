@@ -61,7 +61,7 @@ export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
       <CardContent className="px-8 pb-8 space-y-10">
         <div className="space-y-4">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-            <MapPin className="h-3 w-3" /> District Hub
+            <MapPin className="h-3 w-3" /> District
           </Label>
           <Select 
             value={filters.district} 
@@ -137,7 +137,7 @@ export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
 
         <div className="space-y-4">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-            <CreditCard className="h-3 w-3" /> Payment Status
+            <CreditCard className="h-3 w-3" /> Verification Status
           </Label>
           <Select 
             value={filters.paymentStage} 

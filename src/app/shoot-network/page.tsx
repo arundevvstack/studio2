@@ -52,7 +52,6 @@ export default function ShootNetworkPage() {
     tags: []
   });
 
-  // Decoupled query: Data flows regardless of auth session in testing mode
   const talentQuery = useMemoFirebase(() => {
     return query(
       collection(db, "shoot_network"), 
@@ -121,7 +120,7 @@ export default function ShootNetworkPage() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[750px] rounded-[3.5rem] border-none shadow-2xl p-0 overflow-hidden">
                 <DialogHeader className="p-10 pb-0">
-                  <DialogTitle className="text-3xl font-bold font-headline tracking-tight">Onboard Creative</DialogTitle>
+                  <DialogTitle className="text-3xl font-bold font-headline tracking-tight">Onboard Creative Professional</DialogTitle>
                 </DialogHeader>
                 <TalentForm />
               </DialogContent>

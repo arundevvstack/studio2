@@ -5,7 +5,7 @@ service cloud.firestore {
     // CRITICAL: TESTING MODE ONLY
     // Allows all reads and writes across the entire database to eliminate "Missing or insufficient permissions" errors.
     // This rule provides a permanent fix for testing and should be tightened before production.
-    // Deployment Force Sync Trigger: 2026-02-24T07:25:00Z
+    // Deployment Force Sync Trigger: 2026-02-24T08:30:00Z
     match /{document=**} {
       allow read, write: if true;
     }

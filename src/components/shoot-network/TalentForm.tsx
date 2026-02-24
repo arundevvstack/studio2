@@ -317,7 +317,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
       <div className="space-y-6 pt-6 border-t border-slate-50">
         <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-          <Tag className="h-3.5 w-3.5" /> Production Portfolios (Verticals)
+          <Tag className="h-3.5 w-3.5" /> Project Verticals (Tags)
         </Label>
         <div className="flex flex-wrap gap-2.5">
           {PROJECT_TAGS.map(tag => (
@@ -339,7 +339,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-6 border-t border-slate-50">
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Verification Status</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Verification</Label>
           <Select value={formData.paymentStage} onValueChange={(val) => setFormData({...formData, paymentStage: val})}>
             <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold tracking-tight shadow-inner px-6">
               <SelectValue />
@@ -351,7 +351,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           </Select>
         </div>
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Open to Free Collaboration?</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Willing to free collab?</Label>
           <RadioGroup value={formData.freeCollab} onValueChange={(val) => setFormData({...formData, freeCollab: val})} className="flex items-center gap-10 h-14">
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="Yes" id="collab-yes" className="h-5 w-5 border-primary text-primary" />
@@ -366,7 +366,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       </div>
 
       <div className="space-y-6 pt-6 border-t border-slate-50">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Global Social Registry</Label>
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Social Media</Label>
         <div className="flex gap-3">
           <Select value={newSocialPlatform} onValueChange={setNewSocialPlatform}>
             <SelectTrigger className="h-14 w-48 rounded-2xl bg-slate-50 border-none font-bold tracking-widest text-[10px] uppercase shadow-inner"><SelectValue /></SelectTrigger>
@@ -395,7 +395,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       </div>
 
       <div className="space-y-6 pt-6 border-t border-slate-50">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><ImageIcon className="h-3.5 w-3.5" /> Professional Gallery Hub</Label>
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><ImageIcon className="h-3.5 w-3.5" /> Professional Gallery Manager</Label>
         <div className="grid grid-cols-1 gap-6">
           <div className="flex gap-3">
             <Input value={newItemUrl} onChange={(e) => setNewItemUrl(e.target.value)} placeholder="External asset URL (Vimeo, Drive, Unsplash)..." className="rounded-2xl bg-slate-50 border-none h-14 flex-1 font-bold tracking-tight shadow-inner px-6" />
@@ -406,7 +406,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
             <Button onClick={handleAddGalleryUrl} type="button" className="h-14 w-14 rounded-2xl bg-slate-900 text-white shadow-xl hover:bg-slate-800 transition-all"><Plus className="h-6 w-6" /></Button>
           </div>
           <input type="file" ref={galleryInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'gallery')} />
-          <Button type="button" variant="outline" className="w-full h-16 rounded-3xl border-dashed border-2 border-slate-200 bg-white hover:bg-slate-50 hover:border-primary/20 text-slate-400 hover:text-primary font-bold text-xs uppercase tracking-widest gap-3 transition-all" onClick={() => galleryInputRef.current?.click()}><Upload className="h-5 w-5" /> Upload Local Production Stills</Button>
+          <Button type="button" variant="outline" className="w-full h-16 rounded-3xl border-dashed border-2 border-slate-200 bg-white hover:bg-slate-50 hover:border-primary/20 text-slate-400 hover:text-primary font-bold text-xs uppercase tracking-widest gap-3 transition-all" onClick={() => galleryInputRef.current?.click()}><Upload className="h-5 w-5" /> Upload Local Image Asset</Button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {gallery.map((item, idx) => (
