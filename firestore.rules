@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * STRATEGIC TEST MODE
+     * STRATEGIC TEST MODE (v2026.02.24.0915)
      * Authorizes all authenticated users (request.auth != null) to perform 
      * any operation on any collection. This eliminates permission blockers
      * during the prototyping and testing phase.

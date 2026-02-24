@@ -51,7 +51,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -151,11 +151,58 @@ export default function SettingsPage() {
   }, [db]);
   const { data: billingSettings, isLoading: billingLoading } = useDoc(billingSettingsRef);
 
+  // Billing Form State
+  const [billingForm, setBillingForm] = useState({
+    companyName: "",
+    companyAddress: "",
+    bankName: "",
+    bankAccountNumber: "",
+    bankSwiftCode: "",
+    bankIban: "",
+    companyPhone: "",
+    taxId: "",
+    invoicePrefix: "",
+    nextInvoiceNumberSequence: 1001,
+    panNumber: "",
+    cinNumber: ""
+  });
+
+  useEffect(() => {
+    if (billingSettings) {
+      setBillingForm({
+        companyName: billingSettings.companyName || "Marzelz Lifestyle Private Limited",
+        companyAddress: billingSettings.companyAddress || "Dotspace Business Center TC 24/3088 Ushasandya Building, Kowdiar, Trivandrum, 695003",
+        bankName: billingSettings.bankName || "Axis Bank",
+        bankAccountNumber: billingSettings.bankAccountNumber || "922020014850667",
+        bankSwiftCode: billingSettings.bankSwiftCode || "UTIB0003042",
+        bankIban: billingSettings.bankIban || "Sasthamangalam",
+        companyPhone: billingSettings.companyPhone || "9947109143",
+        taxId: billingSettings.taxId || "32AAQCM8450P1ZQ",
+        invoicePrefix: billingSettings.invoicePrefix || "MRZL_",
+        nextInvoiceNumberSequence: billingSettings.nextInvoiceNumberSequence || 1001,
+        panNumber: billingSettings.panNumber || "AAQCM8450P",
+        cinNumber: billingSettings.cinNumber || "U60200KL2023PTC081308"
+      });
+    }
+  }, [billingSettings]);
+
   const [newVertical, setNewVertical] = useState("");
   const [newHub, setNewHub] = useState("");
 
   const handleSaveProfile = () => {
+    if (!billingSettingsRef) return;
     setIsGenerating(true);
+    
+    // We synchronize the essential brand info from the profile tab into the billing singleton
+    setDocumentNonBlocking(billingSettingsRef, {
+      companyName: billingForm.companyName,
+      cinNumber: billingForm.cinNumber,
+      taxId: billingForm.taxId,
+      panNumber: billingForm.panNumber,
+      companyAddress: billingForm.companyAddress,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
     setTimeout(() => {
       setIsGenerating(false);
       toast({
@@ -235,13 +282,17 @@ export default function SettingsPage() {
     updateDocumentNonBlocking(projectSettingsRef, { districts: updated });
   };
 
-  const handleSaveBilling = (data: any) => {
+  const handleSaveBilling = () => {
     if (!billingSettingsRef) return;
     setIsGenerating(true);
-    updateDocumentNonBlocking(billingSettingsRef, {
-      ...data,
+    
+    // We use setDocumentNonBlocking with merge: true to avoid "permission denied" 
+    // on initial document creation if using updateDoc.
+    setDocumentNonBlocking(billingSettingsRef, {
+      ...billingForm,
       updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
+
     setTimeout(() => {
       setIsGenerating(false);
       toast({ title: "Financials Synchronized", description: "Billing and settlement details have been updated." });
@@ -304,7 +355,11 @@ export default function SettingsPage() {
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Legal Entity Name</Label>
                   <div className="relative">
                     <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-                    <Input defaultValue="Marzelz Lifestyle Private Limited" className="pl-12 h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    <Input 
+                      value={billingForm.companyName} 
+                      onChange={(e) => setBillingForm({...billingForm, companyName: e.target.value})}
+                      className="pl-12 h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                    />
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -318,16 +373,28 @@ export default function SettingsPage() {
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">CIN Number</Label>
                   <div className="relative">
                     <FileText className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-                    <Input defaultValue="U60200KL2023PTC081308" className="pl-12 h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                    <Input 
+                      value={billingForm.cinNumber} 
+                      onChange={(e) => setBillingForm({...billingForm, cinNumber: e.target.value})}
+                      className="pl-12 h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                    />
                   </div>
                 </div>
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">GSTIN Identifier</Label>
-                  <Input defaultValue="32AAQCM8450P1ZQ" className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                  <Input 
+                    value={billingForm.taxId} 
+                    onChange={(e) => setBillingForm({...billingForm, taxId: e.target.value})}
+                    className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                  />
                 </div>
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">PAN Registration</Label>
-                  <Input defaultValue="AAQCM8450P" className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                  <Input 
+                    value={billingForm.panNumber} 
+                    onChange={(e) => setBillingForm({...billingForm, panNumber: e.target.value})}
+                    className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                  />
                 </div>
               </div>
 
@@ -336,7 +403,8 @@ export default function SettingsPage() {
                 <div className="relative">
                   <MapPin className="absolute left-4 top-5 h-4 w-4 text-slate-300" />
                   <textarea 
-                    defaultValue="Dotspace Business Center TC 24/3088 Ushasandya Building, Kowdiar - Devasom Board Road, Kowdiar, Trivandrum, Pin : 695003"
+                    value={billingForm.companyAddress}
+                    onChange={(e) => setBillingForm({...billingForm, companyAddress: e.target.value})}
                     className="w-full min-h-[100px] pl-12 p-4 rounded-xl bg-slate-50 border-none shadow-inner font-bold text-sm tracking-normal resize-none dark:bg-slate-800 dark:text-white"
                   />
                 </div>
@@ -577,30 +645,54 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
                       <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Bank Name</Label>
-                      <Input defaultValue={billingSettings?.bankName || "Axis Bank"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                      <Input 
+                        value={billingForm.bankName} 
+                        onChange={(e) => setBillingForm({...billingForm, bankName: e.target.value})}
+                        className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                      />
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Account Number</Label>
-                      <Input defaultValue={billingSettings?.bankAccountNumber || "922020014850667"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                      <Input 
+                        value={billingForm.bankAccountNumber} 
+                        onChange={(e) => setBillingForm({...billingForm, bankAccountNumber: e.target.value})}
+                        className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="space-y-3">
                       <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">IFSC Code</Label>
-                      <Input defaultValue={billingSettings?.bankSwiftCode || "UTIB0003042"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                      <Input 
+                        value={billingForm.bankSwiftCode} 
+                        onChange={(e) => setBillingForm({...billingForm, bankSwiftCode: e.target.value})}
+                        className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                      />
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Branch Location</Label>
-                      <Input defaultValue={billingSettings?.bankIban || "Sasthamangalam"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                      <Input 
+                        value={billingForm.bankIban} 
+                        onChange={(e) => setBillingForm({...billingForm, bankIban: e.target.value})}
+                        className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                      />
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Settlement Phone</Label>
-                      <Input defaultValue={billingSettings?.companyPhone || "9947109143"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                      <Input 
+                        value={billingForm.companyPhone} 
+                        onChange={(e) => setBillingForm({...billingForm, companyPhone: e.target.value})}
+                        className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                      />
                     </div>
                   </div>
                   <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
-                    <Button onClick={() => handleSaveBilling({})} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
-                      <Save className="h-4 w-4" />
+                    <Button 
+                      onClick={handleSaveBilling} 
+                      disabled={isSaving}
+                      className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal"
+                    >
+                      {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       Sync Financials
                     </Button>
                   </div>
@@ -616,11 +708,20 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
                       <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Invoice Prefix</Label>
-                      <Input defaultValue={billingSettings?.invoicePrefix || "MRZL_"} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                      <Input 
+                        value={billingForm.invoicePrefix} 
+                        onChange={(e) => setBillingForm({...billingForm, invoicePrefix: e.target.value})}
+                        className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                      />
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Next Sequence Number</Label>
-                      <Input type="number" defaultValue={billingSettings?.nextInvoiceNumberSequence || 1001} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                      <Input 
+                        type="number" 
+                        value={billingForm.nextInvoiceNumberSequence} 
+                        onChange={(e) => setBillingForm({...billingForm, nextInvoiceNumberSequence: parseInt(e.target.value) || 1001})}
+                        className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" 
+                      />
                     </div>
                   </div>
                 </CardContent>
