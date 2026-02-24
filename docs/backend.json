@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Client": {
@@ -606,25 +607,21 @@
           "type": "string",
           "description": "The company's tax identification number (e.g., VAT ID, EIN) for legal and tax purposes."
         },
-        "defaultPaymentTerms": {
+        "cinNumber": {
           "type": "string",
-          "description": "The default payment terms for new invoices (e.g., 'Net 30', 'Due on receipt')."
+          "description": "Corporate Identity Number for legal registration."
         },
-        "defaultCurrency": {
+        "panNumber": {
           "type": "string",
-          "description": "The default currency code (e.g., 'USD', 'EUR') for all invoices."
+          "description": "Permanent Account Number for tax compliance."
         },
-        "defaultTaxRatePercentage": {
-          "type": "number",
-          "description": "The default percentage tax rate to be applied to invoices."
+        "logo": {
+          "type": "string",
+          "description": "Base64 encoded string or URL of the organization brand logo."
         },
         "bankName": {
           "type": "string",
           "description": "The name of the bank where payments should be transferred."
-        },
-        "bankAccountName": {
-          "type": "string",
-          "description": "The name of the account holder for bank transfers."
         },
         "bankAccountNumber": {
           "type": "string",
@@ -632,19 +629,11 @@
         },
         "bankSwiftCode": {
           "type": "string",
-          "description": "The SWIFT/BIC code for international bank transfers."
+          "description": "The SWIFT/IFSC code for bank transfers."
         },
         "bankIban": {
           "type": "string",
-          "description": "The International Bank Account Number (IBAN) for international transfers, if applicable."
-        },
-        "invoicePrefix": {
-          "type": "string",
-          "description": "A customizable prefix used for generating new invoice numbers (e.g., 'INV-')."
-        },
-        "nextInvoiceNumberSequence": {
-          "type": "number",
-          "description": "The next sequential number to be used when generating a new invoice number, to ensure uniqueness."
+          "description": "Branch name or IBAN identifier."
         },
         "createdAt": {
           "type": "string",
@@ -660,16 +649,32 @@
       "required": [
         "id",
         "companyName",
-        "companyAddress",
-        "companyEmail",
-        "defaultPaymentTerms",
-        "defaultCurrency",
-        "defaultTaxRatePercentage",
-        "invoicePrefix",
-        "nextInvoiceNumberSequence",
-        "createdAt",
         "updatedAt"
       ]
+    },
+    "SidebarItem": {
+      "title": "SidebarItem",
+      "description": "Represents an item in the workspace sidebar, including its visibility and display order.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "iconName": { "type": "string" },
+        "url": { "type": "string" },
+        "order": { "type": "number" },
+        "isVisible": { "type": "boolean" }
+      },
+      "required": ["id", "title", "iconName", "url", "order"]
+    },
+    "ProjectSettings": {
+      "title": "ProjectSettings",
+      "description": "Global settings for projects, such as available execution verticals.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectTypes": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id"]
     }
   },
   "auth": {
@@ -687,7 +692,7 @@
           "schema": {
             "$ref": "#/backend/entities/Client"
           },
-          "description": "Top-level collection for all client records. Access is managed by global roles (e.g., Admin, Project Manager, Sales)."
+          "description": "Top-level collection for all client records."
         }
       },
       {
@@ -697,7 +702,7 @@
           "schema": {
             "$ref": "#/backend/entities/Role"
           },
-          "description": "Top-level collection for defining available roles and their permissions within the system. Access is restricted to administrators."
+          "description": "Collection for defining available roles and their permissions."
         }
       },
       {
@@ -707,13 +712,7 @@
           "schema": {
             "$ref": "#/backend/entities/TeamMember"
           },
-          "description": "Top-level collection for all team members (users) of the company. `teamMemberId` corresponds to `request.auth.uid`. A team member can read/update their own record; administrators can manage all team members.",
-          "params": [
-            {
-              "name": "teamMemberId",
-              "description": "The unique ID of the team member, matching their Firebase Authentication UID."
-            }
-          ]
+          "description": "Collection for all team members matching their Firebase Authentication UID."
         }
       },
       {
@@ -723,13 +722,7 @@
           "schema": {
             "$ref": "#/backend/entities/Project"
           },
-          "description": "Top-level collection for all projects. Project access is controlled by the `teamMemberIds` array (membership map) and global roles (e.g., Admin, Project Manager).",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "The unique ID of the project."
-            }
-          ]
+          "description": "Top-level collection for all production projects."
         }
       },
       {
@@ -739,41 +732,7 @@
           "schema": {
             "$ref": "#/backend/entities/Task"
           },
-          "description": "Subcollection of Project for individual tasks. Includes denormalized 'projectTeamMemberIds' (copied from parent Project) for authorization independence, alongside its own 'assignedTeamMemberId'.",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "The unique ID of the parent project."
-            },
-            {
-              "name": "taskId",
-              "description": "The unique ID of the task."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/projects/{projectId}/tasks/{taskId}/timeEntries/{timeEntryId}",
-        "definition": {
-          "entityName": "TimeEntry",
-          "schema": {
-            "$ref": "#/backend/entities/TimeEntry"
-          },
-          "description": "Subcollection of Task for time records. Includes denormalized 'projectTeamMemberIds' (from Project) and 'taskAssignedTeamMemberId' (from Task) for authorization independence, alongside its own 'teamMemberId' (creator).",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "The unique ID of the parent project."
-            },
-            {
-              "name": "taskId",
-              "description": "The unique ID of the parent task."
-            },
-            {
-              "name": "timeEntryId",
-              "description": "The unique ID of the time entry."
-            }
-          ]
+          "description": "Subcollection of Project for individual tasks."
         }
       },
       {
@@ -783,49 +742,7 @@
           "schema": {
             "$ref": "#/backend/entities/Invoice"
           },
-          "description": "Top-level collection for all invoices. Access is managed by global roles (e.g., Admin, Billing).",
-          "params": [
-            {
-              "name": "invoiceId",
-              "description": "The unique ID of the invoice."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/invoices/{invoiceId}/lineItems/{lineItemId}",
-        "definition": {
-          "entityName": "InvoiceLineItem",
-          "schema": {
-            "$ref": "#/backend/entities/InvoiceLineItem"
-          },
-          "description": "Subcollection of Invoice for individual line items. Includes denormalized 'clientId' (copied from parent Invoice) for authorization independence.",
-          "params": [
-            {
-              "name": "invoiceId",
-              "description": "The unique ID of the parent invoice."
-            },
-            {
-              "name": "lineItemId",
-              "description": "The unique ID of the invoice line item."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/opportunities/{opportunityId}",
-        "definition": {
-          "entityName": "Opportunity",
-          "schema": {
-            "$ref": "#/backend/entities/Opportunity"
-          },
-          "description": "Top-level collection for all sales opportunities. Access is controlled by 'assignedTeamMemberId' and global roles (e.g., Admin, Sales).",
-          "params": [
-            {
-              "name": "opportunityId",
-              "description": "The unique ID of the opportunity."
-            }
-          ]
+          "description": "Top-level collection for all invoices."
         }
       },
       {
@@ -835,16 +752,25 @@
           "schema": {
             "$ref": "#/backend/entities/CompanyBillingSettings"
           },
-          "description": "Top-level singleton collection storing global billing and invoicing settings for the company. Expected to have a single document (e.g., with ID 'global'). Access is restricted to administrators.",
-          "params": [
-            {
-              "name": "settingsId",
-              "description": "The unique ID for the company billing settings document. Typically a fixed ID like 'global'."
-            }
-          ]
+          "description": "Global singleton document for organization settings."
+        }
+      },
+      {
+        "path": "/sidebar_items/{itemId}",
+        "definition": {
+          "entityName": "SidebarItem",
+          "schema": { "$ref": "#/backend/entities/SidebarItem" },
+          "description": "Collection of sidebar items for dynamic navigation management."
+        }
+      },
+      {
+        "path": "/settings/projects",
+        "definition": {
+          "entityName": "ProjectSettings",
+          "schema": { "$ref": "#/backend/entities/ProjectSettings" },
+          "description": "Singleton document for global project configuration."
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed following the core principles of Authorization Independence, Structural Segregation, Access Modeling, and Data Clarity to ensure security, scalability, and debuggability. \n\n**Authorization Independence (CRITICAL) and Denormalization Strategy:**\nTo eliminate `get()` calls in security rules and support atomic operations, authorization-relevant data is denormalized where necessary:\n*   **`Task`** documents (`/projects/{projectId}/tasks/{taskId}`): To allow team members to access tasks associated with their projects, the `projectTeamMemberIds` array from the parent `Project` document is denormalized into each `Task` document. This enables rules to check `request.auth.uid in resource.data.projectTeamMemberIds` without a `get()` call to the parent `Project`. The `assignedTeamMemberId` is also directly present for individual task assignments.\n*   **`TimeEntry`** documents (`/projects/{projectId}/tasks/{taskId}/timeEntries/{timeEntryId}`): Access to time entries depends on the creator (`teamMemberId`), the task assignee, and project team members. Therefore, `projectTeamMemberIds` from the `Project` and `taskAssignedTeamMemberId` from the `Task` are denormalized into the `TimeEntry` document. This allows `request.auth.uid` to be checked against `resource.data.teamMemberId`, `resource.data.taskAssignedTeamMemberId`, or `resource.data.projectTeamMemberIds` directly.\n*   **`InvoiceLineItem`** documents (`/invoices/{invoiceId}/lineItems/{lineItemId}`): If access to line items depends on the client associated with the invoice (e.g., for client-facing views or internal billing role checks), the `clientId` from the parent `Invoice` document is denormalized into each `InvoiceLineItem` document.\n\n**Structural Segregation and Access Modeling:**\n*   **Private Data & Hierarchical Paths for User-Owned/Contextual Data:** \n    *   `TeamMember` profiles (`/teamMembers/{teamMemberId}`) follow a path-based ownership, where `teamMemberId` matches `request.auth.uid` for self-management, while administrative roles have broader access. \n    *   `Task` and `TimeEntry` are nested under `Project` (e.g., `/projects/{projectId}/tasks/{taskId}` and `/projects/{projectId}/tasks/{taskId}/timeEntries/{timeEntryId}`), reflecting their strong contextual relationship and allowing for focused, hierarchical authorization.\n*   **Collaborative Data:** `Project` documents (`/projects/{projectId}`) use a `teamMemberIds` array to manage access for assigned team members, which is then denormalized into subcollections as described above.\n*   **Global Roles (DBAC - Existence over Content):** User roles are managed using dedicated top-level collections, such as `/roles_admin/{teamMemberId}`, `/roles_projectManager/{teamMemberId}`, `/roles_sales/{teamMemberId}`, and `/roles_billing/{teamMemberId}`. The existence of a document at these paths (e.g., `get(/roles_admin/request.auth.uid).exists()`) grants the corresponding role, ensuring simple and explicit role-based access control without custom claims.\n*   **Singleton for Global Settings:** The `CompanyBillingSettings` entity is stored as a singleton document at `/companyBillingSettings/global`. Access to this critical global configuration is strictly limited to users with the 'admin' role, checked via `get(/roles_admin/request.auth.uid).exists()`.\n\n**Querying for Authorization & QAPs (Rules are not Filters):**\nThe structure supports efficient and secure `list` operations (QAPs) because security rules do not act as filters; they either grant or deny access based on data explicitly available in the queried document or the `request` context, or through direct role checks.\n*   For `Project` documents, users can query for projects where they are a member: `db.collection('projects').where('teamMemberIds', 'array-contains', request.auth.uid)`. The security rule then verifies this condition on the retrieved documents.\n*   For `Task` and `TimeEntry` documents within a specific project, queries are scoped to the parent path (e.g., `db.collection('projects/{projectId}/tasks')`). The rules on these subcollections leverage the denormalized `projectTeamMemberIds` and `assignedTeamMemberId`/`teamMemberId` fields for authorization, ensuring that only relevant data is accessed based on the user's roles or direct assignments.\n*   For global resources like `Client`, `Invoice`, `Opportunity`, and `CompanyBillingSettings`, access is controlled by membership in the respective global role collections (e.g., `roles_admin`, `roles_billing`, `roles_sales`). Querying these collections for `list` operations is implicitly secure as the rules will only allow users with the necessary role to perform the query."
+    ]
   }
 }

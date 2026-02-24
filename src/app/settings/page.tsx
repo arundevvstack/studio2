@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -103,6 +104,9 @@ export default function SettingsPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Project Settings State
+  const [newVertical, setNewVertical] = useState("");
+
   // Auth & Permissions Logic
   const memberRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -129,11 +133,13 @@ export default function SettingsPage() {
 
   // Initialize theme
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (savedTheme === "dark" || (!savedTheme && systemDark)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme");
+      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (savedTheme === "dark" || (!savedTheme && systemDark)) {
+        setIsDarkMode(true);
+        document.documentElement.classList.add("dark");
+      }
     }
   }, []);
 
