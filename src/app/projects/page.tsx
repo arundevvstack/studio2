@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from "react";
@@ -14,7 +15,8 @@ import {
   Target,
   GitBranch,
   Star,
-  CheckCircle2
+  CheckCircle2,
+  Users
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +35,12 @@ import { collection, query, orderBy } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 
 type ViewMode = "list" | "grid";
+
+/**
+ * @fileOverview Projects Registry.
+ * High-fidelity production management with Grid (5 items line) and List views.
+ * Differentiates between mirrored leads and active production entities.
+ */
 
 export default function ProjectsPage() {
   const db = useFirestore();
