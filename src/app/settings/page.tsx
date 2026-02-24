@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -503,7 +502,8 @@ export default function SettingsPage() {
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
                     <TableRow className="hover:bg-transparent border-slate-50 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Crew Member</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Assigned Role</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Strategic Role</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-normal text-center">Status</TableHead>
                       <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -522,6 +522,11 @@ export default function SettingsPage() {
                         <TableCell>
                           <Badge variant="outline" className="border-slate-100 text-slate-600 font-bold text-[9px] uppercase tracking-normal">
                             {roles?.find(r => r.id === member.roleId)?.name || member.roleId || "General Access"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full ${member.status === 'Suspended' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                            {member.status || "Active"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right px-10">
