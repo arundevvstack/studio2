@@ -144,7 +144,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       setGallery(existingTalent.gallery || []);
       setSelectedTags(existingTalent.suitableProjectTypes || []);
       
-      // Handle legacy social or array social
       const legacySocial = existingTalent.socialMediaContact ? [{ platform: "Instagram", url: existingTalent.socialMediaContact }] : [];
       setSocialLinks(existingTalent.socialLinks || legacySocial);
       
@@ -165,7 +164,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         if (target === 'thumbnail') {
           setFormData(prev => ({ ...prev, thumbnail: base64String }));
         } else {
-          setGallery([...gallery, { url: base64String, type: 'image' }]);
+          setGallery(prev => [...prev, { url: base64String, type: 'image' }]);
         }
       };
       reader.readAsDataURL(file);
@@ -187,6 +186,10 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     if (!newItemUrl) return;
     setGallery([...gallery, { url: newItemUrl, type: newItemType }]);
     setNewItemUrl("");
+  };
+
+  const handleRemoveGalleryItem = (index: number) => {
+    setGallery(gallery.filter((_, i) => i !== index));
   };
 
   const toggleTag = (tag: string) => {
@@ -222,7 +225,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       paymentStage: formData.paymentStage,
       referredBy: formData.referredBy,
       socialLinks: socialLinks,
-      socialMediaContact: socialLinks.find(l => l.platform === 'Instagram')?.url || "", // legacy fallback
+      socialMediaContact: socialLinks.find(l => l.platform === 'Instagram')?.url || "",
       portfolio: formData.portfolio,
       rank: Number(formData.rank),
       projectCount: Number(formData.projectCount),
@@ -333,7 +336,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      {/* Production Taxonomy */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
         <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
           <Tag className="h-3 w-3" /> Project Verticals (Tags)
@@ -354,7 +356,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      {/* Verification & Collab Status */}
       <div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-100">
         <div className="space-y-4">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Verification</Label>
@@ -387,7 +388,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      {/* Social Media Registry */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
         <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
           <Share2 className="h-3 w-3" /> Social Media
@@ -433,7 +433,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      {/* Gallery Manager */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
         <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
           <ImageIcon className="h-3 w-3" /> Professional Gallery Manager
@@ -508,7 +507,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      {/* Professional Metrics */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
         <div className="space-y-2">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Performance Rank (1-5)</Label>
@@ -566,7 +564,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         />
       </div>
 
-      <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between -mx-8 -mb-8">
+      <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between -mx-8 -mb-8 mt-4">
         <DialogClose asChild>
           <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal hover:bg-slate-100">Cancel</Button>
         </DialogClose>
