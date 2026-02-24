@@ -13,7 +13,6 @@ import {
   Trash2, 
   Edit2, 
   Award,
-  Zap,
   MoreHorizontal
 } from "lucide-react";
 import { useFirestore } from "@/firebase";
@@ -29,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { TalentForm } from "./TalentForm";
+import Link from "next/link";
 
 export function TalentCard({ talent }: { talent: any }) {
   const db = useFirestore();
@@ -71,6 +71,9 @@ export function TalentCard({ talent }: { talent: any }) {
       toast({ variant: "destructive", title: "Purge Failed", description: e.message });
     }
   };
+
+  // Logic to handle both array and string categories
+  const categories = Array.isArray(talent.category) ? talent.category : [talent.category].filter(Boolean);
 
   return (
     <Card className={`overflow-hidden border-2 rounded-[3rem] bg-white group transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 h-full flex flex-col ${talent.featured ? 'border-primary/20 shadow-lg shadow-primary/5' : 'border-transparent shadow-sm'}`}>
@@ -143,10 +146,17 @@ export function TalentCard({ talent }: { talent: any }) {
       </div>
 
       <div className="p-8 pt-4 flex-grow space-y-6">
-        <div className="space-y-1">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight">{talent.name}</h3>
-            <Badge variant="outline" className="border-slate-100 text-[10px] font-bold uppercase text-slate-400 rounded-lg">{talent.category}</Badge>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {categories.slice(0, 2).map(cat => (
+              <Badge key={cat} variant="outline" className="border-slate-100 text-[9px] font-bold uppercase text-slate-400 rounded-lg">{cat}</Badge>
+            ))}
+            {categories.length > 2 && (
+              <Badge variant="outline" className="border-slate-100 text-[9px] font-bold uppercase text-slate-400 rounded-lg">+{categories.length - 2}</Badge>
+            )}
           </div>
           <p className="text-sm font-bold text-primary tracking-normal flex items-center gap-1">
             <Instagram className="h-3.5 w-3.5" /> @{talent.instagram_username || 'talent'}
@@ -172,8 +182,8 @@ export function TalentCard({ talent }: { talent: any }) {
             <MapPin className="h-4 w-4" />
             <span className="text-xs font-bold uppercase tracking-wider">{talent.location}</span>
           </div>
-          <Button variant="ghost" className="rounded-full h-10 px-6 bg-slate-50 hover:bg-slate-900 hover:text-white transition-all font-bold text-[10px] uppercase tracking-widest border-none">
-            Details +
+          <Button asChild variant="ghost" className="rounded-full h-10 px-6 bg-slate-50 hover:bg-slate-900 hover:text-white transition-all font-bold text-[10px] uppercase tracking-widest border-none">
+            <Link href={`/talent-library/${talent.id}`}>Details +</Link>
           </Button>
         </div>
       </div>

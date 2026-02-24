@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, where, limit } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 import { TalentCard } from "@/components/talent-library/TalentCard";
 import { TalentForm } from "@/components/talent-library/TalentForm";
 import { Input } from "@/components/ui/input";
@@ -10,16 +10,12 @@ import { Button } from "@/components/ui/button";
 import { 
   Search, 
   Filter, 
-  ArrowUpDown, 
   Loader2, 
   Mic2, 
   Plus, 
   Sparkles,
   X,
-  Zap,
   LayoutGrid,
-  CheckCircle2,
-  Award
 } from "lucide-react";
 import { 
   Select, 
@@ -32,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const CATEGORIES = [
   "Tech", "Lifestyle", "Fashion", "Beauty", "Travel", "Food", 
@@ -73,10 +69,10 @@ export default function TalentLibraryPage() {
     
     return talents.filter((t: any) => {
       const matchesSearch = t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          t.instagram_username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          t.category?.toLowerCase().includes(searchQuery.toLowerCase());
+                          t.instagram_username?.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesCategory = filters.category === "All" || t.category === filters.category;
+      const talentCats = Array.isArray(t.category) ? t.category : [t.category];
+      const matchesCategory = filters.category === "All" || talentCats.includes(filters.category);
       
       const range = FOLLOWER_RANGES.find(r => r.label === filters.followerRange);
       const matchesFollowers = !range || (t.followers >= range.min && t.followers <= range.max);
