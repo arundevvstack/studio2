@@ -21,7 +21,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2, Sparkles, User, Instagram, Youtube, Zap, CheckCircle2, Upload } from "lucide-react";
+import { Plus, Loader2, Sparkles, Instagram, Zap, CheckCircle2 } from "lucide-react";
 import { useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
@@ -29,7 +29,6 @@ import { fetchInstagramVisuals } from "@/ai/flows/instagram-visuals-flow";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const TALENT_TYPES = ["Influencer", "Anchor", "Creator", "Model", "Virtual"];
-const REACH_CATEGORIES = ["Nano", "Micro", "Mid", "Macro", "Mega"];
 const COLLAB_TYPES = ["Paid", "Barter", "Free", "Agency Managed"];
 const COST_TYPES = ["Per Post", "Per Reel", "Per Event", "Monthly"];
 
@@ -74,7 +73,7 @@ export function AddTalentDialog() {
         category: formData.type || "Influencer"
       });
 
-      // Parse followers string (e.g. "12.4k") to number
+      // Parse followers string (e.g. "12.4k") to number for sorting/filtering
       let followerNum = 0;
       const fStr = result.followers.toLowerCase();
       if (fStr.includes('k')) followerNum = parseFloat(fStr) * 1000;
@@ -92,7 +91,7 @@ export function AddTalentDialog() {
 
       toast({
         title: "Intelligence Synced",
-        description: `Retrieved ${result.followers} followers and ${result.engagementRate} engagement. Profile portrait updated.`
+        description: `Retrieved ${result.followers} followers. Profile portrait updated.`
       });
     } catch (error) {
       console.error(error);
@@ -193,7 +192,7 @@ export function AddTalentDialog() {
               )}
             </div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              {formData.profileImage ? "Instagram Portrait Synced" : "Talent Portrait"}
+              {formData.profileImage ? "Social Portrait Synced" : "Talent Portrait"}
             </p>
           </div>
 
@@ -221,31 +220,10 @@ export function AddTalentDialog() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-400 px-1">Categories (Comma separated)</Label>
-              <Input 
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="e.g. Tech, Lifestyle"
-                className="h-12 rounded-xl border-slate-100 font-medium"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-400 px-1">Location</Label>
-              <Input 
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g. Kochi, Kerala"
-                className="h-12 rounded-xl border-slate-100 font-medium"
-              />
-            </div>
-          </div>
-
           <div className="space-y-4 border-t border-slate-50 pt-6">
             <h4 className="text-xs font-bold uppercase text-slate-900 flex items-center gap-2">
               <Instagram className="h-4 w-4 text-primary" />
-              Social Media Presence
+              Social Media Integration
             </h4>
             <div className="space-y-6">
               <div className="flex gap-3">
@@ -313,15 +291,13 @@ export function AddTalentDialog() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-slate-400 px-1">Cost Type</Label>
-              <Select value={formData.costType} onValueChange={(val) => setFormData({ ...formData, costType: val })}>
-                <SelectTrigger className="h-12 rounded-xl border-slate-100 font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {COST_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs font-bold uppercase text-slate-400 px-1">Location</Label>
+              <Input 
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="e.g. Kochi, KL"
+                className="h-12 rounded-xl border-slate-100 font-medium"
+              />
             </div>
           </div>
 
@@ -333,7 +309,7 @@ export function AddTalentDialog() {
                 onCheckedChange={(checked) => setFormData({ ...formData, availableForFreeCollab: !!checked })}
                 className="rounded-md"
               />
-              <Label htmlFor="isFree" className="text-sm font-bold text-slate-700 cursor-pointer">Available for Free Collab</Label>
+              <Label htmlFor="isFree" className="text-sm font-bold text-slate-700 cursor-pointer">Free Collab Ready</Label>
             </div>
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
               <Checkbox 
@@ -351,7 +327,7 @@ export function AddTalentDialog() {
               <Button variant="ghost" className="font-bold text-slate-400 uppercase">Cancel</Button>
             </DialogClose>
             <Button disabled={loading} type="submit" className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Deploy to Library"}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add to Library"}
             </Button>
           </DialogFooter>
         </form>

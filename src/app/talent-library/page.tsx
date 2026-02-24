@@ -193,11 +193,11 @@ export default function TalentLibraryPage() {
                 Type: {filters.type}
               </Badge>
             )}
-            {filters.category.map(cat => (
+            {filters.category.map((cat: string) => (
               <Badge key={cat} className="bg-slate-900 text-white border-none px-3 py-1.5 rounded-xl uppercase text-[10px] font-bold">
                 {cat}
               </Badge>
-            )}
+            ))}
           </div>
         )}
 
