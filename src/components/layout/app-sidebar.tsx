@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -19,7 +18,8 @@ import {
   Briefcase,
   Globe,
   Clock,
-  HelpCircle
+  HelpCircle,
+  Key
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,30 +57,31 @@ const ICON_MAP: Record<string, any> = {
   ChevronRight,
   Briefcase,
   Globe,
-  Clock
+  Clock,
+  Key
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
-  { title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
-  { title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 2, isVisible: true },
-  { title: "Projects", iconName: "Folder", url: "/projects", order: 3, isVisible: true },
-  { title: "Board", iconName: "Trello", url: "/board", order: 4, isVisible: true },
-  { title: "Clients", iconName: "Briefcase", url: "/clients", order: 5, isVisible: true },
-  { title: "Schedule", iconName: "Calendar", url: "/schedule", order: 6, isVisible: true },
-  { title: "Time Tracking", iconName: "Clock", url: "/time", order: 7, isVisible: true },
-  { title: "Team", iconName: "Users", url: "/team", order: 8, isVisible: true },
-  { title: "Billing", iconName: "FileText", url: "/invoices", order: 9, isVisible: true },
-  { title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 10, isVisible: true },
-  { title: "Market Research", iconName: "Globe", url: "/market-research", order: 11, isVisible: true },
+  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
+  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 2, isVisible: true },
+  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 3, isVisible: true },
+  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 4, isVisible: true },
+  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 5, isVisible: true },
+  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 6, isVisible: true },
+  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 7, isVisible: true },
+  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 8, isVisible: true },
+  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 9, isVisible: true },
+  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 10, isVisible: true },
+  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 11, isVisible: true },
 ];
 
 const managementItems = [
-  { title: "Admin Console", icon: ShieldCheck, url: "/admin" },
+  { id: "admin", title: "Admin Console", icon: ShieldCheck, url: "/admin" },
 ];
 
 const footerItems = [
-  { title: "Settings", icon: Settings, url: "/settings", color: "text-slate-500" },
-  { title: "Log out", icon: LogOut, url: "/logout", color: "text-primary" },
+  { id: "settings", title: "Settings", icon: Settings, url: "/settings", color: "text-slate-500" },
+  { id: "logout", title: "Log out", icon: LogOut, url: "/logout", color: "text-primary" },
 ];
 
 export function AppSidebar() {
@@ -88,10 +89,27 @@ export function AppSidebar() {
   const db = useFirestore();
   const { user } = useUser();
 
+  // Auth & Permissions
+  const memberRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member } = useDoc(memberRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
+  const hasPermission = (perm: string) => {
+    if (!role) return true; // Proto phase: assume access if role registry not yet managed
+    return role.permissions?.includes(perm);
+  };
+
   const navQuery = useMemoFirebase(() => {
     return query(collection(db, "sidebar_items"), orderBy("order", "asc"));
   }, [db]);
-
   const { data: remoteItems } = useCollection(navQuery);
 
   const billingRef = useMemoFirebase(() => {
@@ -100,11 +118,13 @@ export function AppSidebar() {
   const { data: globalSettings } = useDoc(billingRef);
 
   const displayItems = React.useMemo(() => {
-    if (remoteItems && remoteItems.length > 0) {
-      return remoteItems.filter(item => item.isVisible !== false);
-    }
-    return DEFAULT_WORKSPACE_ITEMS;
-  }, [remoteItems]);
+    const items = (remoteItems && remoteItems.length > 0) ? remoteItems : DEFAULT_WORKSPACE_ITEMS;
+    return items.filter(item => (item.isVisible !== false) && hasPermission(`module:${item.id}`));
+  }, [remoteItems, role]);
+
+  const displayManagement = React.useMemo(() => {
+    return managementItems.filter(item => hasPermission(`module:${item.id}`));
+  }, [role]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -115,21 +135,8 @@ export function AppSidebar() {
               <img src={globalSettings.logo} alt="Organization Logo" className="h-full w-auto object-contain" />
             </div>
           ) : (
-            <svg
-              width="40"
-              height="30"
-              viewBox="0 0 40 30"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="text-primary"
-            >
-              <path
-                d="M5 25L15 5L25 25M15 25L25 5L35 25"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg width="40" height="30" viewBox="0 0 40 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
+              <path d="M5 25L15 5L25 25M15 25L25 5L35 25" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </div>
@@ -153,7 +160,7 @@ export function AppSidebar() {
               const Icon = ICON_MAP[item.iconName] || HelpCircle;
               
               return (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     asChild
                     isActive={isActive}
@@ -179,35 +186,37 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
-            Management
-          </SidebarGroupLabel>
-          <SidebarMenu>
-            {managementItems.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  asChild
-                  className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-                >
-                  <Link href={item.url} className="flex items-center">
-                    <item.icon className="h-[18px] w-[18px] text-slate-400" />
-                    <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                      {item.title}
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
+        {displayManagement.length > 0 && (
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
+              Management
+            </SidebarGroupLabel>
+            <SidebarMenu>
+              {displayManagement.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    asChild
+                    className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                  >
+                    <Link href={item.url} className="flex items-center">
+                      <item.icon className="h-[18px] w-[18px] text-slate-400" />
+                      <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                        {item.title}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto">
         <SidebarSeparator className="mb-4 bg-slate-100 dark:bg-white/10" />
         <SidebarMenu className="space-y-1">
           {footerItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem key={item.id}>
               <SidebarMenuButton
                 asChild
                 className={`rounded-xl h-11 px-3 hover:bg-slate-50 dark:hover:bg-white/5 ${item.color}`}
