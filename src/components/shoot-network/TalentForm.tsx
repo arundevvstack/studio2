@@ -16,9 +16,33 @@ import { collection, doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, Save, Mail, Phone, Upload, X, Star, Plus, Trash2, Image as ImageIcon, Video, Tag, MapPin, Grid } from "lucide-react";
+import { 
+  Loader2, 
+  Save, 
+  Mail, 
+  Phone, 
+  Upload, 
+  X, 
+  Star, 
+  Plus, 
+  Trash2, 
+  Image as ImageIcon, 
+  Video, 
+  Tag, 
+  MapPin, 
+  Grid,
+  Share2,
+  MessageSquare,
+  Globe,
+  Instagram,
+  Youtube,
+  Linkedin,
+  Twitter,
+  Facebook
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface TalentFormProps {
   existingTalent?: any;
@@ -36,12 +60,38 @@ const CATEGORIES = [
 ];
 
 const PROJECT_TAGS = [
-  "Commercial", "Film", "Music Video", "Fashion", "Editorial", "Wedding", "Social Media", "Corporate"
+  "Commercial", 
+  "Feature Film", 
+  "Music Video", 
+  "Fashion", 
+  "Wedding Narrative", 
+  "Social Media", 
+  "Corporate Branding",
+  "Instagram Reels",
+  "TikTok / Shorts",
+  "UGC Production",
+  "Influencer Collab",
+  "Product Story",
+  "Documentary",
+  "VFX / Animation",
+  "AI Generated Content"
+];
+
+const SOCIAL_PLATFORMS = [
+  { id: "Instagram", icon: Instagram },
+  { id: "WhatsApp", icon: MessageSquare },
+  { id: "YouTube", icon: Youtube },
+  { id: "LinkedIn", icon: Linkedin },
+  { id: "X / Twitter", icon: Twitter },
+  { id: "Facebook", icon: Facebook },
+  { id: "Portfolio", icon: Globe },
+  { id: "Other", icon: Share2 },
 ];
 
 export function TalentForm({ existingTalent }: TalentFormProps) {
   const db = useFirestore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   
@@ -56,14 +106,18 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     colabText: "",
     paymentStage: "No",
     referredBy: "",
-    social: "",
     portfolio: "",
     rank: 5,
     projectCount: 0,
     thumbnail: "",
+    freeCollab: "No",
   });
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [socialLinks, setSocialLinks] = useState<{ platform: string; url: string }[]>([]);
+  const [newSocialPlatform, setNewSocialPlatform] = useState("Instagram");
+  const [newSocialUrl, setNewSocialUrl] = useState("");
+
   const [gallery, setGallery] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
   const [newItemUrl, setNewItemUrl] = useState("");
   const [newItemType, setNewItemType] = useState<'image' | 'video'>('image');
@@ -81,44 +135,58 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         colabText: existingTalent.colabCategories?.join(', ') || "",
         paymentStage: existingTalent.paymentStage || "No",
         referredBy: existingTalent.referredBy || "",
-        social: existingTalent.socialMediaContact || "",
         portfolio: existingTalent.portfolio || "",
         rank: existingTalent.rank || 5,
         projectCount: existingTalent.projectCount || 0,
         thumbnail: existingTalent.thumbnail || "",
+        freeCollab: existingTalent.freeCollab || "No",
       });
       setGallery(existingTalent.gallery || []);
       setSelectedTags(existingTalent.suitableProjectTypes || []);
+      
+      // Handle legacy social or array social
+      const legacySocial = existingTalent.socialMediaContact ? [{ platform: "Instagram", url: existingTalent.socialMediaContact }] : [];
+      setSocialLinks(existingTalent.socialLinks || legacySocial);
+      
       setIsInitialized(true);
     }
   }, [existingTalent, isInitialized]);
 
   const handleThumbnailClick = () => {
-    fileInputRef.current?.click();
+    thumbInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, target: 'thumbnail' | 'gallery') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        setFormData(prev => ({ ...prev, thumbnail: base64String }));
+        if (target === 'thumbnail') {
+          setFormData(prev => ({ ...prev, thumbnail: base64String }));
+        } else {
+          setGallery([...gallery, { url: base64String, type: 'image' }]);
+        }
       };
       reader.readAsDataURL(file);
     }
-    // Reset input to allow selecting the same file again if needed
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    e.target.value = "";
   };
 
-  const handleAddGalleryItem = () => {
+  const handleAddSocial = () => {
+    if (!newSocialUrl) return;
+    setSocialLinks([...socialLinks, { platform: newSocialPlatform, url: newSocialUrl }]);
+    setNewSocialUrl("");
+  };
+
+  const handleRemoveSocial = (index: number) => {
+    setSocialLinks(socialLinks.filter((_, i) => i !== index));
+  };
+
+  const handleAddGalleryUrl = () => {
     if (!newItemUrl) return;
     setGallery([...gallery, { url: newItemUrl, type: newItemType }]);
     setNewItemUrl("");
-  };
-
-  const handleRemoveGalleryItem = (index: number) => {
-    setGallery(gallery.filter((_, i) => i !== index));
   };
 
   const toggleTag = (tag: string) => {
@@ -153,12 +221,14 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       suitableProjectTypes: selectedTags,
       paymentStage: formData.paymentStage,
       referredBy: formData.referredBy,
-      socialMediaContact: formData.social,
+      socialLinks: socialLinks,
+      socialMediaContact: socialLinks.find(l => l.platform === 'Instagram')?.url || "", // legacy fallback
       portfolio: formData.portfolio,
       rank: Number(formData.rank),
       projectCount: Number(formData.projectCount),
       thumbnail: formData.thumbnail,
       gallery: gallery,
+      freeCollab: formData.freeCollab,
       updatedAt: serverTimestamp(),
     };
 
@@ -183,6 +253,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
   return (
     <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
+      {/* Photo Identification */}
       <div className="flex flex-col items-center gap-4 py-4">
         <div 
           className="relative group cursor-pointer"
@@ -199,10 +270,10 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           </div>
           <input 
             type="file" 
-            ref={fileInputRef} 
+            ref={thumbInputRef} 
             className="hidden" 
             accept="image/*" 
-            onChange={handleFileChange}
+            onChange={(e) => handleFileChange(e, 'thumbnail')}
           />
         </div>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Primary Identity Thumbnail</p>
@@ -235,7 +306,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">District Hub</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">District</Label>
           <Select value={formData.district} onValueChange={(val) => setFormData({...formData, district: val})}>
             <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
               <SelectValue placeholder="Select Kerala district..." />
@@ -262,6 +333,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
+      {/* Production Taxonomy */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
         <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
           <Tag className="h-3 w-3" /> Project Verticals (Tags)
@@ -282,34 +354,162 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Communication Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-            <Input 
-              value={formData.email} 
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="rounded-xl bg-slate-50 border-none h-12 pl-12 font-bold tracking-normal focus-visible:ring-primary/20"
-              placeholder="name@agency.com"
-            />
-          </div>
+      {/* Verification & Collab Status */}
+      <div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-100">
+        <div className="space-y-4">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Verification</Label>
+          <Select value={formData.paymentStage} onValueChange={(val) => setFormData({...formData, paymentStage: val})}>
+            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              <SelectItem value="Yes" className="tracking-normal font-medium">Verified (Paid)</SelectItem>
+              <SelectItem value="No" className="tracking-normal font-medium">Pending Entry</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Contact Hotline</Label>
-          <div className="relative">
-            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-            <Input 
-              value={formData.phone} 
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              className="rounded-xl bg-slate-50 border-none h-12 pl-12 font-bold tracking-normal focus-visible:ring-primary/20"
-              placeholder="+91 0000 000 000"
-            />
-          </div>
+        <div className="space-y-4">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Willing to Free Collab?</Label>
+          <RadioGroup 
+            value={formData.freeCollab} 
+            onValueChange={(val) => setFormData({...formData, freeCollab: val})}
+            className="flex items-center gap-6 h-12"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="Yes" id="collab-yes" />
+              <Label htmlFor="collab-yes" className="text-xs font-bold text-slate-600">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="No" id="collab-no" />
+              <Label htmlFor="collab-no" className="text-xs font-bold text-slate-600">No</Label>
+            </div>
+          </RadioGroup>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Social Media Registry */}
+      <div className="space-y-4 pt-4 border-t border-slate-100">
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
+          <Share2 className="h-3 w-3" /> Social Media
+        </Label>
+        <div className="flex gap-2">
+          <Select value={newSocialPlatform} onValueChange={setNewSocialPlatform}>
+            <SelectTrigger className="h-12 w-40 rounded-xl bg-slate-50 border-none font-bold tracking-normal">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              {SOCIAL_PLATFORMS.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.id}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input 
+            value={newSocialUrl}
+            onChange={(e) => setNewSocialUrl(e.target.value)}
+            placeholder="Profile Link or Handle"
+            className="rounded-xl bg-slate-50 border-none h-12 flex-1 font-bold tracking-normal focus-visible:ring-primary/20"
+          />
+          <Button onClick={handleAddSocial} type="button" className="h-12 w-12 rounded-xl bg-slate-900 text-white shadow-lg transition-transform active:scale-95">
+            <Plus className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
+          {socialLinks.map((link, idx) => {
+            const PlatformIcon = SOCIAL_PLATFORMS.find(p => p.id === link.platform)?.icon || Share2;
+            return (
+              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-100 group animate-in fade-in slide-in-from-left-2 duration-300">
+                <div className="flex items-center gap-3">
+                  <PlatformIcon className="h-4 w-4 text-primary" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">{link.platform}:</span>
+                  <span className="text-xs font-bold text-slate-900 truncate max-w-[250px]">{link.url}</span>
+                </div>
+                <Button onClick={() => handleRemoveSocial(idx)} type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-destructive transition-colors">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Gallery Manager */}
+      <div className="space-y-4 pt-4 border-t border-slate-100">
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
+          <ImageIcon className="h-3 w-3" /> Professional Gallery Manager
+        </Label>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="flex gap-2">
+            <Input 
+              value={newItemUrl}
+              onChange={(e) => setNewItemUrl(e.target.value)}
+              placeholder="Asset URL (Image or Video)"
+              className="rounded-xl bg-slate-50 border-none h-12 flex-1 font-bold tracking-normal focus-visible:ring-primary/20"
+            />
+            <Select value={newItemType} onValueChange={(val: any) => setNewItemType(val)}>
+              <SelectTrigger className="h-12 w-32 rounded-xl bg-slate-50 border-none font-bold tracking-normal">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="image">Image</SelectItem>
+                <SelectItem value="video">Video</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={handleAddGalleryUrl} type="button" className="h-12 w-12 rounded-xl bg-slate-900 text-white shadow-lg transition-transform active:scale-95">
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          <div className="relative">
+            <input 
+              type="file" 
+              ref={galleryInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={(e) => handleFileChange(e, 'gallery')}
+            />
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full h-12 rounded-xl border-dashed border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-400 font-bold text-xs uppercase gap-2"
+              onClick={() => galleryInputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4" />
+              Upload Local Image Asset
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {gallery.map((item, idx) => (
+            <div key={idx} className="relative aspect-square rounded-2xl bg-slate-100 overflow-hidden group border border-slate-200">
+              <img src={item.url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="Talent Asset" />
+              {item.type === 'video' && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <Video className="h-6 w-6 text-white" />
+                </div>
+              )}
+              <Button 
+                onClick={() => handleRemoveGalleryItem(idx)} 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/40 text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {gallery.length === 0 && (
+            <div className="col-span-full py-6 text-center">
+              <p className="text-[10px] text-slate-300 italic">No assets added to the portfolio gallery.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Professional Metrics */}
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
         <div className="space-y-2">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Performance Rank (1-5)</Label>
           <div className="relative">
@@ -335,79 +535,14 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-slate-100">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Professional Gallery Manager</Label>
-        <div className="flex gap-2">
-          <Input 
-            value={newItemUrl}
-            onChange={(e) => setNewItemUrl(e.target.value)}
-            placeholder="Asset URL (Image or Video)"
-            className="rounded-xl bg-slate-50 border-none h-12 flex-1 font-bold tracking-normal focus-visible:ring-primary/20"
-          />
-          <Select value={newItemType} onValueChange={(val: any) => setNewItemType(val)}>
-            <SelectTrigger className="h-12 w-32 rounded-xl bg-slate-50 border-none font-bold tracking-normal">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="image">Image</SelectItem>
-              <SelectItem value="video">Video</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={handleAddGalleryItem} type="button" className="h-12 w-12 rounded-xl bg-slate-900 text-white">
-            <Plus className="h-5 w-5" />
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2">
-          {gallery.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-100 group">
-              <div className="flex items-center gap-3 overflow-hidden">
-                {item.type === 'image' ? <ImageIcon className="h-4 w-4 text-primary" /> : <Video className="h-4 w-4 text-blue-500" />}
-                <span className="text-xs font-bold text-slate-600 truncate max-w-[250px]">{item.url}</span>
-              </div>
-              <Button onClick={() => handleRemoveGalleryItem(idx)} type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-destructive">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          {gallery.length === 0 && (
-            <p className="text-[10px] text-slate-300 italic text-center py-2">No assets added to the portfolio gallery.</p>
-          )}
-        </div>
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Age</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Partner Age</Label>
           <Input 
             value={formData.age} 
             onChange={(e) => setFormData({...formData, age: e.target.value})}
             className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
-            placeholder="Partner Age"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Verification Tier</Label>
-          <Select value={formData.paymentStage} onValueChange={(val) => setFormData({...formData, paymentStage: val})}>
-            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-              <SelectItem value="Yes" className="tracking-normal font-medium">Verified (Paid)</SelectItem>
-              <SelectItem value="No" className="tracking-normal font-medium">Pending Entry</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Social Reach URL</Label>
-          <Input 
-            value={formData.social} 
-            onChange={(e) => setFormData({...formData, social: e.target.value})}
-            className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
-            placeholder="Instagram / LinkedIn URL"
+            placeholder="e.g. 24"
           />
         </div>
         <div className="space-y-2">
@@ -426,17 +561,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         <Input 
           value={formData.colabText} 
           onChange={(e) => setFormData({...formData, colabText: e.target.value})}
-          placeholder="e.g. Commercial, Music Video, Fashion, Editorial"
-          className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Source / Referral</Label>
-        <Input 
-          value={formData.referredBy} 
-          onChange={(e) => setFormData({...formData, referredBy: e.target.value})}
-          placeholder="Who introduced this partner?"
+          placeholder="e.g. Cinematic, High Contrast, Kerala Culture"
           className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20"
         />
       </div>
@@ -446,9 +571,9 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal hover:bg-slate-100">Cancel</Button>
         </DialogClose>
         <DialogClose asChild>
-          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-8 h-11 gap-2 tracking-normal shadow-lg shadow-primary/20">
+          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-8 h-11 gap-2 tracking-normal shadow-lg shadow-primary/20 transition-all active:scale-95">
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Sync Intelligence
+            Add to Network
           </Button>
         </DialogClose>
       </DialogFooter>
