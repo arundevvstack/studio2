@@ -52,13 +52,13 @@ export default function ShootNetworkPage() {
   });
 
   const talentQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    // Decoupled from user session for testing mode stability
     return query(
       collection(db, "shoot_network"), 
       where("isArchived", "==", false),
       orderBy("updatedAt", "desc")
     );
-  }, [db, user]);
+  }, [db]);
 
   const { data: talent, isLoading: isDataLoading } = useCollection(talentQuery);
 
@@ -94,7 +94,7 @@ export default function ShootNetworkPage() {
                           filters.paymentStage !== "All" ||
                           (filters.tags && filters.tags.length > 0);
 
-  const isLoading = isUserLoading || (user && isDataLoading);
+  const isLoading = isUserLoading || isDataLoading;
 
   return (
     <div className="flex h-full gap-8 animate-in fade-in duration-500">

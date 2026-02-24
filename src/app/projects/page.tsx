@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
@@ -29,7 +28,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import Link from "next/link";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Card } from "@/components/ui/card";
 
@@ -37,12 +36,12 @@ type ViewMode = "list" | "grid";
 
 /**
  * @fileOverview Projects Registry.
- * High-fidelity production management with high-density grid (5 items line).
- * Decoupled from user session for testing mode stability.
+ * Optimized for high-density visual monitoring [5 items per line].
  */
 
 export default function ProjectsPage() {
   const db = useFirestore();
+  const { user, isUserLoading } = useUser();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -79,7 +78,7 @@ export default function ProjectsPage() {
     filteredProjects.filter(p => p.clientId === "PIPELINE"), 
   [filteredProjects]);
 
-  const isLoading = isLoadingClients || isLoadingProjects;
+  const isLoading = isUserLoading || isLoadingClients || isLoadingProjects;
 
   return (
     <div className="space-y-12 max-w-[1600px] mx-auto animate-in fade-in duration-700 pb-20">
