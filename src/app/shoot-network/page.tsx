@@ -39,7 +39,7 @@ import Link from "next/link";
 
 /**
  * @fileOverview Shoot Network Repository.
- * Enhanced with Grid/List modes and advanced Tag Filtering.
+ * Enhanced with Grid (4 items line) and List modes.
  */
 
 export default function ShootNetworkPage() {
@@ -150,7 +150,7 @@ export default function ShootNetworkPage() {
               <Input 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal" 
+                className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal font-bold" 
                 placeholder="Search by name, skill, or creative category..." 
               />
             </div>
@@ -212,7 +212,7 @@ export default function ShootNetworkPage() {
           )}
         </div>
 
-        {/* Grid Area */}
+        {/* Grid Area: Optimized for 4 per line */}
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -220,7 +220,7 @@ export default function ShootNetworkPage() {
           </div>
         ) : filteredTalent.length > 0 ? (
           viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {filteredTalent.map((t: any) => (
                 <TalentCard key={t.id} talent={t} />
               ))}
