@@ -2,12 +2,14 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { Zap } from "lucide-react";
 
 /**
  * @fileOverview Strategic Layout Shell.
  * Manages the workspace structure and conditionally renders the sidebar based on active routes.
+ * Enhanced with mobile-friendly header and responsive main content area.
  */
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -26,11 +28,27 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
-        <main className="flex-1 overflow-auto bg-background p-6 md:p-8">
-          {children}
-        </main>
+        
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Mobile Header - Only visible on small screens */}
+          <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-100 bg-white sticky top-0 z-40">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="h-10 w-10 text-slate-600" />
+              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                <Zap className="h-5 w-5 text-white fill-white" />
+              </div>
+              <span className="font-headline font-bold text-sm tracking-tight">MediaFlow</span>
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8 lg:p-10">
+            <div className="mx-auto max-w-[1600px] w-full">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );

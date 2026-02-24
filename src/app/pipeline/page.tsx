@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -65,7 +64,7 @@ const STAGES = [
   { id: "Lead", title: "Lead" },
   { id: "Contacted", title: "Contacted" },
   { id: "Discussion", title: "Discussion" },
-  { id: "Proposal Sent", title: "Proposal Sent" },
+  { id: "Proposal Sent", title: "Proposal" },
   { id: "Negotiation", title: "Negotiation" },
   { id: "Won", title: "Won" },
   { id: "Lost", title: "Lost" }
@@ -91,12 +90,6 @@ export default function PipelineEnginePage() {
     return query(collection(db, "leads"), orderBy("updatedAt", "desc"));
   }, [db, user]);
   const { data: leads, isLoading: leadsLoading } = useCollection(leadsQuery);
-
-  const projectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, "projects"));
-  }, [db, user]);
-  const { data: projects } = useCollection(projectsQuery);
 
   const followUpsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -158,36 +151,36 @@ export default function PipelineEnginePage() {
   }, [leads, searchQuery]);
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-20">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-none">
-              Strategic Pipeline Engine
+            <h1 className="text-2xl sm:text-4xl font-bold font-headline text-slate-900 tracking-normal leading-tight">
+              Strategic Pipeline
             </h1>
-            <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
+            <Badge className="bg-primary/10 text-primary border-none text-[8px] sm:text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
               <Zap className="h-3 w-3 mr-1" />
               Live Feed
             </Badge>
           </div>
-          <p className="text-sm text-slate-500 font-medium tracking-normal">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium tracking-normal">
             Marketing, sales, and follow-up operating system.
           </p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <Dialog open={isAddingLead} onOpenChange={setIsAddingLead}>
             <DialogTrigger asChild>
-              <Button className="h-12 flex-1 md:flex-none px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
+              <Button className="h-12 flex-1 md:flex-none px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal transition-all active:scale-95 text-xs uppercase">
                 <Plus className="h-4 w-4" />
                 New Lead
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden">
               <DialogHeader className="p-8 pb-4">
-                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">New Lead Portal</DialogTitle>
+                <DialogTitle className="text-xl sm:text-2xl font-bold font-headline tracking-normal">New Lead Portal</DialogTitle>
               </DialogHeader>
               <div className="p-8 pt-0 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Lead Name</label>
                     <Input value={newLead.name} onChange={(e) => setNewLead({...newLead, name: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="John Doe" />
@@ -197,7 +190,7 @@ export default function PipelineEnginePage() {
                     <Input value={newLead.company} onChange={(e) => setNewLead({...newLead, company: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="Nike Global" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Email Address</label>
                     <Input type="email" value={newLead.email} onChange={(e) => setNewLead({...newLead, email: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="j.doe@nike.com" />
@@ -207,7 +200,7 @@ export default function PipelineEnginePage() {
                     <Input value={newLead.phone} onChange={(e) => setNewLead({...newLead, phone: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="+1 555 0000" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Source</label>
                     <Select value={newLead.source} onValueChange={(val) => setNewLead({...newLead, source: val})}>
@@ -244,9 +237,9 @@ export default function PipelineEnginePage() {
                 </div>
               </div>
               <DialogFooter className="bg-slate-50 p-6">
-                <div className="flex gap-3 w-full">
-                  <DialogClose asChild><Button variant="ghost" className="flex-1 font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
-                  <Button onClick={handleCreateLead} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold h-11 tracking-normal">Create Lead</Button>
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <DialogClose asChild><Button variant="ghost" className="flex-1 font-bold text-xs uppercase tracking-normal order-2 sm:order-1">Cancel</Button></DialogClose>
+                  <Button onClick={handleCreateLead} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold h-11 tracking-normal order-1 sm:order-2">Create Lead</Button>
                 </div>
               </DialogFooter>
             </DialogContent>
@@ -254,231 +247,194 @@ export default function PipelineEnginePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
-            <Users className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Leads</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.totalLeads}</h3>
-          </div>
-        </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-blue-500" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Lead</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.leadCount}</h3>
-          </div>
-        </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
-            <Target className="h-5 w-5 text-accent" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Conversion Rate</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{stats.conversionRate}%</h3>
-          </div>
-        </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center">
-            <IndianRupee className="h-5 w-5 text-slate-600" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pipeline Value</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">₹{(stats.activeValue / 1000).toFixed(0)}k</h3>
-          </div>
-        </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
-          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center relative z-10">
-            <TrendingUp className="h-5 w-5 text-primary" />
-          </div>
-          <div className="relative z-10">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-normal">Revenue Forecast</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal text-white">₹{(stats.forecast / 1000).toFixed(0)}k</h3>
-          </div>
-        </Card>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
+        {[
+          { label: "Leads", val: stats.totalLeads, icon: Users, color: "bg-primary/5 text-primary" },
+          { label: "Inbox", val: stats.leadCount, icon: Sparkles, color: "bg-blue-50 text-blue-500" },
+          { label: "CR", val: `${stats.conversionRate}%`, icon: Target, color: "bg-accent/10 text-accent" },
+          { label: "Value", val: `₹${(stats.activeValue / 1000).toFixed(0)}k`, icon: IndianRupee, color: "bg-slate-50 text-slate-600" },
+          { label: "Forecast", val: `₹${(stats.forecast / 1000).toFixed(0)}k`, icon: TrendingUp, color: "bg-slate-900 text-white", dark: true }
+        ].map((s, i) => (
+          <Card key={i} className={`border-none shadow-sm rounded-[2rem] p-5 sm:p-8 space-y-3 sm:space-y-4 relative overflow-hidden ${s.dark ? 'bg-slate-900 text-white' : 'bg-white'}`}>
+            {s.dark && <div className="absolute top-0 right-0 w-24 h-24 bg-primary/20 blur-3xl rounded-full -mr-12 -mt-12" />}
+            <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex items-center justify-center relative z-10 ${s.dark ? 'bg-white/10' : s.color}`}>
+              <s.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${s.dark ? 'text-primary' : ''}`} />
+            </div>
+            <div className="relative z-10">
+              <p className={`text-[8px] sm:text-[10px] font-bold uppercase tracking-widest ${s.dark ? 'text-slate-500' : 'text-slate-400'}`}>{s.label}</p>
+              <h3 className="text-xl sm:text-3xl font-bold font-headline mt-1 tracking-tight">{s.val}</h3>
+            </div>
+          </Card>
+        ))}
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           <Input 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal" 
-            placeholder="Search leads by name or company..." 
+            className="pl-12 h-12 sm:h-14 bg-white border-none shadow-sm rounded-xl text-sm sm:text-base placeholder:text-slate-400 tracking-normal" 
+            placeholder="Search leads..." 
           />
         </div>
-        <Button variant="outline" className="h-14 px-6 bg-white border-slate-100 rounded-xl font-bold text-slate-600 gap-2 shadow-sm tracking-normal">
+        <Button variant="outline" className="h-12 sm:h-14 px-6 bg-white border-slate-100 rounded-xl font-bold text-slate-600 gap-2 shadow-sm text-xs uppercase tracking-widest">
           <Filter className="h-4 w-4" />
           Refine
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1 dark:bg-slate-900 dark:border-slate-800">
-          <TabsTrigger value="list" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
-            <Briefcase className="h-4 w-4" />
-            Pipeline Ledger
-          </TabsTrigger>
-          <TabsTrigger value="followups" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
-            <Calendar className="h-4 w-4" />
-            Engagement
-          </TabsTrigger>
-          <TabsTrigger value="marketing" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
-            <Globe className="h-4 w-4" />
-            Campaigns
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="rounded-xl px-8 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal">
-            <BarChart3 className="h-4 w-4" />
-            Intelligence
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
+        <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1 flex w-full overflow-x-auto no-scrollbar">
+          {[
+            { id: "list", icon: Briefcase, label: "Ledger" },
+            { id: "followups", icon: Calendar, label: "Schedule" },
+            { id: "marketing", icon: Globe, label: "Campaigns" },
+            { id: "analytics", icon: BarChart3, label: "Intel" }
+          ].map(t => (
+            <TabsTrigger key={t.id} value={t.id} className="flex-1 rounded-xl px-4 sm:px-8 py-3 text-[10px] font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest whitespace-nowrap">
+              <t.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="list" className="m-0 animate-in slide-in-from-left-2 duration-300">
-          <div className="space-y-8">
-            <Tabs value={activeStageTab} onValueChange={setActiveStageTab} className="w-full">
-              <div className="flex items-center justify-between mb-6">
-                <TabsList className="bg-slate-100/50 p-1 h-auto rounded-xl gap-1">
+          <div className="space-y-6">
+            <div className="w-full overflow-x-auto no-scrollbar pb-2">
+              <Tabs value={activeStageTab} onValueChange={setActiveStageTab} className="w-full">
+                <TabsList className="bg-slate-100/50 p-1 h-auto rounded-xl gap-1 inline-flex">
                   {STAGES.map((stage) => (
                     <TabsTrigger 
                       key={stage.id} 
                       value={stage.id} 
-                      className="rounded-lg px-6 py-2 text-[10px] font-bold uppercase data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all tracking-normal"
+                      className="rounded-lg px-4 sm:px-6 py-2 text-[9px] sm:text-[10px] font-bold uppercase data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all tracking-widest whitespace-nowrap"
                     >
                       {stage.title}
                     </TabsTrigger>
                   ))}
                 </TabsList>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">
-                    {filteredLeads.filter(l => l.status === activeStageTab).length} Entities
-                  </span>
-                </div>
-              </div>
+              </Tabs>
+            </div>
 
-              {STAGES.map((stage) => (
-                <TabsContent key={stage.id} value={stage.id} className="m-0 animate-in fade-in duration-300">
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                    <Table>
-                      <TableHeader className="bg-slate-50/50">
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Lead Name</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase tracking-normal">Company Entity</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase tracking-normal">Source</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase tracking-normal">Priority</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase tracking-normal">Budget (INR)</TableHead>
-                          <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
+            <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50/50">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="px-6 sm:px-10 text-[10px] font-bold uppercase tracking-widest">Lead Identity</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest hidden sm:table-cell">Source</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Priority</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Budget (INR)</TableHead>
+                      <TableHead className="text-right px-6 sm:px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leadsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-20">
+                          <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredLeads.filter(l => l.status === activeStageTab).length > 0 ? (
+                      filteredLeads.filter(l => l.status === activeStageTab).map((lead) => (
+                        <TableRow key={lead.id} className="group hover:bg-slate-50/50 transition-colors">
+                          <TableCell className="px-6 sm:px-10 py-5 sm:py-6">
+                            <div>
+                              <p className="font-bold text-slate-900 tracking-tight text-sm sm:text-base">{lead.name}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{lead.company || "Individual Entity"}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs font-bold text-slate-500 tracking-widest hidden sm:table-cell">{lead.source || "—"}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-widest border-none px-3 py-1 ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
+                              {lead.priority || "Medium"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-bold text-slate-900 tracking-tight text-xs sm:text-sm">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</TableCell>
+                          <TableCell className="text-right px-6 sm:px-10">
+                            <Button asChild variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                              <Link href={`/pipeline/leads/${lead.id}`}>
+                                <ArrowRight className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {leadsLoading ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-20">
-                              <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto" />
-                            </TableCell>
-                          </TableRow>
-                        ) : filteredLeads.filter(l => l.status === stage.id).length > 0 ? (
-                          filteredLeads.filter(l => l.status === stage.id).map((lead) => (
-                            <TableRow key={lead.id} className="group hover:bg-slate-50/50 transition-colors">
-                              <TableCell className="px-10 font-bold text-slate-900 tracking-normal">{lead.name}</TableCell>
-                              <TableCell className="text-sm font-medium text-slate-600 tracking-normal">{lead.company || "—"}</TableCell>
-                              <TableCell className="text-sm font-medium text-slate-600 tracking-normal">{lead.source || "—"}</TableCell>
-                              <TableCell>
-                                <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-normal border-none ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
-                                  {lead.priority || "Medium"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="font-bold text-slate-900 tracking-normal">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</TableCell>
-                              <TableCell className="text-right px-10">
-                                <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-slate-50 hover:bg-primary hover:text-white transition-all">
-                                  <Link href={`/pipeline/leads/${lead.id}`}>
-                                    <ArrowRight className="h-4 w-4" />
-                                  </Link>
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-24">
-                              <div className="flex flex-col items-center justify-center space-y-4">
-                                <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center">
-                                  <Search className="h-6 w-6 text-slate-200" />
-                                </div>
-                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">No leads in this stage</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-24 px-6">
+                          <div className="flex flex-col items-center justify-center space-y-4">
+                            <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center">
+                              <Search className="h-6 w-6 text-slate-200" />
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No leads in this stage</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
         <TabsContent value="followups" className="m-0 animate-in slide-in-from-left-2 duration-300">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
             <div className="lg:col-span-8 space-y-6">
-              <h3 className="text-xl font-bold font-headline tracking-normal">Active Engagement Schedule</h3>
+              <h3 className="text-lg sm:text-xl font-bold font-headline tracking-tight px-2">Engagement Schedule</h3>
               {followUps && followUps.filter(f => !f.completed).length > 0 ? (
                 <div className="space-y-4">
                   {followUps.filter(f => !f.completed).map((f) => (
-                    <Card key={f.id} className="border-none shadow-sm rounded-[2rem] p-8 flex items-center justify-between group hover:shadow-md transition-all bg-white">
-                      <div className="flex items-center gap-6">
-                        <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
-                          {f.type === 'WhatsApp' && <MessageSquare className="h-6 w-6 text-green-500" />}
-                          {f.type === 'Call' && <Phone className="h-6 w-6 text-blue-500" />}
-                          {f.type === 'Email' && <Mail className="h-6 w-6 text-primary" />}
-                          {f.type === 'Meeting' && <Users className="h-6 w-6 text-orange-500" />}
+                    <Card key={f.id} className="border-none shadow-sm rounded-[2rem] p-6 sm:p-8 flex items-center justify-between group hover:shadow-md transition-all bg-white">
+                      <div className="flex items-center gap-4 sm:gap-6">
+                        <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/5 transition-colors shrink-0">
+                          {f.type === 'WhatsApp' && <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />}
+                          {f.type === 'Call' && <Phone className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />}
+                          {f.type === 'Email' && <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />}
+                          {f.type === 'Meeting' && <Users className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />}
                         </div>
                         <div>
-                          <h4 className="text-lg font-bold text-slate-900 tracking-normal">
+                          <h4 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight line-clamp-1">
                             {leads?.find(l => l.id === f.leadId)?.name || "Unknown Lead"}
                           </h4>
-                          <div className="flex items-center gap-4 mt-1">
-                            <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-normal">{f.type}</Badge>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 tracking-normal">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1">
+                            <Badge variant="outline" className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest border-slate-100">{f.type}</Badge>
+                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 tracking-widest">
                               <Calendar className="h-3 w-3" />
-                              {new Date(f.scheduledAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                              {new Date(f.scheduledAt).toLocaleDateString('en-GB')}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="rounded-xl h-11 w-11 bg-slate-50 hover:bg-accent hover:text-white transition-all">
+                      <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 sm:h-11 sm:w-11 bg-slate-50 hover:bg-accent hover:text-white transition-all shrink-0 ml-2">
                         <CheckCircle2 className="h-5 w-5" />
                       </Button>
                     </Card>
                   ))}
                 </div>
               ) : (
-                <div className="p-20 border-2 border-dashed border-slate-100 rounded-[3rem] text-center bg-white/50">
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No scheduled activities</p>
+                <div className="p-20 border-2 border-dashed border-slate-100 rounded-[2.5rem] sm:rounded-[3rem] text-center bg-white/50 px-6">
+                  <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest">No scheduled activities</p>
                 </div>
               )}
             </div>
             <div className="lg:col-span-4">
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
+              <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-8 sm:p-10 space-y-6 sm:space-y-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
                 <div className="space-y-2 relative z-10">
-                  <p className="text-[10px] font-bold text-slate-50 uppercase tracking-normal">Follow-up Velocity</p>
-                  <h4 className="text-xl font-bold font-headline tracking-normal">Response Efficiency</h4>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Efficiency Metrics</p>
+                  <h4 className="text-xl font-bold font-headline tracking-tight">Response Velocity</h4>
                 </div>
                 <div className="space-y-6 relative z-10">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-400 font-medium">Avg Response Time</span>
-                    <span className="text-2xl font-bold font-headline tracking-normal">2.4h</span>
+                    <span className="text-xs sm:text-sm text-slate-400 font-medium">Avg Response Time</span>
+                    <span className="text-xl sm:text-2xl font-bold font-headline tracking-tight">2.4h</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-400 font-medium">Weekly Activities</span>
-                    <span className="text-2xl font-bold font-headline text-primary tracking-normal">{followUps?.length || 0}</span>
+                    <span className="text-xs sm:text-sm text-slate-400 font-medium">Weekly Flow</span>
+                    <span className="text-xl sm:text-2xl font-bold font-headline text-primary tracking-tight">{followUps?.length || 0}</span>
                   </div>
                 </div>
               </Card>
@@ -487,33 +443,33 @@ export default function PipelineEnginePage() {
         </TabsContent>
 
         <TabsContent value="marketing" className="m-0 animate-in slide-in-from-left-2 duration-300">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {campaigns && campaigns.length > 0 ? (
               campaigns.map((c) => (
-                <Card key={c.id} className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-xl transition-all">
-                  <CardHeader className="p-10 pb-4">
-                    <div className="flex justify-between items-start">
-                      <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">
-                        <Globe className="h-6 w-6 text-primary" />
+                <Card key={c.id} className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-xl transition-all border border-slate-50">
+                  <CardHeader className="p-8 sm:p-10 pb-4">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-primary/5 flex items-center justify-center">
+                        <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       </div>
-                      <Badge className="bg-slate-100 text-slate-500 border-none text-[10px] font-bold uppercase tracking-normal">{c.channel}</Badge>
+                      <Badge className="bg-slate-100 text-slate-500 border-none text-[8px] sm:text-[10px] font-bold uppercase tracking-widest">{c.channel}</Badge>
                     </div>
-                    <CardTitle className="text-xl font-bold font-headline tracking-normal">{c.name}</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl font-bold font-headline tracking-tight line-clamp-1">{c.name}</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-10 pt-0 space-y-8">
-                    <div className="grid grid-cols-2 gap-6">
+                  <CardContent className="p-8 sm:p-10 pt-0 space-y-6 sm:space-y-8">
+                    <div className="grid grid-cols-2 gap-4 sm:gap-6">
                       <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Budget</p>
-                        <p className="text-lg font-bold text-slate-900 tracking-normal">₹{c.budget.toLocaleString('en-IN')}</p>
+                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Budget</p>
+                        <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">₹{c.budget.toLocaleString('en-IN')}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Leads</p>
-                        <p className="text-lg font-bold text-slate-900 tracking-normal">{c.leadsGenerated}</p>
+                        <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Leads</p>
+                        <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">{c.leadsGenerated}</p>
                       </div>
                     </div>
                     <div className="pt-6 border-t border-slate-50">
-                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-normal mb-2">
-                        <span className="text-slate-400">ROI Performance</span>
+                      <div className="flex justify-between items-center text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-2">
+                        <span className="text-slate-400">ROI index</span>
                         <span className="text-accent">+{c.ROI}%</span>
                       </div>
                       <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
@@ -524,35 +480,35 @@ export default function PipelineEnginePage() {
                 </Card>
               ))
             ) : (
-              <div className="col-span-full p-24 border-2 border-dashed border-slate-100 rounded-[3rem] text-center bg-white/50">
-                <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No active marketing campaigns</p>
-                <Button className="mt-4 rounded-xl font-bold text-xs uppercase tracking-normal h-10 px-6">Launch Campaign</Button>
+              <div className="col-span-full p-20 sm:p-24 border-2 border-dashed border-slate-100 rounded-[2.5rem] sm:rounded-[3rem] text-center bg-white/50 px-6">
+                <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest">No active marketing campaigns</p>
+                <Button className="mt-6 rounded-xl font-bold text-[10px] uppercase tracking-widest h-11 px-8">Launch Strategy</Button>
               </div>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="analytics" className="m-0 animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[3rem] bg-white p-12">
-            <div className="flex items-center justify-between mb-12">
+          <Card className="border-none shadow-sm rounded-[2.5rem] sm:rounded-[3rem] bg-white p-8 sm:p-12">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 sm:gap-12 mb-10 sm:mb-12">
               <div>
-                <h3 className="text-2xl font-bold font-headline tracking-normal">Sales Intelligence Core</h3>
-                <p className="text-sm text-slate-500 font-medium tracking-normal">Visualizing pipeline performance and growth vectors.</p>
+                <h3 className="text-xl sm:text-2xl font-bold font-headline tracking-tight">Sales Intelligence Core</h3>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium tracking-normal mt-1">Visualizing pipeline performance and growth vectors.</p>
               </div>
-              <Button variant="outline" className="rounded-xl h-11 px-6 font-bold text-xs uppercase gap-2 border-slate-100 tracking-normal">
+              <Button variant="outline" className="w-full sm:w-auto rounded-xl h-11 px-8 font-bold text-[10px] uppercase gap-2 border-slate-100 tracking-widest">
                 <BarChart3 className="h-4 w-4" />
                 Export Brief
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
+              <div className="space-y-6 sm:space-y-8">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Conversion Efficiency</p>
-                  <h4 className="text-5xl font-bold font-headline tracking-normal text-primary">{stats.conversionRate}%</h4>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Conversion Efficiency</p>
+                  <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-primary">{stats.conversionRate}%</h4>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-normal">
+                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
                     <span className="text-slate-400">Benchmark Goal</span>
                     <span className="text-slate-900">25%</span>
                   </div>
@@ -562,27 +518,27 @@ export default function PipelineEnginePage() {
                 </div>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Opportunity Value</p>
-                  <h4 className="text-5xl font-bold font-headline tracking-normal text-slate-900">₹{(stats.activeValue / 1000).toFixed(0)}k</h4>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Opportunity Value</p>
+                  <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-slate-900">₹{(stats.activeValue / 1000).toFixed(0)}k</h4>
                 </div>
-                <p className="text-sm text-slate-500 font-medium leading-relaxed tracking-normal italic">
+                <p className="text-[11px] sm:text-sm text-slate-500 font-medium leading-relaxed tracking-normal italic">
                   "Aggregate capital potential currently moving through strategic stages."
                 </p>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Monthly Inflow Forecast</p>
-                  <h4 className="text-5xl font-bold font-headline tracking-normal text-accent">₹{(stats.forecast / 1000).toFixed(0)}k</h4>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue Forecast</p>
+                  <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-accent">₹{(stats.forecast / 1000).toFixed(0)}k</h4>
                 </div>
-                <div className="p-6 rounded-2xl bg-accent/5 border border-accent/10">
-                  <p className="text-xs text-accent font-bold uppercase tracking-normal mb-1 flex items-center gap-2">
+                <div className="p-5 sm:p-6 rounded-2xl bg-accent/5 border border-accent/10">
+                  <p className="text-[10px] text-accent font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                     <Star className="h-3 w-3" />
                     Growth Vector
                   </p>
-                  <p className="text-[11px] text-slate-600 font-medium tracking-normal">Predicted revenue based on 30% pipeline conversion probability.</p>
+                  <p className="text-[10px] sm:text-[11px] text-slate-600 font-medium tracking-normal leading-relaxed">Predicted revenue based on 30% pipeline conversion probability.</p>
                 </div>
               </div>
             </div>
