@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -14,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Select, 
   SelectContent, 
@@ -23,10 +21,11 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2, Sparkles, User, Instagram, Youtube } from "lucide-react";
+import { Plus, Loader2, Sparkles, User, Instagram, Youtube, Zap, CheckCircle2 } from "lucide-react";
 import { useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
+import { fetchInstagramVisuals } from "@/ai/flows/instagram-visuals-flow";
 
 const TALENT_TYPES = ["Influencer", "Anchor", "Creator", "Model", "Virtual"];
 const REACH_CATEGORIES = ["Nano", "Micro", "Mid", "Macro", "Mega"];
@@ -36,6 +35,7 @@ const COST_TYPES = ["Per Post", "Per Reel", "Per Event", "Monthly"];
 export function AddTalentDialog() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const db = useFirestore();
 
   const [formData, setFormData] = useState({
@@ -53,11 +53,53 @@ export function AddTalentDialog() {
     verified: false,
     instagramUrl: "",
     instagramFollowers: "",
+    instagramEngagement: 0,
     youtubeUrl: "",
     youtubeSubscribers: "",
     portfolioLinks: "",
     status: "Active"
   });
+
+  const handleFetchInstagram = async () => {
+    if (!formData.instagramUrl) {
+      toast({ variant: "destructive", title: "Missing URL", description: "Provide an Instagram URL to fetch intelligence." });
+      return;
+    }
+
+    setIsFetching(true);
+    try {
+      const result = await fetchInstagramVisuals({
+        instagramUrl: formData.instagramUrl,
+        category: formData.type || "Influencer"
+      });
+
+      // Parse followers string (e.g. "12.4k") to number
+      let followerNum = 0;
+      const fStr = result.followers.toLowerCase();
+      if (fStr.includes('k')) followerNum = parseFloat(fStr) * 1000;
+      else if (fStr.includes('m')) followerNum = parseFloat(fStr) * 1000000;
+      else followerNum = parseFloat(fStr) || 0;
+
+      const engagementNum = parseFloat(result.engagementRate) || 0;
+
+      setFormData(prev => ({
+        ...prev,
+        instagramFollowers: followerNum.toString(),
+        instagramEngagement: engagementNum,
+        profileImage: result.profilePictureUrl
+      }));
+
+      toast({
+        title: "Intelligence Synced",
+        description: `Retrieved ${result.followers} followers and ${result.engagementRate} engagement.`
+      });
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Fetch Failed", description: "Could not retrieve Instagram metrics." });
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,12 +110,13 @@ export function AddTalentDialog() {
       await addDoc(collection(db, "talents"), {
         ...formData,
         category: formData.category.split(',').map(c => c.trim()),
-        languages: formData.languages.split(',').map(l => c.trim()),
+        languages: formData.languages.split(',').map(l => l.trim()),
         estimatedCost: Number(formData.estimatedCost) || 0,
         platforms: {
           instagram: {
             url: formData.instagramUrl,
-            followers: Number(formData.instagramFollowers) || 0
+            followers: Number(formData.instagramFollowers) || 0,
+            engagementRate: formData.instagramEngagement
           },
           youtube: {
             url: formData.youtubeUrl,
@@ -101,6 +144,7 @@ export function AddTalentDialog() {
         verified: false,
         instagramUrl: "",
         instagramFollowers: "",
+        instagramEngagement: 0,
         youtubeUrl: "",
         youtubeSubscribers: "",
         portfolioLinks: "",
@@ -179,25 +223,56 @@ export function AddTalentDialog() {
               <Instagram className="h-4 w-4 text-primary" />
               Social Media Presence
             </h4>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-slate-400 px-1">Instagram URL</Label>
-                <Input 
-                  value={formData.instagramUrl}
-                  onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
-                  placeholder="https://instagram.com/..."
-                  className="h-12 rounded-xl border-slate-100 font-medium"
-                />
+            <div className="space-y-6">
+              <div className="flex gap-3">
+                <div className="flex-1 space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Instagram URL</Label>
+                  <Input 
+                    value={formData.instagramUrl}
+                    onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
+                    placeholder="https://instagram.com/profile"
+                    className="h-12 rounded-xl border-slate-100 font-medium"
+                  />
+                </div>
+                <div className="flex items-end pb-0.5">
+                  <Button 
+                    type="button" 
+                    onClick={handleFetchInstagram} 
+                    disabled={isFetching || !formData.instagramUrl}
+                    variant="secondary"
+                    className="h-12 rounded-xl font-bold gap-2 px-6 shadow-sm border-none bg-primary/5 text-primary hover:bg-primary/10"
+                  >
+                    {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                    Fetch Intel
+                  </Button>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase text-slate-400 px-1">Instagram Followers</Label>
-                <Input 
-                  type="number"
-                  value={formData.instagramFollowers}
-                  onChange={(e) => setFormData({ ...formData, instagramFollowers: e.target.value })}
-                  placeholder="e.g. 15000"
-                  className="h-12 rounded-xl border-slate-100 font-medium"
-                />
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Followers</Label>
+                  <div className="relative">
+                    <Input 
+                      type="number"
+                      value={formData.instagramFollowers}
+                      onChange={(e) => setFormData({ ...formData, instagramFollowers: e.target.value })}
+                      placeholder="e.g. 15000"
+                      className="h-12 rounded-xl border-slate-100 font-bold pr-12"
+                    />
+                    {formData.instagramFollowers && !isFetching && <CheckCircle2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Engagement %</Label>
+                  <Input 
+                    type="number"
+                    step="0.1"
+                    value={formData.instagramEngagement}
+                    onChange={(e) => setFormData({ ...formData, instagramEngagement: parseFloat(e.target.value) || 0 })}
+                    placeholder="e.g. 4.2"
+                    className="h-12 rounded-xl border-slate-100 font-bold"
+                  />
+                </div>
               </div>
             </div>
           </div>
