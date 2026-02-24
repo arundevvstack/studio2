@@ -48,6 +48,11 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 import Link from "next/link";
 
+/**
+ * @fileOverview Team Registry.
+ * High-density executive monitoring with dynamic role resolution.
+ */
+
 export default function TeamPage() {
   const db = useFirestore();
   const { user } = useUser();
@@ -60,6 +65,12 @@ export default function TeamPage() {
     return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
   }, [db, user]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
+
+  const rolesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "roles"));
+  }, [db, user]);
+  const { data: roles } = useCollection(rolesQuery);
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -74,18 +85,20 @@ export default function TeamPage() {
         p.crew?.some((c: any) => c.talentId === member.id)
       ).length || 0;
       
-      return { ...member, projectCount };
+      const roleName = roles?.find(r => r.id === member.roleId)?.name || member.roleId || "CREW MEMBER";
+      
+      return { ...member, projectCount, roleName };
     }).filter((member) => {
       const matchesSearch = 
         member.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         member.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.roleId?.toLowerCase().includes(searchQuery.toLowerCase());
+        member.roleName?.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesType = typeFilter === "all" || member.type === typeFilter;
       
       return matchesSearch && matchesType;
     });
-  }, [team, searchQuery, typeFilter, projects]);
+  }, [team, searchQuery, typeFilter, projects, roles]);
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-20">
@@ -184,7 +197,7 @@ export default function TeamPage() {
                         <h3 className="text-lg font-bold font-headline text-slate-900 tracking-tight leading-tight">{member.firstName} {member.lastName}</h3>
                         <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-50" />
                       </div>
-                      <p className="text-xs font-bold text-primary uppercase tracking-widest">{member.roleId || "CREW MEMBER"}</p>
+                      <p className="text-xs font-bold text-primary uppercase tracking-widest">{member.roleName}</p>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -246,7 +259,7 @@ export default function TeamPage() {
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm font-bold text-slate-600 tracking-normal">
                         <Briefcase className="h-3.5 w-3.5 text-slate-300" />
-                        {member.roleId || "Expert"}
+                        {member.roleName}
                       </div>
                     </TableCell>
                     <TableCell className="text-center">

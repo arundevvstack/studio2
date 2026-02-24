@@ -55,6 +55,12 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ mem
   }, [db, memberId, user]);
   const { data: member, isLoading: isMemberLoading } = useDoc(memberRef);
 
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, "projects"));
@@ -84,6 +90,8 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ mem
     );
   }
 
+  const roleName = role?.name || member.roleId || "Expert";
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -108,7 +116,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ mem
             <div className="flex items-center gap-4 text-sm font-medium text-slate-500 tracking-normal">
               <span className="flex items-center gap-2">
                 <Briefcase className="h-4 w-4" />
-                {member.roleId || "Expert"}
+                {roleName}
               </span>
               <span className="text-slate-200">•</span>
               <span className="flex items-center gap-2">
@@ -145,7 +153,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ mem
               </Avatar>
               <div>
                 <h2 className="text-2xl font-bold font-headline text-slate-900 tracking-normal">{member.firstName} {member.lastName}</h2>
-                <p className="text-[10px] font-bold text-primary uppercase mt-2 tracking-widest">{member.roleId}</p>
+                <p className="text-[10px] font-bold text-primary uppercase mt-2 tracking-widest">{roleName}</p>
               </div>
               <Badge className="bg-accent/10 text-accent border-none font-bold text-[10px] px-4 py-1.5 uppercase tracking-normal rounded-xl">
                 Ready for Deployment
@@ -216,7 +224,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ mem
                             <Badge variant="outline" className="text-[8px] font-bold uppercase border-slate-100">{project.status}</Badge>
                             <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1 tracking-normal">
                               <User className="h-3 w-3" />
-                              Role: {project.crew?.find((c: any) => c.talentId === memberId)?.role || "Expert"}
+                              Role: {project.crew?.find((c: any) => c.talentId === memberId)?.role || roleName}
                             </span>
                           </div>
                         </div>
