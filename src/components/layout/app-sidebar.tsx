@@ -20,10 +20,9 @@ import {
   Briefcase,
   Globe,
   Clock,
-  HelpCircle,
   Key,
   Shield,
-  User
+  Mic2
 } from "lucide-react";
 import {
   Sidebar,
@@ -65,21 +64,23 @@ const ICON_MAP: Record<string, any> = {
   Globe,
   Clock,
   Key,
-  Shield
+  Shield,
+  Mic2
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
   { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
-  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 2, isVisible: true },
-  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 3, isVisible: true },
-  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 4, isVisible: true },
-  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 5, isVisible: true },
-  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 6, isVisible: true },
-  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 7, isVisible: true },
-  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 8, isVisible: true },
-  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 9, isVisible: true },
-  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 10, isVisible: true },
-  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 11, isVisible: true },
+  { id: "talent-library", title: "Talent Library", iconName: "Mic2", url: "/talent-library", order: 2, isVisible: true },
+  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 3, isVisible: true },
+  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 4, isVisible: true },
+  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 5, isVisible: true },
+  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 6, isVisible: true },
+  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 7, isVisible: true },
+  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 8, isVisible: true },
+  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 9, isVisible: true },
+  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 10, isVisible: true },
+  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 11, isVisible: true },
+  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 12, isVisible: true },
 ];
 
 const managementItems = [
@@ -92,7 +93,7 @@ export function AppSidebar() {
   const db = useFirestore();
   const { user } = useUser();
 
-  // Auth & Permissions
+  // Auth & Permissions (Assuming all have access if role registry not yet managed for MVP)
   const memberRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "teamMembers", user.uid);
@@ -106,14 +107,13 @@ export function AppSidebar() {
   const { data: role } = useDoc(roleRef);
 
   const hasPermission = (perm: string) => {
-    if (!role) return true; // Proto phase: assume access if role registry not yet managed
+    if (!role) return true; 
     return role.permissions?.includes(perm);
   };
 
   const navQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "sidebar_items"), orderBy("order", "asc"));
-  }, [db, user]);
+  }, [db]);
   const { data: remoteItems } = useCollection(navQuery);
 
   const billingRef = useMemoFirebase(() => {
@@ -161,7 +161,7 @@ export function AppSidebar() {
           <SidebarMenu className="space-y-1">
             {displayItems.map((item) => {
               const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
-              const Icon = ICON_MAP[item.iconName] || HelpCircle;
+              const Icon = ICON_MAP[item.iconName] || Globe;
               
               return (
                 <SidebarMenuItem key={item.id}>

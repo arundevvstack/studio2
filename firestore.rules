@@ -2,51 +2,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * STRATEGIC SECURITY POLICY [DEPLOYMENT: 2026-02-24T10:00:00Z]
-     * Optimized for high-fidelity prototyping and public brand visibility.
-     */
-
-    // Public read for brand identity (Logo, Company Name) to support the login portal
-    match /companyBillingSettings/{id} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    // Default policy: All other entities require authorized executive access
     match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Explicit path matches for metadata tracking and clarity
-    
-    match /users/{userId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /teamMembers/{memberId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /roles/{roleId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /sidebar_items/{itemId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /clients/{clientId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /projects/{projectId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /leads/{leadId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
   }
 }

@@ -18,6 +18,58 @@
       },
       "required": ["id", "email", "isActive"]
     },
+    "Talent": {
+      "title": "Talent",
+      "type": "object",
+      "description": "A centralized database record for anchors, influencers, and media talents.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "profileImage": { "type": "string", "format": "uri" },
+        "type": { "type": "string", "enum": ["Influencer", "Anchor", "Creator", "Model", "Virtual"] },
+        "category": { "type": "array", "items": { "type": "string" } },
+        "location": { "type": "string" },
+        "languages": { "type": "array", "items": { "type": "string" } },
+        "platforms": {
+          "type": "object",
+          "properties": {
+            "instagram": {
+              "type": "object",
+              "properties": {
+                "url": { "type": "string" },
+                "followers": { "type": "number" },
+                "engagementRate": { "type": "number" }
+              }
+            },
+            "youtube": {
+              "type": "object",
+              "properties": {
+                "url": { "type": "string" },
+                "subscribers": { "type": "number" }
+              }
+            },
+            "tiktok": {
+              "type": "object",
+              "properties": {
+                "url": { "type": "string" },
+                "followers": { "type": "number" }
+              }
+            }
+          }
+        },
+        "reachCategory": { "type": "string", "enum": ["Nano", "Micro", "Mid", "Macro", "Mega"] },
+        "estimatedCost": { "type": "number" },
+        "costType": { "type": "string", "enum": ["Per Post", "Per Reel", "Per Event", "Monthly"] },
+        "collabType": { "type": "string", "enum": ["Paid", "Barter", "Free", "Agency Managed"] },
+        "availableForFreeCollab": { "type": "boolean" },
+        "rating": { "type": "number" },
+        "verified": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["Active", "Inactive"] },
+        "portfolioLinks": { "type": "array", "items": { "type": "string" } },
+        "internalNotes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "TeamMember": {
       "title": "TeamMember",
       "type": "object",
@@ -91,13 +143,17 @@
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": ["password", "anonymous", "google"]
   },
   "firestore": {
     "structure": [
       {
         "path": "/users/{userId}",
         "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "User profiles." }
+      },
+      {
+        "path": "/talents/{talentId}",
+        "definition": { "entityName": "Talent", "schema": { "$ref": "#/backend/entities/Talent" }, "description": "Talent database." }
       },
       {
         "path": "/teamMembers/{memberId}",
