@@ -40,7 +40,8 @@ import {
   CheckCircle2,
   Lock,
   Unlock,
-  Shield
+  Shield,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -94,6 +95,7 @@ const MANAGEMENT_MODULES = [
 ];
 
 const SETTINGS_TABS = [
+  { id: "profile", label: "My Profile", icon: User },
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "team", label: "Team Members", icon: Users },
   { id: "projects", label: "Projects", icon: Briefcase },
@@ -109,6 +111,7 @@ export default function SettingsPage() {
   const [isSaving, setIsGenerating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [newVertical, setNewVertical] = useState("");
 
   // Auth & Permissions Logic
@@ -130,10 +133,14 @@ export default function SettingsPage() {
   };
 
   const visibleTabs = useMemo(() => {
-    return SETTINGS_TABS.filter(tab => hasPermission(`settings:${tab.id}`));
+    return SETTINGS_TABS.filter(tab => {
+      if (tab.id === 'profile') return true; // Personal profile always visible
+      if (tab.id === 'preferences') return true; // Appearance preferences always visible
+      return hasPermission(`settings:${tab.id}`);
+    });
   }, [userRole]);
 
-  const [activeTab, setActiveTab] = useState("organization");
+  const [activeTab, setActiveTab] = useState("profile");
 
   // Initialize theme
   useEffect(() => {
@@ -191,6 +198,14 @@ export default function SettingsPage() {
     logo: ""
   });
 
+  // Personal Profile Form State
+  const [profileForm, setProfileForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    thumbnail: ""
+  });
+
   useEffect(() => {
     if (billingSettings) {
       setBillingForm({
@@ -210,6 +225,17 @@ export default function SettingsPage() {
       });
     }
   }, [billingSettings]);
+
+  useEffect(() => {
+    if (currentUserMember) {
+      setProfileForm({
+        firstName: currentUserMember.firstName || "",
+        lastName: currentUserMember.lastName || "",
+        phone: currentUserMember.phone || "",
+        thumbnail: currentUserMember.thumbnail || ""
+      });
+    }
+  }, [currentUserMember]);
 
   // Role Form State
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
@@ -268,7 +294,17 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveProfile = () => {
+  const handleProfilePicClick = () => profilePicInputRef.current?.click();
+  const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setProfileForm(prev => ({ ...prev, thumbnail: reader.result as string }));
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveOrgProfile = () => {
     if (!billingSettingsRef) return;
     setIsGenerating(true);
     setDocumentNonBlocking(billingSettingsRef, {
@@ -283,6 +319,19 @@ export default function SettingsPage() {
     setTimeout(() => {
       setIsGenerating(false);
       toast({ title: "Profile Synchronized", description: "Organization details updated." });
+    }, 800);
+  };
+
+  const handleSavePersonalProfile = () => {
+    if (!memberRef) return;
+    setIsGenerating(true);
+    updateDocumentNonBlocking(memberRef, {
+      ...profileForm,
+      updatedAt: serverTimestamp()
+    });
+    setTimeout(() => {
+      setIsGenerating(false);
+      toast({ title: "Identity Synchronized", description: "Your personal profile has been updated." });
     }, 800);
   };
 
@@ -311,6 +360,80 @@ export default function SettingsPage() {
             </TabsTrigger>
           ))}
         </TabsList>
+
+        <TabsContent value="profile" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+            <CardHeader className="p-10 pb-0">
+              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Personal Identity</CardTitle>
+              <CardDescription className="tracking-normal">Manage your executive profile, contact details, and system portrait.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-10 space-y-10">
+              <div className="flex flex-col items-center gap-6 py-6 border-b border-slate-50 dark:border-slate-800 mb-6">
+                <div className="relative group cursor-pointer" onClick={handleProfilePicClick}>
+                  <Avatar className="h-32 w-32 rounded-[2.5rem] border-4 border-slate-50 shadow-xl overflow-hidden bg-white dark:border-slate-800 dark:bg-slate-800">
+                    {profileForm.thumbnail ? (
+                      <AvatarImage src={profileForm.thumbnail} className="object-cover" />
+                    ) : (
+                      <AvatarFallback className="bg-primary/5 text-primary text-2xl font-bold">{profileForm.firstName?.[0] || 'E'}</AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="absolute inset-0 bg-black/40 rounded-[2.5rem] flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
+                    <Upload className="h-6 w-6 text-white mb-1" />
+                    <span className="text-[8px] font-bold text-white uppercase tracking-widest">Update Portrait</span>
+                  </div>
+                  <input type="file" ref={profilePicInputRef} className="hidden" accept="image/*" onChange={handleProfilePicChange} />
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Identifier Photo</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">First Name</Label>
+                  <Input value={profileForm.firstName} onChange={(e) => setProfileForm({...profileForm, firstName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Last Name</Label>
+                  <Input value={profileForm.lastName} onChange={(e) => setProfileForm({...profileForm, lastName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">System Email</Label>
+                  <Input value={currentUserMember?.email} disabled className="h-14 rounded-xl bg-slate-100 border-none font-bold tracking-normal text-slate-400" />
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Direct Hotline (Phone)</Label>
+                  <Input value={profileForm.phone} onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
+                </div>
+              </div>
+
+              <div className="p-6 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex items-center justify-between dark:bg-slate-800/50 dark:border-slate-800">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
+                    <ShieldCheck className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-normal">Strategic Role</h4>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Assigned Entitlement</p>
+                  </div>
+                </div>
+                <Badge className="bg-primary text-white border-none rounded-xl px-4 py-1.5 font-bold text-[10px] uppercase tracking-widest">
+                  {roles?.find(r => r.id === currentUserMember?.roleId)?.name || "General Executive"}
+                </Badge>
+              </div>
+
+              <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
+                <Button onClick={handleSavePersonalProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Sync Identity
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="organization" className="animate-in slide-in-from-left-2 duration-300">
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
@@ -356,7 +479,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
-                <Button onClick={handleSaveProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
+                <Button onClick={handleSaveOrgProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Sync Changes
                 </Button>
@@ -384,7 +507,7 @@ export default function SettingsPage() {
               ) : (
                 <Table>
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                    <TableRow className="hover:bg-transparent border-slate-50 dark:border-slate-800">
+                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Role Identity</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-normal">Capabilities</TableHead>
                       <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
@@ -501,7 +624,7 @@ export default function SettingsPage() {
               ) : (
                 <Table>
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                    <TableRow className="hover:bg-transparent border-slate-50 dark:border-slate-800">
+                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Crew Member</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-normal">Strategic Role</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-normal text-center">Status</TableHead>
@@ -510,7 +633,7 @@ export default function SettingsPage() {
                   </TableHeader>
                   <TableBody>
                     {team?.map((member) => (
-                      <TableRow key={member.id} className="group transition-colors border-slate-50 dark:border-slate-800 hover:bg-slate-50/50">
+                      <TableRow key={member.id} className="group transition-colors border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
                         <TableCell className="px-10 py-6">
                           <div className="flex items-center gap-4">
                             <Avatar className="h-10 w-10 rounded-xl"><AvatarImage src={member.thumbnail} /><AvatarFallback>{member.firstName[0]}</AvatarFallback></Avatar>
@@ -555,7 +678,7 @@ export default function SettingsPage() {
 
         <TabsContent value="projects" className="animate-in slide-in-from-left-2 duration-300">
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
-            <CardHeader className="p-10 pb-6 border-b border-slate-50 dark:border-slate-800">
+            <CardHeader className="p-10 pb-6 border-b border-slate-100 dark:border-slate-800">
               <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Execution Verticals</CardTitle>
             </CardHeader>
             <CardContent className="p-10 space-y-8">
@@ -591,7 +714,7 @@ export default function SettingsPage() {
                   <Input value={billingForm.bankAccountNumber} onChange={(e) => setBillingForm({...billingForm, bankAccountNumber: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
                 </div>
               </div>
-              <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
+              <div className="flex justify-end pt-6 border-t border-slate-100 dark:border-slate-800">
                 <Button onClick={() => { if (!billingSettingsRef) return; setIsGenerating(true); setDocumentNonBlocking(billingSettingsRef, { ...billingForm, updatedAt: serverTimestamp() }, { merge: true }); setTimeout(() => { setIsGenerating(false); toast({ title: "Financials Synchronized", description: "Settlement details updated." }); }, 800); }} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Sync Financials
@@ -616,7 +739,7 @@ export default function SettingsPage() {
               ) : (
                 <Table>
                   <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                    <TableRow className="hover:bg-transparent border-slate-50 dark:border-slate-800">
+                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Module Identity</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-normal text-center">Status</TableHead>
                       <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
@@ -624,7 +747,7 @@ export default function SettingsPage() {
                   </TableHeader>
                   <TableBody>
                     {navItems?.map((item) => (
-                      <TableRow key={item.id} className="group transition-colors border-slate-50 dark:border-slate-800">
+                      <TableRow key={item.id} className="group transition-colors border-slate-100 dark:border-slate-800">
                         <TableCell className="px-10 py-6">
                           <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400"><Sparkles className="h-4 w-4" /></div>
