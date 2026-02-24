@@ -33,6 +33,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 
+/**
+ * @fileOverview Shoot Network Registry.
+ * High-density repository [4 items in line] optimized for creative personnel deployment.
+ */
+
 export default function ShootNetworkPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -47,6 +52,7 @@ export default function ShootNetworkPage() {
   });
 
   const talentQuery = useMemoFirebase(() => {
+    // We only query if the user is authenticated to match the new strict rules
     if (!user) return null;
     return query(
       collection(db, "shoot_network"), 
@@ -79,7 +85,7 @@ export default function ShootNetworkPage() {
     if (key === 'gender') updated.gender = 'All';
     if (key === 'paymentStage') updated.paymentStage = 'All';
     if (key === 'category' && value) updated.category = filters.category.filter((c: string) => c !== value);
-    if (key === 'tags' && value) updated.tags = filters.tags.filter((t: string) => t !== value);
+    if (key === 'tags' && value) updated.tags = (filters.tags || []).filter((t: string) => t !== value);
     setFilters(updated);
   };
 
@@ -147,18 +153,21 @@ export default function ShootNetworkPage() {
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-3 p-6 bg-white/50 rounded-[2rem] border border-slate-100 shadow-sm animate-in fade-in duration-300">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Active Strategic Filters:</span>
+              
               {filters.district !== "All" && (
                 <Badge className="bg-white text-slate-600 border border-slate-100 font-bold text-[10px] rounded-full px-4 py-1.5 gap-2 shadow-sm">
                   {filters.district}
                   <Button variant="ghost" size="icon" onClick={() => removeFilter('district')} className="h-4 w-4 p-0 hover:bg-transparent"><X className="h-3 w-3 text-slate-300" /></Button>
                 </Badge>
               )}
+
               {filters.category.map((cat: string) => (
                 <Badge key={cat} className="bg-white text-primary border border-primary/10 font-bold text-[10px] rounded-full px-4 py-1.5 gap-2 shadow-sm">
                   {cat}
                   <Button variant="ghost" size="icon" onClick={() => removeFilter('category', cat)} className="h-4 w-4 p-0 hover:bg-transparent"><X className="h-3 w-3 text-primary/30" /></Button>
                 </Badge>
               ))}
+
               <Button variant="ghost" size="sm" onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All", tags: [] })} className="text-[10px] font-bold text-primary uppercase hover:bg-primary/5 h-8 px-4 rounded-full tracking-widest">Clear All</Button>
             </div>
           )}
