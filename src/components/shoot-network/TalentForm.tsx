@@ -33,7 +33,8 @@ import {
   Youtube,
   Linkedin,
   Twitter,
-  Facebook
+  Facebook,
+  ShieldCheck
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +42,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 /**
  * @fileOverview Talent Onboarding Form.
- * Features robust asset management and explicitly sets isArchived: false to ensure visibility.
+ * Features ultra-rounded design, social hub registry, and Base64 gallery uploader.
  */
 
 interface TalentFormProps {
@@ -197,8 +198,8 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     if (!formData.name || !formData.district || !formData.category) {
       toast({ 
         variant: "destructive", 
-        title: "Validation Error", 
-        description: "Identity, District, and Creative Vertical are required fields." 
+        title: "Information Missing", 
+        description: "Identify name, district, and creative vertical to proceed." 
       });
       return;
     }
@@ -225,14 +226,14 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       thumbnail: formData.thumbnail,
       gallery: gallery,
       freeCollab: formData.freeCollab,
-      isArchived: false, // Ensure visibility in the active repository
+      isArchived: false,
       updatedAt: serverTimestamp(),
     };
 
     if (existingTalent) {
       const talentRef = doc(db, "shoot_network", existingTalent.id);
       updateDocumentNonBlocking(talentRef, talentData);
-      toast({ title: "Intelligence Synchronized", description: `${formData.name} has been updated.` });
+      toast({ title: "Intelligence Synchronized", description: `${formData.name} profile has been updated.` });
     } else {
       const talentRef = collection(db, "shoot_network");
       const newDocRef = doc(talentRef);
@@ -248,35 +249,35 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   };
 
   return (
-    <div className="p-8 space-y-8 max-h-[75vh] overflow-y-auto custom-scrollbar">
+    <div className="p-10 space-y-10 max-h-[80vh] overflow-y-auto custom-scrollbar bg-white">
       <div className="flex flex-col items-center gap-4 py-4">
         <div className="relative group cursor-pointer" onClick={handleThumbnailClick}>
-          <Avatar className="h-32 w-32 border-4 border-slate-50 shadow-xl rounded-[2.5rem] transition-all group-hover:opacity-80">
+          <Avatar className="h-40 w-40 border-8 border-slate-50 shadow-2xl rounded-[3rem] transition-all group-hover:scale-[1.02]">
             <AvatarImage src={formData.thumbnail || ""} className="object-cover" />
             <AvatarFallback className="bg-slate-100">
-              <Upload className="h-8 w-8 text-slate-300" />
+              <Upload className="h-10 w-10 text-slate-300" />
             </AvatarFallback>
           </Avatar>
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Badge className="bg-black/50 text-white border-none rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-normal">Change Photo</Badge>
+            <Badge className="bg-black/60 backdrop-blur-md text-white border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">Update Photo</Badge>
           </div>
           <input type="file" ref={thumbInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'thumbnail')} />
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Identity Portrait</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Identity Portrait</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Full Identity Name</Label>
-          <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="rounded-xl bg-slate-50 border-none h-12 font-bold tracking-normal focus-visible:ring-primary/20" placeholder="Legal or Brand Name" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-3">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Full Identity Name</Label>
+          <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="rounded-2xl bg-slate-50 border-none h-14 font-bold tracking-tight text-lg shadow-inner px-6 focus-visible:ring-primary/20" placeholder="Legal or Brand Name" />
         </div>
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Creative Vertical</Label>
+        <div className="space-y-3">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Creative Vertical</Label>
           <Select value={formData.category} onValueChange={(val) => setFormData({...formData, category: val})}>
-            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
+            <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg tracking-tight shadow-inner px-6 focus:ring-primary/20">
               <SelectValue placeholder="Identify vertical..." />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+            <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
               {CATEGORIES.map(cat => (
                 <SelectItem key={cat} value={cat} className="font-medium">{cat}</SelectItem>
               ))}
@@ -285,27 +286,27 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">District</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-3">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">District</Label>
           <Select value={formData.district} onValueChange={(val) => setFormData({...formData, district: val})}>
-            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
+            <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg tracking-tight shadow-inner px-6 focus:ring-primary/20">
               <SelectValue placeholder="Select District..." />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[300px]">
+            <SelectContent className="rounded-2xl border-slate-100 shadow-2xl max-h-[300px]">
               {KERALA_DISTRICTS.map(district => (
                 <SelectItem key={district} value={district} className="font-medium">{district}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Gender</Label>
+        <div className="space-y-3">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Gender Identity</Label>
           <Select value={formData.gender} onValueChange={(val) => setFormData({...formData, gender: val})}>
-            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal focus:ring-primary/20">
+            <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg tracking-tight shadow-inner px-6 focus:ring-primary/20">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+            <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
               <SelectItem value="Male">Male</SelectItem>
               <SelectItem value="Female">Female</SelectItem>
               <SelectItem value="Other">Other</SelectItem>
@@ -314,102 +315,115 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-slate-100">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-          <Tag className="h-3 w-3" /> Project Verticals (Tags)
+      <div className="space-y-6 pt-6 border-t border-slate-50">
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
+          <Tag className="h-3.5 w-3.5" /> Production Portfolios (Verticals)
         </Label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2.5">
           {PROJECT_TAGS.map(tag => (
-            <Badge key={tag} onClick={() => toggleTag(tag)} variant={selectedTags.includes(tag) ? "default" : "outline"} className={`cursor-pointer px-4 py-1.5 rounded-xl font-bold text-[10px] uppercase tracking-normal transition-all ${selectedTags.includes(tag) ? "bg-primary border-none text-white shadow-md shadow-primary/20" : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"}`}>
+            <Badge 
+              key={tag} 
+              onClick={() => toggleTag(tag)} 
+              variant={selectedTags.includes(tag) ? "default" : "outline"} 
+              className={`cursor-pointer px-5 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest transition-all ${
+                selectedTags.includes(tag) 
+                  ? "bg-primary border-none text-white shadow-xl shadow-primary/30 scale-105" 
+                  : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+              }`}
+            >
               {tag}
             </Badge>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-8 pt-4 border-t border-slate-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-6 border-t border-slate-50">
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Verification</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Verification Status</Label>
           <Select value={formData.paymentStage} onValueChange={(val) => setFormData({...formData, paymentStage: val})}>
-            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold tracking-normal">
+            <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold tracking-tight shadow-inner px-6">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-              <SelectItem value="Yes">Verified (Paid)</SelectItem>
-              <SelectItem value="No">Pending</SelectItem>
+            <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
+              <SelectItem value="Yes" className="text-green-600 font-bold">Verified (Paid Access)</SelectItem>
+              <SelectItem value="No">Pending Validation</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Willing to Free Collab?</Label>
-          <RadioGroup value={formData.freeCollab} onValueChange={(val) => setFormData({...formData, freeCollab: val})} className="flex items-center gap-6 h-12">
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="Yes" id="collab-yes" />
-              <Label htmlFor="collab-yes" className="text-xs font-bold text-slate-600">Yes</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Open to Free Collaboration?</Label>
+          <RadioGroup value={formData.freeCollab} onValueChange={(val) => setFormData({...formData, freeCollab: val})} className="flex items-center gap-10 h-14">
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="Yes" id="collab-yes" className="h-5 w-5 border-primary text-primary" />
+              <Label htmlFor="collab-yes" className="text-sm font-bold text-slate-600 cursor-pointer">Yes</Label>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="No" id="collab-no" />
-              <Label htmlFor="collab-no" className="text-xs font-bold text-slate-600">No</Label>
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="No" id="collab-no" className="h-5 w-5 border-slate-300" />
+              <Label htmlFor="collab-no" className="text-sm font-bold text-slate-600 cursor-pointer">No</Label>
             </div>
           </RadioGroup>
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-slate-100">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2"><Share2 className="h-3 w-3" /> Social Media</Label>
-        <div className="flex gap-2">
+      <div className="space-y-6 pt-6 border-t border-slate-50">
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Global Social Registry</Label>
+        <div className="flex gap-3">
           <Select value={newSocialPlatform} onValueChange={setNewSocialPlatform}>
-            <SelectTrigger className="h-12 w-40 rounded-xl bg-slate-50 border-none font-bold tracking-normal"><SelectValue /></SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-              {SOCIAL_PLATFORMS.map(p => <SelectItem key={p.id} value={p.id}>{p.id}</SelectItem>)}
+            <SelectTrigger className="h-14 w-48 rounded-2xl bg-slate-50 border-none font-bold tracking-widest text-[10px] uppercase shadow-inner"><SelectValue /></SelectTrigger>
+            <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
+              {SOCIAL_PLATFORMS.map(p => <SelectItem key={p.id} value={p.id} className="text-xs font-bold uppercase">{p.id}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Input value={newSocialUrl} onChange={(e) => setNewSocialUrl(e.target.value)} placeholder="Link or Handle" className="rounded-xl bg-slate-50 border-none h-12 flex-1 font-bold tracking-normal" />
-          <Button onClick={handleAddSocial} type="button" className="h-12 w-12 rounded-xl bg-slate-900 text-white shadow-lg"><Plus className="h-5 w-5" /></Button>
+          <Input value={newSocialUrl} onChange={(e) => setNewSocialUrl(e.target.value)} placeholder="Username or direct URL link..." className="rounded-2xl bg-slate-50 border-none h-14 flex-1 font-bold tracking-tight shadow-inner px-6" />
+          <Button onClick={handleAddSocial} type="button" className="h-14 w-14 rounded-2xl bg-slate-900 text-white shadow-xl hover:bg-slate-800 transition-all"><Plus className="h-6 w-6" /></Button>
         </div>
-        <div className="grid grid-cols-1 gap-2">
-          {socialLinks.map((link, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-100 group animate-in fade-in slide-in-from-left-2 duration-300">
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">{link.platform}:</span>
-                <span className="text-xs font-bold text-slate-900 truncate">{link.url}</span>
+        <div className="grid grid-cols-1 gap-3">
+          {socialLinks.map((link, idx) => {
+            const PlatformIcon = SOCIAL_PLATFORMS.find(p => p.id === link.platform)?.icon || Globe;
+            return (
+              <div key={idx} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 border border-slate-100 group animate-in slide-in-from-left-2 duration-300">
+                <div className="flex items-center gap-4">
+                  <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center shadow-sm text-primary"><PlatformIcon className="h-4 w-4" /></div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{link.platform}:</span>
+                  <span className="text-sm font-bold text-slate-900 truncate max-w-[300px]">{link.url}</span>
+                </div>
+                <Button onClick={() => handleRemoveSocial(idx)} type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-300 hover:text-destructive hover:bg-destructive/5"><X className="h-5 w-5" /></Button>
               </div>
-              <Button onClick={() => handleRemoveSocial(idx)} type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-destructive"><X className="h-4 w-4" /></Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-slate-100">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2"><ImageIcon className="h-3 w-3" /> Professional Gallery Manager</Label>
-        <div className="grid grid-cols-1 gap-4">
-          <div className="flex gap-2">
-            <Input value={newItemUrl} onChange={(e) => setNewItemUrl(e.target.value)} placeholder="Asset URL" className="rounded-xl bg-slate-50 border-none h-12 flex-1 font-bold tracking-normal" />
+      <div className="space-y-6 pt-6 border-t border-slate-50">
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><ImageIcon className="h-3.5 w-3.5" /> Professional Gallery Hub</Label>
+        <div className="grid grid-cols-1 gap-6">
+          <div className="flex gap-3">
+            <Input value={newItemUrl} onChange={(e) => setNewItemUrl(e.target.value)} placeholder="External asset URL (Vimeo, Drive, Unsplash)..." className="rounded-2xl bg-slate-50 border-none h-14 flex-1 font-bold tracking-tight shadow-inner px-6" />
             <Select value={newItemType} onValueChange={(val: any) => setNewItemType(val)}>
-              <SelectTrigger className="h-12 w-32 rounded-xl bg-slate-50 border-none font-bold tracking-normal"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="image">Image</SelectItem><SelectItem value="video">Video</SelectItem></SelectContent>
+              <SelectTrigger className="h-14 w-36 rounded-2xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest shadow-inner"><SelectValue /></SelectTrigger>
+              <SelectContent className="rounded-2xl"><SelectItem value="image">Image</SelectItem><SelectItem value="video">Video</SelectItem></SelectContent>
             </Select>
-            <Button onClick={handleAddGalleryUrl} type="button" className="h-12 w-12 rounded-xl bg-slate-900 text-white shadow-lg"><Plus className="h-5 w-5" /></Button>
+            <Button onClick={handleAddGalleryUrl} type="button" className="h-14 w-14 rounded-2xl bg-slate-900 text-white shadow-xl hover:bg-slate-800 transition-all"><Plus className="h-6 w-6" /></Button>
           </div>
           <input type="file" ref={galleryInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'gallery')} />
-          <Button type="button" variant="outline" className="w-full h-12 rounded-xl border-dashed border-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-400 font-bold text-xs uppercase gap-2" onClick={() => galleryInputRef.current?.click()}><Upload className="h-4 w-4" /> Upload Local Image Asset</Button>
+          <Button type="button" variant="outline" className="w-full h-16 rounded-3xl border-dashed border-2 border-slate-200 bg-white hover:bg-slate-50 hover:border-primary/20 text-slate-400 hover:text-primary font-bold text-xs uppercase tracking-widest gap-3 transition-all" onClick={() => galleryInputRef.current?.click()}><Upload className="h-5 w-5" /> Upload Local Production Stills</Button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {gallery.map((item, idx) => (
-            <div key={idx} className="relative aspect-square rounded-2xl bg-slate-100 overflow-hidden group border border-slate-200">
-              <img src={item.url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="Talent Asset" />
-              {item.type === 'video' && <div className="absolute inset-0 flex items-center justify-center bg-black/20"><Video className="h-6 w-6 text-white" /></div>}
-              <Button onClick={() => handleRemoveGalleryItem(idx)} type="button" variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/40 text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-4 w-4" /></Button>
+            <div key={idx} className="relative aspect-[4/5] rounded-[2rem] bg-slate-100 overflow-hidden group border border-slate-50 shadow-sm">
+              <img src={item.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Talent Asset" />
+              {item.type === 'video' && <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"><Video className="h-10 w-10 text-white fill-white" /></div>}
+              <Button onClick={() => handleRemoveGalleryItem(idx)} type="button" variant="ghost" size="icon" className="absolute top-3 right-3 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md"><X className="h-5 w-5" /></Button>
             </div>
           ))}
         </div>
       </div>
 
-      <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center -mx-8 -mb-8 mt-4">
-        <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
+      <DialogFooter className="bg-slate-50 p-10 flex justify-between items-center -mx-10 -mb-10 mt-10 rounded-b-[3.5rem]">
+        <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-transparent">Discard Changes</Button></DialogClose>
         <DialogClose asChild>
-          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-8 h-11 gap-2 tracking-normal shadow-lg shadow-primary/20">
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-12 h-14 gap-3 tracking-widest shadow-2xl shadow-primary/30 transition-all active:scale-95">
+            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
             Add to Network
           </Button>
         </DialogClose>
