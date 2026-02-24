@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, where, orderBy } from "firebase/firestore";
 import { TalentCard } from "@/components/shoot-network/TalentCard";
 import { TalentFilterSidebar } from "@/components/shoot-network/TalentFilterSidebar";
@@ -37,11 +37,12 @@ import Link from "next/link";
 /**
  * @fileOverview Shoot Network Repository.
  * High-density grid (4 items line) with ultra-rounded Sophie Bennett style cards.
- * Decoupled from session for testing mode stability.
+ * Synchronized with user session to prevent permission errors.
  */
 
 export default function ShootNetworkPage() {
   const db = useFirestore();
+  const { user, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filters, setFilters] = useState<any>({
@@ -53,14 +54,16 @@ export default function ShootNetworkPage() {
   });
 
   const talentQuery = useMemoFirebase(() => {
+    // Only query when user is authenticated to prevent permission errors
+    if (!user) return null;
     return query(
       collection(db, "shoot_network"), 
       where("isArchived", "==", false),
       orderBy("updatedAt", "desc")
     );
-  }, [db]);
+  }, [db, user]);
 
-  const { data: talent, isLoading } = useCollection(talentQuery);
+  const { data: talent, isLoading: isDataLoading } = useCollection(talentQuery);
 
   const filteredTalent = useMemo(() => {
     if (!talent) return [];
@@ -91,6 +94,8 @@ export default function ShootNetworkPage() {
                           filters.gender !== "All" || 
                           filters.paymentStage !== "All" ||
                           (filters.tags && filters.tags.length > 0);
+
+  const isLoading = isUserLoading || (user && isDataLoading);
 
   return (
     <div className="flex h-full gap-8 animate-in fade-in duration-500">
@@ -170,7 +175,7 @@ export default function ShootNetworkPage() {
             <Loader2 className="h-12 w-12 text-primary animate-spin" />
             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Syncing Creative Database...</p>
           </div>
-        ) : filteredTalent.length > 0 ? (
+        ) : talent && filteredTalent.length > 0 ? (
           viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
               {filteredTalent.map((t: any) => <TalentCard key={t.id} talent={t} />)}

@@ -366,7 +366,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       </div>
 
       <div className="space-y-6 pt-6 border-t border-slate-50">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Social Media</Label>
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Social media</Label>
         <div className="flex gap-3">
           <Select value={newSocialPlatform} onValueChange={setNewSocialPlatform}>
             <SelectTrigger className="h-14 w-48 rounded-2xl bg-slate-50 border-none font-bold tracking-widest text-[10px] uppercase shadow-inner"><SelectValue /></SelectTrigger>
