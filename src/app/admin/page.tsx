@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
+import Link from "next/link";
 
 /**
  * @fileOverview Strategic Admin Console.
@@ -69,6 +70,12 @@ export default function AdminConsolePage() {
           </div>
           <p className="text-sm text-slate-500 font-medium tracking-normal">Manage global system policies, role hierarchy, and organization security.</p>
         </div>
+        <Button asChild className="rounded-xl font-bold h-12 px-6 shadow-lg shadow-slate-200">
+          <Link href="/admin/users">
+            <Users className="h-4 w-4 mr-2" />
+            User Management
+          </Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -169,8 +176,10 @@ export default function AdminConsolePage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right px-10">
-                          <Button variant="ghost" size="sm" className="rounded-lg font-bold text-[10px] uppercase tracking-normal gap-2 hover:bg-primary hover:text-white">
-                            Override Rules <ArrowRight className="h-3 w-3" />
+                          <Button asChild variant="ghost" size="sm" className="rounded-lg font-bold text-[10px] uppercase tracking-normal gap-2 hover:bg-primary hover:text-white transition-all">
+                            <Link href={`/admin/users?highlight=${member.id}`}>
+                              Override Rules <ArrowRight className="h-3 w-3" />
+                            </Link>
                           </Button>
                         </TableCell>
                       </TableRow>
