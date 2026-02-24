@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Card } from "@/components/ui/card";
 
 const CATEGORIES = [
   "Tech", "Lifestyle", "Fashion", "Beauty", "Travel", "Food", 
@@ -131,7 +132,7 @@ export default function TalentLibraryPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Filters Sidebar */}
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/20 space-y-10">
+          <Card className="p-8 rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/20 space-y-10 bg-white">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold font-headline tracking-tight flex items-center gap-3">
                 <Filter className="h-5 w-5 text-primary" /> Refine Registry
@@ -183,7 +184,7 @@ export default function TalentLibraryPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
           <Card className="border-none shadow-2xl shadow-primary/10 rounded-[3rem] bg-slate-900 text-white p-10 space-y-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[60px] rounded-full -mr-16 -mt-16" />
