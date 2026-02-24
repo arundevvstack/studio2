@@ -39,7 +39,8 @@ import {
   Key,
   CheckCircle2,
   Lock,
-  Unlock
+  Unlock,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -87,6 +88,11 @@ const DEFAULT_WORKSPACE_ITEMS = [
   { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 11, isVisible: true },
 ];
 
+const MANAGEMENT_MODULES = [
+  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", order: 100, isVisible: true },
+  { id: "user-management", title: "User Management", iconName: "Shield", url: "/admin/users", order: 101, isVisible: true },
+];
+
 const SETTINGS_TABS = [
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "team", label: "Team Members", icon: Users },
@@ -103,8 +109,6 @@ export default function SettingsPage() {
   const [isSaving, setIsGenerating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
-
-  // Project Settings State
   const [newVertical, setNewVertical] = useState("");
 
   // Auth & Permissions Logic
@@ -435,7 +439,7 @@ export default function SettingsPage() {
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-3"><Layers className="h-4 w-4 text-primary" /> Module Entitlements</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {DEFAULT_WORKSPACE_ITEMS.map((item) => (
+                      {[...DEFAULT_WORKSPACE_ITEMS, ...MANAGEMENT_MODULES].map((item) => (
                         <div key={item.id} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleTogglePermission(`module:${item.id}`)}>
                           <Checkbox checked={roleForm.permissions.includes(`module:${item.id}`)} onCheckedChange={() => handleTogglePermission(`module:${item.id}`)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
                           <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item.title}</span>
@@ -590,7 +594,7 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
             <div className="p-10 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/30">
               <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Workspace Sidebar</CardTitle>
-              <Button onClick={async () => { setIsGenerating(true); const batch = writeBatch(db); DEFAULT_WORKSPACE_ITEMS.forEach((item) => { const docRef = doc(collection(db, "sidebar_items"), item.id); batch.set(docRef, { ...item }); }); await batch.commit(); setIsGenerating(false); toast({ title: "Navigation Synchronized", description: "Standard modules provisioned." }); }} disabled={isSaving} variant="outline" className="h-11 px-6 rounded-xl font-bold bg-white text-slate-900 gap-2 border-slate-200">
+              <Button onClick={async () => { setIsGenerating(true); const batch = writeBatch(db); [...DEFAULT_WORKSPACE_ITEMS, ...MANAGEMENT_MODULES].forEach((item) => { const docRef = doc(collection(db, "sidebar_items"), item.id); batch.set(docRef, { ...item }); }); await batch.commit(); setIsGenerating(false); toast({ title: "Navigation Synchronized", description: "Standard modules provisioned." }); }} disabled={isSaving} variant="outline" className="h-11 px-6 rounded-xl font-bold bg-white text-slate-900 gap-2 border-slate-200">
                 <RotateCcw className="h-4 w-4" />
                 Initialize System
               </Button>

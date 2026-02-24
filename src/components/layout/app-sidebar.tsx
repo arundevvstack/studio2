@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -19,7 +20,8 @@ import {
   Globe,
   Clock,
   HelpCircle,
-  Key
+  Key,
+  Shield
 } from "lucide-react";
 import {
   Sidebar,
@@ -58,7 +60,8 @@ const ICON_MAP: Record<string, any> = {
   Briefcase,
   Globe,
   Clock,
-  Key
+  Key,
+  Shield
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
@@ -77,6 +80,7 @@ const DEFAULT_WORKSPACE_ITEMS = [
 
 const managementItems = [
   { id: "admin", title: "Admin Console", icon: ShieldCheck, url: "/admin" },
+  { id: "user-management", title: "User Management", icon: Shield, url: "/admin/users" },
 ];
 
 const footerItems = [
@@ -192,21 +196,29 @@ export function AppSidebar() {
               Management
             </SidebarGroupLabel>
             <SidebarMenu>
-              {displayManagement.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    asChild
-                    className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
-                  >
-                    <Link href={item.url} className="flex items-center">
-                      <item.icon className="h-[18px] w-[18px] text-slate-400" />
-                      <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                        {item.title}
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {displayManagement.map((item) => {
+                const isActive = pathname.startsWith(item.url);
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className={`rounded-xl h-11 px-3 transition-all ${
+                        isActive 
+                          ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
+                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                      }`}
+                    >
+                      <Link href={item.url} className="flex items-center">
+                        <item.icon className={`h-[18px] w-[18px] ${isActive ? 'text-primary' : 'text-slate-400'}`} />
+                        <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                          {item.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroup>
         )}
