@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Settings,
   LogOut,
+  LogIn,
   Plus,
   ChevronRight,
   Briefcase,
@@ -55,6 +56,7 @@ const ICON_MAP: Record<string, any> = {
   ShieldCheck,
   Settings,
   LogOut,
+  LogIn,
   Plus,
   ChevronRight,
   Briefcase,
@@ -81,11 +83,6 @@ const DEFAULT_WORKSPACE_ITEMS = [
 const managementItems = [
   { id: "admin", title: "Admin Console", icon: ShieldCheck, url: "/admin" },
   { id: "user-management", title: "User Management", icon: Shield, url: "/admin/users" },
-];
-
-const footerItems = [
-  { id: "settings", title: "Settings", icon: Settings, url: "/settings", color: "text-slate-500" },
-  { id: "logout", title: "Log out", icon: LogOut, url: "/logout", color: "text-primary" },
 ];
 
 export function AppSidebar() {
@@ -227,21 +224,46 @@ export function AppSidebar() {
       <SidebarFooter className="p-4 mt-auto">
         <SidebarSeparator className="mb-4 bg-slate-100 dark:bg-white/10" />
         <SidebarMenu className="space-y-1">
-          {footerItems.map((item) => (
-            <SidebarMenuItem key={item.id}>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5"
+            >
+              <Link href="/settings" className="flex items-center">
+                <Settings className="h-[18px] w-[18px]" />
+                <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                  Settings
+                </span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            {user ? (
               <SidebarMenuButton
                 asChild
-                className={`rounded-xl h-11 px-3 hover:bg-slate-50 dark:hover:bg-white/5 ${item.color}`}
+                className="rounded-xl h-11 px-3 text-primary hover:bg-primary/5"
               >
-                <Link href={item.url} className="flex items-center">
-                  <item.icon className="h-[18px] w-[18px]" />
+                <Link href="/logout" className="flex items-center">
+                  <LogOut className="h-[18px] w-[18px]" />
                   <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                    {item.title}
+                    Log out
                   </span>
                 </Link>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+            ) : (
+              <SidebarMenuButton
+                asChild
+                className="rounded-xl h-11 px-3 text-primary hover:bg-primary/5"
+              >
+                <Link href="/login" className="flex items-center">
+                  <LogIn className="h-[18px] w-[18px]" />
+                  <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                    Log in
+                  </span>
+                </Link>
+              </SidebarMenuButton>
+            )}
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
