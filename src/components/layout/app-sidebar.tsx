@@ -21,7 +21,8 @@ import {
   Clock,
   Key,
   Shield,
-  Mic2
+  Mic2,
+  Lock
 } from "lucide-react";
 import {
   Sidebar,
@@ -64,7 +65,8 @@ const ICON_MAP: Record<string, any> = {
   Clock,
   Key,
   Shield,
-  Mic2
+  Mic2,
+  Lock
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
@@ -80,6 +82,11 @@ const DEFAULT_WORKSPACE_ITEMS = [
   { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 10, isVisible: true },
   { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 11, isVisible: true },
   { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 12, isVisible: true },
+];
+
+const MANAGEMENT_ITEMS = [
+  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", order: 1, isVisible: true },
+  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", order: 2, isVisible: true },
 ];
 
 export function AppSidebar() {
@@ -121,7 +128,7 @@ export function AppSidebar() {
         </Button>
       </SidebarHeader>
 
-      <SidebarContent className="px-4 py-4">
+      <SidebarContent className="px-4 py-4 space-y-6">
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
             Workspace
@@ -130,6 +137,42 @@ export function AppSidebar() {
             {DEFAULT_WORKSPACE_ITEMS.map((item) => {
               const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
               const Icon = ICON_MAP[item.iconName] || Globe;
+              
+              return (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive}
+                    className={`rounded-xl h-11 px-3 transition-all ${
+                      isActive 
+                        ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <Link href={item.url} className="flex items-center w-full">
+                      <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
+                      <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                        {item.title}
+                      </span>
+                      {isActive && (
+                        <ChevronRight className="ml-auto h-3 w-3 opacity-40 group-data-[collapsible=icon]:hidden" />
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
+            Management
+          </SidebarGroupLabel>
+          <SidebarMenu className="space-y-1">
+            {MANAGEMENT_ITEMS.map((item) => {
+              const isActive = pathname.startsWith(item.url);
+              const Icon = ICON_MAP[item.iconName] || ShieldCheck;
               
               return (
                 <SidebarMenuItem key={item.id}>
@@ -167,10 +210,10 @@ export function AppSidebar() {
               asChild
               className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-50"
             >
-              <Link href="/settings" className="flex items-center">
-                <Settings className="h-[18px] w-[18px]" />
+              <Link href="/logout" className="flex items-center">
+                <LogOut className="h-[18px] w-[18px]" />
                 <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                  Settings
+                  Log Out
                 </span>
               </Link>
             </SidebarMenuButton>
