@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -61,7 +60,9 @@ export default function TalentLibraryPage() {
     let result = talents.filter((t: any) => {
       const matchesSearch = t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           t.category?.some((c: string) => c.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                          t.type?.toLowerCase().includes(searchQuery.toLowerCase());
+                          t.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          t.platforms?.instagram?.url?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          t.platforms?.youtube?.url?.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesType = !filters.type || t.type === filters.type;
       const matchesReach = !filters.reachCategory || t.reachCategory === filters.reachCategory;
@@ -151,7 +152,7 @@ export default function TalentLibraryPage() {
           <div className="relative flex-1 group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
             <Input 
-              placeholder="Search by name, category, or talent type..." 
+              placeholder="Search by name, category, handle or platform..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 h-14 bg-slate-50 border-none shadow-inner rounded-2xl text-base font-medium"
@@ -196,7 +197,7 @@ export default function TalentLibraryPage() {
               <Badge key={cat} className="bg-slate-900 text-white border-none px-3 py-1.5 rounded-xl uppercase text-[10px] font-bold">
                 {cat}
               </Badge>
-            ))}
+            )}
           </div>
         )}
 

@@ -21,11 +21,12 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Loader2, Sparkles, User, Instagram, Youtube, Zap, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, Sparkles, User, Instagram, Youtube, Zap, CheckCircle2, Upload } from "lucide-react";
 import { useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import { fetchInstagramVisuals } from "@/ai/flows/instagram-visuals-flow";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const TALENT_TYPES = ["Influencer", "Anchor", "Creator", "Model", "Virtual"];
 const REACH_CATEGORIES = ["Nano", "Micro", "Mid", "Macro", "Mega"];
@@ -91,7 +92,7 @@ export function AddTalentDialog() {
 
       toast({
         title: "Intelligence Synced",
-        description: `Retrieved ${result.followers} followers and ${result.engagementRate} engagement.`
+        description: `Retrieved ${result.followers} followers and ${result.engagementRate} engagement. Profile portrait updated.`
       });
     } catch (error) {
       console.error(error);
@@ -173,6 +174,29 @@ export function AddTalentDialog() {
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+          
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="relative group">
+              <Avatar className="h-32 w-32 rounded-[2.5rem] border-4 border-slate-50 shadow-xl overflow-hidden bg-white">
+                {formData.profileImage ? (
+                  <AvatarImage src={formData.profileImage} className="object-cover" />
+                ) : (
+                  <AvatarFallback className="bg-primary/5 text-primary text-2xl font-bold">
+                    {formData.name?.[0] || 'T'}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              {isFetching && (
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center rounded-[2.5rem]">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {formData.profileImage ? "Instagram Portrait Synced" : "Talent Portrait"}
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase text-slate-400 px-1">Full Name</Label>
