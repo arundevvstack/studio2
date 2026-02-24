@@ -46,13 +46,15 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const clientsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "clients"), orderBy("name", "asc"));
-  }, [db]);
+  }, [db, user]);
   const { data: clients, isLoading: isLoadingClients } = useCollection(clientsQuery);
 
   const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "projects"), orderBy("createdAt", "desc"));
-  }, [db]);
+  }, [db, user]);
   const { data: projects, isLoading: isLoadingProjects } = useCollection(projectsQuery);
 
   const clientMap = useMemo(() => {
