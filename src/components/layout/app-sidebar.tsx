@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Briefcase,
   Globe,
-  Database,
   Clock
 } from "lucide-react";
 import {
@@ -38,7 +37,6 @@ import { Button } from "@/components/ui/button";
 
 const workspaceItems = [
   { title: "Dashboard", icon: LayoutGrid, url: "/" },
-  { title: "Shoot Network", icon: Database, url: "/shoot-network" },
   { title: "Pipeline", icon: GitBranch, url: "/pipeline" },
   { title: "Projects", icon: Folder, url: "/projects" },
   { title: "Board", icon: Trello, url: "/board" },

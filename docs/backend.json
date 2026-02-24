@@ -1,44 +1,5 @@
-
 {
   "entities": {
-    "TalentProfile": {
-      "title": "TalentProfile",
-      "type": "object",
-      "description": "A creative professional profile within the Shoot Network.",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "age": { "type": "string" },
-        "district": { "type": "string" },
-        "category": { "type": "string" },
-        "gender": { "type": "string" },
-        "colabCategories": { "type": "array", "items": { "type": "string" } },
-        "suitableProjectTypes": { "type": "array", "items": { "type": "string" } },
-        "paymentStage": { "type": "string" },
-        "referredBy": { "type": "string" },
-        "socialMediaContact": { "type": "string" },
-        "portfolio": { "type": "string" },
-        "thumbnail": { "type": "string" },
-        "rank": { "type": "number", "minimum": 1, "maximum": 5 },
-        "projectCount": { "type": "number" },
-        "gallery": { 
-          "type": "array", 
-          "items": { 
-            "type": "object",
-            "properties": {
-              "url": { "type": "string" },
-              "type": { "type": "string", "enum": ["image", "video"] }
-            }
-          } 
-        },
-        "isArchived": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["name", "district", "category"]
-    },
     "TeamMember": {
       "title": "TeamMember",
       "type": "object",
@@ -125,10 +86,6 @@
     "providers": ["password", "anonymous"]
   },
   "firestore": {
-    "/shoot_network/{talentId}": {
-      "schema": "TalentProfile",
-      "description": "Collection of verified creative talent profiles."
-    },
     "/projects/{projectId}": {
       "schema": "Project",
       "description": "Production project entities."

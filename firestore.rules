@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // STRATEGIC BYPASS: Allow authenticated users full access to ALL collections for testing
-    // Deployment Trigger: 2026-02-24T09:00:00Z
+    // Deployment Trigger: 2026-02-24T09:30:00Z
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
@@ -47,28 +46,19 @@ export default function Dashboard() {
   }, []);
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "projects"), orderBy("updatedAt", "desc"), limit(4));
-  }, [db, user]);
+  }, [db]);
   const { data: featuredProjects, isLoading: projectsLoading } = useCollection(projectsQuery);
 
   const allProjectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "projects"));
-  }, [db, user]);
+  }, [db]);
   const { data: allProjects } = useCollection(allProjectsQuery);
 
   const teamQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "teamMembers"));
-  }, [db, user]);
+  }, [db]);
   const { data: teamMembers } = useCollection(teamQuery);
-
-  const talentQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, "shoot_network"), where("isArchived", "==", false));
-  }, [db, user]);
-  const { data: talentNetwork } = useCollection(talentQuery);
 
   const stats = useMemo(() => {
     if (!allProjects) return { completed: 0, inProgress: 0, lead: 0, totalRevenue: 0, percent: 0 };
@@ -90,42 +80,33 @@ export default function Dashboard() {
     }));
   }, [mounted]);
 
-  const filteredProjects = useMemo(() => {
-    if (!allProjects) return [];
-    if (activeTab === "released") return allProjects.filter(p => p.status === "Released");
-    if (activeTab === "lead") return allProjects.filter(p => p.status === "Discussion" || p.status === "Lead");
-    return allProjects.filter(p => p.status !== "Released" && p.status !== "Discussion" && p.status !== "Lead");
-  }, [allProjects, activeTab]);
-
   if (!mounted) return null;
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 max-w-[1600px] mx-auto pb-20">
-      {/* Global Stats: Ultra Rounded Style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* Global Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {[
           { title: "Portfolio Value", value: `₹${(stats.totalRevenue / 100000).toFixed(1)}L`, icon: TrendingUp, color: "bg-primary/5 text-primary", sub: "Global assets" },
           { title: "Production Load", value: `${stats.inProgress} Entities`, icon: Activity, color: "bg-accent/5 text-accent", sub: "Active lifecycle" },
-          { title: "Internal Team", value: `${teamMembers?.length || 0} Experts`, icon: Users, color: "bg-blue-50 text-blue-500", sub: "Staff resources" },
-          { title: "Partner Network", value: `${talentNetwork?.length || 0} Members`, icon: Database, color: "bg-slate-900 text-white", sub: "Verified creative repository" }
+          { title: "Internal Team", value: `${teamMembers?.length || 0} Experts`, icon: Users, color: "bg-blue-50 text-blue-500", sub: "Staff resources" }
         ].map((item, i) => (
-          <Card key={i} className={`border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] p-10 group hover:-translate-y-1 transition-all ${item.title === 'Partner Network' ? 'bg-slate-900 text-white' : 'bg-white'}`}>
+          <Card key={i} className="border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] p-10 group hover:-translate-y-1 transition-all bg-white">
             <div className="flex items-center justify-between mb-6">
-              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${item.title === 'Partner Network' ? 'bg-white/10' : item.color} group-hover:scale-110 transition-transform`}>
+              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform`}>
                 <item.icon className="h-6 w-6" />
               </div>
-              <Badge variant="outline" className={`text-[8px] font-bold uppercase tracking-widest border-slate-100 ${item.title === 'Partner Network' ? 'text-white/40 border-white/10' : ''}`}>Live</Badge>
+              <Badge variant="outline" className="text-[8px] font-bold uppercase tracking-widest border-slate-100">Live</Badge>
             </div>
-            <p className={`text-[10px] font-bold uppercase tracking-widest ${item.title === 'Partner Network' ? 'text-slate-500' : 'text-slate-400'}`}>{item.title}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{item.title}</p>
             <h3 className="text-3xl font-bold font-headline mt-2 tracking-tight">{item.value}</h3>
-            <p className={`text-[9px] font-bold uppercase tracking-widest mt-3 opacity-60`}>{item.sub}</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest mt-3 opacity-60 text-slate-400">{item.sub}</p>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-8 space-y-10">
-          {/* Workspace Header: Rounded Pill Style */}
           <div className="flex items-center justify-between bg-white p-8 rounded-[3.5rem] border border-slate-100 shadow-xl shadow-slate-200/30">
             <div className="flex items-center gap-6">
               <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center shadow-xl shadow-primary/30 shrink-0">
@@ -153,7 +134,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Featured Cards: High Fidelity Design */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {featuredProjects?.map((project, idx) => (
               <Card key={project.id} className={`border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] overflow-hidden group cursor-pointer h-56 flex flex-col ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-900 text-white'}`}>
@@ -207,7 +187,6 @@ export default function Dashboard() {
                   <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} stroke="#94a3b8" />
                   <Tooltip contentStyle={{ borderRadius: '2rem', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)', padding: '1.5rem' }} />
                   <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
-                  <Bar dataKey="leads" fill="hsl(var(--accent))" radius={[10, 10, 10, 10]} barSize={12} opacity={0.2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

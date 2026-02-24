@@ -87,25 +87,6 @@ const STATUS_PROGRESS_MAP: Record<string, number> = {
   "Social Media": 100,
 };
 
-const PHASE_ROADMAP_PRESETS: Record<string, any[]> = {
-  "Pre Production": [
-    { name: "Project Planning & Scope Finalization", priority: "High", assignedRole: "Producer / Project Manager", subActivities: ["Finalize creative brief", "Confirm deliverables & formats", "Lock budget approval", "Define production timeline", "Risk assessment"] },
-    { name: "Script & Concept Approval", priority: "High", assignedRole: "Creative Director", subActivities: ["Script draft review", "Client discussion", "Revisions", "Final approval", "Storyboard creation"] },
-    { name: "Team & Resource Allocation", priority: "High", assignedRole: "Production Manager", subActivities: ["Assign crew members", "Equipment booking", "Location confirmation", "Vendor confirmation", "Contract agreements"] }
-  ],
-  "Production": [
-    { name: "Shoot Execution", priority: "High", assignedRole: "Director", subActivities: ["Setup lighting & camera", "Sound check", "Scene execution", "Multiple takes", "Quality monitoring"] },
-    { name: "Review & Alignment Meeting", priority: "Medium", assignedRole: "Project Manager", subActivities: ["Internal discussion", "Client review call", "Feedback documentation", "Change confirmation", "Next step approval"] }
-  ],
-  "Post Production": [
-    { name: "Editing & Rough Cut", priority: "High", assignedRole: "Editor", subActivities: ["Footage review", "Rough cut creation", "Internal review", "Revisions", "Export draft"] },
-    { name: "Client Review & Final Delivery", priority: "High", assignedRole: "Project Manager", subActivities: ["Send preview link", "Collect feedback", "Implement changes", "Final approval", "Deliver master files"] }
-  ],
-  "Release": [
-    { name: "Internal Preview & Review", priority: "High", assignedRole: "Creative Director", subActivities: ["Screening session", "Quality check", "Fix final errors", "Export master"] }
-  ]
-};
-
 export default function ProjectDetailPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = React.use(params);
   const router = useRouter();
@@ -117,27 +98,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const [crewViewMode, setCrewViewMode] = useState<"grid" | "list">("grid");
 
   const projectRef = useMemoFirebase(() => {
-    if (!user) return null;
     return doc(db, "projects", projectId);
-  }, [db, projectId, user]);
+  }, [db, projectId]);
   const { data: project, isLoading: isProjectLoading } = useDoc(projectRef);
 
   const tasksQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "projects", projectId, "tasks"), orderBy("createdAt", "asc"));
-  }, [db, projectId, user]);
+  }, [db, projectId]);
   const { data: allTasks, isLoading: isTasksLoading } = useCollection(tasksQuery);
 
-  const talentQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, "shoot_network"), where("isArchived", "==", false));
-  }, [db, user]);
-  const { data: shootNetwork } = useCollection(talentQuery);
-
   const staffQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "teamMembers"));
-  }, [db, user]);
+  }, [db]);
   const { data: staffMembers } = useCollection(staffQuery);
 
   const [editData, setEditData] = useState<any>(null);
@@ -158,15 +130,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const activePhase = project?.status || "Discussion";
   const phaseTasks = useMemo(() => allTasks?.filter(t => t.phase === activePhase) || [], [allTasks, activePhase]);
 
-  const suggestions = useMemo(() => shootNetwork?.filter(t => !project?.crew?.some((c: any) => c.talentId === t.id)) || [], [shootNetwork, project]);
   const staffSuggestions = useMemo(() => staffMembers?.filter(s => !project?.crew?.some((c: any) => c.talentId === s.id)) || [], [staffMembers, project]);
 
   const categorizedCrew = useMemo(() => {
     const crew = project?.crew || [];
     return {
       production: crew.filter((c: any) => c.type === 'Internal'),
-      freelancers: crew.filter((c: any) => c.type === 'External' && !["Models", "Influencer"].includes(c.category)),
-      cast: crew.filter((c: any) => c.type === 'External' && ["Models", "Influencer"].includes(c.category))
+      external: crew.filter((c: any) => c.type === 'External')
     };
   }, [project?.crew]);
 
@@ -205,7 +175,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     });
   };
 
-  if (isUserLoading || isProjectLoading) return null;
+  if (isUserLoading || isProjectLoading) return (
+    <div className="h-full flex items-center justify-center">
+      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+    </div>
+  );
   if (!project) return null;
 
   return (
@@ -315,48 +289,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-3"><User className="h-4 w-4" /> {task.assignedRole}</span>
                               </div>
                             </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-50">
-                              <div className="space-y-3">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><CalendarIcon className="h-3.5 w-3.5" /> Deadline Assignment</label>
-                                <Input type="date" value={task.dueDate || ""} onChange={(e) => handleUpdateTask(task.id, { dueDate: e.target.value })} className="h-12 rounded-2xl bg-slate-50 border-none font-bold text-xs px-6" />
-                              </div>
-                              <div className="space-y-3">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><MessageSquare className="h-3.5 w-3.5" /> Executive Commentary</label>
-                                <Input value={task.comments || ""} onChange={(e) => handleUpdateTask(task.id, { comments: e.target.value })} placeholder="Add strategic notes..." className="h-12 rounded-2xl bg-slate-50 border-none text-xs px-6" />
-                              </div>
-                            </div>
                           </div>
                         </div>
                         <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id))} className="text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all rounded-full"><X className="h-5 w-5" /></Button>
                       </div>
-
-                      {task.subActivities && (
-                        <div className="pl-16 space-y-4 pt-6 border-t border-slate-50">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Milestone Checkpoints</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {task.subActivities.map((sub: any, idx: number) => (
-                              <div key={idx} className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => {
-                                const newSubs = [...task.subActivities];
-                                newSubs[idx].completed = !newSubs[idx].completed;
-                                handleUpdateTask(task.id, { subActivities: newSubs });
-                              }}>
-                                <div className={`h-5 w-5 rounded-lg flex items-center justify-center border-2 ${sub.completed ? 'bg-green-500 border-green-500' : 'bg-white border-slate-200'}`}>
-                                  {sub.completed && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
-                                </div>
-                                <span className={`text-xs font-bold tracking-tight ${sub.completed ? 'text-slate-300 line-through' : 'text-slate-600'}`}>{sub.title}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </Card>
                 ))
               ) : (
                 <div className="p-32 border-2 border-dashed border-slate-100 rounded-[4rem] text-center bg-slate-50/20 space-y-4">
                   <p className="text-sm font-bold text-slate-300 uppercase tracking-widest">No Roadmap Objectives Recorded</p>
-                  <Button variant="link" className="text-primary font-bold text-xs uppercase tracking-widest p-0 h-auto">Generate Phase presets</Button>
                 </div>
               )}
             </TabsContent>
@@ -365,13 +307,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                 <div className="space-y-1">
                   <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">Personnel Hub</h3>
-                  <p className="text-sm font-medium text-slate-500 tracking-normal">Strategic segmentation of internal experts, freelancers, and cast.</p>
+                  <p className="text-sm font-medium text-slate-500 tracking-normal">Strategic segmentation of internal experts.</p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center bg-white border border-slate-100 rounded-full p-1.5 shadow-sm">
-                    <Button variant={crewViewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCrewViewMode('grid')} className={`h-11 w-11 rounded-full transition-all ${crewViewMode === 'grid' ? 'bg-slate-100 text-primary' : 'text-slate-400'}`}><LayoutGrid className="h-5 w-5" /></Button>
-                    <Button variant={crewViewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setCrewViewMode('list')} className={`h-11 w-11 rounded-full transition-all ${crewViewMode === 'list' ? 'bg-slate-100 text-primary' : 'text-slate-400'}`}><List className="h-5 w-5" /></Button>
-                  </div>
                   <Sheet>
                     <SheetTrigger asChild>
                       <Button className="h-14 px-10 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase gap-3 tracking-widest shadow-2xl shadow-slate-200 transition-all active:scale-95"><Plus className="h-5 w-5" /> Provision Resource</Button>
@@ -415,110 +353,46 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               </div>
 
               <div className="space-y-16">
-                {[
-                  { title: "Production Crew", desc: "Internal experts managing central production logistics.", members: categorizedCrew.production },
-                  { title: "Freelancers", desc: "External creative and technical collaborators assigned to specific project tasks.", members: categorizedCrew.freelancers },
-                  { title: "Cast", desc: "On-camera talent, models, and influencers deployed for the production.", members: categorizedCrew.cast }
-                ].map((tier, i) => (
-                  <div key={i} className="space-y-8 animate-in fade-in duration-700">
-                    <div className="px-4 flex items-center gap-4">
-                      <h4 className="text-2xl font-bold font-headline text-slate-900 tracking-tight">{tier.title}</h4>
-                      <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-4 py-1 rounded-full">{tier.members.length}</Badge>
-                    </div>
-                    {crewViewMode === 'grid' ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-                        {tier.members.map((member: any) => (
-                          <Card key={member.talentId} className="border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
-                            <div className="p-4 flex-grow">
-                              <div className="relative aspect-square overflow-hidden rounded-[2.2rem]">
-                                <img src={member.thumbnail} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={member.name} />
-                                <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-5 w-5" /></Button>
-                              </div>
-                              <div className="px-4 py-6 space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-bold text-base text-slate-900 tracking-tight leading-tight line-clamp-1">{member.name}</h4>
-                                  <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-50" />
-                                </div>
-                                <p className={`text-[9px] font-bold uppercase tracking-widest ${member.type === 'Internal' ? 'text-blue-500' : 'text-primary'}`}>{member.category}</p>
-                              </div>
-                            </div>
-                            <div className="px-6 pb-6">
-                              <Button asChild variant="ghost" className="w-full h-10 rounded-full bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-900 font-bold text-[9px] uppercase transition-all shadow-none border-none gap-2">
-                                <Link href={`/shoot-network/${member.talentId}`}>Profile +</Link>
-                              </Button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
-                        {tier.members.map((member: any) => (
-                          <div key={member.talentId} className="flex items-center justify-between px-10 py-6 group hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-none">
-                            <div className="flex items-center gap-6">
-                              <Avatar className="h-14 w-14 rounded-2xl border-4 border-slate-50 shadow-md">
-                                <AvatarImage src={member.thumbnail} />
-                                <AvatarFallback>{member.name?.[0]}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="font-bold text-slate-900 tracking-tight">{member.name}</p>
-                                  <CheckCircle2 className="h-3 w-3 text-green-500 fill-green-50" />
-                                </div>
-                                <div className="flex items-center gap-4 mt-1">
-                                  <Badge className={`text-[8px] font-bold uppercase rounded-full px-3 py-0.5 border-none tracking-widest ${member.type === 'Internal' ? 'bg-blue-50 text-blue-600' : 'bg-primary/5 text-primary'}`}>{member.type}</Badge>
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{member.category}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="h-12 w-12 rounded-full text-slate-200 hover:text-destructive hover:bg-destructive/5 transition-all"><Trash2 className="h-5 w-5" /></Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                <div className="space-y-8">
+                  <div className="px-4 flex items-center gap-4">
+                    <h4 className="text-2xl font-bold font-headline text-slate-900 tracking-tight">Production Crew</h4>
+                    <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-4 py-1 rounded-full">{categorizedCrew.production.length}</Badge>
                   </div>
-                ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+                    {categorizedCrew.production.map((member: any) => (
+                      <Card key={member.talentId} className="border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
+                        <div className="p-4 flex-grow">
+                          <div className="relative aspect-square overflow-hidden rounded-[2.2rem]">
+                            <img src={member.thumbnail} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={member.name} />
+                            <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-5 w-5" /></Button>
+                          </div>
+                          <div className="px-4 py-6 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-base text-slate-900 tracking-tight leading-tight line-clamp-1">{member.name}</h4>
+                              <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-50" />
+                            </div>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-blue-500">{member.category}</p>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
             <TabsContent value="brief" className="space-y-10 m-0 animate-in fade-in duration-500">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                <Card className="md:col-span-2 border-none shadow-2xl shadow-slate-200/50 rounded-[3.5rem] bg-white p-12 space-y-12">
-                  <div className="flex items-center gap-6">
-                    <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center">
-                      <Zap className="h-7 w-7 text-primary fill-primary/10" />
-                    </div>
-                    <h3 className="text-3xl font-bold font-headline tracking-tight">Creative Soul</h3>
+              <Card className="border-none shadow-2xl shadow-slate-200/50 rounded-[3.5rem] bg-white p-12 space-y-12">
+                <div className="flex items-center gap-6">
+                  <div className="h-14 w-14 rounded-full bg-primary/5 flex items-center justify-center">
+                    <Zap className="h-7 w-7 text-primary fill-primary/10" />
                   </div>
-                  <div className="p-12 rounded-[3.5rem] bg-slate-50/50 border border-slate-100 relative">
-                    <p className="text-xl font-medium leading-relaxed text-slate-600 italic tracking-tight relative z-10 whitespace-pre-wrap">"{project.description || "Briefing pending executive synthesis."}"</p>
-                  </div>
-                </Card>
-                <div className="space-y-8">
-                  <Card className="border-none shadow-2xl shadow-primary/20 rounded-[3rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-[80px] rounded-full -mr-24 -mt-24" />
-                    <div className="space-y-3 relative z-10">
-                      <p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">Style Intelligence</p>
-                      <h4 className="text-2xl font-bold font-headline tracking-tight">Visual Direction</h4>
-                    </div>
-                    <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 relative z-10">
-                      <p className="text-sm font-medium text-slate-300 italic">"Ensure the color palette reflects the high-fidelity കേരള cultural aesthetic requested."</p>
-                    </div>
-                  </Card>
-                  <Card className="border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] bg-white p-10 space-y-6">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Core Deliverables</p>
-                    <div className="space-y-4">
-                      {[
-                        { icon: Film, label: "1x Main Film (TVC)" },
-                        { icon: Type, label: "3x Script Drafts" }
-                      ].map((d, i) => (
-                        <div key={i} className="flex items-center gap-4 text-sm font-bold text-slate-600">
-                          <d.icon className="h-5 w-5 text-primary" /> {d.label}
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
+                  <h3 className="text-3xl font-bold font-headline tracking-tight">Creative Soul</h3>
                 </div>
-              </div>
+                <div className="p-12 rounded-[3.5rem] bg-slate-50/50 border border-slate-100 relative">
+                  <p className="text-xl font-medium leading-relaxed text-slate-600 italic tracking-tight relative z-10 whitespace-pre-wrap">"{project.description || "Briefing pending executive synthesis."}"</p>
+                </div>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
@@ -534,18 +408,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <Link href="/invoices/new">Issue Invoice +</Link>
             </Button>
           </Card>
-
-          <div className="grid grid-cols-1 gap-6">
-            {[
-              { icon: Camera, label: "Callsheet", color: "text-primary" },
-              { icon: Scissors, label: "Post Log", color: "text-accent" }
-            ].map((tool, i) => (
-              <Button key={i} variant="outline" className="h-32 rounded-[3rem] border-slate-100 bg-white flex flex-col items-center justify-center gap-4 hover:bg-slate-50 shadow-2xl shadow-slate-200/30 transition-all group active:scale-95">
-                <tool.icon className={`h-8 w-8 text-slate-300 group-hover:${tool.color} transition-colors`} />
-                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest group-hover:text-slate-900">{tool.label} Hub</span>
-              </Button>
-            ))}
-          </div>
         </div>
       </div>
     </div>
