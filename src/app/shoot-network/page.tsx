@@ -18,8 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, where, orderBy } from "firebase/firestore";
 import { TalentCard } from "@/components/shoot-network/TalentCard";
 import { TalentFilterSidebar } from "@/components/shoot-network/TalentFilterSidebar";
 import { BulkImportButton } from "@/components/shoot-network/BulkImportButton";
@@ -33,9 +33,14 @@ import {
 } from "@/components/ui/dialog";
 import Link from "next/link";
 
+/**
+ * @fileOverview Shoot Network Repository.
+ * Displays creative professionals in a high-density grid.
+ * Decoupled from user session for Testing Mode stability.
+ */
+
 export default function ShootNetworkPage() {
   const db = useFirestore();
-  const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filters, setFilters] = useState<any>({
@@ -46,10 +51,14 @@ export default function ShootNetworkPage() {
     tags: []
   });
 
+  // Decoupled query: Always fetch data in testing mode regardless of user state
   const talentQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, "shoot_network"), where("isArchived", "==", false));
-  }, [db, user]);
+    return query(
+      collection(db, "shoot_network"), 
+      where("isArchived", "==", false),
+      orderBy("updatedAt", "desc")
+    );
+  }, [db]);
 
   const { data: talent, isLoading } = useCollection(talentQuery);
 
@@ -110,7 +119,9 @@ export default function ShootNetworkPage() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
-                <DialogHeader className="p-8 pb-0"><DialogTitle className="text-2xl font-bold font-headline tracking-normal">Add Creative Professional</DialogTitle></DialogHeader>
+                <DialogHeader className="p-8 pb-0">
+                  <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Add Creative Professional</DialogTitle>
+                </DialogHeader>
                 <TalentForm />
               </DialogContent>
             </Dialog>
@@ -121,7 +132,12 @@ export default function ShootNetworkPage() {
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="relative flex-1 group w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal font-bold" placeholder="Search by name, skill, or vertical..." />
+              <Input 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="pl-12 h-14 bg-white border-none shadow-sm rounded-xl text-base placeholder:text-slate-400 tracking-normal font-bold" 
+                placeholder="Search by name, skill, or vertical..." 
+              />
             </div>
             <div className="flex items-center bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 shrink-0">
               <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')} className={`h-11 w-11 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-slate-100 text-primary shadow-inner' : 'text-slate-400'}`}><LayoutGrid className="h-5 w-5" /></Button>
@@ -143,7 +159,7 @@ export default function ShootNetworkPage() {
                   {cat}
                   <Button variant="ghost" size="icon" onClick={() => removeFilter('category', cat)} className="h-4 w-4 p-0"><X className="h-2 w-2" /></Button>
                 </Badge>
-              ))}
+              )}
               <Button variant="ghost" size="sm" onClick={() => setFilters({ category: [], district: "All", gender: "All", paymentStage: "All", tags: [] })} className="text-[10px] font-bold text-primary uppercase hover:bg-primary/5 h-7 px-3 rounded-lg">Clear All</Button>
             </div>
           )}
@@ -176,14 +192,21 @@ export default function ShootNetworkPage() {
                     <tr key={t.id} className="group hover:bg-slate-50/50 transition-colors">
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12 rounded-xl shrink-0"><AvatarImage src={t.thumbnail || `https://picsum.photos/seed/${t.id}/100/100`} /><AvatarFallback>{t.name?.[0]}</AvatarFallback></Avatar>
+                          <Avatar className="h-12 w-12 rounded-xl shrink-0">
+                            <AvatarImage src={t.thumbnail || `https://picsum.photos/seed/${t.id}/100/100`} />
+                            <AvatarFallback>{t.name?.[0]}</AvatarFallback>
+                          </Avatar>
                           <p className="font-bold text-slate-900 tracking-normal">{t.name}</p>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-center"><Badge className="bg-primary/5 text-primary border-none text-[9px] font-bold uppercase px-3">{t.category}</Badge></td>
                       <td className="px-6 py-5 text-xs font-bold text-slate-600"><MapPin className="h-3.5 w-3.5 inline mr-1 text-slate-300" /> {t.district}</td>
                       <td className="px-6 py-5 text-center font-bold text-slate-900 text-sm">{t.projectCount || 0} Projects</td>
-                      <td className="px-8 py-5 text-right"><Button asChild variant="ghost" size="sm" className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase gap-2 hover:bg-primary hover:text-white"><Link href={`/shoot-network/${t.id}`}>Profile <ArrowRight className="h-3.5 w-3.5" /></Link></Button></td>
+                      <td className="px-8 py-5 text-right">
+                        <Button asChild variant="ghost" size="sm" className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase gap-2 hover:bg-primary hover:text-white">
+                          <Link href={`/shoot-network/${t.id}`}>Profile <ArrowRight className="h-3.5 w-3.5" /></Link>
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

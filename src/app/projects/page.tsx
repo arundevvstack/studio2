@@ -14,9 +14,7 @@ import {
   TrendingUp,
   Target,
   GitBranch,
-  Star,
-  CheckCircle2,
-  Users
+  CheckCircle2
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,34 +28,31 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import Link from "next/link";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 type ViewMode = "list" | "grid";
 
 /**
  * @fileOverview Projects Registry.
  * High-fidelity production management with Grid (5 items line) and List views.
- * Differentiates between mirrored leads and active production entities.
+ * Decoupled from session for Testing Mode stability.
  */
 
 export default function ProjectsPage() {
   const db = useFirestore();
-  const { user } = useUser();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
 
   const clientsQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "clients"), orderBy("name", "asc"));
-  }, [db, user]);
+  }, [db]);
   const { data: clients, isLoading: isLoadingClients } = useCollection(clientsQuery);
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "projects"), orderBy("createdAt", "desc"));
-  }, [db, user]);
+  }, [db]);
   const { data: projects, isLoading: isLoadingProjects } = useCollection(projectsQuery);
 
   const clientMap = useMemo(() => {
@@ -95,7 +90,7 @@ export default function ProjectsPage() {
           </p>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="flex items-center bg-white border border-slate-100 rounded-full p-1.5 shadow-sm shrink-0">
+          <div className="flex items-center bg-white p-1.5 rounded-full shadow-sm border border-slate-100 shrink-0">
             <Button 
               variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
               size="icon" 

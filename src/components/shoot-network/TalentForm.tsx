@@ -22,7 +22,6 @@ import {
   Save, 
   Upload, 
   X, 
-  Star, 
   Plus, 
   Image as ImageIcon, 
   Video, 
@@ -39,6 +38,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+/**
+ * @fileOverview Talent Onboarding Form.
+ * Features robust asset management and explicitly sets isArchived: false to ensure visibility.
+ */
 
 interface TalentFormProps {
   existingTalent?: any;
@@ -144,9 +148,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     }
   }, [existingTalent, isInitialized]);
 
-  const handleThumbnailClick = () => {
-    thumbInputRef.current?.click();
-  };
+  const handleThumbnailClick = () => thumbInputRef.current?.click();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, target: 'thumbnail' | 'gallery') => {
     const file = e.target.files?.[0];
@@ -223,6 +225,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       thumbnail: formData.thumbnail,
       gallery: gallery,
       freeCollab: formData.freeCollab,
+      isArchived: false, // Critical: Explicitly set false to ensure visibility in repository query
       updatedAt: serverTimestamp(),
     };
 
@@ -236,7 +239,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       setDocumentNonBlocking(newDocRef, {
         ...talentData,
         id: newDocRef.id,
-        isArchived: false,
         createdAt: serverTimestamp(),
       }, { merge: true });
       toast({ title: "Profile Initialized", description: `${formData.name} added to the repository.` });

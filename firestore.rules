@@ -6,7 +6,7 @@ service cloud.firestore {
     // Allows all reads and writes across the entire database.
     // This removes all "Missing or insufficient permissions" errors during the prototyping phase.
     // This rule provides a permanent fix for testing and should be tightened before production.
-    // Deployment Force Trigger: 2026-02-24T07:20:00Z
+    // Deployment Force Sync Trigger: 2026-02-24T07:25:00Z
     match /{document=**} {
       allow read, write: if true;
     }
