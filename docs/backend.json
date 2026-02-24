@@ -1,183 +1,39 @@
-
 {
   "entities": {
-    "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
-      "type": "object",
-      "description": "Represents a basic authenticated user profile.",
-      "properties": {
-        "id": { "type": "string" },
-        "firstName": { "type": "string" },
-        "lastName": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "profilePictureUrl": { "type": "string", "format": "uri" },
-        "isActive": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "email", "isActive"]
-    },
     "Talent": {
       "title": "Talent",
       "type": "object",
-      "description": "A centralized database record for anchors, influencers, and media talents.",
+      "description": "An influencer or media talent record for the marketplace.",
       "properties": {
-        "id": { "type": "string" },
         "name": { "type": "string" },
-        "profileImage": { "type": "string", "format": "uri" },
-        "type": { "type": "string", "enum": ["Influencer", "Anchor", "Creator", "Model", "Virtual"] },
-        "category": { "type": "array", "items": { "type": "string" } },
+        "instagram_url": { "type": "string" },
+        "instagram_username": { "type": "string" },
+        "followers": { "type": "number" },
+        "category": { "type": "string" },
         "location": { "type": "string" },
-        "languages": { "type": "array", "items": { "type": "string" } },
-        "platforms": {
-          "type": "object",
-          "properties": {
-            "instagram": {
-              "type": "object",
-              "properties": {
-                "url": { "type": "string" },
-                "followers": { "type": "number" },
-                "engagementRate": { "type": "number" }
-              }
-            },
-            "youtube": {
-              "type": "object",
-              "properties": {
-                "url": { "type": "string" },
-                "subscribers": { "type": "number" }
-              }
-            },
-            "tiktok": {
-              "type": "object",
-              "properties": {
-                "url": { "type": "string" },
-                "followers": { "type": "number" }
-              }
-            }
-          }
-        },
-        "reachCategory": { "type": "string", "enum": ["Nano", "Micro", "Mid", "Macro", "Mega"] },
-        "estimatedCost": { "type": "number" },
-        "costType": { "type": "string", "enum": ["Per Post", "Per Reel", "Per Event", "Monthly"] },
-        "collabType": { "type": "string", "enum": ["Paid", "Barter", "Free", "Agency Managed"] },
-        "availableForFreeCollab": { "type": "boolean" },
-        "rating": { "type": "number" },
+        "estimated_cost": { "type": "number" },
+        "engagement_rate": { "type": "number" },
+        "ready_to_collab": { "type": "boolean" },
+        "profile_picture": { "type": "string" },
         "verified": { "type": "boolean" },
-        "status": { "type": "string", "enum": ["Active", "Inactive"] },
-        "portfolioLinks": { "type": "array", "items": { "type": "string" } },
-        "internalNotes": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "TeamMember": {
-      "title": "TeamMember",
-      "type": "object",
-      "description": "Represents a provisioned production expert within the organization.",
-      "properties": {
-        "id": { "type": "string" },
-        "firstName": { "type": "string" },
-        "lastName": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "roleId": { "type": "string" },
-        "type": { "type": "string", "enum": ["In-house", "Freelancer"] },
-        "status": { "type": "string", "enum": ["Active", "Suspended"] },
-        "thumbnail": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Role": {
-      "title": "Role",
-      "type": "object",
-      "description": "Defines access permissions and professional titles.",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "permissions": { "type": "array", "items": { "type": "string" } }
-      }
-    },
-    "SidebarItem": {
-      "title": "SidebarItem",
-      "type": "object",
-      "description": "A dynamic navigation element in the workspace sidebar.",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "iconName": { "type": "string" },
-        "url": { "type": "string" },
-        "order": { "type": "number" },
-        "isVisible": { "type": "boolean" }
-      }
-    },
-    "Client": {
-      "title": "Client",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "industry": { "type": "string" },
-        "address": { "type": "string" },
-        "gstin": { "type": "string" },
-        "notes": { "type": "string" },
-        "status": { "type": "string" }
-      }
-    },
-    "Project": {
-      "title": "Project",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "clientId": { "type": "string" },
-        "name": { "type": "string" },
-        "type": { "type": "string" },
-        "budget": { "type": "number" },
-        "status": { "type": "string" },
-        "progress": { "type": "number" },
-        "crew": { "type": "array", "items": { "type": "object" } }
+        "featured": { "type": "boolean" },
+        "last_verified_date": { "type": "string", "format": "date-time" },
+        "created_at": { "type": "string", "format": "date-time" }
       }
     }
   },
   "auth": {
-    "providers": ["password", "anonymous", "google"]
+    "providers": ["password", "google", "anonymous"]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}",
-        "definition": { "entityName": "User", "schema": { "$ref": "#/backend/entities/User" }, "description": "User profiles." }
-      },
-      {
         "path": "/talents/{talentId}",
-        "definition": { "entityName": "Talent", "schema": { "$ref": "#/backend/entities/Talent" }, "description": "Talent database." }
-      },
-      {
-        "path": "/teamMembers/{memberId}",
-        "definition": { "entityName": "TeamMember", "schema": { "$ref": "#/backend/entities/TeamMember" }, "description": "Internal staff registry." }
-      },
-      {
-        "path": "/roles/{roleId}",
-        "definition": { "entityName": "Role", "schema": { "$ref": "#/backend/entities/Role" }, "description": "Access roles." }
-      },
-      {
-        "path": "/sidebar_items/{itemId}",
-        "definition": { "entityName": "SidebarItem", "schema": { "$ref": "#/backend/entities/SidebarItem" }, "description": "Navigation items." }
-      },
-      {
-        "path": "/clients/{clientId}",
-        "definition": { "entityName": "Client", "schema": { "$ref": "#/backend/entities/Client" }, "description": "Client records." }
-      },
-      {
-        "path": "/projects/{projectId}",
-        "definition": { "entityName": "Project", "schema": { "$ref": "#/backend/entities/Project" }, "description": "Project records." }
-      },
-      {
-        "path": "/companyBillingSettings/global",
-        "definition": { "entityName": "object", "schema": { "type": "object" }, "description": "Global billing and org settings." }
+        "definition": {
+          "entityName": "Talent",
+          "schema": { "$ref": "#/backend/entities/Talent" },
+          "description": "Influencer database."
+        }
       }
     ]
   }

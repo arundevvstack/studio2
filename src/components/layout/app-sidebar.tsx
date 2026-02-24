@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -83,52 +82,21 @@ const DEFAULT_WORKSPACE_ITEMS = [
   { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 12, isVisible: true },
 ];
 
-const managementItems = [
-  { id: "admin", title: "Admin Console", icon: ShieldCheck, url: "/admin" },
-  { id: "user-management", title: "User Management", icon: Shield, url: "/admin/users" },
-];
-
 export function AppSidebar() {
   const pathname = usePathname();
   const db = useFirestore();
   const { user } = useUser();
 
-  // Auth & Permissions (Assuming all have access if role registry not yet managed for MVP)
   const memberRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "teamMembers", user.uid);
   }, [db, user]);
   const { data: member } = useDoc(memberRef);
 
-  const roleRef = useMemoFirebase(() => {
-    if (!member?.roleId) return null;
-    return doc(db, "roles", member.roleId);
-  }, [db, member?.roleId]);
-  const { data: role } = useDoc(roleRef);
-
-  const hasPermission = (perm: string) => {
-    if (!role) return true; 
-    return role.permissions?.includes(perm);
-  };
-
-  const navQuery = useMemoFirebase(() => {
-    return query(collection(db, "sidebar_items"), orderBy("order", "asc"));
-  }, [db]);
-  const { data: remoteItems } = useCollection(navQuery);
-
   const billingRef = useMemoFirebase(() => {
     return doc(db, "companyBillingSettings", "global");
   }, [db]);
   const { data: globalSettings } = useDoc(billingRef);
-
-  const displayItems = React.useMemo(() => {
-    const items = (remoteItems && remoteItems.length > 0) ? remoteItems : DEFAULT_WORKSPACE_ITEMS;
-    return items.filter(item => (item.isVisible !== false) && hasPermission(`module:${item.id}`));
-  }, [remoteItems, role]);
-
-  const displayManagement = React.useMemo(() => {
-    return managementItems.filter(item => hasPermission(`module:${item.id}`));
-  }, [role]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -159,7 +127,7 @@ export function AppSidebar() {
             Workspace
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
-            {displayItems.map((item) => {
+            {DEFAULT_WORKSPACE_ITEMS.map((item) => {
               const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
               const Icon = ICON_MAP[item.iconName] || Globe;
               
@@ -170,8 +138,8 @@ export function AppSidebar() {
                     isActive={isActive}
                     className={`rounded-xl h-11 px-3 transition-all ${
                       isActive 
-                        ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100 dark:bg-white/10 dark:text-white dark:ring-white/20" 
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
+                        ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
                     <Link href={item.url} className="flex items-center w-full">
@@ -189,66 +157,15 @@ export function AppSidebar() {
             })}
           </SidebarMenu>
         </SidebarGroup>
-
-        {displayManagement.length > 0 && (
-          <SidebarGroup className="mt-4">
-            <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
-              Management
-            </SidebarGroupLabel>
-            <SidebarMenu>
-              {displayManagement.map((item) => {
-                const isActive = pathname.startsWith(item.url);
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className={`rounded-xl h-11 px-3 transition-all ${
-                        isActive 
-                          ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
-                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                      }`}
-                    >
-                      <Link href={item.url} className="flex items-center">
-                        <item.icon className={`h-[18px] w-[18px] ${isActive ? 'text-primary' : 'text-slate-400'}`} />
-                        <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                          {item.title}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroup>
-        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto">
-        {user && (
-          <div className="mb-4 px-3 flex items-center gap-3 group-data-[collapsible=icon]:hidden">
-            <Avatar className="h-9 w-9 rounded-xl border-2 border-white shadow-sm shrink-0">
-              <AvatarImage src={member?.thumbnail} />
-              <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
-                {member?.firstName?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                {member?.firstName ? `${member.firstName} ${member.lastName}` : "Executive"}
-              </p>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">
-                {role?.name || "General Access"}
-              </p>
-            </div>
-          </div>
-        )}
-        <SidebarSeparator className="mb-4 bg-slate-100 dark:bg-white/10" />
+        <SidebarSeparator className="mb-4 bg-slate-100" />
         <SidebarMenu className="space-y-1">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5"
+              className="rounded-xl h-11 px-3 text-slate-500 hover:bg-slate-50"
             >
               <Link href="/settings" className="flex items-center">
                 <Settings className="h-[18px] w-[18px]" />
@@ -257,33 +174,6 @@ export function AppSidebar() {
                 </span>
               </Link>
             </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            {user ? (
-              <SidebarMenuButton
-                asChild
-                className="rounded-xl h-11 px-3 text-primary hover:bg-primary/5"
-              >
-                <Link href="/logout" className="flex items-center">
-                  <LogOut className="h-[18px] w-[18px]" />
-                  <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                    Log out
-                  </span>
-                </Link>
-              </SidebarMenuButton>
-            ) : (
-              <SidebarMenuButton
-                asChild
-                className="rounded-xl h-11 px-3 text-primary hover:bg-primary/5"
-              >
-                <Link href="/login" className="flex items-center">
-                  <LogIn className="h-[18px] w-[18px]" />
-                  <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                    Log in
-                  </span>
-                </Link>
-              </SidebarMenuButton>
-            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
