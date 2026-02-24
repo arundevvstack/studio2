@@ -52,13 +52,13 @@ export default function ShootNetworkPage() {
   });
 
   const talentQuery = useMemoFirebase(() => {
-    // Decoupled from user session for testing mode stability
+    if (!user) return null;
     return query(
       collection(db, "shoot_network"), 
       where("isArchived", "==", false),
       orderBy("updatedAt", "desc")
     );
-  }, [db]);
+  }, [db, user]);
 
   const { data: talent, isLoading: isDataLoading } = useCollection(talentQuery);
 

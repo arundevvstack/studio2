@@ -2,10 +2,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // TEMPORARY DEBUG MODE - UNIVERSAL ACCESS
-    // FORCE SYNC TRIGGER: 2026-02-24T09:00:00Z
+    // Allow authenticated users full access to shoot_network collection
+    match /shoot_network/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Block everything else
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
 
   }
