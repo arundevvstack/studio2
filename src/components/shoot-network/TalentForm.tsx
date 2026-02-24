@@ -198,7 +198,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       toast({ 
         variant: "destructive", 
         title: "Validation Error", 
-        description: "Identity, Location, and Creative Category are required fields." 
+        description: "Identity, District, and Creative Vertical are required fields." 
       });
       return;
     }
@@ -225,7 +225,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       thumbnail: formData.thumbnail,
       gallery: gallery,
       freeCollab: formData.freeCollab,
-      isArchived: false, // Critical: Explicitly set false to ensure visibility in repository query
+      isArchived: false, // Ensure visibility in the active repository
       updatedAt: serverTimestamp(),
     };
 
@@ -241,7 +241,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         id: newDocRef.id,
         createdAt: serverTimestamp(),
       }, { merge: true });
-      toast({ title: "Profile Initialized", description: `${formData.name} added to the repository.` });
+      toast({ title: "Profile Initialized", description: `${formData.name} added to the network.` });
     }
     
     setIsSubmitting(false);
@@ -262,7 +262,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           </div>
           <input type="file" ref={thumbInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'thumbnail')} />
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Identity Thumbnail</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Identity Portrait</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

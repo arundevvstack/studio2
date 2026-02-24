@@ -3,8 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // CRITICAL: TESTING MODE ONLY
-    // Allows all reads and writes across the entire database.
-    // This removes all "Missing or insufficient permissions" errors during the prototyping phase.
+    // Allows all reads and writes across the entire database to eliminate "Missing or insufficient permissions" errors.
     // This rule provides a permanent fix for testing and should be tightened before production.
     // Deployment Force Sync Trigger: 2026-02-24T07:25:00Z
     match /{document=**} {
