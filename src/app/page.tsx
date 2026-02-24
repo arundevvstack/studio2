@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, limit, where } from "firebase/firestore";
 import { 
@@ -35,9 +36,10 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const [activeTab, setActiveTab] = useState("production");
   const [forecastView, setForecastView] = useState("monthly");
 
@@ -45,19 +47,29 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
+  // Strategic Redirect: Ensure only authenticated executives access the core dashboard
+  useEffect(() => {
+    if (!isUserLoading && !user && mounted) {
+      router.push("/login");
+    }
+  }, [user, isUserLoading, router, mounted]);
+
   const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "projects"), orderBy("updatedAt", "desc"), limit(4));
-  }, [db]);
+  }, [db, user]);
   const { data: featuredProjects, isLoading: projectsLoading } = useCollection(projectsQuery);
 
   const allProjectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "projects"));
-  }, [db]);
+  }, [db, user]);
   const { data: allProjects } = useCollection(allProjectsQuery);
 
   const teamQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "teamMembers"));
-  }, [db]);
+  }, [db, user]);
   const { data: teamMembers } = useCollection(teamQuery);
 
   const stats = useMemo(() => {
@@ -80,7 +92,16 @@ export default function Dashboard() {
     }));
   }, [mounted]);
 
-  if (!mounted) return null;
+  if (!mounted || isUserLoading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Synchronizing Executive Hub...</p>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 max-w-[1600px] mx-auto pb-20">
@@ -177,7 +198,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={projectionData}>
                   <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="colorRev" x1="0" x1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15}/>
                       <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                     </linearGradient>

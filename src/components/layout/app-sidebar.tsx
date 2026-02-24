@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -109,8 +108,9 @@ export function AppSidebar() {
   };
 
   const navQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "sidebar_items"), orderBy("order", "asc"));
-  }, [db]);
+  }, [db, user]);
   const { data: remoteItems } = useCollection(navQuery);
 
   const billingRef = useMemoFirebase(() => {
