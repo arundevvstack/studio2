@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   Settings, 
   Building2, 
@@ -32,7 +32,9 @@ import {
   CreditCard,
   Receipt,
   Landmark,
-  ShieldAlert
+  ShieldAlert,
+  Upload,
+  Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -104,6 +106,7 @@ export default function SettingsPage() {
   const { user, isUserLoading } = useUser();
   const [isSaving, setIsGenerating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize theme from system/localStorage
   useEffect(() => {
@@ -164,7 +167,8 @@ export default function SettingsPage() {
     invoicePrefix: "",
     nextInvoiceNumberSequence: 1001,
     panNumber: "",
-    cinNumber: ""
+    cinNumber: "",
+    logo: ""
   });
 
   useEffect(() => {
@@ -181,13 +185,27 @@ export default function SettingsPage() {
         invoicePrefix: billingSettings.invoicePrefix || "MRZL_",
         nextInvoiceNumberSequence: billingSettings.nextInvoiceNumberSequence || 1001,
         panNumber: billingSettings.panNumber || "AAQCM8450P",
-        cinNumber: billingSettings.cinNumber || "U60200KL2023PTC081308"
+        cinNumber: billingSettings.cinNumber || "U60200KL2023PTC081308",
+        logo: billingSettings.logo || ""
       });
     }
   }, [billingSettings]);
 
   const [newVertical, setNewVertical] = useState("");
   const [newHub, setNewHub] = useState("");
+
+  const handleLogoClick = () => logoInputRef.current?.click();
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBillingForm(prev => ({ ...prev, logo: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSaveProfile = () => {
     if (!billingSettingsRef) return;
@@ -200,6 +218,7 @@ export default function SettingsPage() {
       taxId: billingForm.taxId,
       panNumber: billingForm.panNumber,
       companyAddress: billingForm.companyAddress,
+      logo: billingForm.logo,
       updatedAt: serverTimestamp()
     }, { merge: true });
 
@@ -350,6 +369,33 @@ export default function SettingsPage() {
               <CardDescription className="tracking-normal">Define the branding and identifiers used in legal and billing documents.</CardDescription>
             </CardHeader>
             <CardContent className="p-10 space-y-10">
+              <div className="flex flex-col items-center gap-6 py-6 border-b border-slate-50 dark:border-slate-800 mb-6">
+                <div className="relative group cursor-pointer" onClick={handleLogoClick}>
+                  <div className="h-32 w-32 rounded-[2.5rem] border-4 border-slate-50 shadow-xl overflow-hidden bg-white flex items-center justify-center dark:border-slate-800 dark:bg-slate-800">
+                    {billingForm.logo ? (
+                      <img src={billingForm.logo} alt="Organization Logo" className="w-full h-full object-contain p-4" />
+                    ) : (
+                      <ImageIcon className="h-10 w-10 text-slate-200" />
+                    )}
+                  </div>
+                  <div className="absolute inset-0 bg-black/40 rounded-[2.5rem] flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-[2px]">
+                    <Upload className="h-6 w-6 text-white mb-1" />
+                    <span className="text-[8px] font-bold text-white uppercase tracking-widest">Change Logo</span>
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={logoInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleLogoChange} 
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Organization Brand Logo</p>
+                  <p className="text-[9px] text-slate-300 mt-1 italic">Prefer transparent PNG or SVG for documents.</p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Legal Entity Name</Label>
