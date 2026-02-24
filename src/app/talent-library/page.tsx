@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -19,7 +18,8 @@ import {
   List,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X
 } from "lucide-react";
 import { 
   Select, 
@@ -42,7 +42,7 @@ export default function TalentLibraryPage() {
   const [sortBy, setSortBy] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);
   
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<any>({
     category: [],
     type: null,
     reachCategory: null,
@@ -55,9 +55,8 @@ export default function TalentLibraryPage() {
   });
 
   const talentsQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "talents"), orderBy("createdAt", "desc"));
-  }, [db, user]);
+  }, [db]);
 
   const { data: talents, isLoading } = useCollection(talentsQuery);
 
@@ -130,9 +129,16 @@ export default function TalentLibraryPage() {
     freeCollabOnly: false,
   });
 
+  const removeCategory = (cat: string) => {
+    setFilters((prev: any) => ({
+      ...prev,
+      category: prev.category.filter((c: string) => c !== cat)
+    }));
+  };
+
   return (
     <div className="flex min-h-screen gap-8 p-4 md:p-8 animate-in fade-in duration-500">
-      <aside className={`w-80 shrink-0 hidden lg:block`}>
+      <aside className="w-80 shrink-0 hidden lg:block">
         <TalentFilters 
           filters={filters} 
           setFilters={setFilters} 
@@ -193,13 +199,15 @@ export default function TalentLibraryPage() {
         {(filters.category.length > 0 || filters.type) && (
           <div className="flex flex-wrap gap-2 animate-in slide-in-from-top-2 duration-300">
             {filters.type && (
-              <Badge key="type-badge" className="bg-primary text-white border-none px-4 py-1.5 rounded-xl uppercase text-[10px] font-bold tracking-widest">
+              <Badge key="type-badge" className="bg-primary text-white border-none px-4 py-1.5 rounded-xl uppercase text-[10px] font-bold tracking-widest gap-2">
                 Type: {filters.type}
+                <X className="h-3 w-3 cursor-pointer hover:opacity-70" onClick={() => setFilters({...filters, type: null})} />
               </Badge>
             )}
             {filters.category.map((cat: string) => (
-              <Badge key={`cat-${cat}`} className="bg-slate-900 text-white border-none px-4 py-1.5 rounded-xl uppercase text-[10px] font-bold tracking-widest">
+              <Badge key={`cat-${cat}`} className="bg-slate-900 text-white border-none px-4 py-1.5 rounded-xl uppercase text-[10px] font-bold tracking-widest gap-2">
                 {cat}
+                <X className="h-3 w-3 cursor-pointer hover:opacity-70" onClick={() => removeCategory(cat)} />
               </Badge>
             ))}
           </div>

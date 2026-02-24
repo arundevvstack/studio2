@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -58,7 +57,8 @@ export function AddTalentDialog() {
     availableForFreeCollab: false,
     verified: false,
     instagramUrl: "",
-    instagramFollowers: "",
+    instagramFollowersDisplay: "",
+    instagramFollowersNumeric: 0,
     instagramEngagement: 0,
     youtubeUrl: "",
     youtubeSubscribers: "",
@@ -82,15 +82,16 @@ export function AddTalentDialog() {
       // Transform followers string (e.g. "12.4k") into numerical data for sorting
       let followerNum = 0;
       const fStr = result.followers.toLowerCase();
-      if (fStr.includes('k')) followerNum = parseFloat(fStr) * 1000;
-      else if (fStr.includes('m')) followerNum = parseFloat(fStr) * 1000000;
-      else followerNum = parseFloat(fStr) || 0;
+      if (fStr.includes('k')) followerNum = Math.round(parseFloat(fStr) * 1000);
+      else if (fStr.includes('m')) followerNum = Math.round(parseFloat(fStr) * 1000000);
+      else followerNum = Math.round(parseFloat(fStr)) || 0;
 
       const engagementNum = parseFloat(result.engagementRate) || 0;
 
       setFormData(prev => ({
         ...prev,
-        instagramFollowers: followerNum.toString(),
+        instagramFollowersDisplay: result.followers,
+        instagramFollowersNumeric: followerNum,
         instagramEngagement: engagementNum,
         profileImage: result.profilePictureUrl
       }));
@@ -121,7 +122,7 @@ export function AddTalentDialog() {
         platforms: {
           instagram: {
             url: formData.instagramUrl,
-            followers: Number(formData.instagramFollowers) || 0,
+            followers: formData.instagramFollowersNumeric,
             engagementRate: formData.instagramEngagement
           },
           youtube: {
@@ -140,8 +141,9 @@ export function AddTalentDialog() {
         name: "", profileImage: "", type: "Influencer", category: "", location: "",
         languages: "English", reachCategory: "Micro", estimatedCost: "",
         costType: "Per Post", collabType: "Paid", availableForFreeCollab: false,
-        verified: false, instagramUrl: "", instagramFollowers: "",
-        instagramEngagement: 0, youtubeUrl: "", youtubeSubscribers: "",
+        verified: false, instagramUrl: "", instagramFollowersDisplay: "",
+        instagramFollowersNumeric: 0, instagramEngagement: 0, 
+        youtubeUrl: "", youtubeSubscribers: "",
         portfolioLinks: "", status: "Active"
       });
     } catch (error: any) {
@@ -250,11 +252,11 @@ export function AddTalentDialog() {
                   <div className="relative">
                     <Input 
                       readOnly
-                      value={formData.instagramFollowers}
+                      value={formData.instagramFollowersDisplay}
                       placeholder="Fetch to populate..."
                       className="h-14 rounded-2xl bg-slate-100 border-none font-bold text-lg px-6 text-slate-500"
                     />
-                    {formData.instagramFollowers && !isFetching && (
+                    {formData.instagramFollowersDisplay && !isFetching && (
                       <CheckCircle2 className="absolute right-6 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
                     )}
                   </div>

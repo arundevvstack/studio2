@@ -2,7 +2,7 @@
 /**
  * @fileOverview A visual extraction engine for social media profiles.
  * 
- * - fetchInstagramVisuals - A function that simulates the extraction of professional assets and metrics from Instagram.
+ * - fetchInstagramVisuals - A function that handles the intelligence extraction process using AI.
  * - InstagramVisualsInput - The input type requiring an Instagram URL and talent category.
  * - InstagramVisualsOutput - The structured return type containing style analysis, metrics, and visual assets.
  */
@@ -34,6 +34,24 @@ export async function fetchInstagramVisuals(input: InstagramVisualsInput): Promi
   return instagramVisualsFlow(input);
 }
 
+const instagramVisualsPrompt = ai.definePrompt({
+  name: 'instagramVisualsPrompt',
+  input: { schema: InstagramVisualsInputSchema },
+  output: { schema: InstagramVisualsOutputSchema },
+  prompt: `You are a social media intelligence agent. 
+Given an Instagram profile URL or handle and a talent category, generate a professional analysis of their social presence.
+
+Instagram URL/Handle: {{{instagramUrl}}}
+Category: {{{category}}}
+
+Since you are in a simulation environment, generate realistic and high-fidelity metrics that would be typical for a professional in this category.
+The profile picture URL should be in the format: https://picsum.photos/seed/[handle]-profile/400/400
+The visual URLs should be in the format: https://picsum.photos/seed/[handle]-[index]/600/600
+
+Ensure the follower count is a realistic string like "12.4k" or "1.2m".
+Ensure the engagement rate is a percentage string like "4.5%".`,
+});
+
 const instagramVisualsFlow = ai.defineFlow(
   {
     name: 'instagramVisualsFlow',
@@ -41,34 +59,7 @@ const instagramVisualsFlow = ai.defineFlow(
     outputSchema: InstagramVisualsOutputSchema,
   },
   async (input) => {
-    // Strategic Simulation: In a production environment, this would interface with a professional scraping service.
-    // We use the Instagram ID as a seed for consistent results.
-    
-    const handle = input.instagramUrl.split('/').filter(Boolean).pop() || 'creative';
-    const seed = handle.toLowerCase();
-    
-    // We simulate a delay for the "extraction" process
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Generate deterministic random numbers based on seed for consistent feeling
-    const getSeedNum = (str: string) => str.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const sNum = getSeedNum(seed);
-    
-    const followers = `${((sNum % 50) + 5).toFixed(1)}k`;
-    const posts = `${(sNum % 800) + 100}`;
-    const engagement = `${((sNum % 8) + 2).toFixed(1)}%`;
-
-    return {
-      profilePictureUrl: `https://picsum.photos/seed/${seed}-profile/400/400`,
-      styleAnalysis: `The visual architecture for @${handle} in the ${input.category} vertical demonstrates high-fidelity production values. The feed maintains a consistent chromatic temperature with a professional focus on cinematic framing and modern ${input.category} aesthetics typical of premium Kerala talent.`,
-      followers,
-      posts,
-      engagementRate: engagement,
-      visuals: Array.from({ length: 9 }).map((_, i) => ({
-        url: `https://picsum.photos/seed/${seed}-${i}/600/600`,
-        likes: `${(Math.random() * 12 + 1).toFixed(1)}k`,
-        description: `Strategic ${input.category} asset demonstrating professional grade lighting and composition for @${handle}.`
-      }))
-    };
+    const { output } = await instagramVisualsPrompt(input);
+    return output!;
   }
 );

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -40,6 +39,12 @@ export default function TalentDetailPage({ params }: { params: Promise<{ talentI
   const talentRef = useMemoFirebase(() => doc(db, "talents", talentId), [db, talentId]);
   const { data: talent, isLoading } = useDoc(talentRef);
 
+  const formatFollowers = (count: number) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
   if (isLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center space-y-4">
@@ -60,10 +65,6 @@ export default function TalentDetailPage({ params }: { params: Promise<{ talentI
       </div>
     );
   }
-
-  const primaryPlatform = talent.platforms?.instagram?.followers > (talent.platforms?.youtube?.subscribers || 0) 
-    ? { name: 'Instagram', stats: talent.platforms.instagram } 
-    : { name: 'YouTube', stats: talent.platforms?.youtube };
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 p-4 md:p-8 animate-in fade-in duration-700">
@@ -207,7 +208,7 @@ export default function TalentDetailPage({ params }: { params: Promise<{ talentI
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Followers</p>
-                        <p className="text-3xl font-bold text-slate-900">{(talent.platforms?.instagram?.followers || 0).toLocaleString()}</p>
+                        <p className="text-3xl font-bold text-slate-900">{formatFollowers(talent.platforms?.instagram?.followers || 0)}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Engagement</p>
@@ -239,7 +240,7 @@ export default function TalentDetailPage({ params }: { params: Promise<{ talentI
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Subscribers</p>
-                        <p className="text-3xl font-bold text-slate-900">{(talent.platforms?.youtube?.subscribers || 0).toLocaleString()}</p>
+                        <p className="text-3xl font-bold text-slate-900">{formatFollowers(talent.platforms?.youtube?.subscribers || 0)}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Videos</p>
