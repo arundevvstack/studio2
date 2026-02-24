@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "TeamMember": {
@@ -80,6 +81,20 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "SidebarItem": {
+      "title": "SidebarItem",
+      "type": "object",
+      "description": "A customized navigation item for the workspace sidebar.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "iconName": { "type": "string" },
+        "url": { "type": "string" },
+        "order": { "type": "number" },
+        "isVisible": { "type": "boolean" }
+      },
+      "required": ["title", "url", "iconName"]
     }
   },
   "auth": {
@@ -105,6 +120,10 @@
     "/teamMembers/{memberId}": {
       "schema": "TeamMember",
       "description": "Internal team members."
+    },
+    "/sidebar_items/{itemId}": {
+      "schema": "SidebarItem",
+      "description": "Dynamic sidebar navigation items."
     }
   }
 }

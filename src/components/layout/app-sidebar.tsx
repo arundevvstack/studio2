@@ -1,5 +1,7 @@
+
 "use client";
 
+import React from "react";
 import {
   LayoutGrid,
   GitBranch,
@@ -16,7 +18,8 @@ import {
   ChevronRight,
   Briefcase,
   Globe,
-  Clock
+  Clock,
+  HelpCircle
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,19 +37,41 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
 
-const workspaceItems = [
-  { title: "Dashboard", icon: LayoutGrid, url: "/" },
-  { title: "Pipeline", icon: GitBranch, url: "/pipeline" },
-  { title: "Projects", icon: Folder, url: "/projects" },
-  { title: "Board", icon: Trello, url: "/board" },
-  { title: "Clients", icon: Briefcase, url: "/clients" },
-  { title: "Schedule", icon: Calendar, url: "/schedule" },
-  { title: "Time Tracking", icon: Clock, url: "/time" },
-  { title: "Team", icon: Users, url: "/team" },
-  { title: "Billing", icon: FileText, url: "/invoices" },
-  { title: "Intelligence", icon: BarChart3, url: "/sales-forecast" },
-  { title: "Market Research", icon: Globe, url: "/market-research" },
+// Icon Map for Dynamic Sidebar
+const ICON_MAP: Record<string, any> = {
+  LayoutGrid,
+  GitBranch,
+  Folder,
+  Trello,
+  Calendar,
+  Users,
+  FileText,
+  BarChart3,
+  ShieldCheck,
+  Settings,
+  LogOut,
+  Plus,
+  ChevronRight,
+  Briefcase,
+  Globe,
+  Clock
+};
+
+const DEFAULT_WORKSPACE_ITEMS = [
+  { title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
+  { title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 2, isVisible: true },
+  { title: "Projects", iconName: "Folder", url: "/projects", order: 3, isVisible: true },
+  { title: "Board", iconName: "Trello", url: "/board", order: 4, isVisible: true },
+  { title: "Clients", iconName: "Briefcase", url: "/clients", order: 5, isVisible: true },
+  { title: "Schedule", iconName: "Calendar", url: "/schedule", order: 6, isVisible: true },
+  { title: "Time Tracking", iconName: "Clock", url: "/time", order: 7, isVisible: true },
+  { title: "Team", iconName: "Users", url: "/team", order: 8, isVisible: true },
+  { title: "Billing", iconName: "FileText", url: "/invoices", order: 9, isVisible: true },
+  { title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 10, isVisible: true },
+  { title: "Market Research", iconName: "Globe", url: "/market-research", order: 11, isVisible: true },
 ];
 
 const managementItems = [
@@ -60,6 +85,23 @@ const footerItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const db = useFirestore();
+  const { user } = useUser();
+
+  const navQuery = useMemoFirebase(() => {
+    return query(collection(db, "sidebar_items"), orderBy("order", "asc"));
+  }, [db]);
+
+  const { data: remoteItems, isLoading } = useCollection(navQuery);
+
+  const displayItems = React.useMemo(() => {
+    // If we have remote items and not loading, use them filtered by visibility
+    if (remoteItems && remoteItems.length > 0) {
+      return remoteItems.filter(item => item.isVisible !== false);
+    }
+    // Fallback to defaults if no remote items yet
+    return DEFAULT_WORKSPACE_ITEMS;
+  }, [remoteItems]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -101,8 +143,10 @@ export function AppSidebar() {
             Workspace
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
-            {workspaceItems.map((item) => {
+            {displayItems.map((item) => {
               const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
+              const Icon = ICON_MAP[item.iconName] || HelpCircle;
+              
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
@@ -115,7 +159,7 @@ export function AppSidebar() {
                     }`}
                   >
                     <Link href={item.url} className="flex items-center w-full">
-                      <item.icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
+                      <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
                       <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
                         {item.title}
                       </span>
