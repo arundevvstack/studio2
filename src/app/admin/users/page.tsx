@@ -98,7 +98,6 @@ export default function UserManagementPage() {
   const db = useFirestore();
   const { user: currentUser, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
-  const [isPurging, setIsPurging] = useState(false);
 
   // Fetch user record status
   const currentUserRef = useMemoFirebase(() => {
@@ -173,34 +172,6 @@ export default function UserManagementPage() {
     );
   }, [team, searchQuery]);
 
-  const handlePurgeOthers = async () => {
-    if (!isMasterUser || !team) return;
-    
-    setIsPurging(true);
-    try {
-      const batch = writeBatch(db);
-      let count = 0;
-      
-      team.forEach(member => {
-        if (member.id !== currentUser?.uid && member.email?.toLowerCase() !== MASTER_EMAIL.toLowerCase()) {
-          batch.delete(doc(db, "teamMembers", member.id));
-          count++;
-        }
-      });
-
-      if (count > 0) {
-        await batch.commit();
-        toast({ title: "System Purge Complete", description: `Successfully removed ${count} identities from the registry.` });
-      } else {
-        toast({ title: "Purge Unnecessary", description: "No other identities found in the system." });
-      }
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Purge Failure", description: e.message });
-    } finally {
-      setIsPurging(false);
-    }
-  };
-
   const handleUpdateRole = (userId: string, roleId: string) => {
     const userRef = doc(db, "teamMembers", userId);
     updateDocumentNonBlocking(userRef, { roleId, updatedAt: serverTimestamp() });
@@ -251,33 +222,6 @@ export default function UserManagementPage() {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          {isMasterUser && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" disabled={isPurging} className="h-12 px-6 rounded-xl font-bold text-destructive border-destructive/20 hover:bg-destructive/5 gap-2 tracking-normal transition-all">
-                  {isPurging ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-                  Purge Others
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-                <AlertDialogHeader>
-                  <div className="flex items-center gap-3 text-destructive mb-2">
-                    <AlertTriangle className="h-6 w-6" />
-                    <AlertDialogTitle className="font-headline text-xl">Critical Maintenance Action</AlertDialogTitle>
-                  </div>
-                  <AlertDialogDescription className="text-slate-500 font-medium">
-                    This will permanently remove **ALL** user identities from the system registry except for your active account. This action is irreversible.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="gap-3 mt-6">
-                  <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase">Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handlePurgeOthers} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs">
-                    Confirm Full Purge
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
           <Dialog>
             <DialogTrigger asChild>
               <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white gap-2 tracking-normal shadow-lg shadow-primary/20">
