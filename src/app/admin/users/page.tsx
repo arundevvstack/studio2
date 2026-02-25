@@ -26,7 +26,8 @@ import {
   Plus,
   Hourglass,
   Zap,
-  RotateCcw
+  RotateCcw,
+  ShieldBan
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
  * @fileOverview Role-Based Access Control (RBAC) Hub.
  * Provides high-level administrative oversight of all system users and their roles.
  * Includes a restricted System Purge utility for defineperspective.in@gmail.com.
+ * Automatically handles blacklisted identity removal.
  */
 
 export default function UserManagementPage() {
@@ -96,6 +98,7 @@ export default function UserManagementPage() {
   const [isPurging, setIsPurging] = useState(false);
 
   const MASTER_EMAIL = 'defineperspective.in@gmail.com';
+  const BLACKLISTED_EMAILS = ['arunadhi.com@gmail.com'];
 
   // Fetch user record status
   const currentUserRef = useMemoFirebase(() => {
@@ -135,6 +138,22 @@ export default function UserManagementPage() {
   }, [db, currentUser]);
   const { data: roles } = useCollection(rolesQuery);
 
+  // Auto-Cleanup logic for blacklisted emails if found in registry
+  useEffect(() => {
+    if (isMasterUser && team) {
+      const blacklistedInRegistry = team.filter(m => BLACKLISTED_EMAILS.includes(m.email?.toLowerCase() || ""));
+      if (blacklistedInRegistry.length > 0) {
+        const batch = writeBatch(db);
+        blacklistedInRegistry.forEach(m => {
+          batch.delete(doc(db, "teamMembers", m.id));
+        });
+        batch.commit().then(() => {
+          toast({ title: "Maintenance Sync", description: "Removed restricted identities from the registry." });
+        });
+      }
+    }
+  }, [isMasterUser, team, db]);
+
   const filteredUsers = useMemo(() => {
     if (!team) return [];
     return team.filter(member => 
@@ -153,7 +172,7 @@ export default function UserManagementPage() {
       let count = 0;
       
       team.forEach(member => {
-        if (member.email !== MASTER_EMAIL) {
+        if (member.email?.toLowerCase() !== MASTER_EMAIL.toLowerCase()) {
           batch.delete(doc(db, "teamMembers", member.id));
           count++;
         }
@@ -294,7 +313,6 @@ export default function UserManagementPage() {
         </div>
       </div>
 
-      {/* Stats and Filter sections remain same ... */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
@@ -329,7 +347,7 @@ export default function UserManagementPage() {
             <Shield className="h-5 w-5 text-primary" />
           </div>
           <div className="relative z-10">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Access Protocol</p>
+            <p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">Access Protocol</p>
             <h3 className="text-2xl font-bold font-headline mt-1 uppercase">RBAC Enforced</h3>
           </div>
         </Card>
@@ -379,7 +397,8 @@ export default function UserManagementPage() {
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
-                              {member.email === MASTER_EMAIL && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
+                              {member.email?.toLowerCase() === MASTER_EMAIL.toLowerCase() && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
+                              {BLACKLISTED_EMAILS.includes(member.email?.toLowerCase() || "") && <ShieldBan className="h-3.5 w-3.5 text-red-500" />}
                             </div>
                             <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
                               <Mail className="h-3 w-3" /> {member.email}
@@ -389,6 +408,7 @@ export default function UserManagementPage() {
                       </TableCell>
                       <TableCell>
                         <Select 
+                          disabled={BLACKLISTED_EMAILS.includes(member.email?.toLowerCase() || "")}
                           value={member.roleId || "none"} 
                           onValueChange={(val) => handleUpdateRole(member.id, val)}
                         >
@@ -432,7 +452,7 @@ export default function UserManagementPage() {
                                 </Link>
                               </DropdownMenuItem>
                               
-                              {member.status !== 'Active' && (
+                              {member.status !== 'Active' && !BLACKLISTED_EMAILS.includes(member.email?.toLowerCase() || "") && (
                                 <DropdownMenuItem 
                                   onClick={() => handleToggleStatus(member.id, member.status)}
                                   className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-green-600 focus:text-green-700"
@@ -442,7 +462,7 @@ export default function UserManagementPage() {
                                 </DropdownMenuItem>
                               )}
 
-                              {member.status === 'Active' && member.email !== MASTER_EMAIL && (
+                              {member.status === 'Active' && member.email?.toLowerCase() !== MASTER_EMAIL.toLowerCase() && (
                                 <DropdownMenuItem 
                                   onClick={() => handleToggleStatus(member.id, member.status)}
                                   className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-orange-600 focus:text-orange-700"
@@ -456,7 +476,7 @@ export default function UserManagementPage() {
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <DropdownMenuItem 
-                                    disabled={member.email === MASTER_EMAIL}
+                                    disabled={member.email?.toLowerCase() === MASTER_EMAIL.toLowerCase()}
                                     onSelect={(e) => e.preventDefault()}
                                     className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
                                   >
