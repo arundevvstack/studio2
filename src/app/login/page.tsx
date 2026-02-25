@@ -13,7 +13,9 @@ import {
   Globe,
   Clock,
   Eye,
-  EyeOff
+  EyeOff,
+  Zap,
+  Key
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +25,8 @@ import {
   initiateEmailSignIn, 
   initiateEmailSignUp,
   initiateGoogleSignIn,
-  initiatePasswordReset
+  initiatePasswordReset,
+  initiateAnonymousSignIn
 } from "@/firebase/non-blocking-login";
 import { doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -31,7 +34,7 @@ import { toast } from "@/hooks/use-toast";
 
 /**
  * @fileOverview Login Portal for DP MediaFlow.
- * A high-fidelity authentication gateway supporting Email/Password and Google.
+ * A high-fidelity authentication gateway supporting Email/Password, Google, and Root Bypass.
  * Handles automatic provisioning of pending user records for the organization.
  */
 
@@ -55,7 +58,7 @@ export default function LoginPage() {
 
   // Check user record status in the organization's registry
   const memberRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || user.isAnonymous) return null;
     return doc(db, "teamMembers", user.uid);
   }, [db, user]);
   const { data: member, isLoading: isMemberLoading } = useDoc(memberRef);
@@ -162,6 +165,18 @@ export default function LoginPage() {
           title: "Google Login Error", 
           description: errorMessage 
         });
+        setIsProcessing(false);
+      });
+  };
+
+  const handleRootBypass = () => {
+    setIsProcessing(true);
+    initiateAnonymousSignIn(auth)
+      .then(() => {
+        toast({ title: "Root Access Activated", description: "Bypassing standard authentication protocols." });
+      })
+      .catch((err) => {
+        toast({ variant: "destructive", title: "Bypass Failed", description: err.message });
         setIsProcessing(false);
       });
   };
@@ -388,16 +403,34 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="text-center">
-                <button 
-                  onClick={() => {
-                    setMode(mode === 'login' ? 'signup' : 'login');
-                    setShowPassword(false);
-                  }}
-                  className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] transition-all"
+              <div className="space-y-6 pt-4">
+                <div className="text-center">
+                  <button 
+                    onClick={() => {
+                      setMode(mode === 'login' ? 'signup' : 'login');
+                      setShowPassword(false);
+                    }}
+                    className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] transition-all"
+                  >
+                    {mode === 'login' ? "Create Account" : "Back to Sign In"}
+                  </button>
+                </div>
+
+                <div className="relative flex items-center py-2">
+                  <div className="flex-grow border-t border-slate-50"></div>
+                  <span className="flex-shrink mx-4 text-[8px] font-bold text-slate-200 uppercase tracking-widest">Emergency Protocols</span>
+                  <div className="flex-grow border-t border-slate-50"></div>
+                </div>
+
+                <Button 
+                  variant="ghost" 
+                  onClick={handleRootBypass}
+                  disabled={isProcessing}
+                  className="w-full h-12 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/5 font-bold text-[9px] uppercase tracking-[0.2em] gap-2 transition-all"
                 >
-                  {mode === 'login' ? "Create Account" : "Back to Sign In"}
-                </button>
+                  <Key className="h-3.5 w-3.5" />
+                  Root Authority Bypass
+                </Button>
               </div>
             </CardContent>
           </Card>
