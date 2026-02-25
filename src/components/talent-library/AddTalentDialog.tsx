@@ -9,13 +9,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus } from "lucide-react";
 import { TalentForm } from "./TalentForm";
-
-/**
- * @fileOverview Talent Onboarding Portal.
- * Enhanced wrapper for the high-fidelity onboarding engine.
- */
 
 export function AddTalentDialog() {
   const [open, setOpen] = useState(false);
@@ -28,12 +23,9 @@ export function AddTalentDialog() {
           Onboard Talent
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[850px] rounded-[3.5rem] p-0 overflow-hidden border-none shadow-2xl">
-        <DialogHeader className="p-10 pb-0 bg-white">
-          <DialogTitle className="text-3xl font-bold font-headline flex items-center gap-3 tracking-tight">
-            <Sparkles className="h-7 w-7 text-primary" />
-            Provision New Identity
-          </DialogTitle>
+      <DialogContent className="sm:max-w-[700px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
+        <DialogHeader className="p-8 pb-0">
+          <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision New Identity</DialogTitle>
         </DialogHeader>
         <TalentForm onSuccess={() => setOpen(false)} />
       </DialogContent>

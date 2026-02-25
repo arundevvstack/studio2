@@ -10,8 +10,7 @@ import {
   List,
   Filter,
   X,
-  Database,
-  Sparkles
+  Database
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,11 +21,6 @@ import { TalentCard } from "@/components/talent-library/TalentCard";
 import { TalentFilters } from "@/components/talent-library/TalentFilters";
 import { AddTalentDialog } from "@/components/talent-library/AddTalentDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-
-/**
- * @fileOverview Talent Library Master Registry.
- * Consolidated source of truth for influencers and media personnel.
- */
 
 export default function TalentLibraryPage() {
   const db = useFirestore();
@@ -41,9 +35,7 @@ export default function TalentLibraryPage() {
     maxCost: 500000,
     location: "",
     verifiedOnly: false,
-    freeCollabOnly: false,
-    reachCategory: null,
-    collabType: null
+    freeCollabOnly: false
   });
 
   const talentQuery = useMemoFirebase(() => {
@@ -91,9 +83,7 @@ export default function TalentLibraryPage() {
     maxCost: 500000,
     location: "",
     verifiedOnly: false,
-    freeCollabOnly: false,
-    reachCategory: null,
-    collabType: null
+    freeCollabOnly: false
   });
 
   const isLoading = isUserLoading || isDataLoading;
