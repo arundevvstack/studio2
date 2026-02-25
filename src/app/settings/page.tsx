@@ -41,7 +41,8 @@ import {
   Lock,
   Unlock,
   Shield,
-  User
+  User,
+  GitBranch
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -74,6 +75,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
+import WorkflowManager from "@/components/settings/WorkflowManager";
 
 const DEFAULT_WORKSPACE_ITEMS = [
   { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
@@ -97,6 +99,7 @@ const MANAGEMENT_MODULES = [
 const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
   { id: "organization", label: "Organization", icon: Building2 },
+  { id: "workflow", label: "Workflow Manager", icon: GitBranch },
   { id: "team", label: "Team Members", icon: Users },
   { id: "projects", label: "Projects", icon: Briefcase },
   { id: "billing", label: "Billing", icon: Receipt },
@@ -351,7 +354,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-[1200px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="space-y-1">
         <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal dark:text-white">Strategic Settings</h1>
         <p className="text-sm text-slate-500 font-medium tracking-normal dark:text-slate-400">Manage your organization profile, team access, and system permissions.</p>
@@ -492,6 +495,10 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="workflow" className="animate-in slide-in-from-left-2 duration-300">
+          <WorkflowManager />
         </TabsContent>
 
         <TabsContent value="roles" className="animate-in slide-in-from-left-2 duration-300">
