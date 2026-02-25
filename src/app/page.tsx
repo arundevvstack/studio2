@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
@@ -14,7 +15,8 @@ import {
   LayoutGrid,
   Users,
   Database,
-  CheckCircle2
+  CheckCircle2,
+  ShieldCheck
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,12 @@ import {
   AreaChart,
   Area
 } from "recharts";
+
+/**
+ * @fileOverview Master Dashboard Node.
+ * Features dynamic role-based filtering for Senior Producers.
+ * Shows only associated projects for staff roles while maintaining global view for Admins.
+ */
 
 export default function Dashboard() {
   const router = useRouter();
@@ -53,6 +61,13 @@ export default function Dashboard() {
   }, [db, user]);
   const { data: member, isLoading: memberLoading } = useDoc(memberRef);
 
+  // Fetch Role for strategic filtering
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
   // Strategic Access Guard
   useEffect(() => {
     if (!isUserLoading && mounted) {
@@ -64,17 +79,12 @@ export default function Dashboard() {
     }
   }, [user, isUserLoading, member, router, mounted]);
 
-  const projectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, "projects"), orderBy("updatedAt", "desc"), limit(4));
-  }, [db, user]);
-  const { data: featuredProjects, isLoading: projectsLoading } = useCollection(projectsQuery);
-
+  // Fetch all projects for logic-based filtering
   const allProjectsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "projects"));
+    return query(collection(db, "projects"), orderBy("updatedAt", "desc"));
   }, [db, user]);
-  const { data: allProjects } = useCollection(allProjectsQuery);
+  const { data: allProjects, isLoading: projectsLoading } = useCollection(allProjectsQuery);
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -82,25 +92,40 @@ export default function Dashboard() {
   }, [db, user]);
   const { data: teamMembers } = useCollection(teamQuery);
 
+  // --- Role Based Filtering Logic ---
+  const isSeniorProducer = role?.name === "Senior Producer";
+  const isAdmin = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
+
+  const displayedProjects = useMemo(() => {
+    if (!allProjects) return [];
+    // Senior Producers only see projects they are assigned to
+    if (isSeniorProducer && !isAdmin) {
+      return allProjects.filter(p => p.crew?.some((c: any) => c.talentId === user?.uid));
+    }
+    return allProjects;
+  }, [allProjects, isSeniorProducer, isAdmin, user]);
+
+  const featuredProjects = useMemo(() => displayedProjects.slice(0, 4), [displayedProjects]);
+
   const stats = useMemo(() => {
-    if (!allProjects) return { completed: 0, inProgress: 0, lead: 0, totalRevenue: 0, percent: 0 };
-    const completed = allProjects.filter(p => p.status === "Released").length;
-    const inProgress = allProjects.filter(p => p.status === "In Progress" || p.status === "Post Production" || p.status === "Production").length;
-    const totalRevenue = allProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
-    const total = allProjects.length;
+    if (!displayedProjects) return { completed: 0, inProgress: 0, lead: 0, totalRevenue: 0, percent: 0 };
+    const completed = displayedProjects.filter(p => p.status === "Released").length;
+    const inProgress = displayedProjects.filter(p => p.status === "In Progress" || p.status === "Post Production" || p.status === "Production").length;
+    const totalRevenue = displayedProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
+    const total = displayedProjects.length;
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { completed, inProgress, lead: total - completed - inProgress, totalRevenue, percent };
-  }, [allProjects]);
+  }, [displayedProjects]);
 
   const projectionData = useMemo(() => {
     if (!mounted) return [];
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
     return months.map(m => ({
       name: m,
-      revenue: Math.floor(Math.random() * 50000) + 20000,
+      revenue: Math.floor(Math.random() * 50000) + (isSeniorProducer ? 5000 : 20000),
       leads: Math.floor(Math.random() * 5) + 2
     }));
-  }, [mounted]);
+  }, [mounted, isSeniorProducer]);
 
   if (!mounted || isUserLoading || memberLoading) {
     return (
@@ -118,7 +143,7 @@ export default function Dashboard() {
       {/* Global Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
         {[
-          { title: "Portfolio Value", value: `₹${(stats.totalRevenue / 100000).toFixed(1)}L`, icon: TrendingUp, color: "bg-primary/5 text-primary", sub: "Global assets" },
+          { title: isSeniorProducer ? "My Portfolio Value" : "Portfolio Value", value: `₹${(stats.totalRevenue / 100000).toFixed(1)}L`, icon: TrendingUp, color: "bg-primary/5 text-primary", sub: isSeniorProducer ? "My projects" : "Global assets" },
           { title: "Production Load", value: `${stats.inProgress} Entities`, icon: Activity, color: "bg-accent/5 text-accent", sub: "Active lifecycle" },
           { title: "Internal Team", value: `${teamMembers?.length || 0} Experts`, icon: Users, color: "bg-blue-50 text-blue-500", sub: "Staff resources" }
         ].map((item, i) => (
@@ -145,10 +170,16 @@ export default function Dashboard() {
               </div>
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-slate-900">Workspace</h1>
-                  <Badge className="bg-green-50 text-green-600 border-none text-[8px] font-bold uppercase tracking-widest px-3">System Optimized</Badge>
+                  <h1 className="text-xl sm:text-2xl font-bold font-headline tracking-tight text-slate-900">
+                    {isSeniorProducer ? "Production Hub" : "Workspace"}
+                  </h1>
+                  <Badge className={`${isSeniorProducer ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'} border-none text-[8px] font-bold uppercase tracking-widest px-3`}>
+                    {isSeniorProducer ? "Staff View" : "System Optimized"}
+                  </Badge>
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Strategic Throughput Monitor</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                  {isSeniorProducer ? "Personal Project Ledger" : "Strategic Throughput Monitor"}
+                </p>
               </div>
             </div>
             <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-6 sm:gap-10">
@@ -166,7 +197,7 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-            {featuredProjects?.map((project, idx) => (
+            {featuredProjects.length > 0 ? featuredProjects.map((project, idx) => (
               <Card key={project.id} className={`border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden group cursor-pointer h-48 sm:h-56 flex flex-col ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-900 text-white'}`}>
                 <div className="p-6 sm:p-8 flex-grow flex flex-col justify-between">
                   <div className="flex justify-between items-start">
@@ -187,7 +218,12 @@ export default function Dashboard() {
                   </div>
                 </div>
               </Card>
-            ))}
+            )) : (
+              <div className="col-span-full py-20 border-2 border-dashed border-slate-100 rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-4 bg-white/50">
+                <Briefcase className="h-10 w-10 text-slate-200" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No projects assigned to your profile</p>
+              </div>
+            )}
           </div>
 
           <Card className="border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3.5rem] bg-white p-6 sm:p-12">
@@ -253,7 +289,9 @@ export default function Dashboard() {
               <div className="flex items-start gap-4 p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.2rem] bg-slate-50 border border-slate-100">
                 <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-accent mt-1 shrink-0" />
                 <p className="text-[11px] sm:text-xs font-bold text-slate-600 tracking-normal leading-relaxed italic">
-                  "Production throughput is currently optimized. High velocity detected in Pre-Production phase."
+                  {isSeniorProducer 
+                    ? `"You are currently assigned to ${displayedProjects.length} projects. Focus on post-production velocity."`
+                    : `"Production throughput is currently optimized. High velocity detected in Pre-Production phase."`}
                 </p>
               </div>
             </div>
