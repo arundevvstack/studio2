@@ -30,7 +30,6 @@ import { useRouter } from "next/navigation";
 /**
  * @fileOverview Strategic Admin Console.
  * Manages system-wide metrics, operational status, and global audit logs.
- * Identity-specific RBAC has been moved to the User Management hub.
  */
 
 export default function AdminConsolePage() {
@@ -38,7 +37,7 @@ export default function AdminConsolePage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
 
-  // Fetch user record status for access guard
+  // Fetch user record status
   const memberRef = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
     return doc(db, "teamMembers", user.uid);
@@ -47,14 +46,13 @@ export default function AdminConsolePage() {
 
   // Strategic Access Guard
   useEffect(() => {
-    if (!isUserLoading && !memberLoading) {
+    if (!isUserLoading) {
       if (!user) {
         router.push("/login");
-      } else if (!user.isAnonymous && member && member.status !== "Active") {
-        router.push("/login");
       }
+      // Access to admin console granted to authenticated users
     }
-  }, [user, isUserLoading, member, memberLoading, router]);
+  }, [user, isUserLoading, router]);
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -68,7 +66,7 @@ export default function AdminConsolePage() {
   }, [db, user]);
   const { data: roles } = useDoc(rolesQuery);
 
-  if (isUserLoading || memberLoading) {
+  if (isUserLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -77,7 +75,7 @@ export default function AdminConsolePage() {
     );
   }
 
-  if (!user || member?.status !== "Active") return null;
+  if (!user) return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
@@ -123,7 +121,6 @@ export default function AdminConsolePage() {
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{team?.length || 0}</h3>
           </div>
         </Card>
-        {/* Additional Cards and Tabs Content */}
       </div>
     </div>
   );

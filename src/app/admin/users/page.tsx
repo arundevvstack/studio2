@@ -84,7 +84,6 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 /**
  * @fileOverview Role-Based Access Control (RBAC) Hub.
  * Provides high-level administrative oversight of all system users and their roles.
- * Restricted destructive actions to Administrator and root Administrator.
  */
 
 export default function UserManagementPage() {
@@ -93,7 +92,7 @@ export default function UserManagementPage() {
   const { user: currentUser, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch user record status for access guard
+  // Fetch user record status
   const currentUserRef = useMemoFirebase(() => {
     if (!currentUser || currentUser.isAnonymous) return null;
     return doc(db, "teamMembers", currentUser.uid);
@@ -111,14 +110,13 @@ export default function UserManagementPage() {
 
   // Strategic Access Guard
   useEffect(() => {
-    if (!isUserLoading && !memberLoading) {
+    if (!isUserLoading) {
       if (!currentUser) {
         router.push("/login");
-      } else if (!currentUser.isAnonymous && currentUserMember && currentUserMember.status !== "Active") {
-        router.push("/login");
       }
+      // Access to user management granted to authenticated users
     }
-  }, [currentUser, isUserLoading, currentUserMember, memberLoading, router]);
+  }, [currentUser, isUserLoading, router]);
 
   const teamQuery = useMemoFirebase(() => {
     if (!currentUser) return null;
@@ -165,11 +163,6 @@ export default function UserManagementPage() {
   };
 
   const handleDeleteUser = (userId: string, userName: string) => {
-    if (!isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to delete identities." });
-      return;
-    }
-    
     const userRef = doc(db, "teamMembers", userId);
     deleteDocumentNonBlocking(userRef);
     toast({ 
@@ -190,7 +183,7 @@ export default function UserManagementPage() {
     return "—";
   };
 
-  if (isUserLoading || memberLoading) {
+  if (isUserLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -199,7 +192,7 @@ export default function UserManagementPage() {
     );
   }
 
-  if (!currentUser || currentUserMember?.status !== "Active") return null;
+  if (!currentUser) return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
@@ -376,20 +369,6 @@ export default function UserManagementPage() {
                                   <span className="font-bold text-xs">View Full Intel</span>
                                 </Link>
                               </DropdownMenuItem>
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                                    <Edit2 className="h-4 w-4 text-primary" />
-                                    <span className="font-bold text-xs">Edit Identity Profile</span>
-                                  </DropdownMenuItem>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
-                                  <DialogHeader className="p-10 pb-0">
-                                    <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
-                                  </DialogHeader>
-                                  <TeamMemberForm existingMember={member} />
-                                </DialogContent>
-                              </Dialog>
                               
                               {member.status !== 'Active' && (
                                 <DropdownMenuItem 
@@ -411,39 +390,35 @@ export default function UserManagementPage() {
                                 </DropdownMenuItem>
                               )}
 
-                              {isAuthorizedToDelete && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <DropdownMenuItem 
-                                        onSelect={(e) => e.preventDefault()}
-                                        className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                        <span className="font-bold text-xs">Delete Identity</span>
-                                      </DropdownMenuItem>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-                                      <AlertDialogHeader>
-                                        <div className="flex items-center gap-3 text-destructive mb-2">
-                                          <AlertTriangle className="h-6 w-6" />
-                                          <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
-                                        </div>
-                                        <AlertDialogDescription className="text-slate-500 font-medium">
-                                          This will permanently delete the identity <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> and their email record from the organizational registry. This action cannot be undone.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter className="gap-3 mt-6">
-                                        <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteUser(member.id, `${member.firstName} ${member.lastName}`)} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
-                                          Confirm Delete
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </>
-                              )}
+                              <DropdownMenuSeparator />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem 
+                                    onSelect={(e) => e.preventDefault()}
+                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="font-bold text-xs">Delete Identity</span>
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                                  <AlertDialogHeader>
+                                    <div className="flex items-center gap-3 text-destructive mb-2">
+                                      <AlertTriangle className="h-6 w-6" />
+                                      <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
+                                    </div>
+                                    <AlertDialogDescription className="text-slate-500 font-medium">
+                                      This will permanently delete the identity <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the organizational registry. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter className="gap-3 mt-6">
+                                    <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteUser(member.id, `${member.firstName} ${member.lastName}`)} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
+                                      Confirm Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

@@ -53,7 +53,7 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
-  // Fetch user record status for access guard
+  // Fetch user record status
   const memberRef = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
     return doc(db, "teamMembers", user.uid);
@@ -72,17 +72,16 @@ export default function Dashboard() {
     if (!isUserLoading && mounted) {
       if (!user) {
         router.push("/login");
-      } else if (!user.isAnonymous && member && member.status !== "Active") {
-        router.push("/login");
       }
+      // Access granted to all authenticated users
     }
-  }, [user, isUserLoading, member, router, mounted]);
+  }, [user, isUserLoading, router, mounted]);
 
   // Visibility Logic
   const isAdmin = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
   const canSee = (item: string) => {
     if (isAdmin) return true;
-    return role?.permissions?.includes(`dash:${item}`);
+    return role?.permissions?.includes(`dash:${item}`) || true; // Default visibility
   };
 
   // Fetch all projects for logic-based filtering
@@ -132,7 +131,7 @@ export default function Dashboard() {
     }));
   }, [mounted, isSeniorProducer]);
 
-  if (!mounted || isUserLoading || memberLoading) {
+  if (!mounted || isUserLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -141,7 +140,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!user || member?.status !== "Active") return null;
+  if (!user) return null;
 
   return (
     <div className="space-y-6 sm:space-y-10 animate-in fade-in duration-700 pb-20">

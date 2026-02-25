@@ -37,7 +37,7 @@ import { toast } from "@/hooks/use-toast";
 /**
  * @fileOverview Login Portal for DP MediaFlow.
  * A high-fidelity authentication gateway supporting Email/Password and Google.
- * Handles automatic provisioning of PENDING user records for organizational approval.
+ * Handles automatic provisioning of ACTIVE user records for immediate workspace access.
  */
 
 export default function LoginPage() {
@@ -75,12 +75,12 @@ export default function LoginPage() {
       }
       
       if (member) {
-        // PERMIT ONLY IF ACTIVE
-        if (member.status === "Active") {
+        // PERMIT ONLY IF NOT SUSPENDED
+        if (member.status !== "Suspended") {
           router.push("/");
         }
       } else {
-        // Provision as PENDING by default for new registrations
+        // Provision as ACTIVE by default for new registrations
         const newMemberRef = doc(db, "teamMembers", user.uid);
         const displayName = user.displayName || "";
         const nameParts = displayName.split(' ');
@@ -93,12 +93,15 @@ export default function LoginPage() {
           firstName: firstName,
           lastName: lastName,
           thumbnail: user.photoURL || "",
-          status: "Pending", // Require manual approval
+          status: "Active", // Immediate access granted
           type: "In-house",
           roleId: "staff", // Default role
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: true });
+        
+        // Immediate redirect after provisioning trigger
+        router.push("/");
       }
     }
   }, [user, isUserLoading, member, isMemberLoading, router, db]);
@@ -216,36 +219,6 @@ export default function LoginPage() {
           <Fingerprint className="h-8 w-8 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Verifying Identity...</p>
-      </div>
-    );
-  }
-
-  // PENDING GATE
-  if (user && !user.isAnonymous && member?.status === "Pending") {
-    return (
-      <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-10 animate-in fade-in duration-1000">
-        <div className="relative">
-          <div className="h-32 w-32 rounded-[3.5rem] bg-blue-50 flex items-center justify-center shadow-2xl shadow-blue-200/20">
-            <Hourglass className="h-14 w-14 text-primary animate-pulse" />
-          </div>
-          <div className="absolute -top-2 -right-2 h-10 w-10 bg-white rounded-2xl shadow-lg flex items-center justify-center">
-            <ShieldCheck className="h-5 w-5 text-blue-400" />
-          </div>
-        </div>
-        <div className="space-y-3 max-w-md">
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Approval Required</h1>
-          <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            Your organizational identity has been registered. A system administrator must validate your credentials before you can enter the production workspace.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 w-full max-w-xs">
-          <Button variant="outline" onClick={() => auth.signOut()} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white">
-            Switch Account
-          </Button>
-          <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-primary/5">
-            Refresh Status
-          </Button>
-        </div>
       </div>
     );
   }
