@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from "react";
@@ -15,7 +14,9 @@ import {
   Filter,
   Sparkles,
   IndianRupee,
-  Briefcase
+  Briefcase,
+  Printer,
+  Trash2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
