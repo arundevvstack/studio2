@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -81,17 +82,26 @@ export default function LoginPage() {
       } else {
         // Provision as ACTIVE by default
         const newMemberRef = doc(db, "teamMembers", user.uid);
+        const displayName = user.displayName || "";
+        const nameParts = displayName.split(' ');
+        const firstName = nameParts[0] || "New";
+        const lastName = nameParts.slice(1).join(' ') || "User";
+
         setDocumentNonBlocking(newMemberRef, {
           id: user.uid,
           email: user.email,
-          firstName: user.displayName?.split(' ')[0] || "New",
-          lastName: user.displayName?.split(' ').slice(1).join(' ') || "User",
+          firstName: firstName,
+          lastName: lastName,
           thumbnail: user.photoURL || "",
           status: "Active",
           type: "In-house",
+          roleId: "staff", // Default role
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: true });
+        
+        // Immediate entry for newly provisioned active user
+        router.push("/");
       }
     }
   }, [user, isUserLoading, member, isMemberLoading, router, db]);
@@ -222,7 +232,7 @@ export default function LoginPage() {
             <UserX className="h-14 w-14 text-red-500" />
           </div>
           <div className="absolute -top-2 -right-2 h-10 w-10 bg-white rounded-2xl shadow-lg flex items-center justify-center">
-            <ShieldAlert className="h-5 w-5 text-red-400" />
+            <ShieldCheck className="h-5 w-5 text-red-400" />
           </div>
         </div>
         <div className="space-y-3 max-w-md">

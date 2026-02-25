@@ -13,8 +13,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from "@/firebase";
-import { collection, doc, serverTimestamp, query, orderBy } from "firebase/firestore";
-import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { collection, query, doc, serverTimestamp, orderBy, updateDoc } from "firebase/firestore";
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Loader2, Save, Mail, Phone, Briefcase, User, Upload, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
@@ -48,7 +48,6 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   const { user: currentUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -80,8 +79,9 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   const rolesQuery = useMemoFirebase(() => query(collection(db, "roles"), orderBy("name", "asc")), [db]);
   const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
 
+  // Initialize form with existing member data only once per member change
   useEffect(() => {
-    if (existingMember && !isInitialized) {
+    if (existingMember) {
       setFormData({
         firstName: existingMember.firstName || "",
         lastName: existingMember.lastName || "",
@@ -92,9 +92,19 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
         status: existingMember.status || "Active",
         thumbnail: existingMember.thumbnail || "",
       });
-      setIsInitialized(true);
+    } else {
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        roleId: "",
+        type: "In-house",
+        status: "Active",
+        thumbnail: "",
+      });
     }
-  }, [existingMember, isInitialized]);
+  }, [existingMember]);
 
   const handleThumbnailClick = () => {
     fileInputRef.current?.click();
@@ -113,7 +123,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.roleId) {
       toast({ 
         variant: "destructive", 
@@ -125,27 +135,32 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
 
     setIsSubmitting(true);
     
-    const memberData = {
-      ...formData,
-      updatedAt: serverTimestamp(),
-    };
+    try {
+      const memberData = {
+        ...formData,
+        updatedAt: serverTimestamp(),
+      };
 
-    if (existingMember) {
-      const memberRef = doc(db, "teamMembers", existingMember.id);
-      updateDocumentNonBlocking(memberRef, memberData);
-      toast({ title: "Identity Synchronized", description: `${formData.firstName}'s identity has been updated.` });
-    } else {
-      const teamRef = collection(db, "teamMembers");
-      const newDocRef = doc(teamRef);
-      setDocumentNonBlocking(newDocRef, {
-        ...memberData,
-        id: newDocRef.id,
-        createdAt: serverTimestamp(),
-      }, { merge: true });
-      toast({ title: "User Provisioned", description: `${formData.firstName} added to the organizational engine.` });
+      if (existingMember) {
+        const memberRef = doc(db, "teamMembers", existingMember.id);
+        await updateDoc(memberRef, memberData);
+        toast({ title: "Identity Synchronized", description: `${formData.firstName}'s identity has been updated.` });
+      } else {
+        const teamRef = collection(db, "teamMembers");
+        const newDocRef = doc(teamRef);
+        setDocumentNonBlocking(newDocRef, {
+          ...memberData,
+          id: newDocRef.id,
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+        toast({ title: "User Provisioned", description: `${formData.firstName} added to the organizational engine.` });
+      }
+    } catch (error: any) {
+      console.error("Save Error:", error);
+      toast({ variant: "destructive", title: "Persistence Error", description: error.message });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
   const handleDelete = () => {
@@ -176,12 +191,22 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">First Name</Label>
           <div className="relative">
             <User className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-            <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="rounded-2xl bg-slate-50 border-none h-14 pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" placeholder="e.g. Rahul" />
+            <Input 
+              value={formData.firstName} 
+              onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
+              className="rounded-2xl bg-slate-50 border-none h-14 pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" 
+              placeholder="e.g. Rahul" 
+            />
           </div>
         </div>
         <div className="space-y-3">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Last Name</Label>
-          <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="rounded-2xl bg-slate-50 border-none h-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" placeholder="e.g. Nair" />
+          <Input 
+            value={formData.lastName} 
+            onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
+            className="rounded-2xl bg-slate-50 border-none h-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" 
+            placeholder="e.g. Nair" 
+          />
         </div>
       </div>
 
