@@ -10,8 +10,6 @@ import {
   MapPin, 
   CheckCircle2,
   Star,
-  Briefcase,
-  Zap,
   Users
 } from "lucide-react";
 import Link from "next/link";

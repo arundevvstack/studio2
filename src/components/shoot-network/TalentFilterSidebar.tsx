@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Filter, MapPin, Grid, User, CreditCard, Tag, Zap, Users, IndianRupee } from "lucide-react";
+import { Filter, MapPin, Grid, CreditCard, Zap, Users, IndianRupee } from "lucide-react";
 
 const KERALA_DISTRICTS = [
   "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",

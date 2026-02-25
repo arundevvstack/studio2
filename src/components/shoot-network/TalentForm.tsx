@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -18,7 +19,6 @@ import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { 
   Loader2, 
-  Save, 
   Upload, 
   X, 
   Plus, 
@@ -40,6 +40,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { fetchInstagramVisuals } from "@/ai/flows/instagram-visuals-flow";
 
 interface TalentFormProps {
   existingTalent?: any;
@@ -89,6 +90,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   const thumbInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -104,9 +106,12 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     referredBy: "",
     portfolio: "",
     rank: 5,
+    followers: 0,
+    engagementRate: 0,
     projectCount: 0,
     thumbnail: "",
     freeCollab: "No",
+    instagramUrl: ""
   });
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -133,9 +138,12 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         referredBy: existingTalent.referredBy || "",
         portfolio: existingTalent.portfolio || "",
         rank: existingTalent.rank || 5,
+        followers: existingTalent.followers || 0,
+        engagementRate: existingTalent.engagementRate || 0,
         projectCount: existingTalent.projectCount || 0,
         thumbnail: existingTalent.thumbnail || "",
         freeCollab: existingTalent.freeCollab || "No",
+        instagramUrl: existingTalent.socialMediaContact || ""
       });
       setGallery(existingTalent.gallery || []);
       setSelectedTags(existingTalent.suitableProjectTypes || []);
@@ -143,6 +151,45 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       setIsInitialized(true);
     }
   }, [existingTalent, isInitialized]);
+
+  const handleFetchInstagram = async () => {
+    if (!formData.instagramUrl) {
+      toast({ variant: "destructive", title: "Missing URL", description: "Provide an Instagram URL or handle to sync intelligence." });
+      return;
+    }
+
+    setIsFetching(true);
+    try {
+      const result = await fetchInstagramVisuals({
+        instagramUrl: formData.instagramUrl,
+        category: formData.category || "Professional"
+      });
+
+      // Parse human-readable followers (e.g. 12.4k) to numerical
+      let followerNum = 0;
+      const fStr = result.followers.toLowerCase();
+      if (fStr.includes('k')) followerNum = Math.round(parseFloat(fStr) * 1000);
+      else if (fStr.includes('m')) followerNum = Math.round(parseFloat(fStr) * 1000000);
+      else followerNum = Math.round(parseFloat(fStr)) || 0;
+
+      setFormData(prev => ({
+        ...prev,
+        followers: followerNum,
+        engagementRate: parseFloat(result.engagementRate) || 0,
+        thumbnail: result.profilePictureUrl
+      }));
+
+      toast({
+        title: "Intelligence Synchronized",
+        description: `Retrieved ${result.followers} followers and portrait from Instagram.`
+      });
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Fetch Failed", description: "Could not extract Instagram visuals." });
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   const handleThumbnailClick = () => thumbInputRef.current?.click();
 
@@ -224,8 +271,11 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       paymentStage: formData.paymentStage,
       referredBy: formData.referredBy,
       socialLinks: socialLinks,
+      socialMediaContact: formData.instagramUrl,
       portfolio: formData.portfolio,
       rank: Number(formData.rank),
+      followers: Number(formData.followers),
+      engagementRate: Number(formData.engagementRate),
       projectCount: Number(formData.projectCount),
       thumbnail: formData.thumbnail,
       gallery: gallery,
@@ -262,6 +312,11 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
               <Upload className="h-10 w-10 text-slate-300" />
             </AvatarFallback>
           </Avatar>
+          {(isFetching || isSubmitting) && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center rounded-[3rem]">
+              <Loader2 className="h-10 w-10 text-primary animate-spin" />
+            </div>
+          )}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <Badge className="bg-black/60 backdrop-blur-md text-white border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">Update Portrait</Badge>
           </div>
@@ -287,6 +342,34 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="space-y-6 border-t border-slate-50 pt-10">
+        <div className="flex items-center justify-between">
+          <h4 className="text-[10px] font-bold uppercase text-slate-900 tracking-widest flex items-center gap-2">
+            <Instagram className="h-4 w-4 text-primary" />
+            Instagram Intel Extraction
+          </h4>
+          {isFetching && <Badge className="bg-primary/10 text-primary border-none animate-pulse">Syncing Visuals...</Badge>}
+        </div>
+        <div className="flex gap-4">
+          <div className="flex-1 space-y-3">
+            <Input 
+              value={formData.instagramUrl} 
+              onChange={(e) => setFormData({...formData, instagramUrl: e.target.value})} 
+              placeholder="Instagram URL or @handle" 
+              className="rounded-2xl bg-slate-50 border-none h-14 font-bold shadow-inner px-6" 
+            />
+          </div>
+          <Button 
+            onClick={handleFetchInstagram} 
+            disabled={isFetching || !formData.instagramUrl}
+            className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold gap-3 transition-all active:scale-95 shadow-xl"
+          >
+            {isFetching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
+            Fetch Intel
+          </Button>
         </div>
       </div>
 
@@ -401,31 +484,6 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
               </div>
             );
           })}
-        </div>
-      </div>
-
-      <div className="space-y-6 pt-6 border-t border-slate-50">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><ImageIcon className="h-3.5 w-3.5" /> Creative Showcase Manager</Label>
-        <div className="grid grid-cols-1 gap-6">
-          <div className="flex gap-3">
-            <Input value={newItemUrl} onChange={(e) => setNewItemUrl(e.target.value)} placeholder="External asset link (Vimeo, Drive, Unsplash)..." className="rounded-2xl bg-slate-50 border-none h-14 flex-1 font-bold tracking-tight shadow-inner px-6" />
-            <Select value={newItemType} onValueChange={(val: any) => setNewItemType(val)}>
-              <SelectTrigger className="h-14 w-36 rounded-2xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest shadow-inner"><SelectValue /></SelectTrigger>
-              <SelectContent className="rounded-2xl"><SelectItem value="image">Still Image</SelectItem><SelectItem value="video">Motion Reel</SelectItem></SelectContent>
-            </Select>
-            <Button onClick={handleAddGalleryUrl} type="button" className="h-14 w-14 rounded-2xl bg-slate-900 text-white shadow-xl hover:bg-slate-800 transition-all"><Plus className="h-6 w-6" /></Button>
-          </div>
-          <input type="file" ref={galleryInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'gallery')} />
-          <Button type="button" variant="outline" className="w-full h-16 rounded-3xl border-dashed border-2 border-slate-200 bg-white hover:bg-slate-50 hover:border-primary/20 text-slate-400 hover:text-primary font-bold text-[10px] uppercase tracking-widest gap-3 transition-all" onClick={() => galleryInputRef.current?.click()}><Upload className="h-5 w-5" /> Import Local Visual Asset</Button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {gallery.map((item, idx) => (
-            <div key={idx} className="relative aspect-[4/5] rounded-[2rem] bg-slate-100 overflow-hidden group border border-slate-50 shadow-sm">
-              <img src={item.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Showcase Asset" />
-              {item.type === 'video' && <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"><Video className="h-10 w-10 text-white fill-white" /></div>}
-              <Button onClick={() => handleRemoveGalleryItem(idx)} type="button" variant="ghost" size="icon" className="absolute top-3 right-3 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md"><X className="h-5 w-5" /></Button>
-            </div>
-          ))}
         </div>
       </div>
 
