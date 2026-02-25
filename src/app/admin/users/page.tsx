@@ -42,7 +42,7 @@ import {
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from "@/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { 
   Select, 
   SelectContent, 
