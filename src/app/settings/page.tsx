@@ -158,6 +158,18 @@ const THEME_COLORS = [
   { name: "Rose Distinction", hsl: "330 81% 60%", color: "#EC4899" },
 ];
 
+const DEFAULT_SERVICE_TYPES = [
+  "TV Commercials (TVC)",
+  "Digital Ad Film Production",
+  "Performance Marketing Ads",
+  "Brand Commercials",
+  "AI Video Production",
+  "Reels / Shorts Production",
+  "Product Photography",
+  "Corporate Profile Films",
+  "Virtual Tours"
+];
+
 function hexToHslValues(hex: string): string {
   let r = 0, g = 0, b = 0;
   if (hex.length === 4) {
@@ -487,23 +499,14 @@ export default function SettingsPage() {
     
     setIsSaving(true);
     try {
-      await updateDoc(projectSettingsRef, {
+      await setDocumentNonBlocking(projectSettingsRef, {
         serviceTypes: [...currentTypes, newServiceType],
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
       setNewServiceType("");
       toast({ title: "Vertical Added", description: `${newServiceType} is now available for projects.` });
     } catch (e: any) {
-      if (e.code === 'not-found') {
-        await setDocumentNonBlocking(projectSettingsRef, {
-          serviceTypes: [newServiceType],
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-        setNewServiceType("");
-        toast({ title: "Vertical Added", description: "Initial project settings registry created." });
-      } else {
-        toast({ variant: "destructive", title: "Sync Error", description: e.message });
-      }
+      toast({ variant: "destructive", title: "Sync Error", description: e.message });
     } finally {
       setIsSaving(false);
     }
@@ -555,6 +558,21 @@ export default function SettingsPage() {
       toast({ title: "Vertical Removed", description: "Service library updated." });
     } catch (e: any) {
       toast({ variant: "destructive", title: "Sync Error", description: e.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRestoreDefaults = async () => {
+    setIsSaving(true);
+    try {
+      await setDocumentNonBlocking(projectSettingsRef, {
+        serviceTypes: DEFAULT_SERVICE_TYPES,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      toast({ title: "Defaults Restored", description: "The service vertical library has been reset to defaults." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Restore Failed", description: e.message });
     } finally {
       setIsSaving(false);
     }
@@ -726,8 +744,19 @@ export default function SettingsPage() {
         <TabsContent value="project" className="animate-in slide-in-from-left-2 duration-300">
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
             <CardHeader className="p-10 pb-0">
-              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Project Matrix Configuration</CardTitle>
-              <CardDescription className="tracking-normal">Manage the authoritative library of service verticals and project archetypes.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Project Matrix Configuration</CardTitle>
+                  <CardDescription className="tracking-normal">Manage the authoritative library of service verticals and project archetypes.</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => {
+                  if(confirm("Restore default service verticals? This will overwrite your current list.")) {
+                    handleRestoreDefaults();
+                  }
+                }} className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase border-slate-100 gap-2 hover:bg-slate-50">
+                  <RotateCcw className="h-3.5 w-3.5" /> Restore Defaults
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-10 space-y-10">
               <div className="space-y-6">
@@ -761,7 +790,7 @@ export default function SettingsPage() {
                               <Input 
                                 value={editServiceValue} 
                                 onChange={e => setEditServiceValue(e.target.value)}
-                                className="h-10 rounded-xl bg-white border-primary/20 font-bold text-sm flex-1"
+                                className="h-10 rounded-xl bg-white border-primary/20 font-bold text-sm flex-1 shadow-inner"
                                 autoFocus
                                 onKeyDown={(e) => e.key === 'Enter' && handleUpdateServiceType()}
                               />
@@ -803,8 +832,12 @@ export default function SettingsPage() {
                         </div>
                       ))
                     ) : (
-                      <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                        <p className="text-sm font-bold text-slate-300 uppercase tracking-widest">No custom verticals defined.</p>
+                      <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl bg-slate-50/30">
+                        <div className="h-12 w-12 rounded-2xl bg-white mx-auto mb-4 flex items-center justify-center shadow-sm">
+                          <Briefcase className="h-6 w-6 text-slate-200" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No custom verticals defined.</p>
+                        <Button variant="link" onClick={handleRestoreDefaults} className="text-primary font-bold text-[10px] mt-2 uppercase tracking-widest">Load Defaults</Button>
                       </div>
                     )}
                   </div>
