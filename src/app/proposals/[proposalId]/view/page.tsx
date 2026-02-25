@@ -84,7 +84,8 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
               "Execution Roadmap", 
               "Deliverables & Assets", 
               "Project Timeline", 
-              "Investment Summary", 
+              "Financial Ledger", 
+              "Investment Narrative",
               "Agency Credentials"
             ].map((item, i) => (
               <div key={i} className="flex items-center justify-between text-lg">
@@ -97,17 +98,65 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
         </section>
 
         {/* Detailed Sections */}
-        {proposal.aiContent && Object.entries(proposal.aiContent).map(([key, value]: [string, any], idx) => (
-          <section key={key} className="min-h-[1100px] p-24 space-y-12 page-break-after border-t border-slate-50 first:border-none">
-            <div className="space-y-4">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Section 0{idx + 2}</p>
-              <h2 className="text-4xl font-bold font-headline tracking-tight capitalize">{key.replace(/([A-Z])/g, ' $1')}</h2>
+        {proposal.aiContent && Object.entries(proposal.aiContent).map(([key, value]: [string, any], idx) => {
+          if (key === 'investmentNarrative') return null; // Handle specifically below
+          return (
+            <section key={key} className="min-h-[1100px] p-24 space-y-12 page-break-after border-t border-slate-50 first:border-none">
+              <div className="space-y-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Section 0{idx + 2}</p>
+                <h2 className="text-4xl font-bold font-headline tracking-tight capitalize">{key.replace(/([A-Z])/g, ' $1')}</h2>
+              </div>
+              <div className="prose max-w-none text-xl leading-[1.8] text-slate-700 whitespace-pre-wrap font-serif">
+                {value}
+              </div>
+            </section>
+          );
+        })}
+
+        {/* Financial Ledger Section */}
+        <section className="min-h-[1100px] p-24 space-y-12 page-break-after border-t border-slate-50">
+          <div className="space-y-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Section 08</p>
+            <h2 className="text-4xl font-bold font-headline tracking-tight">Financial Ledger</h2>
+          </div>
+          <div className="mt-12 overflow-hidden border border-slate-900 rounded-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-900 text-white">
+                  <th className="p-6 text-xs font-bold uppercase tracking-widest">Description</th>
+                  <th className="p-6 text-xs font-bold uppercase tracking-widest text-center">Qty</th>
+                  <th className="p-6 text-xs font-bold uppercase tracking-widest text-right">Unit Price</th>
+                  <th className="p-6 text-xs font-bold uppercase tracking-widest text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {(proposal.lineItems || []).map((item: any, i: number) => (
+                  <tr key={i}>
+                    <td className="p-6 text-sm font-bold text-slate-900">{item.description}</td>
+                    <td className="p-6 text-sm text-slate-500 text-center">{item.quantity}</td>
+                    <td className="p-6 text-sm text-slate-500 text-right">₹{item.unitPrice.toLocaleString('en-IN')}</td>
+                    <td className="p-6 text-sm font-bold text-slate-900 text-right">₹{item.total.toLocaleString('en-IN')}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-50">
+                  <td colSpan={3} className="p-6 text-sm font-bold text-slate-900 uppercase tracking-widest text-right">Total Investment</td>
+                  <td className="p-6 text-xl font-bold text-slate-900 text-right">₹{(proposal.totalBudget || 0).toLocaleString('en-IN')}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          
+          {proposal.aiContent?.investmentNarrative && (
+            <div className="mt-12 space-y-6">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Investment Narrative</h3>
+              <div className="text-lg leading-relaxed text-slate-600 italic font-serif">
+                {proposal.aiContent.investmentNarrative}
+              </div>
             </div>
-            <div className="prose max-w-none text-xl leading-[1.8] text-slate-700 whitespace-pre-wrap font-serif">
-              {value}
-            </div>
-          </section>
-        ))}
+          )}
+        </section>
 
         {/* Commercial Terms */}
         <section className="min-h-[1100px] p-24 space-y-16 page-break-after bg-slate-50/30">

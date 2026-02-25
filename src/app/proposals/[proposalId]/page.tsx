@@ -16,7 +16,9 @@ import {
   Zap,
   Briefcase,
   IndianRupee,
-  FileText
+  FileText,
+  Layers,
+  Table as TableIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -44,7 +46,7 @@ export default function ProposalIntelligencePage({ params }: { params: Promise<{
   const proposalRef = useMemoFirebase(() => doc(db, "proposals", proposalId), [db, proposalId]);
   const { data: proposal, isLoading } = useDoc(proposalRef);
 
-  // MOCK Market Validation Logic
+  // Market Validation Logic
   const validation = useMemo(() => {
     if (!proposal) return null;
     const scope = proposal.scope || [];
@@ -69,6 +71,12 @@ export default function ProposalIntelligencePage({ params }: { params: Promise<{
   const handleSynthesize = async () => {
     if (!proposal) return;
     setIsSynthesizing(true);
+    
+    // Prepare investment context for AI
+    const investmentString = (proposal.lineItems || []).map((item: any) => 
+      `- ${item.description}: ${item.quantity} x ₹${item.unitPrice.toLocaleString('en-IN')} = ₹${item.total.toLocaleString('en-IN')}`
+    ).join('\n') + `\nTotal: ₹${(proposal.totalBudget || 0).toLocaleString('en-IN')}`;
+
     try {
       const aiContent = await generateProposalContent({
         clientName: proposal.clientName,
@@ -80,7 +88,7 @@ export default function ProposalIntelligencePage({ params }: { params: Promise<{
         deliverables: proposal.deliverables,
         scope: proposal.scope,
         timeline: proposal.timeline,
-        budgetRange: proposal.budgetRange,
+        investmentSummary: investmentString,
       });
 
       await updateDoc(proposalRef, {
@@ -143,6 +151,7 @@ export default function ProposalIntelligencePage({ params }: { params: Promise<{
             <TabsList className="bg-white border border-slate-100 p-2 h-auto rounded-full shadow-2xl shadow-slate-200/30 gap-2 mb-10 inline-flex">
               <TabsTrigger value="intelligence" className="rounded-full px-10 py-4 text-xs font-bold uppercase gap-3 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest"><Sparkles className="h-4 w-4" /> AI Strategy</TabsTrigger>
               <TabsTrigger value="validation" className="rounded-full px-10 py-4 text-xs font-bold uppercase gap-3 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest"><BarChart3 className="h-4 w-4" /> Market Validation</TabsTrigger>
+              <TabsTrigger value="financials" className="rounded-full px-10 py-4 text-xs font-bold uppercase gap-3 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest"><IndianRupee className="h-4 w-4" /> Financials</TabsTrigger>
               <TabsTrigger value="parameters" className="rounded-full px-10 py-4 text-xs font-bold uppercase gap-3 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest"><FileText className="h-4 w-4" /> Core Brief</TabsTrigger>
             </TabsList>
 
@@ -233,6 +242,41 @@ export default function ProposalIntelligencePage({ params }: { params: Promise<{
               </Card>
             </TabsContent>
 
+            <TabsContent value="financials" className="m-0 animate-in fade-in duration-500 space-y-8">
+              <Card className="border-none shadow-sm rounded-[3rem] bg-white overflow-hidden">
+                <div className="p-10 border-b border-slate-50 flex items-center justify-between">
+                  <h3 className="text-xl font-bold font-headline tracking-normal flex items-center gap-3">
+                    <TableIcon className="h-5 w-5 text-primary" /> Line Item Ledger
+                  </h3>
+                  <Badge className="bg-slate-900 text-white border-none font-bold text-[10px] uppercase px-4 py-1.5 rounded-full tracking-widest shadow-lg">
+                    TOTAL: ₹{(proposal.totalBudget || 0).toLocaleString('en-IN')}
+                  </Badge>
+                </div>
+                <CardContent className="p-0">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-50/50">
+                      <tr>
+                        <th className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Description</th>
+                        <th className="px-6 py-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Qty</th>
+                        <th className="px-6 py-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Unit Price</th>
+                        <th className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Line Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {(proposal.lineItems || []).map((item: any, i: number) => (
+                        <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-10 py-6 font-bold text-slate-900">{item.description}</td>
+                          <td className="px-6 py-6 text-center font-bold text-slate-500">{item.quantity}</td>
+                          <td className="px-6 py-6 text-center font-bold text-slate-500">₹{item.unitPrice.toLocaleString('en-IN')}</td>
+                          <td className="px-10 py-6 text-right font-bold text-primary">₹{item.total.toLocaleString('en-IN')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="parameters" className="m-0 animate-in fade-in duration-500">
               <Card className="border-none shadow-sm rounded-[3rem] bg-white p-12 space-y-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -300,7 +344,7 @@ export default function ProposalIntelligencePage({ params }: { params: Promise<{
             <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-[80px] rounded-full -mr-24 -mt-24" />
             <div className="relative z-10 space-y-2">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Quote Value</p>
-              <h2 className="text-4xl font-bold font-headline tracking-tight">{proposal.budgetRange}</h2>
+              <h2 className="text-4xl font-bold font-headline tracking-tight">₹{(proposal.totalBudget || 0).toLocaleString('en-IN')}</h2>
             </div>
             <div className="pt-8 border-t border-white/10 relative z-10 space-y-6">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest">

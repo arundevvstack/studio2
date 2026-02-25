@@ -15,7 +15,9 @@ import {
   Calendar,
   Zap,
   GitBranch,
-  Folder
+  Folder,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,12 +44,36 @@ const SCOPE_ITEMS = [
   "CGI / VFX", "Photography", "Other"
 ];
 
+interface LineItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
 export default function NewProposalPage() {
   const router = useRouter();
   const db = useFirestore();
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sourceType, setSourceType] = useState<"manual" | "lead" | "project">("manual");
+
+  const [formData, setFormData] = useState({
+    clientName: "",
+    brandName: "",
+    projectTitle: "",
+    projectType: "",
+    objective: "",
+    targetAudience: "",
+    deliverables: "",
+    platforms: [] as string[],
+    timeline: "",
+    scope: [] as string[],
+  });
+
+  const [lineItems, setLineItems] = useState<LineItem[]>([
+    { description: "Strategic Production Services", quantity: 1, unitPrice: 0, total: 0 }
+  ]);
 
   // --- Data Streams for Selection ---
   const leadsQuery = useMemoFirebase(() => {
@@ -61,20 +87,6 @@ export default function NewProposalPage() {
     return query(collection(db, "projects"), orderBy("updatedAt", "desc"));
   }, [db, user]);
   const { data: projects } = useCollection(projectsQuery);
-
-  const [formData, setFormData] = useState({
-    clientName: "",
-    brandName: "",
-    projectTitle: "",
-    projectType: "",
-    objective: "",
-    targetAudience: "",
-    deliverables: "",
-    platforms: [] as string[],
-    budgetRange: "",
-    timeline: "",
-    scope: [] as string[],
-  });
 
   const handleToggle = useCallback((listName: 'platforms' | 'scope', value: string) => {
     setFormData(prev => ({
@@ -93,9 +105,9 @@ export default function NewProposalPage() {
           ...prev,
           clientName: lead.name || "",
           brandName: lead.company || "",
-          budgetRange: lead.estimatedBudget ? `₹${lead.estimatedBudget.toLocaleString('en-IN')}` : "",
           objective: `Strategic engagement for ${lead.industry || 'media production'}.`,
         }));
+        setLineItems([{ description: "Project Mobilization", quantity: 1, unitPrice: lead.estimatedBudget || 0, total: lead.estimatedBudget || 0 }]);
         toast({ title: "Lead Intel Synced", description: `Proposal populated with data from ${lead.name}.` });
       }
     } else if (sourceType === 'project') {
@@ -105,13 +117,38 @@ export default function NewProposalPage() {
           ...prev,
           projectTitle: project.name || "",
           projectType: PROJECT_TYPES.includes(project.type) ? project.type : "Other",
-          budgetRange: project.budget ? `₹${project.budget.toLocaleString('en-IN')}` : "",
           objective: project.description || "",
         }));
+        setLineItems([{ description: "Production Services", quantity: 1, unitPrice: project.budget || 0, total: project.budget || 0 }]);
         toast({ title: "Project Assets Synced", description: `Proposal populated with production details for ${project.name}.` });
       }
     }
   }, [sourceType, leads, projects]);
+
+  const addLineItem = () => {
+    setLineItems([...lineItems, { description: "", quantity: 1, unitPrice: 0, total: 0 }]);
+  };
+
+  const updateLineItem = (index: number, field: keyof LineItem, value: any) => {
+    const updated = [...lineItems];
+    const item = { ...updated[index], [field]: value };
+    
+    if (field === 'quantity' || field === 'unitPrice') {
+      item.total = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+    }
+    
+    updated[index] = item;
+    setLineItems(updated);
+  };
+
+  const removeLineItem = (index: number) => {
+    if (lineItems.length === 1) return;
+    setLineItems(lineItems.filter((_, i) => i !== index));
+  };
+
+  const totalInvestment = useMemo(() => {
+    return lineItems.reduce((sum, item) => sum + (item.total || 0), 0);
+  }, [lineItems]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,6 +161,9 @@ export default function NewProposalPage() {
     try {
       const docRef = await addDoc(collection(db, "proposals"), {
         ...formData,
+        lineItems,
+        totalBudget: totalInvestment,
+        budgetRange: `₹${totalInvestment.toLocaleString('en-IN')}`, // For legacy display if needed
         status: "Draft",
         creatorId: user?.uid,
         createdAt: serverTimestamp(),
@@ -264,38 +304,65 @@ export default function NewProposalPage() {
             </div>
           </div>
 
+          {/* Line Item Ledger */}
+          <div className="space-y-8 pt-8 border-t border-slate-50">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+                <IndianRupee className="h-3 w-3" /> Financial Ledger
+              </h3>
+              <Button type="button" variant="outline" size="sm" onClick={addLineItem} className="h-8 rounded-xl font-bold text-[9px] uppercase gap-2 border-slate-100">
+                <Plus className="h-3 w-3" /> Add Item
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              {lineItems.map((item, idx) => (
+                <div key={idx} className="grid grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <div className="col-span-6 space-y-2">
+                    <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Description</Label>
+                    <Input value={item.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} placeholder="Service description..." className="h-10 rounded-xl bg-white border-none shadow-sm font-medium" />
+                  </div>
+                  <div className="col-span-2 space-y-2">
+                    <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Qty</Label>
+                    <Input type="number" value={item.quantity} onChange={e => updateLineItem(idx, 'quantity', e.target.value)} className="h-10 rounded-xl bg-white border-none shadow-sm font-bold" />
+                  </div>
+                  <div className="col-span-3 space-y-2">
+                    <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Unit Price</Label>
+                    <Input type="number" value={item.unitPrice} onChange={e => updateLineItem(idx, 'unitPrice', e.target.value)} className="h-10 rounded-xl bg-white border-none shadow-sm font-bold" />
+                  </div>
+                  <div className="col-span-1 pb-1 flex justify-center">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeLineItem(idx)} className="h-8 w-8 rounded-full text-slate-300 hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-slate-900 rounded-[2rem] p-8 flex items-center justify-between shadow-2xl shadow-slate-900/20">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Investment</p>
+                <h4 className="text-3xl font-bold text-white tracking-tight leading-none">₹{totalInvestment.toLocaleString('en-IN')}</h4>
+              </div>
+              <div className="space-y-1 text-right">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Delivery Timeline</p>
+                <Input value={formData.timeline} onChange={e => setFormData({...formData, timeline: e.target.value})} placeholder="e.g. 4 Weeks" className="h-10 bg-white/5 border-none text-white font-bold w-32 text-right p-0 focus-visible:ring-0" />
+              </div>
+            </div>
+          </div>
+
           {/* Scope & Logistics */}
           <div className="space-y-8 pt-8 border-t border-slate-50">
             <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-              <Layers className="h-3 w-3" /> Scope & Logistics
+              <Layers className="h-3 w-3" /> Operational Scope
             </h3>
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Operational Scope</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {SCOPE_ITEMS.map(item => (
-                    <div key={item} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleToggle('scope', item)}>
-                      <Checkbox checked={formData.scope.includes(item)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary pointer-events-none" />
-                      <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item}</span>
-                    </div>
-                  ))}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {SCOPE_ITEMS.map(item => (
+                <div key={item} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleToggle('scope', item)}>
+                  <Checkbox checked={formData.scope.includes(item)} onCheckedChange={() => handleToggle('scope', item)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item}</span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                    <IndianRupee className="h-3 w-3" /> Investment Range
-                  </Label>
-                  <Input value={formData.budgetRange} onChange={e => setFormData({...formData, budgetRange: e.target.value})} placeholder="e.g. ₹5L - ₹8L" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                    <Calendar className="h-3 w-3" /> Delivery Timeline
-                  </Label>
-                  <Input value={formData.timeline} onChange={e => setFormData({...formData, timeline: e.target.value})} placeholder="e.g. 4 Weeks" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>

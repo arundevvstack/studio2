@@ -18,7 +18,7 @@ const ProposalInputSchema = z.object({
   deliverables: z.string(),
   scope: z.array(z.string()),
   timeline: z.string(),
-  budgetRange: z.string(),
+  investmentSummary: z.string().describe('A string representation of the line items and total budget.'),
 });
 
 export type ProposalInput = z.infer<typeof ProposalInputSchema>;
@@ -30,7 +30,7 @@ const ProposalOutputSchema = z.object({
   executionPlan: z.string().describe('Step-by-step production plan from Pre to Post.'),
   deliverablesSummary: z.string().describe('Clear list of what the client receives.'),
   timelinePhases: z.string().describe('Chronological breakdown of project milestones.'),
-  investmentSummary: z.string().describe('Explanation of value and budget allocation.'),
+  investmentNarrative: z.string().describe('Strategic explanation of the value provided by the specific line items and total investment.'),
   whyChooseUs: z.string().describe('Competitive advantages and agency strengths.'),
 });
 
@@ -55,7 +55,7 @@ Audience: {{{targetAudience}}}
 Deliverables: {{{deliverables}}}
 Scope of Work: {{#each scope}}{{{this}}}, {{/each}}
 Timeline: {{{timeline}}}
-Investment: {{{budgetRange}}}
+Financial Context: {{{investmentSummary}}}
 
 Format the output into these specific sections:
 1. Introduction: Set the stage and show excitement.
@@ -64,7 +64,7 @@ Format the output into these specific sections:
 4. Execution Plan: A clear production roadmap.
 5. Deliverables: Concrete list of assets.
 6. Timeline: When they can expect results.
-7. Investment: The value proposition of the budget.
+7. Investment Narrative: Explain the value proposition of the budget items listed in the context.
 8. Why Us: Our unique edge in AI, influencers, and production.
 
 Tone: Professional, persuasive, data-backed, and visionary. Avoid fluff; focus on results.`,
