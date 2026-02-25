@@ -143,7 +143,6 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
 
       if (existingMember) {
         const memberRef = doc(db, "teamMembers", existingMember.id);
-        // Use updateDoc for targeted synchronization of identity fields
         await updateDoc(memberRef, memberData);
         toast({ title: "Identity Synchronized", description: `${formData.firstName}'s identity has been updated.` });
       } else {
@@ -295,7 +294,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
                     <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
                   </div>
                   <AlertDialogDescription className="text-slate-500 font-medium">
-                    This will permanently remove <span className="font-bold text-slate-900">{formData.firstName} {formData.lastName}</span> from the organizational registry. This action cannot be undone.
+                    This will permanently remove <span className="font-bold text-slate-900">{formData.firstName} {formData.lastName}</span> and their email record from the organizational registry. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-3 mt-6">
@@ -311,7 +310,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
           )}
         </div>
         <DialogClose asChild>
-          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-12 h-14 gap-3 tracking-widest shadow-2xl shadow-primary/30 transition-all active:scale-95">
+          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-12 h-14 gap-3 tracking-widest shadow-2xl shadow-primary/20 transition-all active:scale-95">
             {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
             Sync Identity
           </Button>
