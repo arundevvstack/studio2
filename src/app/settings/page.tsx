@@ -47,8 +47,26 @@ import {
   Calendar,
   Clock,
   BarChart3,
-  Globe
+  Globe,
+  GripVertical
 } from "lucide-react";
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors, 
+  DragEndEvent 
+} from '@dnd-kit/core';
+import { 
+  arrayMove, 
+  SortableContext, 
+  sortableKeyboardCoordinates, 
+  verticalListSortingStrategy, 
+  useSortable 
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -126,10 +144,30 @@ export default function SettingsPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
-  const [newVertical, setNewVertical] = useState("");
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
 
-  // Auth & Permissions Logic
+  // --- Navigation Reordering State ---
+  const [orderedModules, setOrderedModules] = useState(SIDEBAR_MODULES);
+  
+  // Fetch Global Navigation Config
+  const navSettingsRef = useMemoFirebase(() => doc(db, "settings", "navigation"), [db]);
+  const { data: navSettings, isLoading: isNavLoading } = useDoc(navSettingsRef);
+
+  useEffect(() => {
+    if (navSettings?.order && Array.isArray(navSettings.order)) {
+      const newOrder = navSettings.order.map((id: string) => 
+        SIDEBAR_MODULES.find(m => m.id === id)
+      ).filter(Boolean) as typeof SIDEBAR_MODULES;
+      
+      // Append any new modules that weren't in the saved order
+      const existingIds = new Set(navSettings.order);
+      const newModules = SIDEBAR_MODULES.filter(m => !existingIds.has(m.id));
+      
+      setOrderedModules([...newOrder, ...newModules]);
+    }
+  }, [navSettings]);
+
+  // --- Auth & Permissions Logic ---
   const memberRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "teamMembers", user.uid);
@@ -188,12 +226,6 @@ export default function SettingsPage() {
       localStorage.setItem("theme", "light");
     }
   };
-
-  const teamQuery = useMemoFirebase(() => query(collection(db, "teamMembers"), orderBy("firstName", "asc")), [db]);
-  const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
-
-  const projectSettingsRef = useMemoFirebase(() => doc(db, "settings", "projects"), [db]);
-  const { data: projectSettings } = useDoc(projectSettingsRef);
 
   const billingSettingsRef = useMemoFirebase(() => doc(db, "companyBillingSettings", "global"), [db]);
   const { data: billingSettings } = useDoc(billingSettingsRef);
@@ -354,6 +386,36 @@ export default function SettingsPage() {
       setIsGenerating(false);
       toast({ title: "Identity Synchronized", description: "Your personal profile has been updated." });
     }, 800);
+  };
+
+  // --- DND Handlers ---
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setOrderedModules((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        
+        // Save to Firestore
+        if (navSettingsRef) {
+          updateDocumentNonBlocking(navSettingsRef, {
+            order: newOrder.map(m => m.id),
+            updatedAt: serverTimestamp()
+          });
+          toast({ title: "Navigation Reordered", description: "Global sidebar position updated." });
+        }
+        
+        return newOrder;
+      });
+    }
   };
 
   if (isUserLoading) {
@@ -517,8 +579,8 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
             <div className="p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-slate-50/30 dark:bg-slate-800/30">
               <div className="space-y-1">
-                <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Role-Based Navigation</CardTitle>
-                <CardDescription className="tracking-normal">Toggle module visibility for specific strategic roles.</CardDescription>
+                <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Global Menu Architecture</CardTitle>
+                <CardDescription className="tracking-normal">Drag to reorder sidebar position or toggle visibility per strategic role.</CardDescription>
               </div>
               <div className="flex items-center gap-4 w-full md:w-auto">
                 <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Select Role:</Label>
@@ -536,45 +598,21 @@ export default function SettingsPage() {
             </div>
             
             <CardContent className="p-0">
-              <div className="divide-y divide-slate-50 dark:divide-slate-800">
-                {SIDEBAR_MODULES.map((item) => {
-                  const Icon = item.icon || Globe;
-                  const selectedRole = roles?.find(r => r.id === selectedRoleIdForNav);
-                  const hasAccess = selectedRole?.permissions?.includes(`module:${item.id}`) || selectedRole?.name === 'Super Admin';
-                  
-                  return (
-                    <div key={item.id} className="flex items-center justify-between p-8 hover:bg-slate-50/50 transition-colors dark:hover:bg-slate-800/50">
-                      <div className="flex items-center gap-6">
-                        <div className="h-12 w-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center">
-                          <Icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 dark:text-white tracking-normal">{item.title}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/{item.id}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${hasAccess ? 'text-primary' : 'text-slate-300'}`}>
-                          {hasAccess ? 'Authorized' : 'Restricted'}
-                        </span>
-                        <Switch 
-                          disabled={selectedRole?.name === 'Super Admin'}
-                          checked={!!hasAccess} 
-                          onCheckedChange={(checked) => {
-                            if (!selectedRole) return;
-                            const perm = `module:${item.id}`;
-                            const updatedPerms = checked 
-                              ? [...(selectedRole.permissions || []), perm]
-                              : (selectedRole.permissions || []).filter(p => p !== perm);
-                            updateDocumentNonBlocking(doc(db, "roles", selectedRole.id), { permissions: updatedPerms });
-                            toast({ title: "Authority Adjusted", description: `${item.title} visibility updated for ${selectedRole.name}.` });
-                          }} 
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={orderedModules.map(m => m.id)} strategy={verticalListSortingStrategy}>
+                  <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                    {orderedModules.map((item) => (
+                      <SortableNavigationItem 
+                        key={item.id} 
+                        item={item} 
+                        roles={roles} 
+                        selectedRoleId={selectedRoleIdForNav} 
+                        db={db}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </CardContent>
           </Card>
         </TabsContent>
@@ -706,6 +744,68 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// --- Sortable Item Component ---
+function SortableNavigationItem({ item, roles, selectedRoleId, db }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+    opacity: isDragging ? 0.5 : 1
+  };
+
+  const Icon = item.icon || Globe;
+  const selectedRole = roles?.find((r: any) => r.id === selectedRoleId);
+  const hasAccess = selectedRole?.permissions?.includes(`module:${item.id}`) || selectedRole?.name === 'Super Admin';
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className="flex items-center justify-between p-8 hover:bg-slate-50/50 transition-colors dark:hover:bg-slate-800/50 relative bg-white dark:bg-slate-900"
+    >
+      <div className="flex items-center gap-6">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-2 hover:bg-slate-100 rounded-lg dark:hover:bg-slate-800">
+          <GripVertical className="h-5 w-5 text-slate-300" />
+        </button>
+        <div className="h-12 w-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <p className="font-bold text-slate-900 dark:text-white tracking-normal">{item.title}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/{item.id}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${hasAccess ? 'text-primary' : 'text-slate-300'}`}>
+          {hasAccess ? 'Authorized' : 'Restricted'}
+        </span>
+        <Switch 
+          disabled={selectedRole?.name === 'Super Admin'}
+          checked={!!hasAccess} 
+          onCheckedChange={(checked) => {
+            if (!selectedRole) return;
+            const perm = `module:${item.id}`;
+            const updatedPerms = checked 
+              ? [...(selectedRole.permissions || []), perm]
+              : (selectedRole.permissions || []).filter((p: string) => p !== perm);
+            updateDocumentNonBlocking(doc(db, "roles", selectedRole.id), { permissions: updatedPerms });
+            toast({ title: "Authority Adjusted", description: `${item.title} visibility updated for ${selectedRole.name}.` });
+          }} 
+        />
+      </div>
     </div>
   );
 }

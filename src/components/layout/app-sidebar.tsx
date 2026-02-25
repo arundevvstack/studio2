@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   LayoutGrid,
   GitBranch,
@@ -67,24 +67,24 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
-  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1 },
-  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals", order: 2 },
-  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", order: 3 },
-  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 4 },
-  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 5 },
-  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 6 },
-  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 7 },
-  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 8 },
-  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 9 },
-  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 10 },
-  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 11 },
-  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 12 },
-  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 13 },
+  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/" },
+  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals" },
+  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library" },
+  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline" },
+  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects" },
+  { id: "board", title: "Board", iconName: "Trello", url: "/board" },
+  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients" },
+  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule" },
+  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time" },
+  { id: "team", title: "Team", iconName: "Users", url: "/team" },
+  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices" },
+  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast" },
+  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research" },
 ];
 
 const MANAGEMENT_ITEMS = [
-  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", order: 1 },
-  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", order: 2 },
+  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin" },
+  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings" },
 ];
 
 export function AppSidebar() {
@@ -110,11 +110,28 @@ export function AppSidebar() {
   }, [db, member?.roleId]);
   const { data: role } = useDoc(roleRef);
 
+  // Fetch Global Navigation Config for Reordering
+  const navSettingsRef = useMemoFirebase(() => doc(db, "settings", "navigation"), [db]);
+  const { data: navSettings } = useDoc(navSettingsRef);
+
   const isSuperAdmin = role?.name === 'Super Admin' || member?.roleId === 'super-admin';
 
-  const filteredWorkspaceItems = DEFAULT_WORKSPACE_ITEMS.filter(item => {
+  // Apply Global Order
+  const sortedWorkspaceItems = useMemo(() => {
+    if (!navSettings?.order || !Array.isArray(navSettings.order)) return DEFAULT_WORKSPACE_ITEMS;
+    
+    const orderMap = new Map(navSettings.order.map((id: string, index: number) => [id, index]));
+    
+    return [...DEFAULT_WORKSPACE_ITEMS].sort((a, b) => {
+      const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 999;
+      const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 999;
+      return orderA - orderB;
+    });
+  }, [navSettings]);
+
+  const filteredWorkspaceItems = sortedWorkspaceItems.filter(item => {
     if (isSuperAdmin) return true;
-    if (!role) return true; // Default to visible in prototype phase if role not yet configured
+    if (!role) return true; 
     return role.permissions?.includes(`module:${item.id}`);
   });
 
