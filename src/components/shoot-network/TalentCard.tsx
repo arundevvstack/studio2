@@ -92,11 +92,13 @@ export function TalentCard({ talent }: { talent: any }) {
 
   const handleDelete = () => {
     if (!isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to purge personnel records." });
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to delete personnel records." });
       return;
     }
-    deleteDocumentNonBlocking(doc(db, "shoot_network", talent.id));
-    toast({ variant: "destructive", title: "Entity Purged", description: talent.name });
+    if (confirm(`Confirm permanent delete of talent record: ${talent.name}?`)) {
+      deleteDocumentNonBlocking(doc(db, "shoot_network", talent.id));
+      toast({ variant: "destructive", title: "Entity Deleted", description: talent.name });
+    }
   };
 
   return (
@@ -207,7 +209,7 @@ export function TalentCard({ talent }: { talent: any }) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleDelete} className="rounded-xl p-3 cursor-pointer gap-3 text-destructive focus:text-destructive focus:bg-destructive/5">
                   <Trash2 className="h-4 w-4" />
-                  <span className="font-bold text-xs">Purge Record</span>
+                  <span className="font-bold text-xs">Delete Record</span>
                 </DropdownMenuItem>
               </>
             )}

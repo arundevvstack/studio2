@@ -21,7 +21,8 @@ import {
   ArrowRight,
   TrendingUp,
   Target,
-  Package
+  Package,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +45,17 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc, serverTimestamp, collection } from "firebase/firestore";
@@ -150,7 +162,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
 
   const handleDeleteLead = () => {
     if (!leadRef || !lead || !isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to purge leads." });
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to delete leads." });
       return;
     }
     
@@ -158,7 +170,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     deleteDocumentNonBlocking(doc(db, "projects", lead.id));
 
     deleteDocumentNonBlocking(leadRef);
-    toast({ variant: "destructive", title: "Lead Purged", description: "Entity removed from the engine." });
+    toast({ variant: "destructive", title: "Lead Deleted", description: "Entity removed from the engine." });
     router.push("/pipeline");
   };
 
@@ -391,12 +403,31 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
                 {isAuthorizedToDelete ? (
-                  <DialogClose asChild>
-                    <Button variant="ghost" onClick={handleDeleteLead} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
-                      <Trash2 className="h-4 w-4" />
-                      Purge Lead
-                    </Button>
-                  </DialogClose>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Delete Lead
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                      <AlertDialogHeader>
+                        <div className="flex items-center gap-3 text-destructive mb-2">
+                          <AlertTriangle className="h-6 w-6" />
+                          <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-slate-500 font-medium">
+                          This will permanently delete the lead record for <span className="font-bold text-slate-900">{editData?.name}</span> and remove all associated intelligence.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-3 mt-6">
+                        <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteLead} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
+                          Confirm Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 ) : <div />}
                 <div className="flex gap-3">
                   <DialogClose asChild>

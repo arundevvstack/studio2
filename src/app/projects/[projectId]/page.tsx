@@ -39,7 +39,8 @@ import {
   LayoutGrid,
   Database,
   Globe,
-  Save
+  Save,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,6 +64,17 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { 
   Sheet, 
   SheetContent, 
@@ -176,13 +188,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
 
   const handleDeleteProject = () => {
     if (!projectRef || !isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack authority to purge projects." });
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack authority to delete projects." });
       return;
     }
     deleteDocumentNonBlocking(projectRef);
     toast({
       variant: "destructive",
-      title: "Entity Purged",
+      title: "Entity Deleted",
       description: "Project has been removed from the workspace."
     });
     router.push("/projects");
@@ -333,12 +345,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
                 {isAuthorizedToDelete ? (
-                  <DialogClose asChild>
-                    <Button variant="ghost" onClick={handleDeleteProject} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
-                      <Trash2 className="h-4 w-4" />
-                      Purge Entity
-                    </Button>
-                  </DialogClose>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                      <AlertDialogHeader>
+                        <div className="flex items-center gap-3 text-destructive mb-2">
+                          <AlertTriangle className="h-6 w-6" />
+                          <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-slate-500 font-medium">
+                          This will permanently delete the project entity <span className="font-bold text-slate-900">{editData?.name}</span> and all associated roadmap tasks.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-3 mt-6">
+                        <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteProject} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
+                          Confirm Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 ) : <div />}
                 <div className="flex gap-3">
                   <DialogClose asChild>
@@ -443,7 +474,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                           </div>
                         </div>
                         {isAuthorizedToDelete && (
-                          <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id))} className="text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all rounded-full"><X className="h-5 w-5" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => {
+                            if (confirm(`Remove task: ${task.name}?`)) {
+                              deleteDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id))
+                            }
+                          }} className="text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all rounded-full"><X className="h-5 w-5" /></Button>
                         )}
                       </div>
                     </div>
@@ -549,7 +584,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                           <div className="relative aspect-square overflow-hidden rounded-[2.2rem]">
                             <img src={member.thumbnail} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={member.name} />
                             {isAuthorizedToDelete && (
-                              <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-5 w-5" /></Button>
+                              <Button onClick={() => {
+                                if (confirm(`De-provision ${member.name} from project?`)) {
+                                  updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })
+                                }
+                              }} variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-5 w-5" /></Button>
                             )}
                           </div>
                           <div className="px-4 py-6 space-y-2">

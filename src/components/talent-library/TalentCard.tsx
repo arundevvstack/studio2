@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -67,12 +68,12 @@ export function TalentCard({ talent }: { talent: any }) {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Confirm permanent purge of this talent record?")) return;
+    if (!confirm(`Confirm permanent delete of talent record: ${talent.name}?`)) return;
     try {
       await deleteDoc(doc(db, "talents", talent.id));
-      toast({ variant: "destructive", title: "Entity Purged", description: talent.name });
+      toast({ variant: "destructive", title: "Entity Deleted", description: talent.name });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Purge Failed", description: e.message });
+      toast({ variant: "destructive", title: "Delete Failed", description: e.message });
     }
   };
 
@@ -141,7 +142,7 @@ export function TalentCard({ talent }: { talent: any }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="rounded-lg p-2.5 cursor-pointer gap-2 text-destructive">
                 <Trash2 className="h-4 w-4" />
-                <span className="font-bold text-xs">Purge Record</span>
+                <span className="font-bold text-xs">Delete Record</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

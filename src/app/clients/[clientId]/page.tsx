@@ -17,7 +17,8 @@ import {
   Trash2,
   Save,
   FileText,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,17 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -119,13 +131,13 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
 
   const handleDeleteClient = () => {
     if (!clientRef || !isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to purge client entities." });
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to delete client entities." });
       return;
     }
     deleteDocumentNonBlocking(clientRef);
     toast({
       variant: "destructive",
-      title: "Entity Purged",
+      title: "Entity Deleted",
       description: "Client has been removed from the portfolio."
     });
     router.push("/clients");
@@ -267,12 +279,31 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
                 {isAuthorizedToDelete ? (
-                  <DialogClose asChild>
-                    <Button variant="ghost" onClick={handleDeleteClient} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
-                      <Trash2 className="h-4 w-4" />
-                      Purge Entity
-                    </Button>
-                  </DialogClose>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Delete Entity
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                      <AlertDialogHeader>
+                        <div className="flex items-center gap-3 text-destructive mb-2">
+                          <AlertTriangle className="h-6 w-6" />
+                          <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-slate-500 font-medium">
+                          This will permanently delete the client entity <span className="font-bold text-slate-900">{editData?.name}</span> and all associated records from the portfolio.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-3 mt-6">
+                        <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteClient} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
+                          Confirm Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 ) : <div />}
                 <div className="flex gap-3">
                   <DialogClose asChild>

@@ -33,7 +33,8 @@ import {
   Image as ImageIcon,
   MessageCircle,
   TrendingUp,
-  Award
+  Award,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,17 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { TalentForm } from "@/components/shoot-network/TalentForm";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
@@ -107,13 +119,13 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
 
   const handleDelete = () => {
     if (!talentRef || !isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack authority to purge personnel records." });
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack authority to delete personnel records." });
       return;
     }
     deleteDocumentNonBlocking(talentRef);
     toast({
       variant: "destructive",
-      title: "Entity Purged",
+      title: "Entity Deleted",
       description: "Profile removed from the creative engine."
     });
     router.push("/shoot-network");
@@ -205,28 +217,31 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
                 Archive
               </Button>
 
-              <Dialog>
-                <DialogTrigger asChild>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
                   <Button variant="ghost" className="h-11 px-6 rounded-xl text-destructive font-bold text-[10px] uppercase gap-2 hover:bg-destructive/5 transition-all tracking-widest">
                     <Trash2 className="h-3.5 w-3.5" />
-                    Purge
+                    Delete
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-                  <DialogHeader>
-                    <DialogTitle className="font-headline tracking-normal text-xl">Permanent Purge Confirmation</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-6">
-                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                  <AlertDialogHeader>
+                    <div className="flex items-center gap-3 text-destructive mb-2">
+                      <AlertTriangle className="h-6 w-6" />
+                      <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
+                    </div>
+                    <AlertDialogDescription className="text-sm text-slate-500 leading-relaxed font-medium">
                       Confirm permanent deletion of <span className="font-bold text-slate-900">{talent.name}</span>. This removes all associated credentials, engagement logs, and gallery assets from the system.
-                    </p>
-                  </div>
-                  <DialogFooter className="gap-3">
-                    <DialogClose asChild><Button variant="ghost" className="font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
-                    <Button onClick={handleDelete} variant="destructive" className="rounded-xl font-bold px-8 tracking-normal">Confirm Purge</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-3 mt-6">
+                    <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
+                      Confirm Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
         </div>

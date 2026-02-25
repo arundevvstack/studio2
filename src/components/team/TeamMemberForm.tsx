@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -11,14 +12,25 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, doc, serverTimestamp, query, orderBy } from "firebase/firestore";
-import { setDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, Save, Mail, Phone, Briefcase, User, Upload, ShieldCheck, Zap } from "lucide-react";
+import { Loader2, Save, Mail, Phone, Briefcase, User, Upload, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TeamMemberFormProps {
   existingMember?: any;
@@ -29,9 +41,11 @@ const MEMBER_TYPES = ["In-house", "Freelancer"];
 /**
  * @fileOverview Strategic Team Member Provisioning Form.
  * Connects personnel identity with dynamic system roles.
+ * Includes deletion authority for administrators.
  */
 export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   const db = useFirestore();
+  const { user: currentUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -46,6 +60,21 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
     status: "Active",
     thumbnail: "",
   });
+
+  // Fetch Current User Role for Deletion Authority
+  const currentUserRef = useMemoFirebase(() => {
+    if (!currentUser) return null;
+    return doc(db, "teamMembers", currentUser.uid);
+  }, [db, currentUser]);
+  const { data: currentUserData } = useDoc(currentUserRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!currentUserData?.roleId) return null;
+    return doc(db, "roles", currentUserData.roleId);
+  }, [db, currentUserData?.roleId]);
+  const { data: userRole } = useDoc(roleRef);
+
+  const isAuthorizedToDelete = userRole?.name === "Administrator" || userRole?.name === "root Administrator" || userRole?.name === "Root Administrator";
 
   // Dynamic Roles Sync
   const rolesQuery = useMemoFirebase(() => query(collection(db, "roles"), orderBy("name", "asc")), [db]);
@@ -104,7 +133,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
     if (existingMember) {
       const memberRef = doc(db, "teamMembers", existingMember.id);
       updateDocumentNonBlocking(memberRef, memberData);
-      toast({ title: "Intelligence Synchronized", description: `${formData.firstName}'s identity has been updated.` });
+      toast({ title: "Identity Synchronized", description: `${formData.firstName}'s identity has been updated.` });
     } else {
       const teamRef = collection(db, "teamMembers");
       const newDocRef = doc(teamRef);
@@ -119,13 +148,20 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
     setIsSubmitting(false);
   };
 
+  const handleDelete = () => {
+    if (!existingMember || !isAuthorizedToDelete) return;
+    const memberRef = doc(db, "teamMembers", existingMember.id);
+    deleteDocumentNonBlocking(memberRef);
+    toast({ variant: "destructive", title: "Identity Deleted", description: "Member has been removed from the registry." });
+  };
+
   return (
     <div className="p-10 space-y-10 max-h-[85vh] overflow-y-auto custom-scrollbar bg-white">
       <div className="flex flex-col items-center gap-4 py-4">
         <div className="relative group cursor-pointer" onClick={handleThumbnailClick}>
           <Avatar className="h-32 w-32 border-8 border-slate-50 shadow-2xl rounded-[3rem] transition-all group-hover:scale-105">
             <AvatarImage src={formData.thumbnail || ""} className="object-cover" />
-            <AvatarFallback className="bg-slate-100"><Upload className="h-8 w-8 text-slate-300" /></AvatarFallback>
+            <AvatarFallback className="bg-slate-100"><Upload className="h-10 w-10 text-slate-300" /></AvatarFallback>
           </Avatar>
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-[3rem] backdrop-blur-[2px]">
             <Badge className="bg-white text-slate-900 border-none rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest shadow-lg">Change Portrait</Badge>
@@ -216,7 +252,38 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
       </div>
 
       <DialogFooter className="bg-slate-50 p-10 flex justify-between items-center -mx-10 -mb-10 mt-10 rounded-b-[3.5rem]">
-        <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-transparent">Discard</Button></DialogClose>
+        <div className="flex items-center gap-4">
+          <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-transparent">Discard</Button></DialogClose>
+          {existingMember && isAuthorizedToDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" className="text-destructive font-bold text-xs uppercase tracking-widest gap-2 hover:bg-destructive/5 hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Delete Identity
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl">
+                <AlertDialogHeader>
+                  <div className="flex items-center gap-3 text-destructive mb-2">
+                    <AlertTriangle className="h-6 w-6" />
+                    <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
+                  </div>
+                  <AlertDialogDescription className="text-slate-500 font-medium">
+                    This will permanently remove <span className="font-bold text-slate-900">{formData.firstName} {formData.lastName}</span> from the organizational registry. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-3 mt-6">
+                  <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                  <DialogClose asChild>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
+                      Confirm Delete
+                    </AlertDialogAction>
+                  </DialogClose>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
         <DialogClose asChild>
           <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-12 h-14 gap-3 tracking-widest shadow-2xl shadow-primary/30 transition-all active:scale-95">
             {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}

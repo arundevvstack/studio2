@@ -101,15 +101,15 @@ export default function ProposalsRegistryPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to purge strategic bids." });
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to delete strategic bids." });
       return;
     }
-    if (!confirm(`Are you sure you want to purge proposal: ${name}?`)) return;
+    if (!confirm(`Are you sure you want to delete proposal: ${name}?`)) return;
     try {
       await deleteDoc(doc(db, "proposals", id));
-      toast({ title: "Proposal Purged", description: "The bid has been removed from the registry." });
+      toast({ title: "Proposal Deleted", description: "The bid has been removed from the registry." });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Purge Failed", description: e.message });
+      toast({ variant: "destructive", title: "Delete Failed", description: e.message });
     }
   };
 
@@ -272,7 +272,7 @@ export default function ProposalsRegistryPage() {
                             <DropdownMenuItem asChild className="rounded-xl p-3 cursor-pointer gap-3">
                               <Link href={`/proposals/${p.id}`}>
                                 <Sparkles className="h-4 w-4 text-primary" />
-                                <span className="font-bold text-xs">AI Synthesis</span>
+                                <span className="font-bold text-xs">AI Strategy</span>
                               </Link>
                             </DropdownMenuItem>
                             {isAuthorizedToDelete && (
@@ -283,7 +283,7 @@ export default function ProposalsRegistryPage() {
                                   className="rounded-xl p-3 cursor-pointer gap-3 text-destructive focus:text-destructive focus:bg-destructive/5"
                                 >
                                   <Trash2 className="h-4 w-4" />
-                                  <span className="font-bold text-xs">Purge Bid</span>
+                                  <span className="font-bold text-xs">Delete Bid</span>
                                 </DropdownMenuItem>
                               </>
                             )}

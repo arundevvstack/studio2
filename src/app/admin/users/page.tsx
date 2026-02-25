@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -151,7 +152,7 @@ export default function UserManagementPage() {
 
   const handlePurgeRegistry = async () => {
     if (!isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to execute a registry purge." });
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to execute a registry delete." });
       return;
     }
     setIsPurging(true);
@@ -166,13 +167,13 @@ export default function UserManagementPage() {
       await batch.commit();
       toast({ 
         variant: "destructive",
-        title: "Registry Purged", 
+        title: "Registry Deleted", 
         description: "All personnel records have been successfully removed from the system." 
       });
       
       router.push("/logout");
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Purge Failed", description: error.message });
+      toast({ variant: "destructive", title: "Delete Failed", description: error.message });
       setIsPurging(false);
     }
   };
@@ -193,7 +194,7 @@ export default function UserManagementPage() {
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
         <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
-          {isPurging ? "Executing Registry Purge..." : "Authorizing RBAC Suite..."}
+          {isPurging ? "Executing Registry Delete..." : "Authorizing RBAC Suite..."}
         </p>
       </div>
     );
@@ -231,14 +232,14 @@ export default function UserManagementPage() {
               <AlertDialogTrigger asChild>
                 <Button variant="outline" className="h-12 px-6 rounded-xl font-bold border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2 transition-all shadow-sm">
                   <Trash2 className="h-4 w-4" />
-                  Purge Registry
+                  Delete Registry
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
                 <AlertDialogHeader>
                   <div className="flex items-center gap-3 text-red-600 mb-2">
                     <AlertTriangle className="h-6 w-6" />
-                    <AlertDialogTitle className="font-headline text-xl">Critical Action: Purge Registry</AlertDialogTitle>
+                    <AlertDialogTitle className="font-headline text-xl">Critical Action: Delete Registry</AlertDialogTitle>
                   </div>
                   <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
                     This will permanently delete **ALL** registered identity records from the Firestore database. You and all other users will lose workspace access until new identities are provisioned and approved. 
@@ -249,7 +250,7 @@ export default function UserManagementPage() {
                 <AlertDialogFooter className="gap-3 mt-6">
                   <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handlePurgeRegistry} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
-                    Confirm Purge
+                    Confirm Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
