@@ -84,6 +84,8 @@ export function TalentCard({ talent }: { talent: any }) {
           alt={talent.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
+        
+        {/* Top Badges */}
         <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
           {talent.featured && (
             <Badge className="bg-primary text-white border-none shadow-lg px-3 py-1 rounded-full font-bold text-[8px] uppercase tracking-widest">
@@ -97,6 +99,15 @@ export function TalentCard({ talent }: { talent: any }) {
           )}
         </div>
 
+        {/* Bottom Place Tag */}
+        <div className="absolute bottom-4 left-4">
+          <Badge className="bg-black/40 backdrop-blur-md text-white border-none shadow-lg px-3 py-1 rounded-full font-bold text-[8px] uppercase tracking-widest gap-1.5 flex items-center">
+            <MapPin className="h-3 w-3" />
+            {talent.location}
+          </Badge>
+        </div>
+
+        {/* Admin Quick Actions */}
         <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -138,9 +149,14 @@ export function TalentCard({ talent }: { talent: any }) {
       </div>
 
       <div className="p-6 flex-grow space-y-4">
-        <div>
-          <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-tight truncate">{talent.name}</h3>
-          <p className="text-xs font-bold text-primary tracking-normal">@{talent.instagram_username || 'talent'}</p>
+        <div className="flex justify-between items-start gap-4">
+          <div className="overflow-hidden">
+            <h3 className="text-xl font-bold text-slate-900 tracking-tight leading-tight truncate">{talent.name}</h3>
+            <p className="text-xs font-bold text-primary tracking-normal">@{talent.instagram_username || 'talent'}</p>
+          </div>
+          <Badge className="bg-slate-50 text-slate-500 border-none font-bold text-[8px] uppercase px-3 py-1 shrink-0">
+            {Array.isArray(talent.category) ? talent.category[0] : talent.category}
+          </Badge>
         </div>
 
         <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-50">
@@ -161,13 +177,16 @@ export function TalentCard({ talent }: { talent: any }) {
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1 text-slate-500">
-            <MapPin className="h-3.5 w-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">{talent.location}</span>
+          <div className="flex items-center gap-1">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className={`h-3 w-3 ${i < (talent.rating || 5) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'}`} />
+            ))}
           </div>
-          <Badge className="bg-slate-50 text-slate-500 border-none font-bold text-[8px] uppercase px-3 py-1">
-            {Array.isArray(talent.category) ? talent.category[0] : talent.category}
-          </Badge>
+          {talent.ready_to_collab && (
+            <Badge className="bg-green-50 text-green-600 border-none font-bold text-[8px] uppercase px-3 py-1">
+              Collab Ready
+            </Badge>
+          )}
         </div>
       </div>
     </Card>
