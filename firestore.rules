@@ -3,9 +3,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     /**
-     * TESTING MODE
-     * This ruleset allows any authenticated user to read and write to any document.
-     * This is intended for the prototype/testing phase to ensure smooth module integration.
+     * Branding & Identity
+     * Allows public read access to global branding settings so the logo 
+     * can be displayed on the login portal.
+     */
+    match /companyBillingSettings/global {
+      allow read: if true;
+    }
+
+    /**
+     * Master Workspace Access
+     * Requires authentication for all other production data.
      */
     match /{document=**} {
       allow read, write: if request.auth != null;

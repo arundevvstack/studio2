@@ -33,6 +33,23 @@
         "updatedAt"
       ]
     },
+    "CompanyBillingSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CompanyBillingSettings",
+      "type": "object",
+      "description": "Stores organizational branding, banking, and legal identifiers.",
+      "properties": {
+        "companyName": { "type": "string" },
+        "companyAddress": { "type": "string" },
+        "logo": { "type": "string", "description": "Base64 or URL of the company logo." },
+        "taxId": { "type": "string", "description": "GSTIN or equivalent." },
+        "panNumber": { "type": "string" },
+        "cinNumber": { "type": "string" },
+        "bankName": { "type": "string" },
+        "bankAccountNumber": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "NavigationSettings": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "NavigationSettings",
@@ -93,120 +110,31 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Client",
       "type": "object",
-      "description": "Represents a client of the media production company, storing their contact details and related information.",
+      "description": "Represents a client of the media production company.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Client entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The official name of the client or the primary contact person's full name."
-        },
-        "contactPerson": {
-          "type": "string",
-          "description": "The primary contact person at the client company."
-        },
-        "email": {
-          "type": "string",
-          "description": "The primary email address for the client contact.",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "The primary phone number for the client contact."
-        },
-        "address": {
-          "type": "string",
-          "description": "The physical address of the client company."
-        },
-        "companyName": {
-          "type": "string",
-          "description": "The full legal name of the client's company."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Any additional notes or comments about the client."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the client record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the client record was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "name",
-        "email",
-        "createdAt",
-        "updatedAt"
-      ]
+      "required": ["id", "name", "email"]
     },
     "TeamMember": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "TeamMember",
       "type": "object",
-      "description": "Represents an internal employee or core team member of the media production company, excluding authentication details.",
+      "description": "Represents an internal employee or core team member.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the TeamMember entity."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the team member."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the team member."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the team member, used for external authentication system linking and communication.",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "The primary phone number for the team member."
-        },
-        "role": {
-          "type": "string",
-          "description": "The role or position of the team member within the company (e.g., 'Producer', 'Editor', 'Administrator')."
-        },
-        "bio": {
-          "type": "string",
-          "description": "A short biography or description of the team member's expertise."
-        },
-        "avatarUrl": {
-          "type": "string",
-          "description": "URL to the team member's profile picture or avatar.",
-          "format": "uri"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the team member record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the team member record was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "roleId": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Pending", "Suspended"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "firstName",
-        "lastName",
-        "email",
-        "role",
-        "createdAt",
-        "updatedAt"
-      ]
+      "required": ["id", "firstName", "lastName", "email", "status"]
     }
   },
   "auth": {
@@ -220,20 +148,23 @@
     "/settings/navigation": {
       "schema": {
         "$ref": "#/backend/entities/NavigationSettings"
+      }
+    },
+    "/companyBillingSettings/global": {
+      "schema": {
+        "$ref": "#/backend/entities/CompanyBillingSettings"
       },
-      "description": "Stores global sidebar reordering preferences."
+      "description": "Global organization settings including branding and financials."
     },
     "/app_settings/modules": {
       "schema": {
         "$ref": "#/backend/entities/AppSettings"
-      },
-      "description": "Stores global application settings."
+      }
     },
     "/market_validation/{validationId}": {
       "schema": {
         "$ref": "#/backend/entities/MarketValidation"
-      },
-      "description": "Stores market analysis and competitor intelligence."
+      }
     }
   }
 }
