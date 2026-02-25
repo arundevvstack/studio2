@@ -132,8 +132,7 @@ const SETTINGS_TABS = [
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "workflow", label: "Workflow Manager", icon: GitBranch },
   { id: "team", label: "Team Members", icon: Users },
-  { id: "projects", label: "Projects", icon: Briefcase },
-  { id: "billing", label: "Billing", icon: Receipt },
+  { id: "billing", label: "Financials", icon: Receipt },
   { id: "navigation", label: "Navigation", icon: LayoutGrid },
   { id: "roles", label: "Roles", icon: Key },
   { id: "preferences", label: "Preferences", icon: Monitor },
@@ -182,7 +181,7 @@ function hexToHslValues(hex: string): string {
 
 export default function SettingsPage() {
   const db = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const [isSaving, setIsSaving] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedColor, setSelectedColor] = useState(THEME_COLORS[0].hsl);
@@ -223,6 +222,12 @@ export default function SettingsPage() {
     return query(collection(db, "roles"), orderBy("name", "asc"));
   }, [db, user]);
   const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
+
+  const teamQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
+  }, [db, user]);
+  const { data: teamMembers, isLoading: teamLoading } = useCollection(teamQuery);
 
   const userRoleRef = useMemoFirebase(() => {
     if (!currentUserMember?.roleId) return null;
@@ -430,12 +435,7 @@ export default function SettingsPage() {
     if (!billingSettingsRef) return;
     setIsSaving(true);
     setDocumentNonBlocking(billingSettingsRef, {
-      companyName: billingForm.companyName,
-      cinNumber: billingForm.cinNumber,
-      taxId: billingForm.taxId,
-      panNumber: billingForm.panNumber,
-      companyAddress: billingForm.companyAddress,
-      logo: billingForm.logo,
+      ...billingForm,
       updatedAt: serverTimestamp()
     }, { merge: true });
     setTimeout(() => {
@@ -490,15 +490,6 @@ export default function SettingsPage() {
       }
     }
   };
-
-  if (isUserLoading) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
-        <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-sm uppercase tracking-normal">Syncing Global Settings...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
@@ -566,21 +557,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="p-6 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex items-center justify-between dark:bg-slate-800/50 dark:border-slate-800">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
-                    <ShieldCheck className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-normal">Strategic Role</h4>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Assigned Entitlement</p>
-                  </div>
-                </div>
-                <Badge className="bg-primary text-white border-none rounded-xl px-4 py-1.5 font-bold text-[10px] uppercase tracking-widest">
-                  {roles?.find(r => r.id === currentUserMember?.roleId)?.name || "General Executive"}
-                </Badge>
-              </div>
-
               <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
                 <Button onClick={handleSavePersonalProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -646,6 +622,145 @@ export default function SettingsPage() {
 
         <TabsContent value="workflow" className="animate-in slide-in-from-left-2 duration-300">
           <WorkflowManager />
+        </TabsContent>
+
+        <TabsContent value="team" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+            <div className="p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-slate-50/30 dark:bg-slate-800/30">
+              <div>
+                <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Organization Registry</CardTitle>
+                <CardDescription className="tracking-normal">Audit and manage system-wide access for all provisioned production experts.</CardDescription>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="h-11 px-6 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white gap-2 tracking-normal dark:bg-white dark:text-slate-900">
+                    <Plus className="h-4 w-4" />
+                    Invite Member
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
+                  <DialogHeader className="p-10 pb-0">
+                    <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Member</DialogTitle>
+                  </DialogHeader>
+                  <TeamMemberForm />
+                </DialogContent>
+              </Dialog>
+            </div>
+            
+            <CardContent className="p-0">
+              {teamLoading ? (
+                <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Identity</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Strategic Role</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Status</TableHead>
+                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {teamMembers?.map((member) => (
+                      <TableRow key={member.id} className="group transition-colors border-slate-50 dark:border-slate-800">
+                        <TableCell className="px-10 py-6">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-10 w-10 border-2 border-white shadow-sm rounded-xl">
+                              <AvatarImage src={member.thumbnail} />
+                              <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{member.firstName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-bold text-slate-900 dark:text-white">{member.firstName} {member.lastName}</p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{member.email}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="border-slate-100 text-slate-500 font-bold text-[9px] uppercase px-3 py-1 rounded-lg">
+                            {roles?.find(r => r.id === member.roleId)?.name || member.roleId || "Expert"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-lg ${member.status === 'Active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                            {member.status || "Active"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right px-10">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-300 hover:text-primary transition-all"><Edit2 className="h-4 w-4" /></Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
+                              <DialogHeader className="p-10 pb-0">
+                                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
+                              </DialogHeader>
+                              <TeamMemberForm existingMember={member} />
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="billing" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+            <CardHeader className="p-10 pb-0">
+              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Settlement Architecture</CardTitle>
+              <CardDescription className="tracking-normal">Configure banking parameters and tax identifiers for automated billing.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-10 space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Bank Name</Label>
+                  <div className="relative">
+                    <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                    <Input value={billingForm.bankName} onChange={(e) => setBillingForm({...billingForm, bankName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold pl-12 dark:bg-slate-800 dark:text-white" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Account Number</Label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                    <Input value={billingForm.bankAccountNumber} onChange={(e) => setBillingForm({...billingForm, bankAccountNumber: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold pl-12 dark:bg-slate-800 dark:text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">IFSC / Swift Code</Label>
+                  <Input value={billingForm.bankSwiftCode} onChange={(e) => setBillingForm({...billingForm, bankSwiftCode: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold dark:bg-slate-800 dark:text-white" />
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Branch / IBAN</Label>
+                  <Input value={billingForm.bankIban} onChange={(e) => setBillingForm({...billingForm, bankIban: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold dark:bg-slate-800 dark:text-white" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-50 dark:border-slate-800">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">PAN Number</Label>
+                  <Input value={billingForm.panNumber} onChange={(e) => setBillingForm({...billingForm, panNumber: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold dark:bg-slate-800 dark:text-white" />
+                </div>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">GSTIN Number</Label>
+                  <Input value={billingForm.taxId} onChange={(e) => setBillingForm({...billingForm, taxId: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold dark:bg-slate-800 dark:text-white" />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
+                <Button onClick={handleSaveOrgProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Financials
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="navigation" className="animate-in slide-in-from-left-2 duration-300">
