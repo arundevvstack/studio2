@@ -180,7 +180,7 @@ export default function TalentLibraryPage() {
             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Synchronizing Registry...</p>
           </div>
         ) : filteredTalent.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {filteredTalent.map((t: any) => (
               <TalentCard key={t.id} talent={t} />
             ))}
