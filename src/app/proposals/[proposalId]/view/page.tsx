@@ -1,29 +1,49 @@
 "use client";
 
 import React from "react";
-import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc } from "firebase/firestore";
-import { Loader2, ChevronLeft, Printer } from "lucide-react";
+import { Loader2, ChevronLeft, Printer, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
 /**
  * @fileOverview Print-Ready Strategic Proposal Viewport.
  * Clean Black & White formatting with professional spacing.
+ * Dynamically fetches Organization branding and details.
  */
 
 export default function ProposalPrintView({ params }: { params: Promise<{ proposalId: string }> }) {
   const { proposalId } = React.use(params);
   const router = useRouter();
   const db = useFirestore();
+  const { user } = useUser();
 
-  const proposalRef = useMemoFirebase(() => doc(db, "proposals", proposalId), [db, proposalId]);
-  const { data: proposal, isLoading } = useDoc(proposalRef);
+  const proposalRef = useMemoFirebase(() => {
+    if (!user || !proposalId) return null;
+    return doc(db, "proposals", proposalId);
+  }, [db, proposalId, user]);
+  const { data: proposal, isLoading: isProposalLoading } = useDoc(proposalRef);
 
-  if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
+  const billingSettingsRef = useMemoFirebase(() => {
+    return doc(db, "companyBillingSettings", "global");
+  }, [db]);
+  const { data: globalSettings, isLoading: isSettingsLoading } = useDoc(billingSettingsRef);
+
+  if (isProposalLoading || isSettingsLoading) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Synthesizing Document Identity...</p>
+      </div>
+    );
+  }
+
   if (!proposal) return null;
 
   const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  const companyName = globalSettings?.companyName || "Organization Name";
+  const companyAddress = globalSettings?.companyAddress || "Headquarters Address not configured.";
 
   return (
     <div className="min-h-screen bg-slate-100/50 p-4 md:p-12 animate-in fade-in duration-1000 print:bg-white print:p-0">
@@ -42,8 +62,12 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
         
         {/* Cover Page */}
         <section className="h-[1100px] flex flex-col justify-between p-24 relative overflow-hidden">
-          <div className="space-y-4">
-            <div className="h-1 w-20 bg-slate-900" />
+          <div className="space-y-6">
+            {globalSettings?.logo ? (
+              <img src={globalSettings.logo} alt="Org Logo" className="h-16 w-auto object-contain grayscale brightness-0" />
+            ) : (
+              <div className="h-1 w-20 bg-slate-900" />
+            )}
             <p className="text-sm font-bold tracking-[0.3em] uppercase">Strategic Production Proposal</p>
           </div>
 
@@ -62,10 +86,10 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
             </div>
           </div>
 
-          <div className="flex justify-between items-end">
-            <div className="space-y-1">
-              <p className="text-sm font-bold uppercase tracking-widest">MediaFlow AI</p>
-              <p className="text-xs text-slate-400 font-medium">Strategic Production Solutions</p>
+          <div className="flex justify-between items-end border-t border-slate-100 pt-12">
+            <div className="space-y-2">
+              <p className="text-sm font-bold uppercase tracking-widest">{companyName}</p>
+              <p className="text-[10px] text-slate-400 font-medium max-w-[300px] leading-relaxed">{companyAddress}</p>
             </div>
             <div className="text-right">
               <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Confidential Executive Briefing</p>
@@ -191,7 +215,7 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
             <div className="space-y-12">
               <div className="h-24 w-full border-b border-slate-900" />
               <div>
-                <p className="font-bold uppercase tracking-widest text-slate-900">For MediaFlow AI</p>
+                <p className="font-bold uppercase tracking-widest text-slate-900">For {companyName}</p>
                 <p className="text-sm text-slate-400 font-medium mt-1">Authorized Strategic Signatory</p>
               </div>
             </div>
@@ -205,7 +229,11 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
           </div>
 
           <div className="pt-24 text-center">
-            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.5em]">END OF STRATEGIC PROPOSAL</p>
+            <div className="mb-4">
+              <p className="text-sm font-bold uppercase text-slate-900">{companyName}</p>
+              <p className="text-[10px] text-slate-400">{companyAddress}</p>
+            </div>
+            <p className="text-[10px] font-bold text-slate-200 uppercase tracking-[0.5em]">END OF STRATEGIC PROPOSAL</p>
           </div>
         </section>
       </div>
