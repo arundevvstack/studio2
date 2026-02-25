@@ -20,7 +20,9 @@ import {
   ChevronLeft,
   UserPlus,
   Clock,
-  Shield
+  Shield,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,17 +52,28 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, serverTimestamp } from "firebase/firestore";
+import { collection, query, orderBy, doc, serverTimestamp, getDocs, writeBatch } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 /**
  * @fileOverview Role-Based Access Control (RBAC) Hub.
  * Provides high-level administrative oversight of all system users and their roles.
- * This is the central repository for managing strategic titles and activation policies.
+ * Includes a "Purge Registry" tactical utility to clear the personnel database.
  */
 
 export default function UserManagementPage() {
@@ -68,6 +81,7 @@ export default function UserManagementPage() {
   const db = useFirestore();
   const { user: currentUser, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isPurging, setIsPurging] = useState(false);
 
   const teamQuery = useMemoFirebase(() => {
     if (!currentUser) return null;
@@ -115,11 +129,38 @@ export default function UserManagementPage() {
     toast({ title: "Access Granted", description: "User has been activated in the workspace." });
   };
 
-  if (isUserLoading) {
+  const handlePurgeRegistry = async () => {
+    setIsPurging(true);
+    try {
+      const batch = writeBatch(db);
+      const snapshot = await getDocs(collection(db, "teamMembers"));
+      
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      toast({ 
+        variant: "destructive",
+        title: "Registry Purged", 
+        description: "All personnel records have been successfully removed from the system." 
+      });
+      
+      // Force logout as the user's own identity record is likely gone
+      router.push("/logout");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Purge Failed", description: error.message });
+      setIsPurging(false);
+    }
+  };
+
+  if (isUserLoading || isPurging) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Authorizing RBAC Suite...</p>
+        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
+          {isPurging ? "Executing Registry Purge..." : "Authorizing RBAC Suite..."}
+        </p>
       </div>
     );
   }
@@ -146,6 +187,36 @@ export default function UserManagementPage() {
             </div>
             <p className="text-sm text-slate-500 font-medium tracking-normal">Manage Role-Based Access Control, verify identities, and enforce system policies.</p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="h-12 px-6 rounded-xl font-bold border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2 transition-all shadow-sm">
+                <Trash2 className="h-4 w-4" />
+                Purge Registry
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+              <AlertDialogHeader>
+                <div className="flex items-center gap-3 text-red-600 mb-2">
+                  <AlertTriangle className="h-6 w-6" />
+                  <AlertDialogTitle className="font-headline text-xl">Critical Action: Purge Registry</AlertDialogTitle>
+                </div>
+                <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
+                  This will permanently delete **ALL** registered identity records from the Firestore database. You and all other users will lose workspace access until new identities are provisioned and approved. 
+                  <br /><br />
+                  <span className="font-bold text-slate-900">Note:</span> This does not delete Firebase Authentication accounts. You must remove those manually in the Firebase Console.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="gap-3 mt-6">
+                <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handlePurgeRegistry} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
+                  Confirm Purge
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
@@ -225,87 +296,98 @@ export default function UserManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((member) => (
-                  <TableRow key={member.id} className="group hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="px-10 py-6">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 rounded-xl border-2 border-white shadow-md">
-                          <AvatarImage src={member.thumbnail} />
-                          <AvatarFallback className="bg-primary/5 text-primary font-bold">{member.firstName?.[0] || 'U'}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                            <Mail className="h-3 w-3" /> {member.email}
-                          </p>
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((member) => (
+                    <TableRow key={member.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="px-10 py-6">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12 rounded-xl border-2 border-white shadow-md">
+                            <AvatarImage src={member.thumbnail} />
+                            <AvatarFallback className="bg-primary/5 text-primary font-bold">{member.firstName?.[0] || 'U'}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                              <Mail className="h-3 w-3" /> {member.email}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Select 
-                        value={member.roleId || "none"} 
-                        onValueChange={(val) => handleUpdateRole(member.id, val)}
-                      >
-                        <SelectTrigger className="h-10 w-48 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
-                          <SelectValue placeholder="Assign Role" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl shadow-2xl">
-                          {roles?.map(role => (
-                            <SelectItem key={role.id} value={role.id} className="text-[10px] font-bold uppercase">{role.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
-                        member.status === 'Active' ? 'bg-green-50 text-green-600' : 
-                        member.status === 'Pending' ? 'bg-orange-50 text-orange-600' :
-                        'bg-red-50 text-red-600'
-                      }`}>
-                        {member.status || "Active"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-[10px] font-bold text-slate-400 uppercase">
-                      {member.createdAt ? new Date(member.createdAt.seconds * 1000).toLocaleDateString('en-GB') : '—'}
-                    </TableCell>
-                    <TableCell className="text-right px-10">
-                      <div className="flex items-center justify-end gap-2">
-                        {member.status === 'Pending' && (
-                          <Button 
-                            onClick={() => handleActivate(member.id)}
-                            className="h-9 px-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase gap-2"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Approve
-                          </Button>
-                        )}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
-                            <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-3">Administrative Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                              <Link href={`/team/${member.id}`} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                                <UserCheck className="h-4 w-4 text-blue-500" />
-                                <span className="font-bold text-xs">View Full Intel</span>
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleToggleStatus(member.id, member.status)}
-                              className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                      </TableCell>
+                      <TableCell>
+                        <Select 
+                          value={member.roleId || "none"} 
+                          onValueChange={(val) => handleUpdateRole(member.id, val)}
+                        >
+                          <SelectTrigger className="h-10 w-48 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
+                            <SelectValue placeholder="Assign Role" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl shadow-2xl">
+                            {roles?.map(role => (
+                              <SelectItem key={role.id} value={role.id} className="text-[10px] font-bold uppercase">{role.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
+                          member.status === 'Active' ? 'bg-green-50 text-green-600' : 
+                          member.status === 'Pending' ? 'bg-orange-50 text-orange-600' :
+                          'bg-red-50 text-red-600'
+                        }`}>
+                          {member.status || "Active"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[10px] font-bold text-slate-400 uppercase">
+                        {member.createdAt ? new Date(member.createdAt.seconds * 1000).toLocaleDateString('en-GB') : '—'}
+                      </TableCell>
+                      <TableCell className="text-right px-10">
+                        <div className="flex items-center justify-end gap-2">
+                          {member.status === 'Pending' && (
+                            <Button 
+                              onClick={() => handleActivate(member.id)}
+                              className="h-9 px-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase gap-2"
                             >
-                              {member.status === 'Active' ? <UserMinus className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                              <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                            </Button>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
+                              <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-3">Administrative Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem asChild>
+                                <Link href={`/team/${member.id}`} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                                  <UserCheck className="h-4 w-4 text-blue-500" />
+                                  <span className="font-bold text-xs">View Full Intel</span>
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleStatus(member.id, member.status)}
+                                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                              >
+                                {member.status === 'Active' ? <UserMinus className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                                <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-24 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-4">
+                        <Users className="h-12 w-12 text-slate-200" />
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Registry is currently empty</p>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           )}
