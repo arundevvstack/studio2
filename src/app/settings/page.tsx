@@ -826,7 +826,7 @@ export default function SettingsPage() {
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
-                              </>
+                              </div>
                             </>
                           )}
                         </div>
