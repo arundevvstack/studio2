@@ -24,7 +24,8 @@ import {
   initiateAnonymousSignIn, 
   initiateEmailSignIn, 
   initiateEmailSignUp,
-  initiateGoogleSignIn
+  initiateGoogleSignIn,
+  initiatePasswordReset
 } from "@/firebase/non-blocking-login";
 import { doc, serverTimestamp } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -157,6 +158,35 @@ export default function LoginPage() {
           variant: "destructive", 
           title: "Google Sync Error", 
           description: err.message || "Could not authorize via Google workspace." 
+        });
+        setIsProcessing(false);
+      });
+  };
+
+  const handleForgotPassword = () => {
+    if (!email) {
+      toast({ 
+        variant: "destructive", 
+        title: "Email Required", 
+        description: "Please enter your executive email address to reset your password." 
+      });
+      return;
+    }
+    
+    setIsProcessing(true);
+    initiatePasswordReset(auth, email)
+      .then(() => {
+        toast({ 
+          title: "Reset Email Sent", 
+          description: "Check your inbox for password recovery instructions." 
+        });
+        setIsProcessing(false);
+      })
+      .catch((err) => {
+        toast({ 
+          variant: "destructive", 
+          title: "Reset Failed", 
+          description: err.message || "Could not initiate password reset."
         });
         setIsProcessing(false);
       });
@@ -311,7 +341,19 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Secure Password</label>
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Secure Password</label>
+                      {mode === 'login' && (
+                        <button 
+                          type="button"
+                          onClick={handleForgotPassword}
+                          disabled={isProcessing}
+                          className="text-[9px] font-bold text-primary hover:underline uppercase tracking-widest transition-all"
+                        >
+                          Forgot Password?
+                        </button>
+                      )}
+                    </div>
                     <div className="relative group">
                       <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                       <Input 

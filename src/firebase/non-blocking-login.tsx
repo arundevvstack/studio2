@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  sendPasswordResetEmail,
   UserCredential,
 } from 'firebase/auth';
 
@@ -32,4 +33,9 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 export function initiateGoogleSignIn(authInstance: Auth): Promise<UserCredential> {
   const provider = new GoogleAuthProvider();
   return signInWithPopup(authInstance, provider);
+}
+
+/** Initiate password reset email (non-blocking). */
+export function initiatePasswordReset(authInstance: Auth, email: string): Promise<void> {
+  return sendPasswordResetEmail(authInstance, email);
 }
