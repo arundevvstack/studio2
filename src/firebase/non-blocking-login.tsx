@@ -30,8 +30,9 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 /** Initiate Google sign-in (non-blocking). */
-export function initiateGoogleSignIn(authInstance: Auth): void {
+export function initiateGoogleSignIn(authInstance: Auth): Promise<void> {
   const provider = new GoogleAuthProvider();
-  // CRITICAL: Call signInWithPopup directly. Do NOT use 'await'.
-  signInWithPopup(authInstance, provider);
+  // CRITICAL: Call signInWithPopup directly. 
+  // We return the promise here so the caller can catch errors, but we don't 'await' it inside the non-blocking pattern if we don't need the user object immediately.
+  return signInWithPopup(authInstance, provider).then(() => {});
 }

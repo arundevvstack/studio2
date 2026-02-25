@@ -13,7 +13,8 @@ import {
   UserPlus,
   Fingerprint,
   ChevronRight,
-  Globe
+  Globe,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,17 +99,21 @@ export default function LoginPage() {
     
     const authPromise = mode === "login" 
       ? initiateEmailSignIn(auth, email, password)
-      : initiateEmailSignUp(auth, email, password);
+      : (initiateEmailSignUp(auth, email, password) as any);
 
-    authPromise.catch((err: any) => {
-      let errorMessage = "Identity verification failed.";
-      if (err.code === 'auth/email-already-in-use') errorMessage = "Identity already registered. Please log in.";
-      if (err.code === 'auth/invalid-credential') errorMessage = "Invalid credentials provided.";
-      if (err.code === 'auth/weak-password') errorMessage = "Password must be at least 6 characters.";
-      
-      toast({ variant: "destructive", title: "Authentication Failure", description: errorMessage });
-      setIsProcessing(false);
-    });
+    // Note: In non-blocking patterns, we usually rely on onAuthStateChanged, 
+    // but we catch immediate errors here.
+    if (authPromise && typeof authPromise.catch === 'function') {
+      authPromise.catch((err: any) => {
+        let errorMessage = "Identity verification failed.";
+        if (err.code === 'auth/email-already-in-use') errorMessage = "Identity already registered. Please log in.";
+        if (err.code === 'auth/invalid-credential') errorMessage = "Invalid credentials provided.";
+        if (err.code === 'auth/weak-password') errorMessage = "Password must be at least 6 characters.";
+        
+        toast({ variant: "destructive", title: "Authentication Failure", description: errorMessage });
+        setIsProcessing(false);
+      });
+    }
   };
 
   const handleGoogleAuth = () => {
@@ -122,10 +127,7 @@ export default function LoginPage() {
   const handleTacticalBypass = () => {
     setIsProcessing(true);
     toast({ title: "Authorizing Bypass", description: "Provisioning administrative session..." });
-    initiateAnonymousSignIn(auth).catch((err) => {
-      toast({ variant: "destructive", title: "Bypass Failed", description: err.message });
-      setIsProcessing(false);
-    });
+    initiateAnonymousSignIn(auth);
   };
 
   if (isUserLoading) {
