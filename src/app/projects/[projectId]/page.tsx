@@ -38,7 +38,8 @@ import {
   Type,
   LayoutGrid,
   Database,
-  Globe
+  Globe,
+  Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,6 +91,12 @@ const STATUS_PROGRESS_MAP: Record<string, number> = {
   "Social Media": 100,
 };
 
+const KERALA_DISTRICTS = [
+  "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",
+  "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", "Kozhikode",
+  "Wayanad", "Kannur", "Kasaragod"
+];
+
 export default function ProjectDetailPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = React.use(params);
   const router = useRouter();
@@ -100,23 +107,27 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const [recruitSearch, setRecruitSearch] = useState("");
 
   const projectRef = useMemoFirebase(() => {
+    if (!user) return null;
     return doc(db, "projects", projectId);
-  }, [db, projectId]);
+  }, [db, projectId, user]);
   const { data: project, isLoading: isProjectLoading } = useDoc(projectRef);
 
   const tasksQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "projects", projectId, "tasks"), orderBy("createdAt", "asc"));
-  }, [db, projectId]);
+  }, [db, projectId, user]);
   const { data: allTasks, isLoading: isTasksLoading } = useCollection(tasksQuery);
 
   const staffQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "teamMembers"));
-  }, [db]);
+  }, [db, user]);
   const { data: staffMembers } = useCollection(staffQuery);
 
   const talentsQuery = useMemoFirebase(() => {
+    if (!user) return null;
     return query(collection(db, "talents"), orderBy("name", "asc"));
-  }, [db]);
+  }, [db, user]);
   const { data: talentLibrary } = useCollection(talentsQuery);
 
   const [editData, setEditData] = useState<any>(null);
@@ -134,6 +145,31 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     }
   }, [project]);
 
+  const handleUpdateProject = () => {
+    if (!editData.name || !projectRef) return;
+    
+    updateDocumentNonBlocking(projectRef, {
+      ...editData,
+      updatedAt: serverTimestamp()
+    });
+    
+    toast({
+      title: "Strategy Synchronized",
+      description: `Project details for ${editData.name} have been updated.`
+    });
+  };
+
+  const handleDeleteProject = () => {
+    if (!projectRef) return;
+    deleteDocumentNonBlocking(projectRef);
+    toast({
+      variant: "destructive",
+      title: "Entity Purged",
+      description: "Project has been removed from the workspace."
+    });
+    router.push("/projects");
+  };
+
   const activePhase = project?.status || "Discussion";
   const phaseTasks = useMemo(() => allTasks?.filter(t => t.phase === activePhase) || [], [allTasks, activePhase]);
 
@@ -144,14 +180,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const talentSuggestions = useMemo(() => 
     talentLibrary?.filter(t => !project?.crew?.some((c: any) => c.talentId === t.id)) || [], 
   [talentLibrary, project]);
-
-  const categorizedTeam = useMemo(() => {
-    const crew = project?.crew || [];
-    return {
-      internal: crew.filter((c: any) => c.type === 'Internal'),
-      library: crew.filter((c: any) => c.type === 'Library')
-    };
-  }, [project?.crew]);
 
   const handleRecruit = (member: any, type: 'Internal' | 'Library') => {
     if (!projectRef || !project) return;
@@ -221,9 +249,91 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           </div>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <Button variant="outline" className="h-14 px-10 rounded-full font-bold gap-3 bg-white border-slate-100 text-slate-600 hover:bg-slate-50 shadow-xl shadow-slate-200/20 transition-all active:scale-95">
-            <Settings2 className="h-5 w-5" /> Config Strategy
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="h-14 px-10 rounded-full font-bold gap-3 bg-white border-slate-100 text-slate-600 hover:bg-slate-50 shadow-xl shadow-slate-200/20 transition-all active:scale-95">
+                <Settings2 className="h-5 w-5" /> Config Strategy
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
+              <DialogHeader className="p-8 pb-0">
+                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Project Matrix</DialogTitle>
+              </DialogHeader>
+              <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Project Identity</label>
+                    <Input 
+                      value={editData?.name} 
+                      onChange={(e) => setEditData({...editData, name: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Hub (Location)</label>
+                    <Select value={editData?.location} onValueChange={(val) => setEditData({...editData, location: val})}>
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold">
+                        <SelectValue placeholder="Select Hub" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {KERALA_DISTRICTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Financial Load (INR)</label>
+                    <Input 
+                      type="number"
+                      value={editData?.budget} 
+                      onChange={(e) => setEditData({...editData, budget: parseFloat(e.target.value) || 0})}
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Lifecycle Status</label>
+                    <Select value={editData?.status} onValueChange={(val) => setEditData({...editData, status: val})}>
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {STAGES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Executive Brief</label>
+                  <Textarea 
+                    value={editData?.description} 
+                    onChange={(e) => setEditData({...editData, description: e.target.value})}
+                    placeholder="Refine the project's strategic objectives and creative direction..."
+                    className="rounded-xl bg-slate-50 border-none min-h-[150px] resize-none p-4 tracking-normal"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
+                <DialogClose asChild>
+                  <Button variant="ghost" onClick={handleDeleteProject} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    Purge Entity
+                  </Button>
+                </DialogClose>
+                <div className="flex gap-3">
+                  <DialogClose asChild>
+                    <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button>
+                  </DialogClose>
+                  <DialogClose asChild>
+                    <Button onClick={handleUpdateProject} className="bg-primary hover:bg-primary/90 rounded-xl font-bold px-6 h-11 gap-2 tracking-normal">
+                      <Save className="h-4 w-4" />
+                      Sync Changes
+                    </Button>
+                  </DialogClose>
+                </div>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Button onClick={() => updateDocumentNonBlocking(projectRef!, { updatedAt: serverTimestamp() })} className="h-14 px-10 rounded-full font-bold bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/30 tracking-normal transition-all active:scale-95">Sync Intelligence</Button>
         </div>
       </div>
