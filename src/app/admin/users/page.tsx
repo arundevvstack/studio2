@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { 
   ShieldCheck, 
   Users, 
@@ -51,7 +51,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp, getDocs, writeBatch } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
@@ -82,6 +82,24 @@ export default function UserManagementPage() {
   const { user: currentUser, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [isPurging, setIsPurging] = useState(false);
+
+  // Fetch user record status for access guard
+  const currentUserRef = useMemoFirebase(() => {
+    if (!currentUser || currentUser.isAnonymous) return null;
+    return doc(db, "teamMembers", currentUser.uid);
+  }, [db, currentUser]);
+  const { data: currentUserMember, isLoading: memberLoading } = useDoc(currentUserRef);
+
+  // Strategic Access Guard
+  useEffect(() => {
+    if (!isUserLoading && !memberLoading) {
+      if (!currentUser) {
+        router.push("/login");
+      } else if (!currentUser.isAnonymous && currentUserMember && currentUserMember.status !== "Active") {
+        router.push("/login");
+      }
+    }
+  }, [currentUser, isUserLoading, currentUserMember, memberLoading, router]);
 
   const teamQuery = useMemoFirebase(() => {
     if (!currentUser) return null;
@@ -146,7 +164,6 @@ export default function UserManagementPage() {
         description: "All personnel records have been successfully removed from the system." 
       });
       
-      // Force logout as the user's own identity record is likely gone
       router.push("/logout");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Purge Failed", description: error.message });
@@ -154,7 +171,18 @@ export default function UserManagementPage() {
     }
   };
 
-  if (isUserLoading || isPurging) {
+  const formatDate = (val: any) => {
+    if (!val) return "—";
+    try {
+      if (val.seconds) return new Date(val.seconds * 1000).toLocaleDateString('en-GB');
+      if (typeof val === 'string') return new Date(val).toLocaleDateString('en-GB');
+    } catch (e) {
+      return "—";
+    }
+    return "—";
+  };
+
+  if (isUserLoading || memberLoading || isPurging) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -164,6 +192,8 @@ export default function UserManagementPage() {
       </div>
     );
   }
+
+  if (!currentUser) return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
@@ -338,7 +368,7 @@ export default function UserManagementPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-[10px] font-bold text-slate-400 uppercase">
-                        {member.createdAt ? new Date(member.createdAt.seconds * 1000).toLocaleDateString('en-GB') : '—'}
+                        {formatDate(member.createdAt)}
                       </TableCell>
                       <TableCell className="text-right px-10">
                         <div className="flex items-center justify-end gap-2">

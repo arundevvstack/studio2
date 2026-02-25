@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { 
   ShieldCheck, 
   Users, 
@@ -22,9 +22,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, orderBy, limit, doc } from "firebase/firestore";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 /**
  * @fileOverview Strategic Admin Console.
@@ -33,8 +34,27 @@ import Link from "next/link";
  */
 
 export default function AdminConsolePage() {
+  const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
+
+  // Fetch user record status for access guard
+  const memberRef = useMemoFirebase(() => {
+    if (!user || user.isAnonymous) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member, isLoading: memberLoading } = useDoc(memberRef);
+
+  // Strategic Access Guard
+  useEffect(() => {
+    if (!isUserLoading && !memberLoading) {
+      if (!user) {
+        router.push("/login");
+      } else if (!user.isAnonymous && member && member.status !== "Active") {
+        router.push("/login");
+      }
+    }
+  }, [user, isUserLoading, member, memberLoading, router]);
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -48,7 +68,7 @@ export default function AdminConsolePage() {
   }, [db, user]);
   const { data: roles } = useCollection(rolesQuery);
 
-  if (isUserLoading) {
+  if (isUserLoading || memberLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -56,6 +76,8 @@ export default function AdminConsolePage() {
       </div>
     );
   }
+
+  if (!user) return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
