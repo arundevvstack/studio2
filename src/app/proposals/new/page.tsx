@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ChevronLeft, 
@@ -13,7 +14,10 @@ import {
   List,
   Layers,
   IndianRupee,
-  Calendar
+  Calendar,
+  Zap,
+  GitBranch,
+  Folder
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +31,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useFirestore, useUser } from "@/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 
 const PROJECT_TYPES = ["Ad Film", "Social Media Campaign", "AI Content", "Corporate Video", "Product Shoot", "Influencer Campaign", "Other"];
@@ -44,6 +48,20 @@ export default function NewProposalPage() {
   const db = useFirestore();
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sourceType, setSourceType] = useState<"manual" | "lead" | "project">("manual");
+
+  // --- Data Streams for Selection ---
+  const leadsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "leads"), orderBy("updatedAt", "desc"));
+  }, [db, user]);
+  const { data: leads } = useCollection(leadsQuery);
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "projects"), orderBy("updatedAt", "desc"));
+  }, [db, user]);
+  const { data: projects } = useCollection(projectsQuery);
 
   const [formData, setFormData] = useState({
     clientName: "",
@@ -66,6 +84,34 @@ export default function NewProposalPage() {
         ? prev[listName].filter(item => item !== value)
         : [...prev[listName], value]
     }));
+  };
+
+  const handleSourceSelect = (id: string) => {
+    if (sourceType === 'lead') {
+      const lead = leads?.find(l => l.id === id);
+      if (lead) {
+        setFormData(prev => ({
+          ...prev,
+          clientName: lead.name || "",
+          brandName: lead.company || "",
+          budgetRange: lead.estimatedBudget ? `₹${lead.estimatedBudget.toLocaleString('en-IN')}` : "",
+          objective: `Strategic engagement for ${lead.industry || 'media production'}.`,
+        }));
+        toast({ title: "Lead Intel Synced", description: `Proposal populated with data from ${lead.name}.` });
+      }
+    } else if (sourceType === 'project') {
+      const project = projects?.find(p => p.id === id);
+      if (project) {
+        setFormData(prev => ({
+          ...prev,
+          projectTitle: project.name || "",
+          projectType: PROJECT_TYPES.includes(project.type) ? project.type : "Other",
+          budgetRange: project.budget ? `₹${project.budget.toLocaleString('en-IN')}` : "",
+          objective: project.description || "",
+        }));
+        toast({ title: "Project Assets Synced", description: `Proposal populated with production details for ${project.name}.` });
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,9 +145,61 @@ export default function NewProposalPage() {
           <ChevronLeft className="h-6 w-6 text-slate-600" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight leading-tight">New Strategic Bid</h1>
-          <p className="text-slate-500 mt-1 font-medium">Define production parameters for automated proposal synthesis.</p>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight leading-none">New Strategic Bid</h1>
+          <p className="text-slate-500 mt-1 font-medium">Define production parameters or select from your pipeline for automated synthesis.</p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2.5rem] bg-white p-8 space-y-6">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="w-full md:w-1/3 space-y-3">
+              <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Strategy Source</Label>
+              <Select value={sourceType} onValueChange={(val: any) => setSourceType(val)}>
+                <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-sm shadow-inner px-6">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl shadow-xl">
+                  <SelectItem value="manual" className="font-medium">Manual Entry</SelectItem>
+                  <SelectItem value="lead" className="font-medium">From Pipeline Lead</SelectItem>
+                  <SelectItem value="project" className="font-medium">From Active Project</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {sourceType !== 'manual' && (
+              <div className="flex-1 space-y-3 animate-in slide-in-from-left-2 duration-300 w-full">
+                <Label className="text-[10px] font-bold text-primary uppercase tracking-widest px-1">
+                  {sourceType === 'lead' ? 'Identify Target Lead' : 'Select Production Asset'}
+                </Label>
+                <Select onValueChange={handleSourceSelect}>
+                  <SelectTrigger className="h-14 rounded-2xl bg-primary/5 border-2 border-primary/10 font-bold text-sm shadow-inner px-6 text-primary">
+                    <SelectValue placeholder={sourceType === 'lead' ? "Search pipeline..." : "Search projects..."} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl shadow-xl max-h-[300px]">
+                    {sourceType === 'lead' ? (
+                      leads?.map(l => (
+                        <SelectItem key={l.id} value={l.id} className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <GitBranch className="h-3.5 w-3.5" /> {l.name} {l.company ? `(${l.company})` : ''}
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      projects?.map(p => (
+                        <SelectItem key={p.id} value={p.id} className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Folder className="h-3.5 w-3.5" /> {p.name}
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </Card>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-[3rem] shadow-2xl shadow-slate-200/50 overflow-hidden relative border border-slate-50">
