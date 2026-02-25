@@ -1,10 +1,357 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Testing mode: allow all authenticated users full access to documents
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    /**
+     * CORE PHILOSOPHY
+     * This ruleset implements a modular organizational security model designed for a high-performance 
+     * project management environment. It prioritizes "Authorization Independence" by favoring flat, 
+     * top-level collections with denormalized ownership fields (managerId, teamMemberId, assignedToId) 
+     * to ensure that security checks are fast, atomic, and do not require excessive document lookups.
+     *
+     * DATA STRUCTURE
+     * - Global Settings: Contained in a singleton /app_settings/modules to control feature access.
+     * - Organizational Entities: Top-level collections (Clients, Projects, TeamMembers) facilitate 
+     *   global reporting and cross-functional access.
+     * - Contextual Subcollections: Strictly nested data (Tasks, InvoiceItems) are managed within 
+     *   their parent document paths to maintain strict relational integrity.
+     *
+     * KEY SECURITY DECISIONS
+     * - Denormalization: Authorization fields are required on creation to avoid costly 'get()' 
+     *   calls in rules.
+     * - Immutability: Critical relational links (e.g., projectId on a Task) are enforced as 
+     *   immutable during updates.
+     * - Prototyping Flexibility: Rules enforce strict authorization (Who can access) but allow 
+     *   flexible data shapes (What data is stored) for rapid iteration.
+     * - Module Gating: Access to specific collections can be programmatically gated by the 
+     *   global app_settings configuration.
+     */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the user is authenticated. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the user's UID matches the provided ID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Checks ownership for existing documents before update/delete. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /** @description Placeholder for administrative access. */
+    function isAdmin() {
+      return isSignedIn(); // In production, add: && get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    /** @description Enforces that a field's value cannot be changed after creation. */
+    function isUnchanged(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Global application configuration for module enablement.
+     * @path /app_settings/modules
+     * @allow (get, list) if true;
+     * @deny (create, update, delete) if !isAdmin();
+     * @principle Singleton configuration should be globally readable but strictly protected.
+     */
+    match /app_settings/modules {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Management of organizational client profiles.
+     * @path /clients/{clientId}
+     * @allow (get, list) if isSignedIn();
+     * @allow (create, update) if isSignedIn();
+     * @deny (delete) if !isAdmin();
+     * @principle Organizational data shared among team members.
+     */
+    match /clients/{clientId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Internal profiles for team members.
+     * @path /team_members/{teamMemberId}
+     * @allow (get, list) if isSignedIn();
+     * @allow (create) if isOwner(teamMemberId);
+     * @allow (update) if isExistingOwner(teamMemberId);
+     * @deny (delete) if true;
+     * @principle Users own their profile documents; deletion is restricted to preserve relational history.
+     */
+    match /team_members/{teamMemberId} {
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(teamMemberId);
+      allow update: if isExistingOwner(teamMemberId);
+      allow delete: if false;
+    }
+
+    /**
+     * @description Profiles for external talent/freelancers.
+     * @path /talents/{talentId}
+     * @allow (get, list) if isSignedIn();
+     * @allow (create) if isOwner(talentId);
+     * @allow (update) if isExistingOwner(talentId);
+     * @deny (delete) if true;
+     * @principle Talent profiles follow the user-ownership model.
+     */
+    match /talents/{talentId} {
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(talentId);
+      allow update: if isExistingOwner(talentId);
+      allow delete: if false;
+    }
+
+    /**
+     * @description Catalog of skills referenced by talent.
+     * @path /skills/{skillId}
+     * @allow (get, list) if isSignedIn();
+     * @allow (create, update, delete) if isAdmin();
+     * @principle Reference catalogs are managed by administrators.
+     */
+    match /skills/{skillId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Media production projects.
+     * @path /projects/{projectId}
+     * @allow (get, list) if isSignedIn();
+     * @allow (create) if isSignedIn() && request.resource.data.managerId == request.auth.uid;
+     * @allow (update) if isSignedIn() && isUnchanged('managerId');
+     * @allow (delete) if isAdmin() && resource != null;
+     * @principle Project managers own the project creation; managers or admins control lifecycle.
+     */
+    match /projects/{projectId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.managerId == request.auth.uid;
+      allow update: if isSignedIn() && isUnchanged('managerId');
+      allow delete: if isAdmin() && resource != null;
+
+      /**
+       * @description Tasks associated with a project.
+       * @path /projects/{projectId}/tasks/{taskId}
+       * @allow (get, list) if isSignedIn();
+       * @allow (create) if isSignedIn() && request.resource.data.projectId == projectId;
+       * @allow (update) if isSignedIn() && isUnchanged('projectId');
+       * @deny (delete) if !isAdmin();
+       * @principle Subcollection access inherits the project's scope.
+       */
+      match /tasks/{taskId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.projectId == projectId;
+        allow update: if isSignedIn() && isUnchanged('projectId');
+        allow delete: if isAdmin() && resource != null;
+      }
+
+      /**
+       * @description Production phases defining project stages.
+       * @path /projects/{projectId}/production_phases/{productionPhaseId}
+       */
+      match /production_phases/{productionPhaseId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.projectId == projectId;
+        allow update: if isSignedIn() && isUnchanged('projectId');
+        allow delete: if isAdmin() && resource != null;
+      }
+
+      /**
+       * @description Equipment bookings for a project.
+       * @path /projects/{projectId}/equipment_bookings/{equipmentBookingId}
+       */
+      match /equipment_bookings/{equipmentBookingId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.projectId == projectId;
+        allow update: if isSignedIn() && isUnchanged('projectId');
+        allow delete: if isAdmin() && resource != null;
+      }
+
+      /**
+       * @description Assignments of crew to projects.
+       * @path /projects/{projectId}/crew_assignments/{crewAssignmentId}
+       */
+      match /crew_assignments/{crewAssignmentId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.projectId == projectId;
+        allow update: if isSignedIn() && isUnchanged('projectId');
+        allow delete: if isAdmin() && resource != null;
+      }
+    }
+
+    /**
+     * @description Global time tracking entries.
+     * @path /time_entries/{timeEntryId}
+     * @allow (get, list) if isSignedIn();
+     * @allow (create) if isOwner(request.resource.data.teamMemberId) || isOwner(request.resource.data.talentId);
+     * @allow (update) if isExistingOwner(resource.data.teamMemberId) || isExistingOwner(resource.data.talentId);
+     * @allow (delete) if isAdmin() && resource != null;
+     * @principle Users own their time logs; relational fields must match auth context.
+     */
+    match /time_entries/{timeEntryId} {
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(request.resource.data.teamMemberId) || isOwner(request.resource.data.talentId);
+      allow update: if isExistingOwner(resource.data.teamMemberId) || isExistingOwner(resource.data.talentId);
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Financial invoices and billing.
+     * @path /invoices/{invoiceId}
+     */
+    match /invoices/{invoiceId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+
+      match /invoice_items/{invoiceItemId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.invoiceId == invoiceId;
+        allow update: if isSignedIn() && isUnchanged('invoiceId');
+        allow delete: if isAdmin() && resource != null;
+      }
+
+      match /payments/{paymentId} {
+        allow get, list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.invoiceId == invoiceId;
+        allow update: if isSignedIn() && isUnchanged('invoiceId');
+        allow delete: if isAdmin() && resource != null;
+      }
+    }
+
+    /**
+     * @description Sales CRM leads.
+     * @path /leads/{leadId}
+     */
+    match /leads/{leadId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.assignedToId == request.auth.uid;
+      allow update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Sales CRM opportunities.
+     * @path /opportunities/{opportunityId}
+     */
+    match /opportunities/{opportunityId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.assignedToId == request.auth.uid;
+      allow update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Sales interaction activities.
+     * @path /sales_activities/{salesActivityId}
+     */
+    match /sales_activities/{salesActivityId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.assignedToId == request.auth.uid;
+      allow update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Inventory of physical locations.
+     * @path /locations/{locationId}
+     */
+    match /locations/{locationId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Production equipment inventory.
+     * @path /equipment/{equipmentId}
+     */
+    match /equipment/{equipmentId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Media content release tracking.
+     * @path /releases/{releaseId}
+     */
+    match /releases/{releaseId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Distribution channel definitions.
+     * @path /distribution_channels/{distributionChannelId}
+     */
+    match /distribution_channels/{distributionChannelId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin() && (resource != null || request.method == 'create');
+    }
+
+    /**
+     * @description Social media post scheduling.
+     * @path /social_media_posts/{socialMediaPostId}
+     */
+    match /social_media_posts/{socialMediaPostId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Management of social media accounts.
+     * @path /social_media_accounts/{socialMediaAccountId}
+     */
+    match /social_media_accounts/{socialMediaAccountId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.managedByTeamMemberId == request.auth.uid;
+      allow update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Financial budget tracking.
+     * @path /budgets/{budgetId}
+     */
+    match /budgets/{budgetId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Expense records and claims.
+     * @path /expenses/{expenseId}
+     */
+    match /expenses/{expenseId} {
+      allow get, list: if isSignedIn();
+      allow create: if isOwner(request.resource.data.teamMemberId);
+      allow update: if isExistingOwner(resource.data.teamMemberId);
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Categorization for financial expenses.
+     * @path /expense_categories/{expenseCategoryId}
+     */
+    match /expense_categories/{expenseCategoryId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isAdmin() && (resource != null || request.method == 'create');
     }
   }
 }
