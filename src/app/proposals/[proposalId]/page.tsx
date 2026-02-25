@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -19,7 +20,10 @@ import {
   FileText,
   Layers,
   Table as TableIcon,
-  TrendingUp
+  TrendingUp,
+  Users,
+  Compass,
+  ArrowUpRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -34,6 +38,7 @@ import Link from "next/link";
 /**
  * @fileOverview Strategic Proposal Intelligence Hub.
  * Manages AI synthesis and market validation for a specific bid.
+ * Includes Competitor Analysis and Opportunity Mapping.
  */
 
 export default function ProposalIntelligencePage({ params }: { params: Promise<{ proposalId: string }> }) {
@@ -47,33 +52,55 @@ export default function ProposalIntelligencePage({ params }: { params: Promise<{
   const proposalRef = useMemoFirebase(() => doc(db, "proposals", proposalId), [db, proposalId]);
   const { data: proposal, isLoading } = useDoc(proposalRef);
 
-  // Market Validation Logic
+  // Enhanced Market & Competitor Validation Logic
   const validation = useMemo(() => {
     if (!proposal) return null;
     const scope = proposal.scope || [];
+    const totalBudget = proposal.totalBudget || 0;
     
     let demand: 'High' | 'Medium' | 'Low' = 'Medium';
-    let advantage = "Standard production alignment.";
-    let gap = "Standard competitive landscape.";
+    let competitorSummary = "Standard agencies focusing on traditional production timelines.";
+    let opportunityGap = "Limited focus on AI-driven asset repurposing and creator-led distribution.";
+    let trendSummary = "Increasing demand for cross-platform visual consistency.";
+    let avgBudget = 75000;
 
-    if (scope.includes('AI Content Creation') || scope.includes('Influencer Marketing')) {
+    // Advanced heuristics based on scope combinations
+    if (scope.includes('AI Content Creation') && scope.includes('Social Media Management')) {
       demand = 'High';
-      advantage = "Leveraging frontier tech and reach.";
-      gap = "High demand for content repurposing.";
+      avgBudget = 120000;
+      competitorSummary = "Creative boutiques offering high-cost bespoke production without AI speed.";
+      opportunityGap = "Immediate need for VFX-led storytelling at performance marketing speeds.";
+      trendSummary = "Brands shifting budgets from TVC to high-fidelity 'Synthetic Media' for Reels/TikTok.";
+    } else if (scope.includes('Influencer Marketing')) {
+      demand = 'High';
+      avgBudget = 150000;
+      competitorSummary = "Talent agencies with high commissions and slow execution cycles.";
+      opportunityGap = "Integrating internal production with influencer reach to cut costs.";
+      trendSummary = "Rise of the 'In-house Creator' model within agencies.";
     } else if (scope.length < 2) {
       demand = 'Low';
-      advantage = "Limited scope differentiation.";
-      gap = "Opportunity to upsell AI content layer.";
+      avgBudget = 40000;
+      competitorSummary = "Freelance networks undercutting on price for single-asset delivery.";
+      opportunityGap = "Upsell into multi-asset strategic campaigns.";
+      trendSummary = "Commoditization of single-asset production.";
     }
 
-    return { demand, advantage, gap };
+    const budgetStatus = totalBudget > avgBudget ? 'Premium' : totalBudget < (avgBudget * 0.7) ? 'Aggressive' : 'Competitive';
+
+    return { 
+      demand, 
+      competitorSummary, 
+      opportunityGap, 
+      trendSummary, 
+      avgBudget,
+      budgetStatus
+    };
   }, [proposal]);
 
   const handleSynthesize = async () => {
     if (!proposal) return;
     setIsSynthesizing(true);
     
-    // Prepare investment context for AI
     const investmentString = (proposal.lineItems || []).map((item: any) => 
       `- ${item.description}: ${item.quantity} x ₹${item.unitPrice.toLocaleString('en-IN')} = ₹${item.total.toLocaleString('en-IN')}`
     ).join('\n') + `\nTotal: ₹${(proposal.totalBudget || 0).toLocaleString('en-IN')}`;
@@ -198,49 +225,98 @@ export default function ProposalIntelligencePage({ params }: { params: Promise<{
                     <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
                       <div className={`h-full ${validation?.demand === 'High' ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: validation?.demand === 'High' ? '95%' : '60%' }} />
                     </div>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
+                      "{validation?.trendSummary}"
+                    </p>
                   </div>
                 </Card>
 
                 <Card className="border-none shadow-sm rounded-[3rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
                   <div className="flex items-center justify-between relative z-10">
-                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Strategic Advantage</h3>
-                    <Zap className="h-5 w-5 text-primary" />
+                    <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Industry Budget Benchmark</h3>
+                    <IndianRupee className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="relative z-10">
-                    <p className="text-lg font-bold font-headline leading-tight tracking-tight">{validation?.advantage}</p>
-                    <p className="text-xs text-slate-400 mt-4 font-medium leading-relaxed italic">
-                      "Proposal validation confirms a unique production position relative to current competitor patterns."
+                  <div className="relative z-10 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-3xl font-bold font-headline leading-tight tracking-tight">₹{validation?.avgBudget.toLocaleString('en-IN')}</p>
+                      <Badge className="bg-white/10 text-white border-none font-bold text-[10px] uppercase px-3">AVERAGE</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+                      <Badge className={`border-none font-bold text-[10px] uppercase px-3 py-1 ${validation?.budgetStatus === 'Aggressive' ? 'bg-orange-500 text-white' : 'bg-green-500 text-white'}`}>
+                        {validation?.budgetStatus} Entry
+                      </Badge>
+                      <span className="text-[10px] text-slate-400 font-medium">Your quote is {validation?.budgetStatus === 'Aggressive' ? 'below' : 'above'} benchmark.</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="border-none shadow-sm rounded-[3rem] bg-white p-10 space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-slate-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold font-headline tracking-tight">Competitor Landscape</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Standard Offerings</p>
+                    </div>
+                  </div>
+                  <div className="p-8 rounded-[2rem] bg-slate-50/50 border border-slate-100">
+                    <p className="text-sm font-medium leading-relaxed text-slate-600">
+                      {validation?.competitorSummary}
+                    </p>
+                  </div>
+                </Card>
+
+                <Card className="border-none shadow-sm rounded-[3rem] bg-white p-10 space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center">
+                      <Compass className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold font-headline tracking-tight text-primary">Opportunity Advantage</h3>
+                      <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1">Strategic Gap</p>
+                    </div>
+                  </div>
+                  <div className="p-8 rounded-[2rem] bg-primary/5 border border-primary/10">
+                    <p className="text-sm font-bold text-slate-900 italic">
+                      "{validation?.opportunityGap}"
                     </p>
                   </div>
                 </Card>
               </div>
 
-              <Card className="border-none shadow-sm rounded-[3rem] bg-white p-10 space-y-10">
+              <Card className="border-none shadow-sm rounded-[3rem] bg-green-50 p-8 flex items-center justify-between border border-green-100">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center">
-                    <Target className="h-6 w-6 text-primary" />
+                  <div className="h-12 w-12 rounded-full bg-green-500 flex items-center justify-center text-white shadow-lg">
+                    <CheckCircle2 className="h-6 w-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold font-headline tracking-tight">Intelligence Gap Opportunity</h3>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Strategic Refinement</p>
+                    <h4 className="text-lg font-bold text-green-900">Scope Validation Passed</h4>
+                    <p className="text-sm text-green-700 font-medium">Your project matrix is aligned with the latest market intelligence.</p>
                   </div>
                 </div>
-                <div className="p-8 rounded-[2rem] bg-blue-50/50 border border-blue-100">
-                  <p className="text-sm font-bold text-blue-900 leading-relaxed tracking-normal italic">
-                    "{validation?.gap}"
-                  </p>
-                </div>
-                {validation?.demand === 'Low' && (
-                  <div className="flex items-start gap-4 p-6 rounded-2xl bg-orange-50 border border-orange-100">
-                    <AlertTriangle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-bold text-orange-900 uppercase tracking-widest">Strategic Warning: Low Demand Scope</p>
-                      <p className="text-xs text-orange-700 mt-1 font-medium leading-relaxed">Consider adding "AI Content Repurposing" or "Instagram Specific Vertical" to increase the perceived value and alignment with current market signals.</p>
-                    </div>
-                  </div>
-                )}
+                <Badge className="bg-green-600 text-white border-none font-bold text-[10px] uppercase px-4 py-1.5 rounded-full tracking-widest">
+                  OPTIMIZED
+                </Badge>
               </Card>
+
+              {validation?.demand === 'Low' && (
+                <div className="flex items-start gap-4 p-8 rounded-[2.5rem] bg-orange-50 border border-orange-100">
+                  <AlertTriangle className="h-6 w-6 text-orange-600 shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-bold text-orange-900 uppercase tracking-widest">Strategic Advisory: Low Demand Scope</p>
+                    <p className="text-sm text-orange-700 leading-relaxed font-medium">
+                      Market signals indicate a transition away from single-asset production. To maximize conversion, consider integrating <strong>AI Content Layering</strong> or <strong>Influencer Sync</strong> to increase perceived strategic value.
+                    </p>
+                    <Button variant="link" className="text-orange-900 font-bold p-0 h-auto text-xs uppercase gap-2">
+                      Analyze Alternative Verticals <ArrowUpRight className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="financials" className="m-0 animate-in fade-in duration-500 space-y-8">

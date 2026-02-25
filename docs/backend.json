@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "AppSettings": {
@@ -31,6 +32,45 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "MarketValidation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MarketValidation",
+      "type": "object",
+      "description": "Stores market analysis and competitor intelligence for specific project verticals and scopes.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "scope_type": {
+          "type": "string",
+          "description": "The service combination being validated (e.g. AI Content + Social Media)."
+        },
+        "demand_level": {
+          "type": "string",
+          "enum": ["High", "Medium", "Low"]
+        },
+        "competitor_summary": {
+          "type": "string",
+          "description": "Summary of common competitor offerings in this niche."
+        },
+        "avg_budget_range": {
+          "type": "number",
+          "description": "Average industry budget for this scope."
+        },
+        "opportunity_gap": {
+          "type": "string",
+          "description": "Specific gaps in the market that can be exploited."
+        },
+        "trend_summary": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "scope_type", "demand_level"]
     },
     "Client": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1202,7 +1242,7 @@
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp when the release record was last updated.",
+          "description": "Timestamp when the last updated.",
           "format": "date-time"
         }
       },
@@ -1587,6 +1627,16 @@
             "$ref": "#/backend/entities/AppSettings"
           },
           "description": "Stores global application settings, specifically the enablement status of various modules. This is a singleton document. Access control will ensure only authorized administrators can modify this document in a future authenticated setup, while read access is required globally by the application to determine UI and route visibility. Includes a 'modules' field which is a JSON string indicating module enablement status."
+        }
+      },
+      {
+        "path": "/market_validation/{validationId}",
+        "definition": {
+          "entityName": "MarketValidation",
+          "schema": {
+            "$ref": "#/backend/entities/MarketValidation"
+          },
+          "description": "Stores market analysis and competitor intelligence for specific project verticals and scopes."
         }
       },
       {
