@@ -24,7 +24,10 @@ import {
   ArrowRight,
   Filter,
   Clock,
-  Package
+  Package,
+  PieChart as PieChartIcon,
+  Layers,
+  Rocket
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +58,18 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  Cell,
+  PieChart,
+  Pie
+} from "recharts";
 import Link from "next/link";
 
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
@@ -78,6 +93,8 @@ const PRIORITY_COLORS: Record<string, string> = {
   High: "bg-orange-50 text-orange-500",
   Hot: "bg-primary/10 text-primary"
 };
+
+const CHART_COLORS = ['#2E86C1', '#4CAF50', '#F39C12', '#9B59B6', '#E74C3C', '#1ABC9C'];
 
 export default function PipelineEnginePage() {
   const db = useFirestore();
@@ -107,13 +124,49 @@ export default function PipelineEnginePage() {
 
   // --- Analytics Logic ---
   const stats = useMemo(() => {
-    if (!leads) return { totalLeads: 0, conversionRate: 0, activeValue: 0, forecast: 0, leadCount: 0 };
+    if (!leads) return { 
+      totalLeads: 0, 
+      conversionRate: 0, 
+      activeValue: 0, 
+      forecast: 0, 
+      leadCount: 0,
+      sourceData: [],
+      industryData: []
+    };
+
     const won = leads.filter(l => l.status === 'Won').length;
     const total = leads.length;
+    const activeLeads = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost');
+    
     const conversionRate = total > 0 ? Math.round((won / total) * 100) : 0;
-    const activeValue = leads.filter(l => l.status !== 'Won' && l.status !== 'Lost').reduce((acc, curr) => acc + (curr.estimatedBudget || 0), 0);
+    const activeValue = activeLeads.reduce((acc, curr) => acc + (curr.estimatedBudget || 0), 0);
     const leadCountInStage = leads.filter(l => l.status === 'Lead').length;
-    return { totalLeads: total, conversionRate, activeValue, forecast: activeValue * 0.3, leadCount: leadCountInStage };
+
+    // Source Distribution
+    const sources = activeLeads.reduce((acc: any, lead) => {
+      const src = lead.source || 'Other';
+      acc[src] = (acc[src] || 0) + (lead.estimatedBudget || 0);
+      return acc;
+    }, {});
+    const sourceData = Object.entries(sources).map(([name, value]) => ({ name, value }));
+
+    // Industry Distribution
+    const industries = activeLeads.reduce((acc: any, lead) => {
+      const ind = lead.industry || 'General';
+      acc[ind] = (acc[ind] || 0) + 1;
+      return acc;
+    }, {});
+    const industryData = Object.entries(industries).map(([name, value]) => ({ name, value }));
+
+    return { 
+      totalLeads: total, 
+      conversionRate, 
+      activeValue, 
+      forecast: activeValue * 0.3, 
+      leadCount: leadCountInStage,
+      sourceData,
+      industryData
+    };
   }, [leads]);
 
   // --- Form Logic ---
@@ -509,60 +562,130 @@ export default function PipelineEnginePage() {
         </TabsContent>
 
         <TabsContent value="analytics" className="m-0 animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] sm:rounded-[3rem] bg-white p-8 sm:p-12">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 sm:gap-12 mb-10 sm:mb-12">
-              <div>
-                <h3 className="text-xl sm:text-2xl font-bold font-headline tracking-tight">Sales Intelligence Core</h3>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium tracking-normal mt-1">Visualizing pipeline performance and growth vectors.</p>
-              </div>
-              <Button variant="outline" className="w-full sm:w-auto rounded-xl h-11 px-8 font-bold text-[10px] uppercase gap-2 border-slate-100 tracking-widest">
-                <BarChart3 className="h-4 w-4" />
-                Export Brief
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
-              <div className="space-y-6 sm:space-y-8">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Conversion Efficiency</p>
-                  <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-primary">{stats.conversionRate}%</h4>
+          <div className="space-y-10">
+            <Card className="border-none shadow-sm rounded-[2.5rem] sm:rounded-[3rem] bg-white p-8 sm:p-12">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 sm:gap-12 mb-10 sm:mb-12">
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-bold font-headline tracking-tight">Sales Intelligence Core</h3>
+                  <p className="text-xs sm:text-sm text-slate-500 font-medium tracking-normal mt-1">Visualizing pipeline performance and growth vectors.</p>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                    <span className="text-slate-400">Benchmark Goal</span>
-                    <span className="text-slate-900">25%</span>
+                <div className="flex gap-3">
+                  <Button variant="outline" className="rounded-xl h-11 px-8 font-bold text-[10px] uppercase gap-2 border-slate-100 tracking-widest">
+                    <BarChart3 className="h-4 w-4" />
+                    Export Brief
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12">
+                <div className="space-y-6 sm:space-y-8">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Conversion Efficiency</p>
+                    <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-primary">{stats.conversionRate}%</h4>
                   </div>
-                  <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: `${stats.conversionRate}%` }} />
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                      <span className="text-slate-400">Benchmark Goal</span>
+                      <span className="text-slate-900">25%</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary" style={{ width: `${stats.conversionRate}%` }} />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-6 sm:space-y-8">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Opportunity Value</p>
-                  <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-slate-900">₹{(stats.activeValue / 1000).toFixed(0)}k</h4>
-                </div>
-                <p className="text-[11px] sm:text-sm text-slate-500 font-medium leading-relaxed tracking-normal italic">
-                  "Aggregate capital potential currently moving through strategic stages."
-                </p>
-              </div>
-
-              <div className="space-y-6 sm:space-y-8">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue Forecast</p>
-                  <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-accent">₹{(stats.forecast / 1000).toFixed(0)}k</h4>
-                </div>
-                <div className="p-5 sm:p-6 rounded-2xl bg-accent/5 border border-accent/10">
-                  <p className="text-[10px] text-accent font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <Star className="h-3 w-3" />
-                    Growth Vector
+                <div className="space-y-6 sm:space-y-8">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Opportunity Value</p>
+                    <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-slate-900">₹{(stats.activeValue / 1000).toFixed(0)}k</h4>
+                  </div>
+                  <p className="text-[11px] sm:text-sm text-slate-500 font-medium leading-relaxed tracking-normal italic">
+                    "Aggregate capital potential currently moving through strategic stages."
                   </p>
-                  <p className="text-[10px] sm:text-[11px] text-slate-600 font-medium tracking-normal leading-relaxed">Predicted revenue based on 30% pipeline conversion probability.</p>
+                </div>
+
+                <div className="space-y-6 sm:space-y-8">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue Forecast</p>
+                    <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-accent">₹{(stats.forecast / 1000).toFixed(0)}k</h4>
+                  </div>
+                  <div className="p-5 sm:p-6 rounded-2xl bg-accent/5 border border-accent/10">
+                    <p className="text-[10px] text-accent font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <Rocket className="h-3 w-3" />
+                      Growth Vector
+                    </p>
+                    <p className="text-[10px] sm:text-[11px] text-slate-600 font-medium tracking-normal leading-relaxed">Predicted revenue based on 30% pipeline conversion probability.</p>
+                  </div>
                 </div>
               </div>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
+                <CardHeader className="p-0 mb-8">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Source ROI Analysis</CardTitle>
+                    <Globe className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold font-headline mt-1 tracking-tight">Channel Revenue Potential</h3>
+                </CardHeader>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.sourceData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.05} />
+                      <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                        formatter={(v: any) => [`₹${v.toLocaleString()}`, 'Potential']}
+                      />
+                      <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={32}>
+                        {stats.sourceData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
+                <CardHeader className="p-0 mb-8">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strategic Segmenting</CardTitle>
+                    <PieChartIcon className="h-4 w-4 text-accent" />
+                  </div>
+                  <h3 className="text-xl font-bold font-headline mt-1 tracking-tight">Niche Market Distribution</h3>
+                </CardHeader>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.industryData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {stats.industryData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap justify-center gap-4 mt-4">
+                  {stats.industryData.map((item, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </div>
-          </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
