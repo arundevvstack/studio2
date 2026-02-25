@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -131,7 +130,6 @@ const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "workflow", label: "Workflow Manager", icon: GitBranch },
-  { id: "team", label: "Team Members", icon: Users },
   { id: "billing", label: "Financials", icon: Receipt },
   { id: "navigation", label: "Navigation", icon: LayoutGrid },
   { id: "roles", label: "Roles", icon: Key },
@@ -222,12 +220,6 @@ export default function SettingsPage() {
     return query(collection(db, "roles"), orderBy("name", "asc"));
   }, [db, user]);
   const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
-
-  const teamQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, "teamMembers"), orderBy("firstName", "asc"));
-  }, [db, user]);
-  const { data: teamMembers, isLoading: teamLoading } = useCollection(teamQuery);
 
   const userRoleRef = useMemoFirebase(() => {
     if (!currentUserMember?.roleId) return null;
@@ -622,89 +614,6 @@ export default function SettingsPage() {
 
         <TabsContent value="workflow" className="animate-in slide-in-from-left-2 duration-300">
           <WorkflowManager />
-        </TabsContent>
-
-        <TabsContent value="team" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
-            <div className="p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-slate-50/30 dark:bg-slate-800/30">
-              <div>
-                <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Organization Registry</CardTitle>
-                <CardDescription className="tracking-normal">Audit and manage system-wide access for all provisioned production experts.</CardDescription>
-              </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="h-11 px-6 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white gap-2 tracking-normal dark:bg-white dark:text-slate-900">
-                    <Plus className="h-4 w-4" />
-                    Invite Member
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
-                  <DialogHeader className="p-10 pb-0">
-                    <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Member</DialogTitle>
-                  </DialogHeader>
-                  <TeamMemberForm />
-                </DialogContent>
-              </Dialog>
-            </div>
-            
-            <CardContent className="p-0">
-              {teamLoading ? (
-                <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-              ) : (
-                <Table>
-                  <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Identity</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Strategic Role</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Status</TableHead>
-                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teamMembers?.map((member) => (
-                      <TableRow key={member.id} className="group transition-colors border-slate-50 dark:border-slate-800">
-                        <TableCell className="px-10 py-6">
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-10 w-10 border-2 border-white shadow-sm rounded-xl">
-                              <AvatarImage src={member.thumbnail} />
-                              <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{member.firstName?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-bold text-slate-900 dark:text-white">{member.firstName} {member.lastName}</p>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{member.email}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="border-slate-100 text-slate-500 font-bold text-[9px] uppercase px-3 py-1 rounded-lg">
-                            {roles?.find(r => r.id === member.roleId)?.name || member.roleId || "Expert"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-lg ${member.status === 'Active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                            {member.status || "Active"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right px-10">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-300 hover:text-primary transition-all"><Edit2 className="h-4 w-4" /></Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
-                              <DialogHeader className="p-10 pb-0">
-                                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
-                              </DialogHeader>
-                              <TeamMemberForm existingMember={member} />
-                            </DialogContent>
-                          </Dialog>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="billing" className="animate-in slide-in-from-left-2 duration-300">

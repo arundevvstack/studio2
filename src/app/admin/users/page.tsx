@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -22,7 +21,9 @@ import {
   Clock, 
   Shield, 
   Trash2, 
-  AlertTriangle 
+  AlertTriangle,
+  Edit2,
+  Plus
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 /**
  * @fileOverview Role-Based Access Control (RBAC) Hub.
@@ -240,6 +249,21 @@ export default function UserManagementPage() {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white gap-2 tracking-normal shadow-lg shadow-primary/20">
+                <Plus className="h-4 w-4" />
+                Invite Member
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
+              <DialogHeader className="p-10 pb-0">
+                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Member</DialogTitle>
+              </DialogHeader>
+              <TeamMemberForm />
+            </DialogContent>
+          </Dialog>
+
           {isAuthorizedToDelete && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -408,6 +432,20 @@ export default function UserManagementPage() {
                                   <span className="font-bold text-xs">View Full Intel</span>
                                 </Link>
                               </DropdownMenuItem>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                                    <Edit2 className="h-4 w-4 text-primary" />
+                                    <span className="font-bold text-xs">Edit Identity Profile</span>
+                                  </DropdownMenuItem>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
+                                  <DialogHeader className="p-10 pb-0">
+                                    <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
+                                  </DialogHeader>
+                                  <TeamMemberForm existingMember={member} />
+                                </DialogContent>
+                              </Dialog>
                               {isAuthorizedToDelete && (
                                 <>
                                   <DropdownMenuItem 
