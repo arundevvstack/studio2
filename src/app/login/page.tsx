@@ -99,35 +99,71 @@ export default function LoginPage() {
     
     const authPromise = mode === "login" 
       ? initiateEmailSignIn(auth, email, password)
-      : (initiateEmailSignUp(auth, email, password) as any);
+      : initiateEmailSignUp(auth, email, password);
 
-    // Note: In non-blocking patterns, we usually rely on onAuthStateChanged, 
-    // but we catch immediate errors here.
-    if (authPromise && typeof authPromise.catch === 'function') {
-      authPromise.catch((err: any) => {
+    authPromise
+      .then(() => {
+        // Success handled by useEffect listener
+      })
+      .catch((err: any) => {
+        console.error("Auth Error:", err);
         let errorMessage = "Identity verification failed.";
-        if (err.code === 'auth/email-already-in-use') errorMessage = "Identity already registered. Please log in.";
-        if (err.code === 'auth/invalid-credential') errorMessage = "Invalid credentials provided.";
-        if (err.code === 'auth/weak-password') errorMessage = "Password must be at least 6 characters.";
         
-        toast({ variant: "destructive", title: "Authentication Failure", description: errorMessage });
+        // Strategic error mapping
+        switch (err.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = "This identity identifier is already registered. Please sign in.";
+            break;
+          case 'auth/invalid-email':
+            errorMessage = "The provided email identifier is not a valid format.";
+            break;
+          case 'auth/weak-password':
+            errorMessage = "Security protocol requires a password of at least 6 characters.";
+            break;
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            errorMessage = "Invalid executive credentials provided.";
+            break;
+          case 'auth/operation-not-allowed':
+            errorMessage = "This authentication method is currently restricted in the console.";
+            break;
+          default:
+            errorMessage = err.message || "An unexpected security exception occurred.";
+        }
+        
+        toast({ 
+          variant: "destructive", 
+          title: mode === 'signup' ? "Provisioning Error" : "Access Denied", 
+          description: errorMessage 
+        });
         setIsProcessing(false);
       });
-    }
   };
 
   const handleGoogleAuth = () => {
     setIsProcessing(true);
-    initiateGoogleSignIn(auth).catch((err) => {
-      toast({ variant: "destructive", title: "Google Auth Error", description: err.message });
-      setIsProcessing(false);
-    });
+    initiateGoogleSignIn(auth)
+      .then(() => {
+        // Success handled by useEffect listener
+      })
+      .catch((err) => {
+        toast({ 
+          variant: "destructive", 
+          title: "Google Sync Error", 
+          description: err.message || "Could not authorize via Google workspace." 
+        });
+        setIsProcessing(false);
+      });
   };
 
   const handleTacticalBypass = () => {
     setIsProcessing(true);
     toast({ title: "Authorizing Bypass", description: "Provisioning administrative session..." });
-    initiateAnonymousSignIn(auth);
+    initiateAnonymousSignIn(auth).catch((err) => {
+      toast({ variant: "destructive", title: "Bypass Failed", description: err.message });
+      setIsProcessing(false);
+    });
   };
 
   if (isUserLoading) {
