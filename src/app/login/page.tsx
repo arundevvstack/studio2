@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -10,9 +11,7 @@ import {
   ArrowRight, 
   Loader2, 
   ShieldAlert,
-  UserPlus,
   Fingerprint,
-  ChevronRight,
   Globe,
   Clock,
   Eye,
@@ -76,7 +75,6 @@ export default function LoginPage() {
         }
       } else {
         // Automatically provision a "Pending" record for new authenticated identities
-        // This ensures they appear in the Admin Hub for approval
         const newMemberRef = doc(db, "teamMembers", user.uid);
         setDocumentNonBlocking(newMemberRef, {
           id: user.uid,
@@ -118,7 +116,6 @@ export default function LoginPage() {
         console.error("Auth Error:", err);
         let errorMessage = "Identity verification failed.";
         
-        // Strategic error mapping
         switch (err.code) {
           case 'auth/email-already-in-use':
             errorMessage = "This identity identifier is already registered. Please sign in.";
@@ -133,9 +130,6 @@ export default function LoginPage() {
           case 'auth/wrong-password':
           case 'auth/invalid-credential':
             errorMessage = "Invalid executive credentials provided.";
-            break;
-          case 'auth/operation-not-allowed':
-            errorMessage = "This authentication method is currently restricted in the console.";
             break;
           default:
             errorMessage = err.message || "An unexpected security exception occurred.";
@@ -216,7 +210,6 @@ export default function LoginPage() {
     );
   }
 
-  // Waiting room for identities awaiting administrator validation
   if (user && !user.isAnonymous && member?.status === "Pending") {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-10 animate-in fade-in duration-1000">
@@ -248,7 +241,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col lg:flex-row relative overflow-hidden font-body">
-      {/* Visual Branding Side (Desktop) */}
       <div className="hidden lg:flex flex-1 bg-slate-950 relative overflow-hidden items-center justify-center p-20">
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/10 blur-[150px] rounded-full -mr-96 -mt-96" />
@@ -284,7 +276,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Auth Interaction Side */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 relative bg-white">
         <div className="w-full max-w-[440px] space-y-10">
           <div className="lg:hidden flex flex-col items-center text-center space-y-6 mb-12">
@@ -402,7 +393,6 @@ export default function LoginPage() {
             </CardContent>
           </Card>
 
-          {/* Tactical Demo Bypass */}
           <div className="pt-4 space-y-6">
             <div className="flex items-center gap-4">
               <div className="h-px flex-1 bg-slate-100" />
@@ -424,7 +414,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Footer info */}
         <div className="mt-auto pt-12 flex items-center gap-6 opacity-20 group hover:opacity-100 transition-opacity">
           <Globe className="h-4 w-4 text-slate-400" />
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">System Version 2.4.0 • Node: TRV-01</p>
