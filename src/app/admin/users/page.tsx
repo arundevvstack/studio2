@@ -3,31 +3,20 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { 
-  ShieldCheck, 
   Users, 
   Search, 
-  Filter, 
   MoreHorizontal, 
-  UserCheck, 
-  UserMinus, 
-  Key, 
-  ArrowRight, 
   Loader2, 
   CheckCircle2, 
-  AlertCircle, 
   Mail, 
   ShieldAlert, 
   ChevronLeft, 
-  UserPlus, 
-  Clock, 
+  Plus, 
+  Hourglass,
   Shield, 
   Trash2, 
   AlertTriangle,
-  Edit2,
-  Plus,
-  Hourglass,
   Zap,
-  RotateCcw,
   ShieldBan
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -58,11 +47,10 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc, serverTimestamp, getDocs, writeBatch, where } from "firebase/firestore";
+import { collection, query, orderBy, doc, serverTimestamp, where } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertDialog,
@@ -85,9 +73,9 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 /**
- * @fileOverview Role-Based Access Control (RBAC) Hub.
- * Provides high-level administrative oversight of all system users and their roles.
- * Includes automated Maintenance Sync for restricted identifiers.
+ * @fileOverview Identity & RBAC Hub.
+ * Manages the Onboarding -> Approval -> Activation lifecycle.
+ * Centralized governance for all organizational identities.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -99,14 +87,13 @@ export default function UserManagementPage() {
   const { user: currentUser, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch user record status
+  // Fetch Current User Authority
   const currentUserRef = useMemoFirebase(() => {
     if (!currentUser) return null;
     return doc(db, "teamMembers", currentUser.uid);
   }, [db, currentUser]);
-  const { data: currentUserMember, isLoading: memberLoading } = useDoc(currentUserRef);
+  const { data: currentUserMember } = useDoc(currentUserRef);
 
-  // Fetch Role for Authority Check
   const roleRef = useMemoFirebase(() => {
     if (!currentUserMember?.roleId) return null;
     return doc(db, "roles", currentUserMember.roleId);
@@ -114,16 +101,7 @@ export default function UserManagementPage() {
   const { data: userRole } = useDoc(roleRef);
 
   const isMasterUser = currentUser?.email?.toLowerCase() === MASTER_EMAIL.toLowerCase() || currentUserMember?.roleId === 'root-admin' || currentUser?.isAnonymous;
-  const isAuthorizedToDelete = userRole?.name === "Administrator" || userRole?.name === "root Administrator" || userRole?.name === "Root Administrator" || isMasterUser;
-
-  // Strategic Access Guard
-  useEffect(() => {
-    if (!isUserLoading) {
-      if (!currentUser) {
-        router.push("/login");
-      }
-    }
-  }, [currentUser, isUserLoading, router]);
+  const isAuthorizedToManage = userRole?.name === "Administrator" || isMasterUser;
 
   const teamQuery = useMemoFirebase(() => {
     if (!currentUser) return null;
@@ -137,32 +115,6 @@ export default function UserManagementPage() {
   }, [db, currentUser]);
   const { data: roles } = useCollection(rolesQuery);
 
-  // --- MAINTENANCE SYNC: Targeted Purge ---
-  const restrictedLeadsQuery = useMemoFirebase(() => {
-    if (!currentUser || !isMasterUser) return null;
-    return query(collection(db, "leads"), where("email", "==", RESTRICTED_EMAIL));
-  }, [db, currentUser, isMasterUser]);
-  const { data: restrictedLeads } = useCollection(restrictedLeadsQuery);
-
-  useEffect(() => {
-    if (isMasterUser && team) {
-      const restrictedMember = team.find(m => m.email?.toLowerCase() === RESTRICTED_EMAIL.toLowerCase());
-      if (restrictedMember) {
-        deleteDocumentNonBlocking(doc(db, "teamMembers", restrictedMember.id));
-        toast({ variant: "destructive", title: "Maintenance Sync", description: `Unauthorized identity ${RESTRICTED_EMAIL} purged from registry.` });
-      }
-    }
-  }, [isMasterUser, team, db]);
-
-  useEffect(() => {
-    if (isMasterUser && restrictedLeads && restrictedLeads.length > 0) {
-      restrictedLeads.forEach(lead => {
-        deleteDocumentNonBlocking(doc(db, "leads", lead.id));
-      });
-      toast({ variant: "destructive", title: "Pipeline Cleanse", description: "Removed restricted identifiers from sales pipeline." });
-    }
-  }, [isMasterUser, restrictedLeads, db]);
-
   const filteredUsers = useMemo(() => {
     if (!team) return [];
     return team.filter(member => 
@@ -175,27 +127,16 @@ export default function UserManagementPage() {
   const handleUpdateRole = (userId: string, roleId: string) => {
     const userRef = doc(db, "teamMembers", userId);
     updateDocumentNonBlocking(userRef, { roleId, updatedAt: serverTimestamp() });
-    toast({ title: "Authority Synchronized", description: "User role has been updated." });
+    toast({ title: "Authority Synchronized", description: "Identity role updated." });
   };
 
-  const handleToggleStatus = (userId: string, currentStatus: string) => {
+  const handleSetStatus = (userId: string, status: string) => {
     const userRef = doc(db, "teamMembers", userId);
-    let newStatus = currentStatus === "Active" ? "Suspended" : "Active";
-    updateDocumentNonBlocking(userRef, { status: newStatus, updatedAt: serverTimestamp() });
+    updateDocumentNonBlocking(userRef, { status, updatedAt: serverTimestamp() });
     toast({ 
-      variant: newStatus === "Suspended" ? "destructive" : "default",
-      title: `Identity ${newStatus}`, 
-      description: `Access policy updated for the selected account.` 
-    });
-  };
-
-  const handleDeleteUser = (userId: string, userName: string) => {
-    const userRef = doc(db, "teamMembers", userId);
-    deleteDocumentNonBlocking(userRef);
-    toast({ 
-      variant: "destructive",
-      title: "Identity Deleted", 
-      description: `${userName} has been removed from the registry.` 
+      variant: status === "Suspended" ? "destructive" : "default",
+      title: `Identity ${status}`, 
+      description: `Access policy updated for the selected identity.` 
     });
   };
 
@@ -203,7 +144,7 @@ export default function UserManagementPage() {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorizing Executive Access...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorizing Authority Access...</p>
       </div>
     );
   }
@@ -216,8 +157,8 @@ export default function UserManagementPage() {
             <ChevronLeft className="h-6 w-6 text-slate-600" />
           </Button>
           <div className="space-y-1">
-            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Identity & RBAC Hub</h1>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage access control, verify identities, and deploy system policies.</p>
+            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-none">Identity Governance</h1>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage the Onboarding -> Approval -> Activation lifecycle.</p>
           </div>
         </div>
 
@@ -225,11 +166,11 @@ export default function UserManagementPage() {
           <Dialog>
             <DialogTrigger asChild>
               <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white gap-2 tracking-normal shadow-lg shadow-primary/20">
-                <Plus className="h-4 w-4" /> Invite Member
+                <Plus className="h-4 w-4" /> Invite Expert
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
-              <DialogHeader className="p-10 pb-0"><DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Member</DialogTitle></DialogHeader>
+              <DialogHeader className="p-10 pb-0"><DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Identity</DialogTitle></DialogHeader>
               <TeamMemberForm />
             </DialogContent>
           </Dialog>
@@ -248,10 +189,10 @@ export default function UserManagementPage() {
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
-            <Users className="h-5 w-5 text-primary" />
+            <CheckCircle2 className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Identities</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Experts</p>
             <h3 className="text-3xl font-bold font-headline mt-1">{team?.filter(m => m.status === 'Active').length || 0}</h3>
           </div>
         </Card>
@@ -261,7 +202,7 @@ export default function UserManagementPage() {
             <Shield className="h-5 w-5 text-primary" />
           </div>
           <div className="relative z-10">
-            <p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">Identity Protocol</p>
+            <p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">System Status</p>
             <h3 className="text-2xl font-bold font-headline mt-1 uppercase">Governance Active</h3>
           </div>
         </Card>
@@ -269,13 +210,13 @@ export default function UserManagementPage() {
 
       <div className="relative flex-1 group">
         <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search identities by name or email..." className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-base font-bold" />
+        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search identifiers by name or email..." className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-base font-bold" />
       </div>
 
-      <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
+      <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden border border-slate-50">
         <CardHeader className="p-10 pb-6 border-b border-slate-50 bg-slate-50/30">
-          <CardTitle className="text-xl font-bold font-headline tracking-normal">Identity Governance Ledger</CardTitle>
-          <CardDescription className="tracking-normal">Audit, approve, and manage system-wide entitlements for the production crew.</CardDescription>
+          <CardTitle className="text-xl font-bold font-headline tracking-normal">Identity Ledger</CardTitle>
+          <CardDescription className="tracking-normal">Audit, approve, and manage organizational access for the production crew.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {teamLoading ? (
@@ -283,10 +224,10 @@ export default function UserManagementPage() {
           ) : (
             <Table>
               <TableHeader className="bg-slate-50/50">
-                <TableRow className="hover:bg-transparent">
+                <TableRow className="hover:bg-transparent border-slate-100">
                   <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Identity</TableHead>
-                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Role Assignment</TableHead>
-                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Status</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Strategic Role</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Lifecycle Phase</TableHead>
                   <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -305,16 +246,16 @@ export default function UserManagementPage() {
                             <div className="flex items-center gap-2">
                               <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
                               {(member.email?.toLowerCase() === MASTER_EMAIL.toLowerCase() || member.roleId === 'root-admin') && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
-                              {isRestricted && <ShieldBan className="h-3.5 w-3.5 text-red-500 animate-pulse" />}
+                              {isRestricted && <ShieldBan className="h-3.5 w-3.5 text-red-500" />}
                             </div>
                             <p className="text-[10px] font-bold text-slate-400 uppercase">{member.email}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Select value={member.roleId || "none"} onValueChange={(val) => handleUpdateRole(member.id, val)}>
+                        <Select value={member.roleId || "staff"} onValueChange={(val) => handleUpdateRole(member.id, val)}>
                           <SelectTrigger className="h-10 w-48 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
-                            <SelectValue placeholder="Assign Role" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="rounded-2xl shadow-2xl">
                             {roles?.map(role => (
@@ -338,36 +279,40 @@ export default function UserManagementPage() {
                               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all"><MoreHorizontal className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
-                              <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Identity Actions</DropdownMenuLabel>
+                              <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Lifecycle Control</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleToggleStatus(member.id, member.status)} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs ${member.status === 'Active' ? 'text-orange-600' : 'text-green-600'}`}>
-                                {member.status === 'Active' ? <ShieldAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                                <span>{member.status === 'Active' ? 'Suspend Access' : 'Authorize Entry'}</span>
-                              </DropdownMenuItem>
-                              {isAuthorizedToDelete && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
-                                      <Trash2 className="h-4 w-4" /> Delete Identity
-                                    </DropdownMenuItem>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-                                    <AlertDialogHeader>
-                                      <div className="flex items-center gap-3 text-destructive mb-2">
-                                        <AlertTriangle className="h-6 w-6" />
-                                        <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
-                                      </div>
-                                      <AlertDialogDescription className="text-slate-500 font-medium">
-                                        This will permanently delete the identity <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the organization.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter className="gap-3 mt-6">
-                                      <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase">Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDeleteUser(member.id, `${member.firstName} ${member.lastName}`)} className="bg-destructive text-white rounded-xl font-bold px-8 uppercase text-xs">Confirm Delete</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                              {member.status === 'Pending' && (
+                                <DropdownMenuItem onClick={() => handleSetStatus(member.id, "Active")} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs text-green-600">
+                                  <CheckCircle2 className="h-4 w-4" /> Authorize Entry
+                                </DropdownMenuItem>
                               )}
+                              <DropdownMenuItem onClick={() => handleSetStatus(member.id, member.status === 'Active' ? "Suspended" : "Active")} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs ${member.status === 'Active' ? 'text-orange-600' : 'text-green-600'}`}>
+                                {member.status === 'Active' ? <ShieldAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                                <span>{member.status === 'Active' ? 'Suspend Privileges' : 'Restore Access'}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
+                                    <Trash2 className="h-4 w-4" /> Purge Identity
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                                  <AlertDialogHeader>
+                                    <div className="flex items-center gap-3 text-destructive mb-2">
+                                      <AlertTriangle className="h-6 w-6" />
+                                      <AlertDialogTitle className="font-headline text-xl">Confirm Purge</AlertDialogTitle>
+                                    </div>
+                                    <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
+                                      This will permanently remove the identity <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the organizational ledger. This action is irreversible.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter className="gap-3 mt-6">
+                                    <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, "teamMembers", member.id))} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">Confirm Purge</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

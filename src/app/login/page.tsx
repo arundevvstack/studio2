@@ -9,18 +9,14 @@ import {
   Lock, 
   ArrowRight, 
   Loader2, 
-  ShieldAlert,
   Fingerprint,
-  Globe,
-  Clock,
+  Hourglass,
+  ShieldBan,
+  Shield as ShieldIcon,
   Eye,
   EyeOff,
   Zap,
-  Key,
-  UserX,
-  Hourglass,
-  ShieldBan,
-  Shield as ShieldIcon
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,15 +34,14 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
 /**
- * @fileOverview Login Portal for DP MediaFlow.
- * A high-fidelity authentication gateway supporting Email/Password, Google, and Root Access.
- * Handles Identity Governance with a Pending approval workflow.
- * Auto-authorizes master email: defineperspective.in@gmail.com
- * Strictly blocks restricted identifiers.
+ * @fileOverview Standardized Identity Governance Portal.
+ * Enforces a strict Onboarding -> Approval -> Activation lifecycle.
+ * Master Account: defineperspective.in@gmail.com (Auto-Active)
+ * Restricted Account: arunadhi.com@gmail.com (Strict Block)
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const BLACKLISTED_EMAILS = ['arunadhi.com@gmail.com'];
+const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com'];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,13 +55,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch global branding settings
-  const billingSettingsRef = useMemoFirebase(() => {
-    return doc(db, "companyBillingSettings", "global");
-  }, [db]);
-  const { data: globalSettings } = useDoc(billingSettingsRef);
-
-  // Check user record status in the organization's registry
+  // Fetch user record status in the organization's registry
   const memberRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "teamMembers", user.uid);
@@ -77,23 +66,22 @@ export default function LoginPage() {
     if (isUserLoading || isMemberLoading) return;
 
     if (user) {
-      // 🚫 BLACKLIST ENFORCEMENT
-      if (user.email && BLACKLISTED_EMAILS.includes(user.email.toLowerCase())) {
-        toast({ variant: "destructive", title: "Access Denied", description: "This identifier has been restricted from the production engine." });
-        auth.signOut();
+      // 1. STRICT BLACKLIST ENFORCEMENT
+      if (user.email && RESTRICTED_EMAILS.includes(user.email.toLowerCase())) {
+        toast({ variant: "destructive", title: "Access Denied", description: "This identifier has been restricted by system policy." });
+        signOut(auth);
         setIsProcessing(false);
         return;
       }
 
+      // 2. ROOT ADMINISTRATOR PROTOCOL (ANONYMOUS)
       if (user.isAnonymous) {
-        // Provision Identity for Anonymous Root
         const rootRef = doc(db, "teamMembers", user.uid);
         setDocumentNonBlocking(rootRef, {
           id: user.uid,
           email: "anonymous-root@mediaflow.internal",
           firstName: "Root",
           lastName: "Administrator",
-          thumbnail: "",
           status: "Active",
           type: "System",
           roleId: "root-admin",
@@ -104,36 +92,48 @@ export default function LoginPage() {
         return;
       }
       
-      if (member) {
-        // PERMIT ONLY IF ACTIVE
-        if (member.status === "Active") {
-          router.push("/");
-        }
-      } else {
-        // Provision Identity
-        const isMaster = user.email === MASTER_EMAIL;
-        const newMemberRef = doc(db, "teamMembers", user.uid);
-        const displayName = user.displayName || "";
-        const nameParts = displayName.split(' ');
-        const firstName = nameParts[0] || "New";
-        const lastName = nameParts.slice(1).join(' ') || "User";
-
-        setDocumentNonBlocking(newMemberRef, {
+      // 3. MASTER IDENTITY AUTO-ACTIVATION
+      if (user.email === MASTER_EMAIL && (!member || member.status !== 'Active')) {
+        const masterRef = doc(db, "teamMembers", user.uid);
+        setDocumentNonBlocking(masterRef, {
           id: user.uid,
           email: user.email,
-          firstName: firstName,
-          lastName: lastName,
-          thumbnail: user.photoURL || "",
-          status: isMaster ? "Active" : "Pending", 
+          firstName: "Master",
+          lastName: "Admin",
+          status: "Active",
           type: "In-house",
-          roleId: isMaster ? "root-admin" : "staff", 
+          roleId: "root-admin",
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: true });
+        router.push("/");
+        return;
+      }
 
-        if (isMaster) {
+      // 4. STANDARD IDENTITY LIFECYCLE
+      if (member) {
+        if (member.status === "Active") {
           router.push("/");
+        } else if (member.status === "Suspended") {
+          setIsProcessing(false);
         }
+      } else if (user.email) {
+        // PROVISION NEW PENDING IDENTITY
+        const newMemberRef = doc(db, "teamMembers", user.uid);
+        const nameParts = (user.displayName || "New User").split(' ');
+        
+        setDocumentNonBlocking(newMemberRef, {
+          id: user.uid,
+          email: user.email,
+          firstName: nameParts[0] || "New",
+          lastName: nameParts.slice(1).join(' ') || "User",
+          thumbnail: user.photoURL || "",
+          status: "Pending", 
+          type: "In-house",
+          roleId: "staff", 
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
       }
     }
   }, [user, isUserLoading, member, isMemberLoading, router, db, auth]);
@@ -141,84 +141,48 @@ export default function LoginPage() {
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast({ 
-        variant: "destructive", 
-        title: "Missing Credentials", 
-        description: "Please enter your email and password." 
-      });
+      toast({ variant: "destructive", title: "Credentials Required", description: "Enter email and password to proceed." });
+      return;
+    }
+    
+    if (RESTRICTED_EMAILS.includes(email.toLowerCase())) {
+      toast({ variant: "destructive", title: "Security Restriction", description: "Identity restricted from registry." });
       return;
     }
 
-    if (BLACKLISTED_EMAILS.includes(email.toLowerCase())) {
-      toast({ variant: "destructive", title: "Restricted Identifier", description: "Access denied by system policy." });
-      return;
-    }
-    
     setIsProcessing(true);
-    
     const authPromise = mode === "login" 
       ? initiateEmailSignIn(auth, email, password)
       : initiateEmailSignUp(auth, email, password);
 
-    authPromise
-      .catch((err: any) => {
-        toast({ 
-          variant: "destructive", 
-          title: mode === 'signup' ? "Registration Error" : "Login Failed", 
-          description: err.message || "An unexpected error occurred." 
-        });
-        setIsProcessing(false);
-      });
+    authPromise.catch((err: any) => {
+      toast({ variant: "destructive", title: mode === 'signup' ? "Registration Failed" : "Sign In Failed", description: err.message });
+      setIsProcessing(false);
+    });
   };
 
   const handleGoogleAuth = () => {
     setIsProcessing(true);
-    initiateGoogleSignIn(auth)
-      .catch((err) => {
-        toast({ variant: "destructive", title: "Google Login Error", description: err.message });
-        setIsProcessing(false);
-      });
-  };
-
-  const handleRootAuth = () => {
-    setIsProcessing(true);
-    initiateAnonymousSignIn(auth)
-      .catch((err) => {
-        toast({ variant: "destructive", title: "Root Authorization Error", description: err.message });
-        setIsProcessing(false);
-      });
-  };
-
-  const handleForgotPassword = () => {
-    if (!email) {
-      toast({ variant: "destructive", title: "Email Required", description: "Please enter your email address to reset your password." });
-      return;
-    }
-    setIsProcessing(true);
-    initiatePasswordReset(auth, email)
-      .then(() => {
-        toast({ title: "Reset Email Sent", description: "Check your inbox for password recovery instructions." });
-        setIsProcessing(false);
-      })
-      .catch((err) => {
-        toast({ variant: "destructive", title: "Reset Failed", description: err.message });
-        setIsProcessing(false);
-      });
+    initiateGoogleSignIn(auth).catch((err) => {
+      toast({ variant: "destructive", title: "Authentication Error", description: err.message });
+      setIsProcessing(false);
+    });
   };
 
   if (isUserLoading || (user && isMemberLoading)) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 space-y-6">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-6">
         <div className="relative">
           <Loader2 className="h-16 w-16 text-primary animate-spin opacity-20" />
           <Fingerprint className="h-8 w-8 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Verifying Identity...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Synchronizing Credentials...</p>
       </div>
     );
   }
 
-  if (user && !user.isAnonymous && member?.status === "Pending") {
+  // PENDING STATE VIEW
+  if (user && member?.status === "Pending") {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-10 animate-in fade-in duration-1000">
         <div className="relative">
@@ -227,19 +191,39 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="space-y-3 max-w-md">
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Pending</h1>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Onboarding Required</h1>
           <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            Your identity has been registered. Entry to the production engine requires manual activation by a Root Administrator.
+            Your identity has been registered in the production library. Entry requires manual activation by a Root Administrator.
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
-          <Button variant="outline" onClick={() => auth.signOut()} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white">
+          <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white">
             Switch Account
           </Button>
           <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-primary/5">
-            Check Status
+            <RotateCcw className="h-4 w-4 mr-2" /> Refresh Authorization
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  // SUSPENDED STATE VIEW
+  if (user && member?.status === "Suspended") {
+    return (
+      <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-10 animate-in fade-in duration-1000">
+        <div className="h-32 w-32 rounded-[3.5rem] bg-red-50 flex items-center justify-center shadow-2xl shadow-red-200/20">
+          <ShieldBan className="h-14 w-14 text-red-500" />
+        </div>
+        <div className="space-y-3 max-w-md">
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Restricted</h1>
+          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+            Your organization privileges have been suspended. Contact an administrator to restore access to production tools.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white w-full max-w-xs">
+          Sign Out
+        </Button>
       </div>
     );
   }
@@ -252,24 +236,18 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/login-bg/1200/1200')] bg-cover bg-center opacity-10 grayscale" />
         </div>
         
-        <div className="relative z-10 space-y-12 max-wxl">
+        <div className="relative z-10 space-y-12 max-w-xl">
           <div className="flex items-center gap-6">
-            <div className="h-20 w-20 rounded-[1.5rem] bg-white flex items-center justify-center shadow-2xl shadow-white/10 overflow-hidden">
-              {globalSettings?.logo ? (
-                <img src={globalSettings.logo} alt="DP Logo" className="w-full h-full object-contain p-2" />
-              ) : (
-                <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                  <ShieldCheck className="h-8 w-8 text-white" />
-                </div>
-              )}
+            <div className="h-16 w-16 rounded-[1.2rem] bg-primary flex items-center justify-center shadow-2xl shadow-primary/20">
+              <Zap className="h-10 w-10 text-white fill-white" />
             </div>
             <h2 className="text-4xl font-bold font-headline text-white tracking-tighter">DP MediaFlow</h2>
           </div>
           
           <div className="space-y-6">
-            <h3 className="text-5xl font-bold text-white tracking-tight leading-[1.1]">Production Engine</h3>
+            <h3 className="text-5xl font-bold text-white tracking-tight leading-[1.1]">The Production Operating System</h3>
             <p className="text-xl text-slate-400 font-medium leading-relaxed">
-              Consolidated intelligence for high-growth media agencies. Manage leads, synthesize proposals, and scale your production throughput.
+              Consolidated intelligence for premium media agencies. Orchestrate your crew, automate your billing, and scale your production throughput.
             </p>
           </div>
         </div>
@@ -279,10 +257,10 @@ export default function LoginPage() {
         <div className="w-full max-w-[440px] space-y-10">
           <div className="space-y-2 text-center lg:text-left">
             <h2 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">
-              {mode === 'login' ? 'Sign In' : 'Create Account'}
+              {mode === 'login' ? 'System Sign In' : 'Organization Enrollment'}
             </h2>
             <p className="text-sm text-slate-500 font-medium leading-relaxed">
-              {mode === 'login' ? 'Welcome back. Please enter your credentials.' : 'Join the organization to start managing production entities.'}
+              {mode === 'login' ? 'Identify yourself to access organizational intelligence.' : 'Register your profile for administrative validation.'}
             </p>
           </div>
 
@@ -299,14 +277,14 @@ export default function LoginPage() {
                   Continue with Google
                 </Button>
 
-                <Button variant="outline" onClick={handleRootAuth} disabled={isProcessing} className="w-full h-14 rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold text-sm gap-3 transition-all">
+                <Button variant="outline" onClick={() => initiateAnonymousSignIn(auth)} disabled={isProcessing} className="w-full h-14 rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold text-sm gap-3 transition-all">
                   <ShieldIcon className="h-5 w-5" />
                   Root Administrator
                 </Button>
                 
                 <div className="relative flex items-center">
                   <div className="flex-grow border-t border-slate-100"></div>
-                  <span className="flex-shrink mx-4 text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">or use email</span>
+                  <span className="flex-shrink mx-4 text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">or use credentials</span>
                   <div className="flex-grow border-t border-slate-100"></div>
                 </div>
               </div>
@@ -314,7 +292,7 @@ export default function LoginPage() {
               <form onSubmit={handleAuth} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Email Address</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Institutional Email</label>
                     <div className="relative group">
                       <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                       <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@agency.com" className="h-14 rounded-2xl bg-slate-50 border-none pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" />
@@ -322,10 +300,10 @@ export default function LoginPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between px-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Password</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Secure Password</label>
                       {mode === 'login' && (
-                        <button type="button" onClick={handleForgotPassword} disabled={isProcessing} className="text-[9px] font-bold text-primary hover:underline uppercase tracking-widest transition-all">
-                          Forgot Password?
+                        <button type="button" onClick={() => email && initiatePasswordReset(auth, email).then(() => toast({title: "Reset Sent"}))} disabled={isProcessing} className="text-[9px] font-bold text-primary hover:underline uppercase tracking-widest transition-all">
+                          Recover?
                         </button>
                       )}
                     </div>
@@ -341,14 +319,14 @@ export default function LoginPage() {
 
                 <Button type="submit" disabled={isProcessing} className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm uppercase tracking-widest shadow-xl shadow-slate-200/50 transition-all group">
                   {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                    <>{mode === 'login' ? 'Sign In' : 'Sign Up'} <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" /></>
+                    <>{mode === 'login' ? 'Authorize Session' : 'Request Enrollment'} <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" /></>
                   )}
                 </Button>
               </form>
 
               <div className="text-center">
                 <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] transition-all">
-                  {mode === 'login' ? "Create Account" : "Back to Sign In"}
+                  {mode === 'login' ? "Create New Profile" : "Return to Sign In"}
                 </button>
               </div>
             </CardContent>
