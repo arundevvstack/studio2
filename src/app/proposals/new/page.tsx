@@ -21,7 +21,9 @@ import {
   RotateCcw,
   Users,
   Target as TargetIcon,
-  Tag
+  Tag,
+  Save,
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,7 +171,6 @@ export default function NewProposalPage() {
     if (sourceType === 'lead') {
       const lead = leads?.find(l => l.id === id);
       if (lead) {
-        // Map industry keywords to verticals
         const matchedType = PROJECT_TYPES.find(t => 
           lead.industry?.toLowerCase().includes(t.toLowerCase()) || 
           lead.deliverables?.toLowerCase().includes(t.toLowerCase())
@@ -205,6 +206,8 @@ export default function NewProposalPage() {
         
         setFormData(prev => ({
           ...prev,
+          clientName: project.clientName || "",
+          brandName: project.clientName || "",
           projectTitle: project.name || "",
           projectType: matchedType,
           objective: project.description || "",
@@ -267,7 +270,7 @@ export default function NewProposalPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      toast({ title: "Bid Deployed", description: "Draft saved. Proceeding to synthesis." });
+      toast({ title: "Bid Deployed", description: "Draft saved. Proceeding to strategy synthesis." });
       router.push(`/proposals/${docRef.id}`);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Persistence Error", description: error.message });
@@ -492,7 +495,7 @@ export default function NewProposalPage() {
           <Button type="submit" disabled={isSubmitting} className="h-16 px-12 rounded-3xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-2xl shadow-primary/20 gap-3 group transition-all active:scale-[0.98]">
             {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : (
               <>
-                Initiate Synthesis
+                Save & Initiate Synthesis
                 <Sparkles className="h-6 w-6 group-hover:scale-110 transition-transform" />
               </>
             )}
