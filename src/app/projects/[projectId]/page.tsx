@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -35,7 +36,9 @@ import {
   Users,
   Film,
   Type,
-  LayoutGrid
+  LayoutGrid,
+  Database,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,9 +96,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const [progress, setProgress] = useState([0]);
-  const [activeTab, setActiveTab] = useState("objectives");
+  const [activeTab, setActiveTab] = useState("roadmap");
   const [recruitSearch, setRecruitSearch] = useState("");
-  const [crewViewMode, setCrewViewMode] = useState<"grid" | "list">("grid");
 
   const projectRef = useMemoFirebase(() => {
     return doc(db, "projects", projectId);
@@ -111,6 +113,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
     return query(collection(db, "teamMembers"));
   }, [db]);
   const { data: staffMembers } = useCollection(staffQuery);
+
+  const talentsQuery = useMemoFirebase(() => {
+    return query(collection(db, "talents"), orderBy("name", "asc"));
+  }, [db]);
+  const { data: talentLibrary } = useCollection(talentsQuery);
 
   const [editData, setEditData] = useState<any>(null);
 
@@ -130,24 +137,38 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   const activePhase = project?.status || "Discussion";
   const phaseTasks = useMemo(() => allTasks?.filter(t => t.phase === activePhase) || [], [allTasks, activePhase]);
 
-  const staffSuggestions = useMemo(() => staffMembers?.filter(s => !project?.crew?.some((c: any) => c.talentId === s.id)) || [], [staffMembers, project]);
+  const staffSuggestions = useMemo(() => 
+    staffMembers?.filter(s => !project?.crew?.some((c: any) => c.talentId === s.id)) || [], 
+  [staffMembers, project]);
 
-  const categorizedCrew = useMemo(() => {
+  const talentSuggestions = useMemo(() => 
+    talentLibrary?.filter(t => !project?.crew?.some((c: any) => c.talentId === t.id)) || [], 
+  [talentLibrary, project]);
+
+  const categorizedTeam = useMemo(() => {
     const crew = project?.crew || [];
     return {
-      production: crew.filter((c: any) => c.type === 'Internal'),
-      external: crew.filter((c: any) => c.type === 'External')
+      internal: crew.filter((c: any) => c.type === 'Internal'),
+      library: crew.filter((c: any) => c.type === 'Library')
     };
   }, [project?.crew]);
 
-  const handleRecruit = (member: any, type: 'Internal' | 'External') => {
+  const handleRecruit = (member: any, type: 'Internal' | 'Library') => {
     if (!projectRef || !project) return;
     const name = type === 'Internal' ? `${member.firstName} ${member.lastName}` : member.name;
+    const thumbnail = type === 'Internal' 
+      ? (member.thumbnail || `https://picsum.photos/seed/${member.id}/100/100`)
+      : (member.profile_picture || `https://picsum.photos/seed/${member.id}/100/100`);
+    
+    let category = "Professional";
+    if (type === 'Internal') category = member.roleId || "Expert";
+    else category = Array.isArray(member.category) ? member.category[0] : member.category;
+
     const newCrew = [...(project.crew || []), {
       talentId: member.id,
       name,
-      category: member.category || member.roleId,
-      thumbnail: member.thumbnail || `https://picsum.photos/seed/${member.id}/100/100`,
+      category,
+      thumbnail,
       type,
       stage: project.status
     }];
@@ -176,7 +197,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   };
 
   if (isUserLoading || isProjectLoading) return (
-    <div className="h-full flex items-center justify-center">
+    <div className="h-full flex items-center justify-center py-32">
       <Loader2 className="h-10 w-10 animate-spin text-primary" />
     </div>
   );
@@ -265,15 +286,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="bg-white border border-slate-100 p-2 h-auto rounded-full shadow-2xl shadow-slate-200/30 gap-2 mb-10 inline-flex">
               {[
-                { val: "objectives", label: "Roadmap", icon: List },
-                { val: "crew", label: "Production Crew", icon: Users },
+                { val: "roadmap", label: "Roadmap", icon: List },
+                { val: "team", label: "Production Team", icon: Users },
                 { val: "brief", label: "Creative Soul", icon: Zap }
               ].map(t => (
                 <TabsTrigger key={t.val} value={t.val} className="rounded-full px-10 py-4 text-xs font-bold uppercase gap-3 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest"><t.icon className="h-4 w-4" /> {t.label}</TabsTrigger>
               ))}
             </TabsList>
 
-            <TabsContent value="objectives" className="space-y-8 m-0 animate-in fade-in duration-500">
+            <TabsContent value="roadmap" className="space-y-8 m-0 animate-in fade-in duration-500">
               {phaseTasks.length > 0 ? (
                 phaseTasks.map((task) => (
                   <Card key={task.id} className="border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] bg-white overflow-hidden group hover:shadow-primary/5 transition-all border border-slate-50">
@@ -303,11 +324,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               )}
             </TabsContent>
 
-            <TabsContent value="crew" className="space-y-12 m-0 animate-in fade-in duration-500">
+            <TabsContent value="team" className="space-y-12 m-0 animate-in fade-in duration-500">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                 <div className="space-y-1">
                   <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">Personnel Hub</h3>
-                  <p className="text-sm font-medium text-slate-500 tracking-normal">Strategic segmentation of internal experts.</p>
+                  <p className="text-sm font-medium text-slate-500 tracking-normal">Strategic integration of internal experts and marketplace talent.</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <Sheet>
@@ -323,28 +344,59 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         </div>
                       </div>
                       <ScrollArea className="flex-1 p-12 space-y-10">
-                        <div className="space-y-6">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4">Organization Experts</p>
-                          {staffSuggestions.filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(recruitSearch.toLowerCase())).map((staff) => (
-                            <Card key={staff.id} className="border-none shadow-xl shadow-slate-200/30 rounded-[2.5rem] bg-white p-6 hover:-translate-y-1 transition-all">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-5">
-                                  <Avatar className="h-16 w-16 rounded-[1.5rem] border-4 border-slate-50 shadow-md">
-                                    <AvatarImage src={staff.thumbnail || `https://picsum.photos/seed/${staff.id}/100/100`} />
-                                    <AvatarFallback className="bg-blue-50 text-blue-500 font-bold">{staff.firstName[0]}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <p className="font-bold text-base text-slate-900 tracking-tight">{staff.firstName} {staff.lastName}</p>
-                                      <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-50" />
+                        <div className="space-y-8">
+                          {/* Internal Team Section */}
+                          <div className="space-y-4">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 flex items-center gap-2">
+                              <ShieldCheck className="h-3 w-3" /> Organization Experts
+                            </p>
+                            {staffSuggestions.filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(recruitSearch.toLowerCase())).map((staff) => (
+                              <Card key={staff.id} className="border-none shadow-xl shadow-slate-200/30 rounded-[2.5rem] bg-white p-6 hover:-translate-y-1 transition-all">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-5">
+                                    <Avatar className="h-16 w-16 rounded-[1.5rem] border-4 border-slate-50 shadow-md">
+                                      <AvatarImage src={staff.thumbnail || `https://picsum.photos/seed/${staff.id}/100/100`} />
+                                      <AvatarFallback className="bg-blue-50 text-blue-500 font-bold">{staff.firstName[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-bold text-base text-slate-900 tracking-tight">{staff.firstName} {staff.lastName}</p>
+                                        <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-50" />
+                                      </div>
+                                      <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">{staff.roleId}</p>
                                     </div>
-                                    <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">{staff.roleId}</p>
                                   </div>
+                                  <Button onClick={() => handleRecruit(staff, 'Internal')} variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-slate-50 hover:bg-primary hover:text-white transition-all"><Plus className="h-6 w-6" /></Button>
                                 </div>
-                                <Button onClick={() => handleRecruit(staff, 'Internal')} variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-slate-50 hover:bg-primary hover:text-white transition-all"><Plus className="h-6 w-6" /></Button>
-                              </div>
-                            </Card>
-                          ))}
+                              </Card>
+                            ))}
+                          </div>
+
+                          {/* Library Talent Section */}
+                          <div className="space-y-4">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 flex items-center gap-2">
+                              <Database className="h-3 w-3" /> Talent Library
+                            </p>
+                            {talentSuggestions.filter(t => t.name.toLowerCase().includes(recruitSearch.toLowerCase())).map((talent) => (
+                              <Card key={talent.id} className="border-none shadow-xl shadow-slate-200/30 rounded-[2.5rem] bg-white p-6 hover:-translate-y-1 transition-all">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-5">
+                                    <Avatar className="h-16 w-16 rounded-[1.5rem] border-4 border-slate-50 shadow-md">
+                                      <AvatarImage src={talent.profile_picture || `https://picsum.photos/seed/${talent.id}/100/100`} />
+                                      <AvatarFallback className="bg-primary/5 text-primary font-bold">{talent.name[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="font-bold text-base text-slate-900 tracking-tight">{talent.name}</p>
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                        {Array.isArray(talent.category) ? talent.category[0] : talent.category}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button onClick={() => handleRecruit(talent, 'Library')} variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-slate-50 hover:bg-primary hover:text-white transition-all"><Plus className="h-6 w-6" /></Button>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
                         </div>
                       </ScrollArea>
                     </SheetContent>
@@ -355,11 +407,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
               <div className="space-y-16">
                 <div className="space-y-8">
                   <div className="px-4 flex items-center gap-4">
-                    <h4 className="text-2xl font-bold font-headline text-slate-900 tracking-tight">Production Crew</h4>
-                    <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-4 py-1 rounded-full">{categorizedCrew.production.length}</Badge>
+                    <h4 className="text-2xl font-bold font-headline text-slate-900 tracking-tight">Production Team</h4>
+                    <Badge className="bg-slate-100 text-slate-500 border-none font-bold text-[10px] px-4 py-1 rounded-full">{project.crew?.length || 0}</Badge>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-                    {categorizedCrew.production.map((member: any) => (
+                    {project.crew?.map((member: any) => (
                       <Card key={member.talentId} className="border-none shadow-2xl shadow-slate-200/50 rounded-[3rem] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
                         <div className="p-4 flex-grow">
                           <div className="relative aspect-square overflow-hidden rounded-[2.2rem]">
@@ -369,13 +421,23 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                           <div className="px-4 py-6 space-y-2">
                             <div className="flex items-center gap-2">
                               <h4 className="font-bold text-base text-slate-900 tracking-tight leading-tight line-clamp-1">{member.name}</h4>
-                              <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-50" />
+                              {member.type === 'Internal' ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-50" />
+                              ) : (
+                                <Badge variant="outline" className="text-[7px] font-bold uppercase tracking-widest h-4 px-1.5 border-slate-100">Library</Badge>
+                              )}
                             </div>
                             <p className="text-[9px] font-bold uppercase tracking-widest text-blue-500">{member.category}</p>
                           </div>
                         </div>
                       </Card>
                     ))}
+                    {(!project.crew || project.crew.length === 0) && (
+                      <div className="col-span-full py-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[3rem] bg-slate-50/20 text-center space-y-4">
+                        <Users className="h-10 w-10 text-slate-200" />
+                        <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No team members provisioned</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
