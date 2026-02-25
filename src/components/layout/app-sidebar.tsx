@@ -23,7 +23,8 @@ import {
   Shield,
   Zap,
   Sparkles,
-  User
+  User,
+  MoreVertical
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,6 +44,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc } from "firebase/firestore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ICON_MAP: Record<string, any> = {
   LayoutGrid,
@@ -124,21 +126,18 @@ export function AppSidebar() {
 
   const isSuperAdmin = role?.name === 'Super Admin' || role?.name === 'Root Administrator' || member?.roleId === 'super-admin';
 
-  // Master Sorting & Grouping Logic
   const groupedMenuItems = useMemo(() => {
     const hasCustomOrder = navSettings?.order && Array.isArray(navSettings.order);
     const orderMap = hasCustomOrder 
       ? new Map(navSettings.order.map((id: string, index: number) => [id, index]))
       : null;
 
-    // Filter allowed modules
     const allowedModules = ALL_MODULES.filter(item => {
       if (isSuperAdmin) return true;
       if (!role) return true; 
       return role.permissions?.includes(`module:${item.id}`);
     });
 
-    // Create groups
     return GROUPS.map(group => ({
       ...group,
       items: allowedModules
@@ -149,7 +148,7 @@ export function AppSidebar() {
             const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 999;
             return orderA - orderB;
           }
-          return 0; // Default sequence
+          return 0;
         })
     })).filter(g => g.items.length > 0);
   }, [navSettings, role, isSuperAdmin, member]);
@@ -221,6 +220,29 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-2 mt-auto">
         <SidebarSeparator className="mb-2 bg-sidebar-border" />
+        
+        {/* Authoritative Executive Identity Node */}
+        {member && (
+          <SidebarMenu className="group-data-[collapsible=icon]:hidden px-2 py-2">
+            <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-50/50 border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+              <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-white dark:border-slate-700">
+                <AvatarImage src={member.thumbnail} className="object-cover" />
+                <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
+                  {member.firstName?.[0] || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="overflow-hidden">
+                <p className="text-[10px] font-bold text-slate-900 dark:text-white truncate">
+                  {member.firstName} {member.lastName}
+                </p>
+                <p className="text-[8px] font-bold text-primary uppercase tracking-widest truncate">
+                  {role?.name || member.roleId || 'Expert'}
+                </p>
+              </div>
+            </div>
+          </SidebarMenu>
+        )}
+
         <SidebarMenu className="space-y-0">
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -234,7 +256,7 @@ export function AppSidebar() {
               <Link href="/settings" className="flex items-center">
                 <User className="h-3.5 w-3.5" />
                 <span className="ml-2.5 font-bold text-[11px] group-data-[collapsible=icon]:hidden">
-                  Profile
+                  Settings
                 </span>
               </Link>
             </SidebarMenuButton>

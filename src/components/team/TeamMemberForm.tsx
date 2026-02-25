@@ -143,6 +143,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
 
       if (existingMember) {
         const memberRef = doc(db, "teamMembers", existingMember.id);
+        // Use updateDoc for targeted synchronization of identity fields
         await updateDoc(memberRef, memberData);
         toast({ title: "Identity Synchronized", description: `${formData.firstName}'s identity has been updated.` });
       } else {
@@ -171,7 +172,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   };
 
   return (
-    <div className="p-10 space-y-10 max-h-[85vh] overflow-y-auto custom-scrollbar bg-white">
+    <div key={existingMember?.id || 'new'} className="p-10 space-y-10 max-h-[85vh] overflow-y-auto custom-scrollbar bg-white">
       <div className="flex flex-col items-center gap-4 py-4">
         <div className="relative group cursor-pointer" onClick={handleThumbnailClick}>
           <Avatar className="h-32 w-32 border-8 border-slate-50 shadow-2xl rounded-[3rem] transition-all group-hover:scale-105">

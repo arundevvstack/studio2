@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -93,7 +94,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp } from "firebase/firestore";
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp, updateDoc } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -436,21 +437,26 @@ export default function SettingsPage() {
     }, 800);
   };
 
-  const handleSavePersonalProfile = () => {
+  const handleSavePersonalProfile = async () => {
     if (!memberRef || !user) return;
     setIsSaving(true);
-    setDocumentNonBlocking(memberRef, {
-      ...profileForm,
-      email: user.email,
-      id: user.uid,
-      status: "Active",
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    setTimeout(() => {
+    
+    try {
+      // Use updateDoc for reliable deep merging of personal identity details
+      await updateDoc(memberRef, {
+        ...profileForm,
+        updatedAt: serverTimestamp()
+      });
+      
+      toast({ 
+        title: "Identity Synchronized", 
+        description: "Your personal profile has been updated and set as default." 
+      });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Sync Failed", description: error.message });
+    } finally {
       setIsSaving(false);
-      toast({ title: "Identity Synchronized", description: "Your personal profile has been updated." });
-    }, 800);
+    }
   };
 
   const sensors = useSensors(
@@ -552,7 +558,7 @@ export default function SettingsPage() {
               <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
                 <Button onClick={handleSavePersonalProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Sync Identity
+                  Save Identity Details
                 </Button>
               </div>
             </CardContent>
