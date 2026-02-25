@@ -27,8 +27,7 @@ import {
   Plus,
   Hourglass,
   Zap,
-  RotateCcw,
-  ShieldBan
+  RotateCcw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,7 +89,6 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const BLACKLISTED_EMAILS = ['arunadhi.com@gmail.com'];
 
 export default function UserManagementPage() {
   const router = useRouter();
@@ -332,7 +330,6 @@ export default function UserManagementPage() {
                           <div className="flex items-center gap-2">
                             <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
                             {(member.email?.toLowerCase() === MASTER_EMAIL.toLowerCase() || member.roleId === 'root-admin') && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
-                            {BLACKLISTED_EMAILS.includes(member.email?.toLowerCase() || "") && <ShieldBan className="h-3.5 w-3.5 text-red-500" />}
                           </div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase">{member.email}</p>
                         </div>

@@ -42,11 +42,9 @@ import { toast } from "@/hooks/use-toast";
  * A high-fidelity authentication gateway supporting Email/Password, Google, and Root Access.
  * Handles Identity Governance with a Pending approval workflow.
  * Auto-authorizes master email: defineperspective.in@gmail.com
- * Blocks blacklisted emails: arunadhi.com@gmail.com
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const BLACKLISTED_EMAILS = ['arunadhi.com@gmail.com'];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -77,18 +75,6 @@ export default function LoginPage() {
     if (isUserLoading || isMemberLoading) return;
 
     if (user) {
-      // BLACKLIST CHECK - Immediate Termination
-      if (BLACKLISTED_EMAILS.includes(user.email?.toLowerCase() || "")) {
-        auth.signOut();
-        toast({ 
-          variant: "destructive", 
-          title: "Access Terminated", 
-          description: "This account identifier is strictly restricted from the DP MediaFlow workspace." 
-        });
-        setIsProcessing(false);
-        return;
-      }
-
       if (user.isAnonymous) {
         // Provision Identity for Anonymous Root
         const rootRef = doc(db, "teamMembers", user.uid);
@@ -149,15 +135,6 @@ export default function LoginPage() {
         variant: "destructive", 
         title: "Missing Credentials", 
         description: "Please enter your email and password." 
-      });
-      return;
-    }
-
-    if (BLACKLISTED_EMAILS.includes(email.toLowerCase())) {
-      toast({ 
-        variant: "destructive", 
-        title: "Access Restricted", 
-        description: "This organizational identifier is blocked." 
       });
       return;
     }
@@ -222,27 +199,6 @@ export default function LoginPage() {
           <Fingerprint className="h-8 w-8 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Verifying Identity...</p>
-      </div>
-    );
-  }
-
-  if (user && !user.isAnonymous && BLACKLISTED_EMAILS.includes(user.email?.toLowerCase() || "")) {
-    return (
-      <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-10 animate-in fade-in duration-1000">
-        <div className="relative">
-          <div className="h-32 w-32 rounded-[3.5rem] bg-red-50 flex items-center justify-center shadow-2xl shadow-red-200/20">
-            <ShieldBan className="h-14 w-14 text-red-500" />
-          </div>
-        </div>
-        <div className="space-y-3 max-w-md">
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Prohibited</h1>
-          <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            This account identity is restricted and cannot enter the DP MediaFlow workspace.
-          </p>
-        </div>
-        <Button variant="outline" onClick={() => auth.signOut()} className="h-14 w-full max-w-xs rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white">
-          Exit Portal
-        </Button>
       </div>
     );
   }
