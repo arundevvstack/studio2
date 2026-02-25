@@ -87,7 +87,6 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 /**
  * @fileOverview Role-Based Access Control (RBAC) Hub.
  * Provides high-level administrative oversight of all system users and their roles.
- * Automatically handles blacklisted identity removal via Maintenance Sync.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -137,26 +136,6 @@ export default function UserManagementPage() {
     return query(collection(db, "roles"), orderBy("name", "asc"));
   }, [db, currentUser]);
   const { data: roles } = useCollection(rolesQuery);
-
-  // AUTO-MAINTENANCE SYNC logic for blacklisted emails
-  useEffect(() => {
-    if (isMasterUser && team && team.length > 0) {
-      const blacklistedInRegistry = team.filter(m => BLACKLISTED_EMAILS.includes(m.email?.toLowerCase() || ""));
-      if (blacklistedInRegistry.length > 0) {
-        const batch = writeBatch(db);
-        blacklistedInRegistry.forEach(m => {
-          batch.delete(doc(db, "teamMembers", m.id));
-        });
-        batch.commit().then(() => {
-          toast({ 
-            variant: "destructive",
-            title: "Maintenance Sync Triggered", 
-            description: `Auto-purged ${blacklistedInRegistry.length} restricted identifiers from the registry.` 
-          });
-        });
-      }
-    }
-  }, [isMasterUser, team, db]);
 
   const filteredUsers = useMemo(() => {
     if (!team) return [];
