@@ -34,7 +34,7 @@ import { toast } from "@/hooks/use-toast";
 
 /**
  * @fileOverview Login Portal for DP MediaFlow.
- * A high-fidelity authentication gateway supporting Email/Password, Google, and Root Bypass.
+ * A high-fidelity authentication gateway supporting Email/Password and Google.
  * Handles automatic provisioning of pending user records for the organization.
  */
 
@@ -165,18 +165,6 @@ export default function LoginPage() {
           title: "Google Login Error", 
           description: errorMessage 
         });
-        setIsProcessing(false);
-      });
-  };
-
-  const handleRootBypass = () => {
-    setIsProcessing(true);
-    initiateAnonymousSignIn(auth)
-      .then(() => {
-        toast({ title: "Root Access Activated", description: "Bypassing standard authentication protocols." });
-      })
-      .catch((err) => {
-        toast({ variant: "destructive", title: "Bypass Failed", description: err.message });
         setIsProcessing(false);
       });
   };
@@ -415,22 +403,6 @@ export default function LoginPage() {
                     {mode === 'login' ? "Create Account" : "Back to Sign In"}
                   </button>
                 </div>
-
-                <div className="relative flex items-center py-2">
-                  <div className="flex-grow border-t border-slate-50"></div>
-                  <span className="flex-shrink mx-4 text-[8px] font-bold text-slate-200 uppercase tracking-widest">Emergency Protocols</span>
-                  <div className="flex-grow border-t border-slate-50"></div>
-                </div>
-
-                <Button 
-                  variant="ghost" 
-                  onClick={handleRootBypass}
-                  disabled={isProcessing}
-                  className="w-full h-12 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/5 font-bold text-[9px] uppercase tracking-[0.2em] gap-2 transition-all"
-                >
-                  <Key className="h-3.5 w-3.5" />
-                  Root Authority Bypass
-                </Button>
               </div>
             </CardContent>
           </Card>
