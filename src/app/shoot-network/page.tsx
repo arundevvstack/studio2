@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -37,9 +38,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 
 /**
- * @fileOverview Shoot Network Registry (Merged Master Module).
- * High-density repository [4 items in line] optimized for creative personnel deployment.
- * Consolidated from Talent Library and previous Shoot Network files.
+ * @fileOverview Shoot Network Registry (Master Module).
+ * Unified personnel hub integrating social intelligence and administrative deployment.
  */
 
 export default function ShootNetworkPage() {
@@ -70,13 +70,13 @@ export default function ShootNetworkPage() {
     if (!talent) return [];
     return talent.filter((t: any) => {
       const matchesSearch = (t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           t.category?.toLowerCase().includes(searchQuery.toLowerCase()));
+                           t.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           t.instagram_username?.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesCategory = filters.category.length === 0 || filters.category.includes(t.category);
       const matchesDistrict = filters.district === "All" || t.district === filters.district;
       const matchesGender = filters.gender === "All" || t.gender === filters.gender;
       const matchesPayment = filters.paymentStage === "All" || t.paymentStage === filters.paymentStage;
       
-      // Filter by Tags (Project Verticals)
       const matchesTags = filters.tags.length === 0 || 
                          (t.suitableProjectTypes && filters.tags.every((tag: string) => t.suitableProjectTypes.includes(tag)));
 
@@ -104,7 +104,6 @@ export default function ShootNetworkPage() {
 
   return (
     <div className="flex h-full gap-6 sm:gap-8 animate-in fade-in duration-500">
-      {/* Desktop Filter Sidebar */}
       <aside className="w-80 shrink-0 hidden lg:block">
         <TalentFilterSidebar filters={filters} setFilters={setFilters} totalCount={filteredTalent.length} />
       </aside>
@@ -122,9 +121,7 @@ export default function ShootNetworkPage() {
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
-            <div className="flex-1 sm:flex-none">
-              <BulkImportButton />
-            </div>
+            <BulkImportButton />
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="h-12 sm:h-14 flex-1 sm:flex-none px-8 sm:px-10 rounded-full font-bold bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/30 gap-2 tracking-widest transition-all active:scale-95 text-[10px] sm:text-xs uppercase">
@@ -153,7 +150,6 @@ export default function ShootNetworkPage() {
               />
             </div>
             <div className="flex items-center bg-white p-1 rounded-full shadow-sm border border-slate-100 shrink-0 w-full md:w-auto overflow-hidden">
-              {/* Mobile Filter Trigger */}
               <div className="lg:hidden flex-1 md:flex-none border-r border-slate-50 pr-1">
                 <Sheet>
                   <SheetTrigger asChild>
@@ -203,7 +199,7 @@ export default function ShootNetworkPage() {
                   {tag}
                   <X className="h-3 w-3 text-slate-400 cursor-pointer" onClick={() => removeFilter('tags', tag)} />
                 </Badge>
-              )}
+              ))}
 
               <Button 
                 variant="ghost" 
@@ -220,7 +216,7 @@ export default function ShootNetworkPage() {
         {isLoading ? (
           <div className="py-24 sm:py-32 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 text-primary animate-spin" />
-            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Synchronizing Creative Database...</p>
+            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Synchronizing Master Registry...</p>
           </div>
         ) : talent && filteredTalent.length > 0 ? (
           viewMode === 'grid' ? (

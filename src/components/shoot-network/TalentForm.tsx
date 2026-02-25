@@ -30,11 +30,11 @@ import {
   MapPin,
   User,
   Globe,
-  MessageCircle
+  MessageCircle,
+  IndianRupee
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { fetchInstagramVisuals } from "@/ai/flows/instagram-visuals-flow";
 
 interface TalentFormProps {
@@ -85,7 +85,9 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     rank: 5,
     thumbnail: "",
     instagramUrl: "",
-    freeCollab: "No"
+    freeCollab: "No",
+    estimated_cost: 0,
+    engagement_rate: 0
   });
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -105,12 +107,25 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
         rank: existingTalent.rank || 5,
         thumbnail: existingTalent.thumbnail || "",
         instagramUrl: existingTalent.socialMediaContact || "",
-        freeCollab: existingTalent.freeCollab || "No"
+        freeCollab: existingTalent.freeCollab || "No",
+        estimated_cost: existingTalent.estimated_cost || 0,
+        engagement_rate: existingTalent.engagement_rate || 0
       });
       setSelectedTags(existingTalent.suitableProjectTypes || []);
       setIsInitialized(true);
     }
   }, [existingTalent, isInitialized]);
+
+  const extractUsername = (url: string) => {
+    if (!url) return "";
+    try {
+      const parts = url.replace(/\/$/, "").split("/");
+      const lastPart = parts[parts.length - 1];
+      return lastPart.replace('@', '') || "";
+    } catch (e) {
+      return "";
+    }
+  };
 
   const handleFetchInstagram = async () => {
     if (!formData.instagramUrl) return;
@@ -127,10 +142,13 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       else if (fStr.includes('m')) followerNum = Math.round(parseFloat(fStr) * 1000000);
       else followerNum = Math.round(parseFloat(fStr)) || 0;
 
+      const engRate = parseFloat(result.engagementRate) || 0;
+
       setFormData(prev => ({
         ...prev,
         followers: followerNum,
-        thumbnail: result.profilePictureUrl
+        thumbnail: result.profilePictureUrl,
+        engagement_rate: engRate
       }));
 
       toast({ title: "Intel Synchronized", description: `Extracted ${result.followers} followers and portrait.` });
@@ -162,8 +180,11 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
     setIsSubmitting(true);
     const talentData = {
       ...formData,
+      instagram_username: extractUsername(formData.instagramUrl),
+      socialMediaContact: formData.instagramUrl, // Sync for legacy compat
       suitableProjectTypes: selectedTags,
       isArchived: false,
+      verified: formData.paymentStage === 'Yes',
       updatedAt: serverTimestamp(),
     };
 
@@ -172,7 +193,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       toast({ title: "Registry Updated", description: `${formData.name} profile synchronized.` });
     } else {
       const newRef = doc(collection(db, "shoot_network"));
-      setDocumentNonBlocking(newRef, { ...talentData, id: newRef.id, createdAt: serverTimestamp() }, { merge: true });
+      setDocumentNonBlocking(newRef, { ...talentData, id: newRef.id, createdAt: serverTimestamp(), featured: false }, { merge: true });
       toast({ title: "Personnel Onboarded", description: `${formData.name} added to the network.` });
     }
     setIsSubmitting(false);
@@ -186,6 +207,10 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
             <AvatarImage src={formData.thumbnail} className="object-cover" />
             <AvatarFallback className="bg-slate-100"><Upload className="h-10 w-10 text-slate-300" /></AvatarFallback>
           </Avatar>
+          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded-[3rem] backdrop-blur-[2px]">
+            <Upload className="h-6 w-6 text-white mb-1" />
+            <span className="text-[8px] font-bold text-white uppercase tracking-widest">Capture Portrait</span>
+          </div>
           <input type="file" ref={thumbInputRef} className="hidden" accept="image/*" onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {
@@ -195,7 +220,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
             }
           }} />
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portrait Asset</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Identifier Photo</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -220,7 +245,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       <div className="space-y-6 border-t border-slate-50 pt-10">
         <div className="flex items-center justify-between">
           <h4 className="text-[10px] font-bold uppercase text-slate-900 tracking-widest flex items-center gap-2">
-            <Instagram className="h-4 w-4 text-primary" /> Instagram Sync
+            <Instagram className="h-4 w-4 text-primary" /> Instagram Strategic Sync
           </h4>
         </div>
         <div className="flex gap-4">
@@ -232,7 +257,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           />
           <Button onClick={handleFetchInstagram} disabled={isFetching || !formData.instagramUrl} className="h-14 px-8 rounded-2xl bg-slate-900 text-white font-bold gap-3 shadow-xl">
             {isFetching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
-            Sync
+            Sync Intel
           </Button>
         </div>
       </div>
@@ -248,8 +273,11 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           </Select>
         </div>
         <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Followers Count</Label>
-          <Input type="number" value={formData.followers} onChange={(e) => setFormData({...formData, followers: parseInt(e.target.value) || 0})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold shadow-inner px-6" />
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Strategic Quote (INR)</Label>
+          <div className="relative">
+            <IndianRupee className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+            <Input type="number" value={formData.estimated_cost} onChange={(e) => setFormData({...formData, estimated_cost: parseInt(e.target.value) || 0})} className="h-14 rounded-2xl bg-slate-50 border-none pl-14 font-bold shadow-inner px-6" />
+          </div>
         </div>
       </div>
 
