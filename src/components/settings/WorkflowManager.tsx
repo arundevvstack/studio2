@@ -189,9 +189,11 @@ export default function WorkflowManager() {
 
   const deleteSelectedNode = () => {
     if (!selectedNodeId) return;
-    setNodes((nds) => nds.filter((node) => node.id !== selectedNodeId));
-    setEdges((eds) => eds.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId));
-    setSelectedNodeId(null);
+    if (confirm("Delete this strategic workflow node? This will also remove any associated connections.")) {
+      setNodes((nds) => nds.filter((node) => node.id !== selectedNodeId));
+      setEdges((eds) => eds.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId));
+      setSelectedNodeId(null);
+    }
   };
 
   const handleSaveWorkflow = async () => {
@@ -391,7 +393,7 @@ export default function WorkflowManager() {
                   </div>
 
                   <Button variant="ghost" onClick={deleteSelectedNode} className="w-full h-12 rounded-xl text-destructive hover:bg-destructive/5 font-bold text-xs uppercase tracking-widest gap-2">
-                    <Trash2 className="h-4 w-4" /> Purge Node
+                    <Trash2 className="h-4 w-4" /> Delete Node
                   </Button>
                 </>
               ) : (

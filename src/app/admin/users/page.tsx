@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp, getDocs, writeBatch } from "firebase/firestore";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -148,6 +148,19 @@ export default function UserManagementPage() {
       title: `Identity ${newStatus}`, 
       description: `Access policy updated for the selected account.` 
     });
+  };
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    if (!isAuthorizedToDelete) return;
+    if (confirm(`Are you sure you want to permanently delete the identity: ${userName}? This action cannot be undone.`)) {
+      const userRef = doc(db, "teamMembers", userId);
+      deleteDocumentNonBlocking(userRef);
+      toast({ 
+        variant: "destructive",
+        title: "Identity Deleted", 
+        description: `${userName} has been removed from the registry.` 
+      });
+    }
   };
 
   const handlePurgeRegistry = async () => {
@@ -396,13 +409,23 @@ export default function UserManagementPage() {
                                 </Link>
                               </DropdownMenuItem>
                               {isAuthorizedToDelete && (
-                                <DropdownMenuItem 
-                                  onClick={() => handleToggleStatus(member.id, member.status)}
-                                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
-                                >
-                                  {member.status === 'Active' ? <UserMinus className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                                  <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
-                                </DropdownMenuItem>
+                                <>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleToggleStatus(member.id, member.status)}
+                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
+                                  >
+                                    {member.status === 'Active' ? <ShieldAlert className="h-4 w-4 text-orange-500" /> : <UserCheck className="h-4 w-4 text-green-500" />}
+                                    <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDeleteUser(member.id, `${member.firstName} ${member.lastName}`)}
+                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                    <span className="font-bold text-xs">Delete Identity</span>
+                                  </DropdownMenuItem>
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
