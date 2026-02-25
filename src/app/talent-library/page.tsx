@@ -19,7 +19,9 @@ export default function TalentLibraryPage() {
   return (
     <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
       <Loader2 className="h-10 w-10 text-primary animate-spin" />
-      <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Redirecting to Master Registry...</p>
+      <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest text-center px-6">
+        Synchronizing Master Registry...
+      </p>
     </div>
   );
 }
