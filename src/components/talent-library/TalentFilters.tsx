@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -7,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Select, 
   SelectContent, 
@@ -17,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Filter, X, Search } from "lucide-react";
+import { Filter, Search, MapPin, Users, IndianRupee, Globe } from "lucide-react";
 
 interface TalentFiltersProps {
   filters: any;
@@ -31,8 +29,12 @@ const CATEGORIES = [
 ];
 
 const TALENT_TYPES = ["Influencer", "Anchor", "Creator", "Model", "Virtual"];
-const REACH_CATEGORIES = ["Nano", "Micro", "Mid", "Macro", "Mega"];
-const COLLAB_TYPES = ["Paid", "Barter", "Free", "Agency Managed"];
+
+const KERALA_DISTRICTS = [
+  "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",
+  "Idukki", "Ernakulam", "Thrissur", "Palakkad", "Malappuram", "Kozhikode",
+  "Wayanad", "Kannur", "Kasaragod"
+];
 
 export function TalentFilters({ filters, setFilters, clearFilters }: TalentFiltersProps) {
   const toggleCategory = (cat: string) => {
@@ -44,44 +46,44 @@ export function TalentFilters({ filters, setFilters, clearFilters }: TalentFilte
   };
 
   return (
-    <Card className="border-none shadow-sm rounded-3xl bg-white h-full overflow-hidden sticky top-8">
-      <CardHeader className="px-6 py-6 border-b border-slate-50 flex flex-row items-center justify-between">
-        <CardTitle className="text-xl font-bold flex items-center gap-2">
+    <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2.5rem] bg-white h-full overflow-hidden">
+      <CardHeader className="px-8 py-8 border-b border-slate-50 flex flex-row items-center justify-between">
+        <CardTitle className="text-xl font-bold font-headline flex items-center gap-2">
           <Filter className="h-5 w-5 text-primary" />
-          Advanced Filters
+          Refine Intel
         </CardTitle>
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={clearFilters}
-          className="text-xs font-bold text-slate-400 hover:text-primary uppercase"
+          className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-widest"
         >
           Reset
         </Button>
       </CardHeader>
-      <CardContent className="p-6 space-y-8 overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar">
+      <CardContent className="p-8 space-y-10">
         {/* Type Filter */}
-        <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Talent Type</Label>
+        <div className="space-y-4">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Talent Vertical</Label>
           <Select 
             value={filters.type || "all"} 
             onValueChange={(val) => setFilters({ ...filters, type: val === "all" ? null : val })}
           >
-            <SelectTrigger className="rounded-xl border-slate-100 font-medium">
-              <SelectValue placeholder="All Types" />
+            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none shadow-inner font-bold text-xs px-4">
+              <SelectValue placeholder="All Verticals" />
             </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="all">All Types</SelectItem>
+            <SelectContent className="rounded-xl border-slate-100 shadow-2xl">
+              <SelectItem value="all" className="text-xs font-bold uppercase">All Verticals</SelectItem>
               {TALENT_TYPES.map(type => (
-                <SelectItem key={type} value={type}>{type}</SelectItem>
+                <SelectItem key={type} value={type} className="text-xs font-bold uppercase">{type}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         {/* Categories Multi-select */}
-        <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Categories</Label>
+        <div className="space-y-4">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Market Niches</Label>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map(cat => {
               const isSelected = (filters.category || []).includes(cat);
@@ -89,8 +91,8 @@ export function TalentFilters({ filters, setFilters, clearFilters }: TalentFilte
                 <Badge
                   key={cat}
                   variant={isSelected ? "default" : "outline"}
-                  className={`cursor-pointer px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                    isSelected ? "bg-primary text-white" : "border-slate-100 text-slate-400 hover:bg-slate-50"
+                  className={`cursor-pointer px-3.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${
+                    isSelected ? "bg-primary border-none text-white shadow-lg shadow-primary/20" : "border-slate-100 text-slate-400 hover:bg-slate-50"
                   }`}
                   onClick={() => toggleCategory(cat)}
                 >
@@ -101,30 +103,13 @@ export function TalentFilters({ filters, setFilters, clearFilters }: TalentFilte
           </div>
         </div>
 
-        {/* Reach Category */}
-        <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reach Category</Label>
-          <Select 
-            value={filters.reachCategory || "all"} 
-            onValueChange={(val) => setFilters({ ...filters, reachCategory: val === "all" ? null : val })}
-          >
-            <SelectTrigger className="rounded-xl border-slate-100 font-medium">
-              <SelectValue placeholder="All Reach" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="all">All Reach</SelectItem>
-              {REACH_CATEGORIES.map(reach => (
-                <SelectItem key={reach} value={reach}>{reach}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Follower Range */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Followers (Min)</Label>
-            <span className="text-xs font-bold text-slate-900">{(filters.minFollowers || 0) / 1000}K+</span>
+            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <Users className="h-3 w-3" /> Reach Min
+            </Label>
+            <span className="text-[10px] font-bold text-primary">{(filters.minFollowers || 0) / 1000}K+</span>
           </div>
           <Slider 
             value={[filters.minFollowers || 0]} 
@@ -136,10 +121,12 @@ export function TalentFilters({ filters, setFilters, clearFilters }: TalentFilte
         </div>
 
         {/* Cost Range */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Max Est. Cost (INR)</Label>
-            <span className="text-xs font-bold text-slate-900">₹{(filters.maxCost || 100000).toLocaleString()}</span>
+            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <IndianRupee className="h-3 w-3" /> Max Quote
+            </Label>
+            <span className="text-[10px] font-bold text-primary">₹{(filters.maxCost || 100000).toLocaleString()}</span>
           </div>
           <Slider 
             value={[filters.maxCost || 100000]} 
@@ -150,55 +137,51 @@ export function TalentFilters({ filters, setFilters, clearFilters }: TalentFilte
           />
         </div>
 
-        {/* Location */}
-        <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-            <Input 
-              placeholder="Filter by city..." 
-              value={filters.location || ""}
-              onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-              className="pl-9 rounded-xl border-slate-100 text-sm font-medium"
-            />
-          </div>
-        </div>
-
-        {/* Collaboration Type */}
-        <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Collaboration Type</Label>
+        {/* Location Hub */}
+        <div className="space-y-4">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <MapPin className="h-3 w-3" /> Regional Hub
+          </Label>
           <Select 
-            value={filters.collabType || "all"} 
-            onValueChange={(val) => setFilters({ ...filters, collabType: val === "all" ? null : val })}
+            value={filters.location || "all"} 
+            onValueChange={(val) => setFilters({ ...filters, location: val === "all" ? "" : val })}
           >
-            <SelectTrigger className="rounded-xl border-slate-100 font-medium">
-              <SelectValue placeholder="All Collabs" />
+            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none shadow-inner font-bold text-xs px-4">
+              <SelectValue placeholder="All Kerala Districts" />
             </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="all">All Collabs</SelectItem>
-              {COLLAB_TYPES.map(collab => (
-                <SelectItem key={collab} value={collab}>{collab}</SelectItem>
+            <SelectContent className="rounded-xl border-slate-100 shadow-2xl max-h-[300px]">
+              <SelectItem value="all" className="text-xs font-bold uppercase">All Kerala Districts</SelectItem>
+              {KERALA_DISTRICTS.map(d => (
+                <SelectItem key={d} value={d} className="text-xs font-bold uppercase">{d}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         {/* Toggles */}
-        <div className="pt-4 space-y-4 border-t border-slate-50">
+        <div className="pt-6 space-y-5 border-t border-slate-50">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-bold text-slate-700 cursor-pointer" htmlFor="verified">Verified Only</Label>
+            <div className="space-y-0.5">
+              <Label className="text-sm font-bold text-slate-700 cursor-pointer" htmlFor="verified">Verified Hub</Label>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Only approved pros</p>
+            </div>
             <Switch 
               id="verified" 
               checked={!!filters.verifiedOnly} 
               onCheckedChange={(checked) => setFilters({ ...filters, verifiedOnly: checked })}
+              className="data-[state=checked]:bg-primary"
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-bold text-slate-700 cursor-pointer" htmlFor="free-collab">Free Collaboration</Label>
+            <div className="space-y-0.5">
+              <Label className="text-sm font-bold text-slate-700 cursor-pointer" htmlFor="free-collab">Collab Ready</Label>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Strategic availability</p>
+            </div>
             <Switch 
               id="free-collab" 
               checked={!!filters.freeCollabOnly} 
               onCheckedChange={(checked) => setFilters({ ...filters, freeCollabOnly: checked })}
+              className="data-[state=checked]:bg-accent"
             />
           </div>
         </div>

@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Upload, Instagram, User, IndianRupee, Globe, Sparkles, Zap, CheckCircle2 } from "lucide-react";
+import { Loader2, Upload, Instagram, User, IndianRupee, Globe, Sparkles, Zap, CheckCircle2, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -73,9 +73,11 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
   }, [existingTalent]);
 
   const extractUsername = (url: string) => {
+    if (!url) return "";
     try {
       const parts = url.replace(/\/$/, "").split("/");
-      return parts[parts.length - 1];
+      const lastPart = parts[parts.length - 1];
+      return lastPart.replace('@', '') || "";
     } catch (e) {
       return "";
     }
@@ -195,13 +197,13 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 p-6">
+    <form onSubmit={handleSubmit} className="space-y-10 p-10 max-h-[85vh] overflow-y-auto custom-scrollbar bg-white">
       <div className="flex flex-col items-center gap-4 py-4">
         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-          <Avatar className="h-32 w-32 rounded-[2.5rem] border-4 border-slate-50 shadow-xl overflow-hidden bg-white">
+          <Avatar className="h-40 w-40 rounded-[2.5rem] border-8 border-slate-50 shadow-2xl overflow-hidden bg-white group-hover:scale-[1.02] transition-transform duration-500">
             <AvatarImage src={formData.profile_picture} className="object-cover" />
             <AvatarFallback className="bg-slate-50 text-slate-300">
-              {isFetching ? <Loader2 className="h-8 w-8 animate-spin" /> : <Upload className="h-8 w-8" />}
+              {isFetching ? <Loader2 className="h-10 w-10 animate-spin" /> : <Upload className="h-10 w-10" />}
             </AvatarFallback>
           </Avatar>
           <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded-[2.5rem] backdrop-blur-[2px]">
@@ -213,55 +215,58 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile Identity Picture</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Full Identity Name</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1 tracking-widest">Full Identity Name</Label>
             <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+              <User className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
               <Input 
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g. Rahul Nair"
-                className="pl-12 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
+                className="pl-14 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Instagram URL</Label>
-              <Button type="button" onClick={handleFetchInstagram} disabled={isFetching || !formData.instagram_url} variant="ghost" className="h-6 text-[9px] font-bold uppercase text-primary gap-1">
+              <Label className="text-[10px] font-bold uppercase text-slate-400 px-1 tracking-widest">Instagram Strategic URL</Label>
+              <Button type="button" onClick={handleFetchInstagram} disabled={isFetching || !formData.instagram_url} variant="ghost" className="h-6 text-[9px] font-bold uppercase text-primary gap-1.5 hover:bg-primary/5">
                 {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
                 Fetch Intel
               </Button>
             </div>
             <div className="relative group">
-              <Instagram className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+              <Instagram className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
               <Input 
                 value={formData.instagram_url}
                 onChange={e => setFormData({ ...formData, instagram_url: e.target.value })}
                 placeholder="https://instagram.com/username"
-                className="pl-12 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
+                className="pl-14 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Followers Count</Label>
-            <Input 
-              type="number"
-              value={formData.followers}
-              onChange={e => setFormData({ ...formData, followers: e.target.value })}
-              placeholder="e.g. 15000"
-              className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
-            />
+          <div className="space-y-3">
+            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1 tracking-widest">Followers Analytics (Auto-synced)</Label>
+            <div className="relative">
+              <Users className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+              <Input 
+                type="number"
+                value={formData.followers}
+                onChange={e => setFormData({ ...formData, followers: e.target.value })}
+                placeholder="e.g. 15000"
+                className="pl-14 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Location Hub (Kerala)</Label>
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1 tracking-widest">Location Hub (Kerala Districts)</Label>
             <Select value={formData.location} onValueChange={val => setFormData({ ...formData, location: val })}>
               <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base shadow-inner px-6 focus:ring-primary/20">
                 <div className="flex items-center gap-3">
@@ -271,59 +276,62 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-slate-100 shadow-2xl max-h-[300px]">
                 {KERALA_DISTRICTS.map(district => (
-                  <SelectItem key={district} value={district} className="font-medium">{district}</SelectItem>
+                  <SelectItem key={district} value={district} className="font-bold text-slate-900">{district}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Estimated Cost (INR)</Label>
+          <div className="space-y-3">
+            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1 tracking-widest">Estimated Strategic Cost (INR)</Label>
             <div className="relative">
-              <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+              <IndianRupee className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
               <Input 
                 type="number"
                 value={formData.estimated_cost}
                 onChange={e => setFormData({ ...formData, estimated_cost: e.target.value })}
                 placeholder="e.g. 5000"
-                className="pl-12 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
+                className="pl-14 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Engagement Rate (%)</Label>
-            <Input 
-              type="number" step="0.1"
-              value={formData.engagement_rate}
-              onChange={e => setFormData({ ...formData, engagement_rate: e.target.value })}
-              placeholder="e.g. 4.2"
-              className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
-            />
+          <div className="space-y-3">
+            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1 tracking-widest">Engagement Rate Benchmark (%)</Label>
+            <div className="relative">
+              <Sparkles className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+              <Input 
+                type="number" step="0.1"
+                value={formData.engagement_rate}
+                onChange={e => setFormData({ ...formData, engagement_rate: e.target.value })}
+                placeholder="e.g. 4.2"
+                className="pl-14 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base px-6 focus-visible:ring-primary/20"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4 pt-6 border-t border-slate-50">
+      <div className="space-y-6 pt-8 border-t border-slate-50">
         <div className="flex items-center justify-between">
           <Label className="text-[10px] font-bold uppercase text-slate-400 px-1 tracking-widest">
-            Talent Verticals <span className="text-primary font-bold">(Max 3)</span>
+            Talent Verticals <span className="text-primary font-bold">(Max 3 Selection)</span>
           </Label>
-          <Badge variant="outline" className="rounded-full border-slate-100 text-[10px] font-bold text-slate-400 uppercase">
+          <Badge variant="outline" className="rounded-full border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
             {selectedCategories.length} / 3 Selected
           </Badge>
         </div>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-3">
           {CATEGORIES.map(cat => {
             const isSelected = selectedCategories.includes(cat);
             return (
               <Badge
                 key={cat}
                 onClick={() => toggleCategory(cat)}
-                className={`cursor-pointer px-5 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${
+                className={`cursor-pointer px-6 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all duration-300 ${
                   isSelected 
-                    ? "bg-primary text-white border-none shadow-lg shadow-primary/20 scale-105" 
-                    : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                    ? "bg-primary text-white border-none shadow-xl shadow-primary/30 scale-105" 
+                    : "bg-slate-50 border-none text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                 }`}
               >
                 {isSelected && <CheckCircle2 className="h-3 w-3 mr-2" />}
@@ -334,38 +342,38 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
         </div>
       </div>
 
-      <div className="p-6 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-            <Sparkles className="h-6 w-6 text-primary" />
+      <div className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 flex items-center justify-between group">
+        <div className="flex items-center gap-5">
+          <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Zap className="h-7 w-7 text-accent" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-slate-900 tracking-tight leading-none">Collaboration Policy</h4>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Ready for strategic partnerships</p>
+            <h4 className="text-base font-bold text-slate-900 tracking-tight leading-none">Collaboration Model</h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Ready for immediate strategic partnerships</p>
           </div>
         </div>
         <Switch 
           checked={formData.ready_to_collab} 
           onCheckedChange={val => setFormData({ ...formData, ready_to_collab: val })}
-          className="data-[state=checked]:bg-primary"
+          className="data-[state=checked]:bg-accent"
         />
       </div>
 
-      <div className="flex justify-end gap-4 pt-8 border-t border-slate-50">
+      <div className="flex justify-end gap-6 pt-10 border-t border-slate-100">
         <Button 
           type="button" 
           variant="ghost" 
           onClick={onSuccess}
-          className="rounded-xl font-bold text-[10px] uppercase text-slate-400 hover:text-slate-900"
+          className="h-14 px-8 rounded-2xl font-bold text-[10px] uppercase text-slate-400 hover:text-slate-900 tracking-widest"
         >
           Discard
         </Button>
         <Button 
           type="submit" 
           disabled={loading}
-          className="h-14 px-12 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 transition-all active:scale-95 gap-3 tracking-widest uppercase text-xs"
+          className="h-14 px-12 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/30 transition-all active:scale-95 gap-3 tracking-widest uppercase text-xs"
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
           {existingTalent ? "Sync Changes" : "Deploy Talent"}
         </Button>
       </div>

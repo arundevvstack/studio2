@@ -10,7 +10,8 @@ import {
   List,
   Filter,
   X,
-  Database
+  Database,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,12 +99,12 @@ export default function TalentLibraryPage() {
   const isLoading = isUserLoading || isDataLoading;
 
   return (
-    <div className="flex h-full gap-8 animate-in fade-in duration-500">
-      <aside className="w-80 shrink-0 hidden lg:block">
+    <div className="flex flex-col lg:flex-row h-full gap-8 animate-in fade-in duration-500 pb-20">
+      <aside className="w-full lg:w-80 shrink-0 hidden lg:block">
         <TalentFilters filters={filters} setFilters={setFilters} clearFilters={clearFilters} />
       </aside>
 
-      <main className="flex-1 space-y-8 overflow-auto pb-20">
+      <main className="flex-1 space-y-8">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
@@ -112,7 +113,7 @@ export default function TalentLibraryPage() {
                 <Database className="h-3 w-3 mr-1" /> Master Registry
               </Badge>
             </div>
-            <p className="text-sm text-slate-500 font-medium tracking-normal mt-3">Curated marketplace for influencers and media personnel.</p>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Curated marketplace for influencers and media personnel.</p>
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
@@ -131,7 +132,7 @@ export default function TalentLibraryPage() {
                 placeholder="Search by name or @handle..." 
               />
             </div>
-            <div className="flex items-center bg-white p-1 rounded-full shadow-sm border border-slate-100 shrink-0">
+            <div className="flex items-center bg-white p-1.5 rounded-full shadow-sm border border-slate-100 shrink-0">
               <div className="lg:hidden px-2 border-r border-slate-100">
                 <Sheet>
                   <SheetTrigger asChild>
@@ -140,7 +141,7 @@ export default function TalentLibraryPage() {
                       Refine
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="p-0 border-none sm:max-w-xs">
+                  <SheetContent side="left" className="p-0 border-none sm:max-w-xs overflow-y-auto">
                     <SheetHeader className="p-6 pb-0">
                       <SheetTitle className="text-xl font-bold font-headline">Registry Filters</SheetTitle>
                     </SheetHeader>
@@ -189,8 +190,10 @@ export default function TalentLibraryPage() {
             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Synchronizing Registry...</p>
           </div>
         ) : filteredTalent.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {filteredTalent.map((t: any) => <TalentCard key={t.id} talent={t} />)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {filteredTalent.map((t: any) => (
+              <TalentCard key={t.id} talent={t} />
+            ))}
           </div>
         ) : (
           <div className="py-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[4rem] bg-white/30 text-center space-y-8 px-6">
