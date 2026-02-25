@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -30,13 +31,6 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-
-const FOLLOWER_RANGES = [
-  { label: "1K – 10K", min: 1000, max: 10000 },
-  { label: "10K – 50K", min: 10000, max: 50000 },
-  { label: "50K – 100K", min: 50000, max: 100000 },
-  { label: "100K+", min: 100000, max: 100000000 },
-];
 
 export default function TalentLibraryPage() {
   const db = useFirestore();
@@ -196,6 +190,17 @@ export default function TalentLibraryPage() {
               </Select>
             </div>
           </div>
+
+          {filters.category.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 p-4 sm:p-6 bg-white/50 rounded-[2rem] border border-slate-100 shadow-sm animate-in fade-in duration-300">
+              <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Active Strategic Categories:</span>
+              {filters.category.map(cat => (
+                <Badge key={cat} className="bg-white text-primary border border-primary/10 font-bold text-[9px] sm:text-[10px] rounded-full px-3 sm:px-4 py-1.5 gap-2 shadow-sm">
+                  {cat}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {isLoading ? (
             <div className="py-24 sm:py-40 flex flex-col items-center justify-center space-y-4">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -10,18 +11,26 @@ import {
   CheckCircle2,
   Star,
   Briefcase,
-  Zap
+  Zap,
+  Users
 } from "lucide-react";
 import Link from "next/link";
 
 /**
  * @fileOverview High-fidelity Talent Card (Consolidated).
  * Features ultra-rounded corners [3rem], large imagery [aspect-4/5], and verified identifiers.
- * Displays up to 3 category tags from the merged registry.
+ * Includes reach formatting (K/M) for professional metrics.
  */
 
 export function TalentCard({ talent }: { talent: any }) {
   const displayThumbnail = talent.thumbnail || `https://picsum.photos/seed/${talent.id}/400/500`;
+
+  const formatFollowers = (count: number) => {
+    if (!count) return "0";
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
 
   return (
     <Link href={`/shoot-network/${talent.id}`} className="block group h-full">
@@ -77,14 +86,20 @@ export function TalentCard({ talent }: { talent: any }) {
             </div>
 
             {/* Strategic Metrics Row */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-50 mt-4">
-              <div className="flex items-center gap-2 text-slate-400">
-                <Briefcase className="h-3.5 w-3.5 text-primary opacity-40" />
-                <span className="text-[10px] font-bold text-slate-600 tabular-nums">{talent.projectCount || 0} Projects</span>
+            <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+              <div className="flex flex-col gap-1">
+                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Reach Index</p>
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-3 w-3 text-primary" />
+                  <span className="text-xs font-bold text-slate-900 tabular-nums">{formatFollowers(talent.followers)}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-                <span className="text-[10px] font-bold text-slate-600 tabular-nums">{talent.rank || 5}.0</span>
+              <div className="flex flex-col gap-1 text-right">
+                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Rank</p>
+                <div className="flex items-center gap-1.5 justify-end">
+                  <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                  <span className="text-xs font-bold text-slate-900 tabular-nums">{talent.rank || 5}.0</span>
+                </div>
               </div>
             </div>
           </div>

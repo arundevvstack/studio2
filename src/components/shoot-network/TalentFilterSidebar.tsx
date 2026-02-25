@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -11,7 +12,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Filter, MapPin, Grid, User, CreditCard, Tag, Zap } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Filter, MapPin, Grid, User, CreditCard, Tag, Zap, Users, IndianRupee } from "lucide-react";
 
 const KERALA_DISTRICTS = [
   "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",
@@ -81,6 +83,38 @@ export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
               {KERALA_DISTRICTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <Users className="h-3 w-3" /> Reach Index (Min)
+            </Label>
+            <span className="text-[10px] font-bold text-primary">{(filters.minFollowers || 0) / 1000}K+</span>
+          </div>
+          <Slider 
+            value={[filters.minFollowers || 0]} 
+            onValueChange={(val) => setFilters({ ...filters, minFollowers: val[0] })}
+            max={1000000} 
+            step={10000} 
+            className="[&_.bg-primary]:bg-primary"
+          />
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <IndianRupee className="h-3 w-3" /> Max Budget
+            </Label>
+            <span className="text-[10px] font-bold text-primary">₹{(filters.maxCost || 100000).toLocaleString()}</span>
+          </div>
+          <Slider 
+            value={[filters.maxCost || 100000]} 
+            onValueChange={(val) => setFilters({ ...filters, maxCost: val[0] })}
+            max={500000} 
+            step={5000} 
+            className="[&_.bg-primary]:bg-primary"
+          />
         </div>
 
         <div className="space-y-4">
