@@ -187,7 +187,7 @@ function hexToHslValues(hex: string): string {
 export default function SettingsPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
-  const [isSaving, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedColor, setSelectedColor] = useState(THEME_COLORS[0].hsl);
   const [customHex, setCustomHex] = useState("#2E86C1");
@@ -394,7 +394,7 @@ export default function SettingsPage() {
 
   const handleSaveRole = async () => {
     if (!roleForm.name) return;
-    setIsGenerating(true);
+    setIsSaving(true);
     const data = { ...roleForm, updatedAt: serverTimestamp() };
     if (editingRole) {
       updateDocumentNonBlocking(doc(db, "roles", editingRole.id), data);
@@ -402,7 +402,7 @@ export default function SettingsPage() {
       addDocumentNonBlocking(collection(db, "roles"), { ...data, createdAt: serverTimestamp() });
     }
     setIsRoleDialogOpen(false);
-    setIsGenerating(false);
+    setIsSaving(false);
     toast({ title: "Role Synchronized", description: `${roleForm.name} has been updated in the registry.` });
   };
 
@@ -428,7 +428,7 @@ export default function SettingsPage() {
 
   const handleSaveOrgProfile = () => {
     if (!billingSettingsRef) return;
-    setIsGenerating(true);
+    setIsSaving(true);
     setDocumentNonBlocking(billingSettingsRef, {
       companyName: billingForm.companyName,
       cinNumber: billingForm.cinNumber,
@@ -439,14 +439,14 @@ export default function SettingsPage() {
       updatedAt: serverTimestamp()
     }, { merge: true });
     setTimeout(() => {
-      setIsGenerating(false);
+      setIsSaving(false);
       toast({ title: "Profile Synchronized", description: "Organization details updated." });
     }, 800);
   };
 
   const handleSavePersonalProfile = () => {
     if (!memberRef || !user) return;
-    setIsGenerating(true);
+    setIsSaving(true);
     setDocumentNonBlocking(memberRef, {
       ...profileForm,
       email: user.email,
@@ -456,7 +456,7 @@ export default function SettingsPage() {
     }, { merge: true });
 
     setTimeout(() => {
-      setIsGenerating(false);
+      setIsSaving(false);
       toast({ title: "Identity Synchronized", description: "Your personal profile has been updated." });
     }, 800);
   };
@@ -789,8 +789,8 @@ export default function SettingsPage() {
               </div>
               <DialogFooter className="bg-slate-50 p-8 flex justify-between items-center -mx-0">
                 <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest">Discard</Button></DialogClose>
-                <Button onClick={handleSaveRole} disabled={isGenerating} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-10 h-12 gap-3 tracking-widest shadow-2xl transition-all">
-                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                <Button onClick={handleSaveRole} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-10 h-12 gap-3 tracking-widest shadow-2xl transition-all">
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                   Deploy Policy
                 </Button>
               </DialogFooter>
