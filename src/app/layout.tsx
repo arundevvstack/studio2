@@ -29,7 +29,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
-        <title>MediaFlow - Production Project Management</title>
+        <title>DP MediaFlow - Production Project Management</title>
         <meta name="description" content="Manage clients, projects, team, billing, and sales for media production." />
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>

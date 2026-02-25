@@ -256,11 +256,11 @@ export default function LoginPage() {
             <div className="h-16 w-16 rounded-[1.5rem] bg-primary flex items-center justify-center shadow-2xl shadow-primary/40">
               <Zap className="h-10 w-10 text-white fill-white" />
             </div>
-            <h2 className="text-4xl font-bold font-headline text-white tracking-tighter">MediaFlow</h2>
+            <h2 className="text-4xl font-bold font-headline text-white tracking-tighter">DP MediaFlow</h2>
           </div>
           
           <div className="space-y-6">
-            <h3 className="text-5xl font-bold text-white tracking-tight leading-[1.1]">The Strategic Production Engine.</h3>
+            <h3 className="text-5xl font-bold text-white tracking-tight leading-[1.1]">Production Engine</h3>
             <p className="text-xl text-slate-400 font-medium leading-relaxed">
               Consolidated intelligence for high-growth media agencies. Manage leads, synthesize proposals, and scale your production throughput.
             </p>
@@ -285,7 +285,7 @@ export default function LoginPage() {
             <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center shadow-xl shadow-primary/20">
               <Zap className="h-8 w-8 text-white fill-white" />
             </div>
-            <h1 className="text-3xl font-bold font-headline tracking-tighter">MediaFlow</h1>
+            <h1 className="text-3xl font-bold font-headline tracking-tighter">DP MediaFlow</h1>
           </div>
 
           <div className="space-y-2 text-center lg:text-left">

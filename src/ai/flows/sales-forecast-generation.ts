@@ -1,6 +1,7 @@
+
 'use server';
 /**
- * @fileOverview A sales forecasting AI agent for MediaFlow.
+ * @fileOverview A sales forecasting AI agent for DP MediaFlow.
  *
  * - salesForecastGeneration - A function that handles the sales forecast generation process.
  * - SalesForecastGenerationInput - The input type for the salesForecastGeneration function.
@@ -8,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 // Input schema for the public facing function and flow
 const SalesForecastGenerationInputSchema = z.object({
@@ -57,7 +58,7 @@ const salesForecastGenerationPrompt = ai.definePrompt({
   name: 'salesForecastGenerationPrompt',
   input: { schema: SalesForecastPromptInputSchema }, // Use the extended schema for the prompt
   output: { schema: SalesForecastGenerationOutputSchema },
-  prompt: `You are an expert sales forecaster for a media production company called MediaFlow. Your task is to analyze the provided historical project data and client information to generate a detailed sales forecast for the next {{forecastPeriodInWeeks}} weeks.
+  prompt: `You are an expert sales forecaster for a media production company called DP MediaFlow. Your task is to analyze the provided historical project data and client information to generate a detailed sales forecast for the next {{forecastPeriodInWeeks}} weeks.
 
 Consider market trends, client history, project revenue, project duration, and project status when making your predictions. Assume that current economic conditions are stable unless specified in the project data. Focus on identifying potential revenue streams, risks, and client-specific trends.
 
