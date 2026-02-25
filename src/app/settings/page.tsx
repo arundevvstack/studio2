@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -525,9 +526,24 @@ export default function SettingsPage() {
                   {projectSettings?.serviceTypes?.map((type: string) => (
                     <div key={type} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 group transition-all hover:shadow-md">
                       {editingServiceType === type ? (
-                        <div className="flex items-center gap-2 flex-1"><Input value={editServiceValue} onChange={e => setEditServiceValue(e.target.value)} className="h-10 rounded-xl bg-white border-primary/20 font-bold" autoFocus onKeyDown={e => e.key === 'Enter' && handleUpdateServiceType()} /><Button size="icon" variant="ghost" onClick={handleUpdateServiceType} className="text-green-600"><Check className="h-4 w-4" /></Button></div>
+                        <div className="flex items-center gap-2 flex-1">
+                          <Input value={editServiceValue} onChange={e => setEditServiceValue(e.target.value)} className="h-10 rounded-xl bg-white border-primary/20 font-bold" autoFocus onKeyDown={e => e.key === 'Enter' && handleUpdateServiceType()} />
+                          <Button size="icon" variant="ghost" onClick={handleUpdateServiceType} className="text-green-600">
+                            <Check className="h-4 w-4" />
+                          </Button>
+                        </div>
                       ) : (
-                        <><span className="text-sm font-bold text-slate-900">{type}</span><div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all"><Button variant="ghost" size="icon" onClick={() => { setEditingServiceType(type); setEditServiceValue(type); }} className="text-slate-400 hover:text-primary"><Edit2 className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" onClick={() => handleRemoveServiceType(type)} className="text-slate-400 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></div></>
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-sm font-bold text-slate-900">{type}</span>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <Button variant="ghost" size="icon" onClick={() => { setEditingServiceType(type); setEditServiceValue(type); }} className="text-slate-400 hover:text-primary">
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveServiceType(type)} className="text-slate-400 hover:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   ))}
