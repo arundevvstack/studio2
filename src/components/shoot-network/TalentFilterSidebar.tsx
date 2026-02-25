@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -12,7 +11,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Filter, MapPin, Grid, User, CreditCard, Tag } from "lucide-react";
+import { Filter, MapPin, Grid, User, CreditCard, Tag, Zap } from "lucide-react";
 
 const KERALA_DISTRICTS = [
   "Thiruvananthapuram", "Kollam", "Pathanamthitta", "Alappuzha", "Kottayam",
@@ -26,7 +25,14 @@ const CATEGORIES = [
 ];
 
 const PROJECT_TAGS = [
-  "Commercial", "Film", "Music Video", "Fashion", "Editorial", "Wedding", "Social Media", "Corporate"
+  "Commercial", 
+  "Feature Film", 
+  "Music Video", 
+  "Fashion", 
+  "Wedding Narrative", 
+  "Instagram Reels",
+  "UGC Production",
+  "Digital Ad Films"
 ];
 
 export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
@@ -49,95 +55,75 @@ export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
   };
 
   return (
-    <Card className="border-none shadow-sm rounded-[2rem] bg-white h-full sticky top-8">
+    <Card className="border-none shadow-sm rounded-[2.5rem] bg-white h-full sticky top-8">
       <CardHeader className="px-8 pt-8 pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-bold font-headline tracking-normal flex items-center gap-2">
-            <Filter className="h-4 w-4 text-primary" /> Refine Search
+            <Filter className="h-4 w-4 text-primary" /> Refine Hub
           </CardTitle>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">{totalCount} Results</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{totalCount} Results</span>
         </div>
       </CardHeader>
-      <CardContent className="px-8 pb-8 space-y-10">
+      <CardContent className="px-8 pb-10 space-y-10 overflow-y-auto max-h-[calc(100vh-180px)] custom-scrollbar">
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-            <MapPin className="h-3 w-3" /> District
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <MapPin className="h-3 w-3" /> Regional Registry
           </Label>
           <Select 
             value={filters.district} 
             onValueChange={(val) => setFilters({...filters, district: val})}
           >
             <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none shadow-inner tracking-normal font-bold">
-              <SelectValue placeholder="All Kerala" />
+              <SelectValue placeholder="All Kerala Hubs" />
             </SelectTrigger>
             <SelectContent className="rounded-xl shadow-xl">
-              <SelectItem value="All">All Kerala</SelectItem>
+              <SelectItem value="All">All Kerala Hubs</SelectItem>
               {KERALA_DISTRICTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-            <Grid className="h-3 w-3" /> Creative Verticals
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <Grid className="h-3 w-3" /> Core Verticals
           </Label>
-          <div className="grid grid-cols-1 gap-2.5">
+          <div className="grid grid-cols-1 gap-3">
             {CATEGORIES.map(cat => (
-              <div key={cat} className="flex items-center gap-3">
+              <div key={cat} className="flex items-center gap-3 group cursor-pointer" onClick={() => toggleCategory(cat)}>
                 <Checkbox 
                   id={`cat-${cat}`} 
                   checked={filters.category.includes(cat)}
                   onCheckedChange={() => toggleCategory(cat)}
-                  className="rounded-md border-slate-200" 
+                  className="rounded-md border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
                 />
-                <label htmlFor={`cat-${cat}`} className="text-xs font-bold text-slate-600 cursor-pointer">{cat}</label>
+                <label htmlFor={`cat-${cat}`} className="text-[11px] font-bold text-slate-600 uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">{cat}</label>
               </div>
             ))}
           </div>
         </div>
 
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-            <Tag className="h-3 w-3" /> Project Verticals
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <Zap className="h-3 w-3" /> Strategy Tags
           </Label>
-          <div className="grid grid-cols-1 gap-2.5">
+          <div className="grid grid-cols-1 gap-3">
             {PROJECT_TAGS.map(tag => (
-              <div key={tag} className="flex items-center gap-3">
+              <div key={tag} className="flex items-center gap-3 group cursor-pointer" onClick={() => toggleTag(tag)}>
                 <Checkbox 
                   id={`tag-${tag}`} 
                   checked={(filters.tags || []).includes(tag)}
                   onCheckedChange={() => toggleTag(tag)}
-                  className="rounded-md border-slate-200" 
+                  className="rounded-md border-slate-200 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900" 
                 />
-                <label htmlFor={`tag-${tag}`} className="text-xs font-bold text-slate-600 cursor-pointer">{tag}</label>
+                <label htmlFor={`tag-${tag}`} className="text-[11px] font-bold text-slate-600 uppercase tracking-widest cursor-pointer group-hover:text-slate-900 transition-colors">{tag}</label>
               </div>
             ))}
           </div>
         </div>
 
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-            <User className="h-3 w-3" /> Gender
-          </Label>
-          <Select 
-            value={filters.gender} 
-            onValueChange={(val) => setFilters({...filters, gender: val})}
-          >
-            <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none shadow-inner tracking-normal font-bold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl shadow-xl">
-              <SelectItem value="All">Any Gender</SelectItem>
-              <SelectItem value="Male">Male</SelectItem>
-              <SelectItem value="Female">Female</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal flex items-center gap-2">
-            <CreditCard className="h-3 w-3" /> Verification Status
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <CreditCard className="h-3 w-3" /> Tier Filter
           </Label>
           <Select 
             value={filters.paymentStage} 
@@ -148,7 +134,7 @@ export function TalentFilterSidebar({ filters, setFilters, totalCount }: any) {
             </SelectTrigger>
             <SelectContent className="rounded-xl shadow-xl">
               <SelectItem value="All">All Tiers</SelectItem>
-              <SelectItem value="Yes">Verified (Paid)</SelectItem>
+              <SelectItem value="Yes">Verified Pros</SelectItem>
               <SelectItem value="No">Pending</SelectItem>
             </SelectContent>
           </Select>

@@ -34,7 +34,8 @@ import {
   Twitter,
   Facebook,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Zap
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -183,9 +184,19 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      if (selectedTags.length >= 3) {
+        toast({ 
+          variant: "destructive", 
+          title: "Selection Limit", 
+          description: "A maximum of 3 strategic verticals can be assigned per professional." 
+        });
+        return;
+      }
+      setSelectedTags([...selectedTags, tag]);
+    }
   };
 
   const handleSave = () => {
@@ -252,7 +263,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
             </AvatarFallback>
           </Avatar>
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Badge className="bg-black/60 backdrop-blur-md text-white border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">Update Photo</Badge>
+            <Badge className="bg-black/60 backdrop-blur-md text-white border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">Update Portrait</Badge>
           </div>
           <input type="file" ref={thumbInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'thumbnail')} />
         </div>
@@ -265,10 +276,10 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
           <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="rounded-2xl bg-slate-50 border-none h-14 font-bold tracking-tight text-lg shadow-inner px-6 focus-visible:ring-primary/20" placeholder="Legal or Brand Name" />
         </div>
         <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Creative Vertical</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Primary Category</Label>
           <Select value={formData.category} onValueChange={(val) => setFormData({...formData, category: val})}>
             <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg tracking-tight shadow-inner px-6 focus:ring-primary/20">
-              <SelectValue placeholder="Identify vertical..." />
+              <SelectValue placeholder="Identify primary vertical..." />
             </SelectTrigger>
             <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
               {CATEGORIES.map(cat => (
@@ -281,7 +292,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">District</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Location Hub (Kerala)</Label>
           <Select value={formData.district} onValueChange={(val) => setFormData({...formData, district: val})}>
             <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg tracking-tight shadow-inner px-6 focus:ring-primary/20">
               <SelectValue placeholder="Select District..." />
@@ -309,21 +320,27 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       </div>
 
       <div className="space-y-6 pt-6 border-t border-slate-50">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
-          <Tag className="h-3.5 w-3.5" /> Project Verticals (Tags)
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
+            <Tag className="h-3.5 w-3.5" /> Additional Project Verticals (Max 3)
+          </Label>
+          <Badge variant="outline" className="rounded-full border-slate-100 text-[9px] font-bold text-slate-400 uppercase px-3">
+            {selectedTags.length} / 3 Selected
+          </Badge>
+        </div>
         <div className="flex flex-wrap gap-2.5">
           {PROJECT_TAGS.map(tag => (
             <Badge 
               key={tag} 
               onClick={() => toggleTag(tag)} 
               variant={selectedTags.includes(tag) ? "default" : "outline"} 
-              className={`cursor-pointer px-5 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest transition-all ${
+              className={`cursor-pointer px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${
                 selectedTags.includes(tag) 
                   ? "bg-primary border-none text-white shadow-xl shadow-primary/30 scale-105" 
                   : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
               }`}
             >
+              {selectedTags.includes(tag) && <CheckCircle2 className="h-3 w-3 mr-2" />}
               {tag}
             </Badge>
           ))}
@@ -332,19 +349,19 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-6 border-t border-slate-50">
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Verification</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Verification Status</Label>
           <Select value={formData.paymentStage} onValueChange={(val) => setFormData({...formData, paymentStage: val})}>
             <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold tracking-tight shadow-inner px-6">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
-              <SelectItem value="Yes" className="text-green-600 font-bold">Verified (Paid Access)</SelectItem>
-              <SelectItem value="No">Pending Validation</SelectItem>
+              <SelectItem value="Yes" className="text-green-600 font-bold">Verified Professional</SelectItem>
+              <SelectItem value="No">Awaiting Validation</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-4">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Willing to free collab?</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Free Collab Readiness?</Label>
           <RadioGroup value={formData.freeCollab} onValueChange={(val) => setFormData({...formData, freeCollab: val})} className="flex items-center gap-10 h-14">
             <div className="flex items-center space-x-3">
               <RadioGroupItem value="Yes" id="collab-yes" className="h-5 w-5 border-primary text-primary" />
@@ -359,7 +376,7 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       </div>
 
       <div className="space-y-6 pt-6 border-t border-slate-50">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Social media</Label>
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><Share2 className="h-3.5 w-3.5" /> Social Media Sync</Label>
         <div className="flex gap-3">
           <Select value={newSocialPlatform} onValueChange={setNewSocialPlatform}>
             <SelectTrigger className="h-14 w-48 rounded-2xl bg-slate-50 border-none font-bold tracking-widest text-[10px] uppercase shadow-inner"><SelectValue /></SelectTrigger>
@@ -388,23 +405,23 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       </div>
 
       <div className="space-y-6 pt-6 border-t border-slate-50">
-        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><ImageIcon className="h-3.5 w-3.5" /> Professional Gallery Manager</Label>
+        <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2"><ImageIcon className="h-3.5 w-3.5" /> Creative Showcase Manager</Label>
         <div className="grid grid-cols-1 gap-6">
           <div className="flex gap-3">
-            <Input value={newItemUrl} onChange={(e) => setNewItemUrl(e.target.value)} placeholder="External asset URL (Vimeo, Drive, Unsplash)..." className="rounded-2xl bg-slate-50 border-none h-14 flex-1 font-bold tracking-tight shadow-inner px-6" />
+            <Input value={newItemUrl} onChange={(e) => setNewItemUrl(e.target.value)} placeholder="External asset link (Vimeo, Drive, Unsplash)..." className="rounded-2xl bg-slate-50 border-none h-14 flex-1 font-bold tracking-tight shadow-inner px-6" />
             <Select value={newItemType} onValueChange={(val: any) => setNewItemType(val)}>
               <SelectTrigger className="h-14 w-36 rounded-2xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest shadow-inner"><SelectValue /></SelectTrigger>
-              <SelectContent className="rounded-2xl"><SelectItem value="image">Image</SelectItem><SelectItem value="video">Video</SelectItem></SelectContent>
+              <SelectContent className="rounded-2xl"><SelectItem value="image">Still Image</SelectItem><SelectItem value="video">Motion Reel</SelectItem></SelectContent>
             </Select>
             <Button onClick={handleAddGalleryUrl} type="button" className="h-14 w-14 rounded-2xl bg-slate-900 text-white shadow-xl hover:bg-slate-800 transition-all"><Plus className="h-6 w-6" /></Button>
           </div>
           <input type="file" ref={galleryInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'gallery')} />
-          <Button type="button" variant="outline" className="w-full h-16 rounded-3xl border-dashed border-2 border-slate-200 bg-white hover:bg-slate-50 hover:border-primary/20 text-slate-400 hover:text-primary font-bold text-xs uppercase tracking-widest gap-3 transition-all" onClick={() => galleryInputRef.current?.click()}><Upload className="h-5 w-5" /> Upload Local Image Asset</Button>
+          <Button type="button" variant="outline" className="w-full h-16 rounded-3xl border-dashed border-2 border-slate-200 bg-white hover:bg-slate-50 hover:border-primary/20 text-slate-400 hover:text-primary font-bold text-[10px] uppercase tracking-widest gap-3 transition-all" onClick={() => galleryInputRef.current?.click()}><Upload className="h-5 w-5" /> Import Local Visual Asset</Button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {gallery.map((item, idx) => (
             <div key={idx} className="relative aspect-[4/5] rounded-[2rem] bg-slate-100 overflow-hidden group border border-slate-50 shadow-sm">
-              <img src={item.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Talent Asset" />
+              <img src={item.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Showcase Asset" />
               {item.type === 'video' && <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"><Video className="h-10 w-10 text-white fill-white" /></div>}
               <Button onClick={() => handleRemoveGalleryItem(idx)} type="button" variant="ghost" size="icon" className="absolute top-3 right-3 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md"><X className="h-5 w-5" /></Button>
             </div>
@@ -413,11 +430,11 @@ export function TalentForm({ existingTalent }: TalentFormProps) {
       </div>
 
       <DialogFooter className="bg-slate-50 p-10 flex justify-between items-center -mx-10 -mb-10 mt-10 rounded-b-[3.5rem]">
-        <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-transparent">Discard Changes</Button></DialogClose>
+        <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-transparent">Discard</Button></DialogClose>
         <DialogClose asChild>
           <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-12 h-14 gap-3 tracking-widest shadow-2xl shadow-primary/30 transition-all active:scale-95">
             {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
-            Add to Network
+            {existingTalent ? "Sync Intelligence" : "Add to Network"}
           </Button>
         </DialogClose>
       </DialogFooter>

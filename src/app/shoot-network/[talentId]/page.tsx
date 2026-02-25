@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -31,7 +30,9 @@ import {
   Play,
   Plus,
   Image as ImageIcon,
-  MessageCircle
+  MessageCircle,
+  TrendingUp,
+  Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,9 +52,10 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { TalentForm } from "@/components/shoot-network/TalentForm";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 /**
- * @fileOverview Talent Profile Page.
+ * @fileOverview Talent Profile Page (Consolidated Master View).
  * Enhanced with professional metrics, project count, rank, media gallery, and direct messaging channels.
  */
 
@@ -98,7 +100,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-xs uppercase tracking-normal">Syncing Partner Intelligence...</p>
+        <p className="text-slate-400 font-bold text-xs uppercase tracking-normal">Syncing Consolidated Intelligence...</p>
       </div>
     );
   }
@@ -116,42 +118,54 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
 
   // Messaging URL generators
   const getWhatsAppLink = () => {
-    if (!talent.phone) return "#";
-    const cleanedPhone = talent.phone.replace(/\D/g, '');
+    const phoneLink = talent.socialLinks?.find((l: any) => l.platform === 'WhatsApp')?.url || talent.phone;
+    if (!phoneLink) return "#";
+    const cleanedPhone = phoneLink.replace(/\D/g, '');
     return `https://wa.me/${cleanedPhone}`;
   };
 
-  const getInstagramMessageLink = () => {
-    if (!talent.socialMediaContact) return "#";
-    const handle = talent.socialMediaContact.split('/').filter(Boolean).pop() || '';
-    return `https://ig.me/m/${handle}`;
+  const getInstagramLink = () => {
+    return talent.socialLinks?.find((l: any) => l.platform === 'Instagram')?.url || talent.socialMediaContact || "#";
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
+    <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       {/* Header Navigation */}
-      <div className="flex items-center justify-between">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => router.back()}
-          className="h-10 px-4 rounded-xl bg-white border-slate-200 shadow-sm text-slate-600 font-bold text-xs uppercase gap-2 hover:bg-slate-50 transition-all tracking-normal"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Network
-        </Button>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => router.push("/shoot-network")}
+            className="h-12 w-12 rounded-2xl bg-white border-slate-200 shadow-sm shrink-0"
+          >
+            <ChevronLeft className="h-6 w-6 text-slate-600" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold font-headline text-slate-900 leading-none tracking-normal">{talent.name}</h1>
+            <div className="flex items-center gap-3 mt-2">
+              <Badge className="bg-primary text-white border-none text-[10px] font-bold uppercase px-3 py-1 rounded-xl">
+                {talent.category}
+              </Badge>
+              <span className="text-slate-200">•</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5" /> {talent.district}
+              </span>
+            </div>
+          </div>
+        </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap justify-center">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-10 px-4 rounded-xl bg-white border-slate-200 shadow-sm text-slate-600 font-bold text-xs uppercase gap-2 hover:bg-slate-50 transition-all tracking-normal">
+              <Button variant="outline" className="h-11 px-6 rounded-xl bg-white border-slate-200 text-slate-600 font-bold text-[10px] uppercase gap-2 hover:bg-slate-50 transition-all tracking-widest">
                 <Edit2 className="h-3.5 w-3.5" />
-                Edit Profile
+                Configure Profile
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
               <DialogHeader className="p-8 pb-0">
-                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Partner Profile</DialogTitle>
+                <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Consolidated Profile</DialogTitle>
               </DialogHeader>
               <TalentForm existingTalent={talent} />
             </DialogContent>
@@ -160,7 +174,7 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
           <Button 
             variant="outline" 
             onClick={handleArchive}
-            className="h-10 px-4 rounded-xl bg-white border-slate-200 shadow-sm text-slate-600 font-bold text-xs uppercase gap-2 hover:bg-slate-50 transition-all tracking-normal"
+            className="h-11 px-6 rounded-xl bg-white border-slate-200 text-slate-600 font-bold text-[10px] uppercase gap-2 hover:bg-slate-50 transition-all tracking-widest"
           >
             <Archive className="h-3.5 w-3.5" />
             Archive
@@ -168,311 +182,291 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
 
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" className="h-10 px-4 rounded-xl text-destructive font-bold text-xs uppercase gap-2 hover:bg-destructive/5 transition-all tracking-normal">
+              <Button variant="ghost" className="h-11 px-6 rounded-xl text-destructive font-bold text-[10px] uppercase gap-2 hover:bg-destructive/5 transition-all tracking-widest">
                 <Trash2 className="h-3.5 w-3.5" />
                 Purge
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-[2rem]">
+            <DialogContent className="rounded-[2.5rem] border-none shadow-2xl">
               <DialogHeader>
-                <DialogTitle className="font-headline tracking-normal">Confirm Permanent Deletion</DialogTitle>
+                <DialogTitle className="font-headline tracking-normal text-xl">Permanent Purge Confirmation</DialogTitle>
               </DialogHeader>
-              <div className="py-4">
+              <div className="py-6">
                 <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                  Are you sure you want to permanently delete <span className="font-bold text-slate-900">{talent.name}</span>? This action cannot be undone and will remove all associated intelligence logs.
+                  Confirm permanent deletion of <span className="font-bold text-slate-900">{talent.name}</span>. This removes all associated credentials, engagement logs, and gallery assets from the system.
                 </p>
               </div>
               <DialogFooter className="gap-3">
                 <DialogClose asChild><Button variant="ghost" className="font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
-                <Button onClick={handleDelete} variant="destructive" className="rounded-xl font-bold px-6 tracking-normal">Confirm Purge</Button>
+                <Button onClick={handleDelete} variant="destructive" className="rounded-xl font-bold px-8 tracking-normal">Confirm Purge</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Identity Card */}
-        <div className="lg:col-span-4 space-y-6">
-          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2.5rem] bg-white overflow-hidden">
-            <div className="p-10 flex flex-col items-center text-center space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        {/* Left Column: Identity & Contact Card */}
+        <div className="lg:col-span-4 space-y-8">
+          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[3rem] bg-white overflow-hidden">
+            <div className="p-10 flex flex-col items-center text-center space-y-8">
               <div className="relative group">
-                <Avatar className="h-40 w-40 border-8 border-slate-50 shadow-2xl rounded-[3rem] transition-transform duration-500 group-hover:scale-105">
-                  <AvatarImage src={displayThumbnail} />
+                <Avatar className="h-48 w-48 border-8 border-slate-50 shadow-2xl rounded-[3.5rem] transition-transform duration-700 group-hover:scale-[1.03]">
+                  <AvatarImage src={displayThumbnail} className="object-cover" />
                   <AvatarFallback className="bg-primary/5 text-primary text-4xl font-bold">{talent.name?.[0]}</AvatarFallback>
                 </Avatar>
                 {talent.paymentStage === 'Yes' && (
                   <div className="absolute -bottom-2 -right-2 bg-white rounded-2xl p-2 shadow-lg ring-4 ring-slate-50">
-                    <ShieldCheck className="h-6 w-6 text-blue-500" />
+                    <ShieldCheck className="h-8 w-8 text-blue-500" />
                   </div>
                 )}
               </div>
 
-              <div>
-                <h1 className="text-3xl font-bold font-headline text-slate-900 leading-none tracking-normal">{talent.name}</h1>
-                <p className="text-[10px] font-bold text-primary uppercase mt-3 tracking-normal tracking-widest">{talent.category}</p>
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">{talent.name}</h2>
+                <div className="flex items-center justify-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`h-4 w-4 ${i < (talent.rank || 5) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'}`} />
+                  ))}
+                </div>
               </div>
 
-              <div className="flex items-center gap-1 justify-center py-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < (talent.rank || 5) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'}`} />
-                ))}
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-2 pt-2">
-                <Badge className={`border-none font-bold text-[10px] uppercase px-4 py-1.5 rounded-xl tracking-normal ${talent.paymentStage === 'Yes' ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
-                  {talent.paymentStage === 'Yes' ? 'Verified Elite' : 'Verification Pending'}
+              <div className="flex flex-wrap justify-center gap-2">
+                <Badge className={`border-none font-bold text-[9px] uppercase px-4 py-1.5 rounded-xl tracking-widest ${talent.paymentStage === 'Yes' ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                  {talent.paymentStage === 'Yes' ? 'VERIFIED EXPERT' : 'PENDING REVIEW'}
                 </Badge>
-                <Badge variant="outline" className="border-slate-100 text-slate-400 font-bold text-[10px] uppercase px-4 py-1.5 rounded-xl tracking-normal">
+                <Badge variant="outline" className="border-slate-100 text-slate-400 font-bold text-[9px] uppercase px-4 py-1.5 rounded-xl tracking-widest">
                   {talent.gender}
                 </Badge>
               </div>
             </div>
 
-            <div className="px-10 pb-10 space-y-6 pt-6 border-t border-slate-50">
-              <div className="flex items-center justify-between group cursor-pointer">
-                <div className="flex items-center gap-4 text-slate-600">
-                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                    <MapPin className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Hub Location</p>
-                    <p className="text-sm font-bold text-slate-900 tracking-normal">{talent.district}</p>
-                  </div>
+            <div className="px-10 pb-10 space-y-6 pt-8 border-t border-slate-50">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex flex-col items-center justify-center text-center">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Engagements</p>
+                  <p className="text-xl font-bold text-slate-900 mt-1">{talent.projectCount || 0}</p>
+                </div>
+                <div className="p-5 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex flex-col items-center justify-center text-center">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
+                  <p className="text-sm font-bold text-green-600 mt-1 uppercase tracking-widest">Active</p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between group cursor-pointer">
-                <div className="flex items-center gap-4 text-slate-600">
-                  <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                    <Briefcase className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Total Engagements</p>
-                    <p className="text-sm font-bold text-slate-900 tracking-normal">{talent.projectCount || 0} Successful Projects</p>
-                  </div>
+              <div className="space-y-4 pt-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Engagement Channels</p>
+                {talent.email && (
+                  <a href={`mailto:${talent.email}`} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-primary/5 hover:border-primary/20 transition-all group">
+                    <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm text-slate-400 group-hover:text-primary">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-900 truncate tracking-normal">{talent.email}</span>
+                  </a>
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  <a href={getWhatsAppLink()} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-green-50/50 border border-green-100 hover:bg-green-50 transition-all">
+                    <MessageCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest">WhatsApp</span>
+                  </a>
+                  <a href={getInstagramLink()} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 p-4 rounded-2xl bg-purple-50/50 border border-purple-100 hover:bg-purple-50 transition-all">
+                    <Instagram className="h-4 w-4 text-purple-600" />
+                    <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">Instagram</span>
+                  </a>
                 </div>
               </div>
-
-              {talent.socialMediaContact && (
-                <a href={talent.socialMediaContact} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between group cursor-pointer">
-                  <div className="flex items-center gap-4 text-slate-600">
-                    <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                      <Instagram className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Social Grid</p>
-                      <p className="text-sm font-bold text-slate-900 tracking-normal">@{talent.socialMediaContact.split('/').filter(Boolean).pop() || 'Profile'}</p>
-                    </div>
-                  </div>
-                  <ExternalLink className="h-3.5 w-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-all" />
-                </a>
-              )}
             </div>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-6">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Communication Hub</h4>
-            <div className="space-y-4">
-              {talent.email && (
-                <a href={`mailto:${talent.email}`} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-primary/5 hover:border-primary/20 transition-all group">
-                  <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:text-primary">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Email Channel</p>
-                    <p className="text-sm font-bold text-slate-900 truncate tracking-normal">{talent.email}</p>
-                  </div>
-                </a>
-              )}
-              {talent.phone && (
-                <div className="space-y-3">
-                  <a href={`tel:${talent.phone}`} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-accent/5 hover:border-accent/20 transition-all group">
-                    <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:text-accent">
-                      <Phone className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-normal">Direct Hotline</p>
-                      <p className="text-sm font-bold text-slate-900 tracking-normal">{talent.phone}</p>
-                    </div>
-                  </a>
-                  <a 
-                    href={getWhatsAppLink()} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-green-50/50 border border-green-100 hover:bg-green-50 hover:border-green-200 transition-all group"
-                  >
-                    <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                      <svg viewBox="0 0 24 24" className="h-5 w-5 text-green-600 fill-current" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.353-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982 1.001-3.646-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .018 5.394 0 12.03c0 2.123.554 4.197 1.606 6.064L0 24l6.135-1.61a11.793 11.793 0 005.915 1.594h.005c6.637 0 12.032-5.395 12.035-12.03a11.79 11.79 0 00-3.48-8.504z"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-green-600 uppercase tracking-normal">WhatsApp Hub</p>
-                      <p className="text-sm font-bold text-slate-900 tracking-normal">Send Message</p>
-                    </div>
-                  </a>
-                </div>
-              )}
-              {talent.socialMediaContact && (
-                <a 
-                  href={getInstagramMessageLink()} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-purple-50/50 border border-purple-100 hover:bg-purple-50 hover:border-purple-200 transition-all group"
-                >
-                  <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                    <Instagram className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-bold text-purple-600 uppercase tracking-normal">Instagram DM</p>
-                    <p className="text-sm font-bold text-slate-900 tracking-normal">Message Agency</p>
-                  </div>
-                </a>
-              )}
+          <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-10 space-y-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-[100px] -mr-24 -mt-24 rounded-full" />
+            <div className="space-y-2 relative z-10">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Operational Intel</p>
+              <h4 className="text-xl font-bold font-headline tracking-tight">Deployment Index</h4>
+            </div>
+            <div className="space-y-6 relative z-10">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-400 font-medium">Mobility Score</span>
+                <span className="text-xl font-bold font-headline text-primary tracking-tight">Optimized</span>
+              </div>
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-primary" style={{ width: '85%' }} />
+              </div>
             </div>
           </Card>
         </div>
 
-        {/* Right Column: Detailed Intelligence */}
+        {/* Right Column: Multi-tab Data Intelligence */}
         <div className="lg:col-span-8 space-y-8">
-          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
-            <div className="space-y-10">
-              <div>
-                <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
-                  <User className="h-5 w-5 text-primary" />
-                  Professional Matrix
-                </h3>
-                <p className="text-sm text-slate-500 mt-1 font-medium tracking-normal">Assessment of skill depth and project compatibility.</p>
-              </div>
+          <Tabs defaultValue="matrix" className="w-full">
+            <TabsList className="bg-white border border-slate-100 p-2 h-auto rounded-[2.5rem] shadow-sm gap-2 mb-10 flex items-center justify-start overflow-x-auto no-scrollbar">
+              <TabsTrigger value="matrix" className="rounded-2xl px-10 py-4 text-[10px] font-bold uppercase gap-3 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest">
+                <User className="h-4 w-4" /> Professional Matrix
+              </TabsTrigger>
+              <TabsTrigger value="gallery" className="rounded-2xl px-10 py-4 text-[10px] font-bold uppercase gap-3 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest">
+                <ImageIcon className="h-4 w-4" /> Creative Gallery
+              </TabsTrigger>
+              <TabsTrigger value="audit" className="rounded-2xl px-10 py-4 text-[10px] font-bold uppercase gap-3 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest">
+                <History className="h-4 w-4" /> Audit Logs
+              </TabsTrigger>
+            </TabsList>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div className="space-y-8">
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Deployment Suitability</p>
-                    <div className="flex flex-wrap gap-2">
-                      {talent.suitableProjectTypes && talent.suitableProjectTypes.length > 0 ? (
-                        talent.suitableProjectTypes.map((type: string, i: number) => (
-                          <Badge key={i} className="bg-primary/5 text-primary border-none font-bold text-[10px] uppercase px-4 py-1.5 rounded-xl tracking-normal">
-                            {type}
-                          </Badge>
-                        ))
-                      ) : (
-                        <p className="text-sm text-slate-400 italic font-medium tracking-normal">No specific project verticals recorded.</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Collaboration Tier</p>
-                    <div className="flex flex-wrap gap-2">
-                      {talent.colabCategories && talent.colabCategories.length > 0 ? (
-                        talent.colabCategories.map((cat: string, i: number) => (
-                          <Badge key={i} className="bg-slate-900 text-white border-none font-bold text-[10px] uppercase px-4 py-1.5 rounded-xl tracking-normal">
-                            {cat}
-                          </Badge>
-                        ))
-                      ) : (
-                        <p className="text-sm text-slate-400 italic font-medium tracking-normal">General Collab.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-8">
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Strategic Demographics</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Age</p>
-                        <p className="text-xl font-bold text-slate-900 mt-1 tracking-normal">{talent.age || "—"}</p>
+            <TabsContent value="matrix" className="m-0 space-y-8 animate-in fade-in duration-500">
+              <Card className="border-none shadow-sm rounded-[3rem] bg-white p-10 space-y-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Project Verticals</p>
+                      <div className="flex flex-wrap gap-2">
+                        {talent.suitableProjectTypes && talent.suitableProjectTypes.length > 0 ? (
+                          talent.suitableProjectTypes.map((type: string, i: number) => (
+                            <Badge key={i} className="bg-primary/5 text-primary border-none font-bold text-[9px] uppercase px-4 py-2 rounded-xl tracking-widest">
+                              {type}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-xs text-slate-400 italic font-medium">No specialized verticals assigned.</p>
+                        )}
                       </div>
-                      <div className="p-6 rounded-2xl bg-slate-50/50 border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Status</p>
-                        <p className="text-xl font-bold text-slate-900 mt-1 tracking-normal">Verified</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Skill Segmentation</p>
+                      <div className="flex flex-wrap gap-2">
+                        {talent.colabCategories && talent.colabCategories.length > 0 ? (
+                          talent.colabCategories.map((cat: string, i: number) => (
+                            <Badge key={i} className="bg-slate-900 text-white border-none font-bold text-[9px] uppercase px-4 py-2 rounded-xl tracking-widest">
+                              {cat}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge className="bg-slate-100 text-slate-400 border-none font-bold text-[9px] uppercase px-4 py-2 rounded-xl tracking-widest">General Crew</Badge>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </Card>
 
-          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
-                  <ImageIcon className="h-5 w-5 text-primary" />
-                  Professional Gallery
-                </h3>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" className="text-primary hover:text-primary/80 font-bold text-[10px] uppercase gap-2 tracking-normal">
-                      <Plus className="h-4 w-4" /> Manage Assets
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
-                    <DialogHeader className="p-8 pb-0">
-                      <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Partner Assets</DialogTitle>
-                    </DialogHeader>
-                    <TalentForm existingTalent={talent} />
-                  </DialogContent>
-                </Dialog>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {talent.gallery && talent.gallery.length > 0 ? (
-                  talent.gallery.map((asset: any, i: number) => (
-                    <div key={i} className="aspect-square rounded-2xl bg-slate-100 overflow-hidden relative group">
-                      <img src={asset.url} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="Talent Asset" />
-                      {asset.type === 'video' && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <Play className="h-8 w-8 text-white fill-white" />
+                  <div className="space-y-10">
+                    <div className="p-8 rounded-[2.5rem] bg-slate-50/50 border border-slate-100">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="h-10 w-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                          <TrendingUp className="h-5 w-5 text-accent" />
                         </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-full py-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-50 rounded-[2rem] text-center space-y-4">
-                    <ImageIcon className="h-12 w-12 text-slate-200" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-slate-400 uppercase tracking-normal">No assets uploaded</p>
-                      <p className="text-xs text-slate-300 italic tracking-normal">Showcase professional stills and video reels here.</p>
+                        <h4 className="font-bold text-lg text-slate-900 tracking-tight">Performance Summary</h4>
+                      </div>
+                      <p className="text-sm font-medium leading-relaxed text-slate-600 italic tracking-tight">
+                        "Member demonstrates high reliability in {talent.category} verticals. Consistently delivers within production timelines with a rank stability of {talent.rank || 5}.0/5.0."
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          </Card>
+                </div>
+              </Card>
 
-          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
-            <div className="space-y-8">
-              <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
-                <History className="h-5 w-5 text-primary" />
-                Partner Audit Trail
-              </h3>
-              <div className="p-8 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Registered</p>
-                  <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">
-                    {talent.createdAt ? new Date(talent.createdAt.seconds * 1000).toLocaleDateString('en-GB') : '—'}
-                  </p>
-                </div>
-                <div className="h-8 w-px bg-slate-200 hidden md:block" />
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Engagement Score</p>
-                  <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">High Mobility</p>
-                </div>
-                <div className="h-8 w-px bg-slate-200 hidden md:block" />
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Status</p>
-                  <Badge className={`border-none font-bold text-[10px] uppercase px-3 tracking-normal mt-1 ${talent.isArchived ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
-                    {talent.isArchived ? 'ARCHIVED' : 'ACTIVE'}
-                  </Badge>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-8 flex items-center justify-between group hover:shadow-md transition-all">
+                  <div className="flex items-center gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                      <Award className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-slate-900 tracking-tight">Senior Tier</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Org Classification</p>
+                    </div>
+                  </div>
+                  <CheckCircle2 className="h-6 w-6 text-green-500" />
+                </Card>
+                <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-8 flex items-center justify-between group hover:shadow-md transition-all">
+                  <div className="flex items-center gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
+                      <Zap className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold text-slate-900 tracking-tight">{talent.freeCollab === 'Yes' ? 'Collab Ready' : 'Project Based'}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Collab Availability</p>
+                    </div>
+                  </div>
+                  <TrendingUp className="h-6 w-6 text-orange-500" />
+                </Card>
               </div>
-            </div>
-          </Card>
+            </TabsContent>
+
+            <TabsContent value="gallery" className="m-0 space-y-8 animate-in fade-in duration-500">
+              <Card className="border-none shadow-sm rounded-[3rem] bg-white p-10">
+                <div className="space-y-10">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal">Production Showcase</h3>
+                      <p className="text-sm text-slate-500 font-medium mt-1">Stills and video reels from verified engagements.</p>
+                    </div>
+                    <Button variant="ghost" className="text-primary font-bold text-[10px] uppercase tracking-widest gap-2">
+                      <Plus className="h-4 w-4" /> Update Assets
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    {talent.gallery && talent.gallery.length > 0 ? (
+                      talent.gallery.map((asset: any, i: number) => (
+                        <div key={i} className="aspect-[4/5] rounded-[2rem] bg-slate-100 overflow-hidden relative group shadow-sm border border-slate-50">
+                          <img src={asset.url} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" alt="Production Asset" />
+                          {asset.type === 'video' && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                              <div className="h-14 w-14 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
+                                <Play className="h-6 w-6 text-white fill-white" />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-full py-32 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[3rem] text-center space-y-6 bg-slate-50/30">
+                        <div className="h-20 w-20 rounded-[2.5rem] bg-white shadow-inner flex items-center justify-center">
+                          <ImageIcon className="h-10 w-10 text-slate-200" />
+                        </div>
+                        <div className="max-w-xs space-y-2">
+                          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No Professional Assets</p>
+                          <p className="text-xs text-slate-300 italic font-medium leading-relaxed">Showcase professional stills, campaign lookbooks, and high-fidelity video reels here.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="audit" className="m-0 animate-in fade-in duration-500">
+              <Card className="border-none shadow-sm rounded-[3rem] bg-white p-10">
+                <div className="space-y-10">
+                  <h3 className="text-xl font-bold font-headline text-slate-900 tracking-normal flex items-center gap-3">
+                    <History className="h-5 w-5 text-primary" /> System Audit Trail
+                  </h3>
+                  <div className="space-y-6">
+                    <div className="p-8 rounded-[2.5rem] bg-slate-50/50 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Registry Admission</p>
+                        <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">
+                          {talent.createdAt ? new Date(talent.createdAt.seconds * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
+                        </p>
+                      </div>
+                      <div className="h-10 w-px bg-slate-200 hidden md:block" />
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Identity Status</p>
+                        <Badge className={`border-none font-bold text-[9px] uppercase px-4 py-1 tracking-widest mt-1 ${talent.isArchived ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+                          {talent.isArchived ? 'ARCHIVED' : 'ACTIVE IN HUB'}
+                        </Badge>
+                      </div>
+                      <div className="h-10 w-px bg-slate-200 hidden md:block" />
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sync Consistency</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span className="text-xs font-bold text-slate-900 uppercase tracking-widest">100% Verified</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

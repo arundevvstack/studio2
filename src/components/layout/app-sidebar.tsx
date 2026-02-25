@@ -22,7 +22,8 @@ import {
   Key,
   Shield,
   Mic2,
-  Lock
+  Lock,
+  Zap
 } from "lucide-react";
 import {
   Sidebar,
@@ -66,12 +67,13 @@ const ICON_MAP: Record<string, any> = {
   Key,
   Shield,
   Mic2,
-  Lock
+  Lock,
+  Zap
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
   { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
-  { id: "talent-library", title: "Talent Library", iconName: "Mic2", url: "/talent-library", order: 2, isVisible: true },
+  { id: "shoot-network", title: "Shoot Network", iconName: "Mic2", url: "/shoot-network", order: 2, isVisible: true },
   { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 3, isVisible: true },
   { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 4, isVisible: true },
   { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 5, isVisible: true },
@@ -94,12 +96,6 @@ export function AppSidebar() {
   const db = useFirestore();
   const { user } = useUser();
 
-  const memberRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(db, "teamMembers", user.uid);
-  }, [db, user]);
-  const { data: member } = useDoc(memberRef);
-
   const billingRef = useMemoFirebase(() => {
     return doc(db, "companyBillingSettings", "global");
   }, [db]);
@@ -114,9 +110,9 @@ export function AppSidebar() {
               <img src={globalSettings.logo} alt="Organization Logo" className="h-full w-auto object-contain" />
             </div>
           ) : (
-            <svg width="40" height="30" viewBox="0 0 40 30" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-              <path d="M5 25L15 5L25 25M15 25L25 5L35 25" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <Zap className="h-6 w-6 text-white fill-white" />
+            </div>
           )}
         </div>
 
