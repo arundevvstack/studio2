@@ -8,8 +8,6 @@ import {
   MoreHorizontal, 
   Loader2, 
   CheckCircle2, 
-  Mail, 
-  ShieldAlert, 
   ChevronLeft, 
   Plus, 
   Hourglass,
@@ -62,7 +60,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { 
   Dialog, 
@@ -88,21 +85,13 @@ export default function UserManagementPage() {
   const { user: currentUser, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch Current User Authority
   const currentUserRef = useMemoFirebase(() => {
     if (!currentUser) return null;
     return doc(db, "teamMembers", currentUser.uid);
   }, [db, currentUser]);
   const { data: currentUserMember } = useDoc(currentUserRef);
 
-  const roleRef = useMemoFirebase(() => {
-    if (!currentUserMember?.roleId) return null;
-    return doc(db, "roles", currentUserMember.roleId);
-  }, [db, currentUserMember?.roleId]);
-  const { data: userRole } = useDoc(roleRef);
-
   const isMasterUser = currentUser?.email?.toLowerCase() === MASTER_EMAIL.toLowerCase() || currentUserMember?.roleId === 'root-admin' || currentUser?.isAnonymous;
-  const isAuthorizedToManage = userRole?.name === "Administrator" || isMasterUser;
 
   const teamQuery = useMemoFirebase(() => {
     if (!currentUser) return null;
@@ -116,8 +105,7 @@ export default function UserManagementPage() {
   }, [db, currentUser]);
   const { data: roles } = useCollection(rolesQuery);
 
-  // AUTHORITATIVE MAINTENANCE SYNC (Master Admin Only)
-  // Standardized protocol to keep registry clean of restricted identifiers.
+  // TARGETED MAINTENANCE SYNC (Master Admin Only)
   useEffect(() => {
     const executePurge = async () => {
       if (isMasterUser && team) {
@@ -184,17 +172,6 @@ export default function UserManagementPage() {
     );
   }
 
-  if (!isAuthorizedToManage) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center py-32 text-center space-y-6">
-        <ShieldAlert className="h-16 w-16 text-red-500 opacity-20" />
-        <h2 className="text-2xl font-bold font-headline">Unauthorized Access</h2>
-        <p className="text-slate-500 max-w-xs">You lack the necessary authority to manage organizational identities.</p>
-        <Button onClick={() => router.push("/")}>Return to Dashboard</Button>
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -215,7 +192,7 @@ export default function UserManagementPage() {
                 <Plus className="h-4 w-4" /> Invite Expert
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
               <DialogHeader className="p-10 pb-0"><DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Identity</DialogTitle></DialogHeader>
               <TeamMemberForm />
             </DialogContent>
@@ -225,32 +202,17 @@ export default function UserManagementPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
-            <Hourglass className="h-5 w-5 text-orange-500" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting Approval</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{team?.filter(m => m.status === 'Pending').length || 0}</h3>
-          </div>
+          <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center"><Hourglass className="h-5 w-5 text-orange-500" /></div>
+          <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting Approval</p><h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{team?.filter(m => m.status === 'Pending').length || 0}</h3></div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
-            <CheckCircle2 className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Experts</p>
-            <h3 className="text-3xl font-bold font-headline mt-1">{team?.filter(m => m.status === 'Active').length || 0}</h3>
-          </div>
+          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center"><CheckCircle2 className="h-5 w-5 text-primary" /></div>
+          <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Experts</p><h3 className="text-3xl font-bold font-headline mt-1">{team?.filter(m => m.status === 'Active').length || 0}</h3></div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
-          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center relative z-10">
-            <Shield className="h-5 w-5 text-primary" />
-          </div>
-          <div className="relative z-10">
-            <p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">System Status</p>
-            <h3 className="text-2xl font-bold font-headline mt-1 uppercase">Protocol Active</h3>
-          </div>
+          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center relative z-10"><Shield className="h-5 w-5 text-primary" /></div>
+          <div className="relative z-10"><p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">System Status</p><h3 className="text-2xl font-bold font-headline mt-1 uppercase">Protocol Active</h3></div>
         </Card>
       </div>
 
@@ -259,9 +221,7 @@ export default function UserManagementPage() {
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
           <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search identifiers by name or email..." className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-base font-bold" />
         </div>
-        <Button variant="outline" className="h-16 px-8 rounded-full bg-white border-slate-100 font-bold text-slate-600 gap-2 shadow-sm text-xs uppercase tracking-widest">
-          <Filter className="h-4 w-4" /> Refine
-        </Button>
+        <Button variant="outline" className="h-16 px-8 rounded-full bg-white border-slate-100 font-bold text-slate-600 gap-2 shadow-sm text-xs uppercase tracking-widest"><Filter className="h-4 w-4" /> Refine</Button>
       </div>
 
       <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden border border-slate-50">
@@ -343,11 +303,9 @@ export default function UserManagementPage() {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
-                                    <Trash2 className="h-4 w-4" /> Purge Identity
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
+                                  <Trash2 className="h-4 w-4" /> Purge Identity
+                                </DropdownMenuItem>
                                 <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
                                   <AlertDialogHeader>
                                     <div className="flex items-center gap-3 text-destructive mb-2">

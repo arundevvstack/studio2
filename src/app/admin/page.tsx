@@ -5,23 +5,14 @@ import React, { useEffect } from "react";
 import { 
   ShieldCheck, 
   Users, 
-  Lock, 
   Activity, 
-  Database, 
   Server, 
-  Settings,
   CheckCircle2,
-  AlertCircle,
-  Loader2,
-  ArrowRight,
-  UserCheck,
-  Key,
-  LayoutGrid
+  Loader2
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, limit, doc } from "firebase/firestore";
 import Link from "next/link";
@@ -60,12 +51,6 @@ export default function AdminConsolePage() {
     return query(collection(db, "teamMembers"), orderBy("updatedAt", "desc"), limit(5));
   }, [db, user]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
-
-  const rolesQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(db, "roles"));
-  }, [db, user]);
-  const { data: roles } = useDoc(rolesQuery);
 
   if (isUserLoading || (user && !member)) {
     return (
