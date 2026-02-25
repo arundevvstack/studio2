@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ChevronLeft, 
@@ -10,7 +10,6 @@ import {
   Building2,
   Briefcase,
   Target,
-  List,
   Layers,
   IndianRupee,
   Calendar,
@@ -77,16 +76,16 @@ export default function NewProposalPage() {
     scope: [] as string[],
   });
 
-  const handleToggle = (listName: 'platforms' | 'scope', value: string) => {
+  const handleToggle = useCallback((listName: 'platforms' | 'scope', value: string) => {
     setFormData(prev => ({
       ...prev,
       [listName]: prev[listName].includes(value)
         ? prev[listName].filter(item => item !== value)
         : [...prev[listName], value]
     }));
-  };
+  }, []);
 
-  const handleSourceSelect = (id: string) => {
+  const handleSourceSelect = useCallback((id: string) => {
     if (sourceType === 'lead') {
       const lead = leads?.find(l => l.id === id);
       if (lead) {
@@ -112,7 +111,7 @@ export default function NewProposalPage() {
         toast({ title: "Project Assets Synced", description: `Proposal populated with production details for ${project.name}.` });
       }
     }
-  };
+  }, [sourceType, leads, projects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +171,7 @@ export default function NewProposalPage() {
                 <Label className="text-[10px] font-bold text-primary uppercase tracking-widest px-1">
                   {sourceType === 'lead' ? 'Identify Target Lead' : 'Select Production Asset'}
                 </Label>
-                <Select onValueChange={handleSourceSelect}>
+                <Select key={sourceType} onValueChange={handleSourceSelect}>
                   <SelectTrigger className="h-14 rounded-2xl bg-primary/5 border-2 border-primary/10 font-bold text-sm shadow-inner px-6 text-primary">
                     <SelectValue placeholder={sourceType === 'lead' ? "Search pipeline..." : "Search projects..."} />
                   </SelectTrigger>
@@ -276,7 +275,7 @@ export default function NewProposalPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {SCOPE_ITEMS.map(item => (
                     <div key={item} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleToggle('scope', item)}>
-                      <Checkbox checked={formData.scope.includes(item)} onCheckedChange={() => handleToggle('scope', item)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                      <Checkbox checked={formData.scope.includes(item)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary pointer-events-none" />
                       <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item}</span>
                     </div>
                   ))}
