@@ -33,6 +33,23 @@
         "updatedAt"
       ]
     },
+    "ProjectSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProjectSettings",
+      "type": "object",
+      "description": "Global settings for project management, including available service verticals.",
+      "properties": {
+        "serviceTypes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of available service types/verticals for new projects."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "CompanyBillingSettings": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "CompanyBillingSettings",
@@ -148,6 +165,11 @@
     "/settings/navigation": {
       "schema": {
         "$ref": "#/backend/entities/NavigationSettings"
+      }
+    },
+    "/settings/projects": {
+      "schema": {
+        "$ref": "#/backend/entities/ProjectSettings"
       }
     },
     "/companyBillingSettings/global": {

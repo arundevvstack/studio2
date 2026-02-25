@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +17,7 @@ import {
   Zap 
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { 
   Select, 
@@ -34,44 +35,17 @@ const KERALA_DISTRICTS = [
   "Wayanad", "Kannur", "Kasaragod"
 ];
 
-const PROJECT_TYPES = [
+// Fallback default verticals if settings aren't configured yet
+const DEFAULT_PROJECT_TYPES = [
   "TV Commercials (TVC)",
   "Digital Ad Film Production",
   "Performance Marketing Ads",
   "Brand Commercials",
-  "Product Launch Videos",
-  "Campaign Ads",
-  "AI VFX Production",
-  "Explainer Videos",
-  "Motion Graphics",
-  "AI 3D Animation",
-  "AI 2D Animation",
   "AI Video Production",
-  "AI Avatar Videos",
-  "AI Image Generation",
-  "AI Ad Creative Production",
-  "AI Content Repurposing",
-  "AI Voice Cloning",
-  "Synthetic Media Production",
   "Reels / Shorts Production",
-  "Influencer Content Production",
-  "UGC (User Generated Content)",
-  "YouTube Content Production",
-  "Trend Content Production",
   "Product Photography",
-  "Product Demo Videos",
-  "Amazon / Flipkart Listing Media",
-  "360° Product Spin Videos",
-  "Lifestyle Product Shoots",
   "Corporate Profile Films",
-  "Company Overview Videos",
-  "Internal Training Videos",
-  "CSR Films",
-  "Property Walkthrough Videos",
   "Virtual Tours",
-  "Architectural Visualization",
-  "Builder Branding Films",
-  "Podcast Production",
   "Other (Custom Vertical)"
 ];
 
@@ -112,8 +86,10 @@ export default function AddProjectPage() {
   const clientsQuery = useMemoFirebase(() => {
     return query(collection(db, "clients"), orderBy("name", "asc"));
   }, [db]);
-
   const { data: clients, isLoading: isLoadingClients } = useCollection(clientsQuery);
+
+  const projectSettingsRef = useMemoFirebase(() => doc(db, "settings", "projects"), [db]);
+  const { data: projectSettings, isLoading: isLoadingSettings } = useDoc(projectSettingsRef);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -129,6 +105,10 @@ export default function AddProjectPage() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  const serviceTypes = useMemo(() => {
+    return projectSettings?.serviceTypes || DEFAULT_PROJECT_TYPES;
+  }, [projectSettings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,6 +174,8 @@ export default function AddProjectPage() {
     }
   };
 
+  const isLoading = isLoadingClients || isLoadingSettings;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-start gap-6">
@@ -215,12 +197,13 @@ export default function AddProjectPage() {
               <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Service Type (Project Name)</label>
               <Select value={formData.type} onValueChange={(val) => setFormData({...formData, type: val})}>
                 <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
-                  <SelectValue placeholder="Identify service vertical..." />
+                  <SelectValue placeholder={isLoadingSettings ? "Syncing verticals..." : "Identify service vertical..."} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[400px]">
-                  {PROJECT_TYPES.map(type => (
+                  {serviceTypes.map((type: string) => (
                     <SelectItem key={type} value={type} className="font-medium tracking-normal">{type}</SelectItem>
                   ))}
+                  <SelectItem value="Other (Custom Vertical)" className="text-primary font-bold">Other (Custom Vertical)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

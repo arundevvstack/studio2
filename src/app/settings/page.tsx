@@ -50,7 +50,8 @@ import {
   Globe,
   GripVertical,
   Palette,
-  Pipette
+  Pipette,
+  Tag
 } from "lucide-react";
 import { 
   DndContext, 
@@ -131,6 +132,7 @@ const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "workflow", label: "Workflow Manager", icon: GitBranch },
+  { id: "project", label: "Project Settings", icon: Briefcase },
   { id: "billing", label: "Financials", icon: Receipt },
   { id: "navigation", label: "Navigation", icon: LayoutGrid },
   { id: "roles", label: "Roles", icon: Key },
@@ -442,7 +444,6 @@ export default function SettingsPage() {
     setIsSaving(true);
     
     try {
-      // Use updateDoc for reliable deep merging of personal identity details
       await updateDoc(memberRef, {
         ...profileForm,
         updatedAt: serverTimestamp()
@@ -454,6 +455,61 @@ export default function SettingsPage() {
       });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Sync Failed", description: error.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // --- Project Settings Logic ---
+  const projectSettingsRef = useMemoFirebase(() => doc(db, "settings", "projects"), [db]);
+  const { data: projectSettings } = useDoc(projectSettingsRef);
+  const [newServiceType, setNewServiceType] = useState("");
+
+  const handleAddServiceType = async () => {
+    if (!newServiceType) return;
+    const currentTypes = projectSettings?.serviceTypes || [];
+    if (currentTypes.includes(newServiceType)) {
+      toast({ variant: "destructive", title: "Duplicate Entry", description: "This service vertical already exists." });
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      await updateDoc(projectSettingsRef, {
+        serviceTypes: [...currentTypes, newServiceType],
+        updatedAt: serverTimestamp()
+      });
+      setNewServiceType("");
+      toast({ title: "Vertical Added", description: `${newServiceType} is now available for projects.` });
+    } catch (e: any) {
+      if (e.code === 'not-found') {
+        await setDocumentNonBlocking(projectSettingsRef, {
+          serviceTypes: [newServiceType],
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        setNewServiceType("");
+        toast({ title: "Vertical Added", description: "Initial project settings registry created." });
+      } else {
+        toast({ variant: "destructive", title: "Sync Error", description: e.message });
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemoveServiceType = async (type: string) => {
+    if (!confirm(`Are you sure you want to remove '${type}' from the service library?`)) return;
+    
+    setIsSaving(true);
+    try {
+      const currentTypes = projectSettings?.serviceTypes || [];
+      await updateDoc(projectSettingsRef, {
+        serviceTypes: currentTypes.filter((t: string) => t !== type),
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: "Vertical Removed", description: "Service library updated." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Sync Error", description: e.message });
     } finally {
       setIsSaving(false);
     }
@@ -620,6 +676,67 @@ export default function SettingsPage() {
 
         <TabsContent value="workflow" className="animate-in slide-in-from-left-2 duration-300">
           <WorkflowManager />
+        </TabsContent>
+
+        <TabsContent value="project" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+            <CardHeader className="p-10 pb-0">
+              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Project Settings</CardTitle>
+              <CardDescription className="tracking-normal">Manage the authoritative library of service verticals and project types.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-10 space-y-10">
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Define New Service Vertical</Label>
+                  <div className="flex gap-4">
+                    <div className="relative flex-1 group">
+                      <Tag className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                      <Input 
+                        value={newServiceType} 
+                        onChange={(e) => setNewServiceType(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddServiceType()}
+                        placeholder="e.g. AI Content Repurposing" 
+                        className="pl-14 h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-base dark:bg-slate-800"
+                      />
+                    </div>
+                    <Button onClick={handleAddServiceType} disabled={isSaving || !newServiceType} className="h-14 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold gap-2 shadow-lg shadow-primary/20">
+                      <Plus className="h-5 w-5" /> Add Vertical
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-6 border-t border-slate-50 dark:border-slate-800">
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Service Type Library</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {projectSettings?.serviceTypes?.length > 0 ? (
+                      projectSettings.serviceTypes.map((type: string) => (
+                        <div key={type} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 group">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
+                              <Briefcase className="h-4 w-4 text-primary" />
+                            </div>
+                            <span className="text-sm font-bold text-slate-900 dark:text-white">{type}</span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleRemoveServiceType(type)}
+                            className="h-8 w-8 rounded-full text-slate-300 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                        <p className="text-sm font-bold text-slate-300 uppercase tracking-widest">No custom verticals defined.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="billing" className="animate-in slide-in-from-left-2 duration-300">

@@ -38,11 +38,11 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
+import { useFirestore, useUser, useCollection, useMemoFirebase, useDoc } from "@/firebase";
+import { collection, addDoc, serverTimestamp, query, orderBy, doc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 
-const PROJECT_TYPES = [
+const DEFAULT_PROJECT_TYPES = [
   "Ad Film", 
   "Social Media Campaign", 
   "AI Content", 
@@ -141,6 +141,13 @@ export default function NewProposalPage() {
   }, [db, user]);
   const { data: projects } = useCollection(projectsQuery);
 
+  const projectSettingsRef = useMemoFirebase(() => doc(db, "settings", "projects"), [db]);
+  const { data: projectSettings, isLoading: isLoadingSettings } = useDoc(projectSettingsRef);
+
+  const serviceTypes = useMemo(() => {
+    return projectSettings?.serviceTypes || DEFAULT_PROJECT_TYPES;
+  }, [projectSettings]);
+
   const handleToggle = useCallback((listName: 'platforms' | 'scope', value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -171,7 +178,7 @@ export default function NewProposalPage() {
     if (sourceType === 'lead') {
       const lead = leads?.find(l => l.id === id);
       if (lead) {
-        const matchedType = PROJECT_TYPES.find(t => 
+        const matchedType = serviceTypes.find((t: string) => 
           lead.industry?.toLowerCase().includes(t.toLowerCase()) || 
           lead.deliverables?.toLowerCase().includes(t.toLowerCase())
         ) || "Other";
@@ -201,7 +208,7 @@ export default function NewProposalPage() {
     } else if (sourceType === 'project') {
       const project = projects?.find(p => p.id === id);
       if (project) {
-        const matchedType = PROJECT_TYPES.includes(project.type) ? project.type : "Other";
+        const matchedType = serviceTypes.includes(project.type) ? project.type : "Other";
         const defaults = VERTICAL_MAPPING[matchedType];
         
         setFormData(prev => ({
@@ -225,7 +232,7 @@ export default function NewProposalPage() {
         toast({ title: "Project Ingested", description: `Cloned parameters from ${project.name}.` });
       }
     }
-  }, [sourceType, leads, projects]);
+  }, [sourceType, leads, projects, serviceTypes]);
 
   const addLineItem = () => {
     setLineItems(prev => [...prev, { description: "", quantity: 1, unitPrice: 0, total: 0 }]);
@@ -382,9 +389,11 @@ export default function NewProposalPage() {
                     )}
                   </div>
                   <Select value={formData.projectType} onValueChange={handleProjectTypeChange}>
-                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg shadow-inner px-6"><SelectValue placeholder="Identify vertical..." /></SelectTrigger>
+                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg shadow-inner px-6">
+                      <SelectValue placeholder={isLoadingSettings ? "Syncing verticals..." : "Identify vertical..."} />
+                    </SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-xl">
-                      {PROJECT_TYPES.map(t => <SelectItem key={t} value={t} className="font-medium">{t}</SelectItem>)}
+                      {serviceTypes.map((t: string) => <SelectItem key={t} value={t} className="font-medium">{t}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
