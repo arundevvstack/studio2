@@ -33,7 +33,7 @@ import {
   initiatePasswordReset,
   initiateAnonymousSignIn
 } from "@/firebase/non-blocking-login";
-import { doc, serverTimestamp } from "firebase/firestore";
+import { doc, serverTimestamp, signOut } from "firebase/firestore";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
@@ -42,9 +42,11 @@ import { toast } from "@/hooks/use-toast";
  * A high-fidelity authentication gateway supporting Email/Password, Google, and Root Access.
  * Handles Identity Governance with a Pending approval workflow.
  * Auto-authorizes master email: defineperspective.in@gmail.com
+ * Strictly blocks restricted identifiers.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
+const BLACKLISTED_EMAILS = ['arunadhi.com@gmail.com'];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -75,6 +77,14 @@ export default function LoginPage() {
     if (isUserLoading || isMemberLoading) return;
 
     if (user) {
+      // 🚫 BLACKLIST ENFORCEMENT
+      if (user.email && BLACKLISTED_EMAILS.includes(user.email.toLowerCase())) {
+        toast({ variant: "destructive", title: "Access Denied", description: "This identifier has been restricted from the production engine." });
+        auth.signOut();
+        setIsProcessing(false);
+        return;
+      }
+
       if (user.isAnonymous) {
         // Provision Identity for Anonymous Root
         const rootRef = doc(db, "teamMembers", user.uid);
@@ -136,6 +146,11 @@ export default function LoginPage() {
         title: "Missing Credentials", 
         description: "Please enter your email and password." 
       });
+      return;
+    }
+
+    if (BLACKLISTED_EMAILS.includes(email.toLowerCase())) {
+      toast({ variant: "destructive", title: "Restricted Identifier", description: "Access denied by system policy." });
       return;
     }
     
@@ -237,7 +252,7 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/login-bg/1200/1200')] bg-cover bg-center opacity-10 grayscale" />
         </div>
         
-        <div className="relative z-10 space-y-12 max-w-xl">
+        <div className="relative z-10 space-y-12 max-wxl">
           <div className="flex items-center gap-6">
             <div className="h-20 w-20 rounded-[1.5rem] bg-white flex items-center justify-center shadow-2xl shadow-white/10 overflow-hidden">
               {globalSettings?.logo ? (

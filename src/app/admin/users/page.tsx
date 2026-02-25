@@ -27,7 +27,8 @@ import {
   Plus,
   Hourglass,
   Zap,
-  RotateCcw
+  RotateCcw,
+  ShieldBan
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc, serverTimestamp, getDocs, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, doc, serverTimestamp, getDocs, writeBatch, where } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -86,9 +87,11 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 /**
  * @fileOverview Role-Based Access Control (RBAC) Hub.
  * Provides high-level administrative oversight of all system users and their roles.
+ * Includes automated Maintenance Sync for restricted identifiers.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
+const RESTRICTED_EMAIL = 'arunadhi.com@gmail.com';
 
 export default function UserManagementPage() {
   const router = useRouter();
@@ -134,6 +137,32 @@ export default function UserManagementPage() {
     return query(collection(db, "roles"), orderBy("name", "asc"));
   }, [db, currentUser]);
   const { data: roles } = useCollection(rolesQuery);
+
+  // --- MAINTENANCE SYNC: Targeted Purge ---
+  const restrictedLeadsQuery = useMemoFirebase(() => {
+    if (!currentUser || !isMasterUser) return null;
+    return query(collection(db, "leads"), where("email", "==", RESTRICTED_EMAIL));
+  }, [db, currentUser, isMasterUser]);
+  const { data: restrictedLeads } = useCollection(restrictedLeadsQuery);
+
+  useEffect(() => {
+    if (isMasterUser && team) {
+      const restrictedMember = team.find(m => m.email?.toLowerCase() === RESTRICTED_EMAIL.toLowerCase());
+      if (restrictedMember) {
+        deleteDocumentNonBlocking(doc(db, "teamMembers", restrictedMember.id));
+        toast({ variant: "destructive", title: "Maintenance Sync", description: `Unauthorized identity ${RESTRICTED_EMAIL} purged from registry.` });
+      }
+    }
+  }, [isMasterUser, team, db]);
+
+  useEffect(() => {
+    if (isMasterUser && restrictedLeads && restrictedLeads.length > 0) {
+      restrictedLeads.forEach(lead => {
+        deleteDocumentNonBlocking(doc(db, "leads", lead.id));
+      });
+      toast({ variant: "destructive", title: "Pipeline Cleanse", description: "Removed restricted identifiers from sales pipeline." });
+    }
+  }, [isMasterUser, restrictedLeads, db]);
 
   const filteredUsers = useMemo(() => {
     if (!team) return [];
@@ -318,86 +347,90 @@ export default function UserManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((member) => (
-                  <TableRow key={member.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
-                    <TableCell className="px-10 py-6">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 rounded-xl border-2 border-white shadow-md">
-                          <AvatarImage src={member.thumbnail} />
-                          <AvatarFallback className="bg-primary/5 text-primary font-bold">{member.firstName?.[0] || 'U'}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
-                            {(member.email?.toLowerCase() === MASTER_EMAIL.toLowerCase() || member.roleId === 'root-admin') && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
+                {filteredUsers.map((member) => {
+                  const isRestricted = member.email?.toLowerCase() === RESTRICTED_EMAIL.toLowerCase();
+                  return (
+                    <TableRow key={member.id} className={`group hover:bg-slate-50/50 transition-colors border-slate-50 ${isRestricted ? 'bg-red-50/30' : ''}`}>
+                      <TableCell className="px-10 py-6">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12 rounded-xl border-2 border-white shadow-md">
+                            <AvatarImage src={member.thumbnail} />
+                            <AvatarFallback className="bg-primary/5 text-primary font-bold">{member.firstName?.[0] || 'U'}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
+                              {(member.email?.toLowerCase() === MASTER_EMAIL.toLowerCase() || member.roleId === 'root-admin') && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
+                              {isRestricted && <ShieldBan className="h-3.5 w-3.5 text-red-500 animate-pulse" />}
+                            </div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">{member.email}</p>
                           </div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{member.email}</p>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Select value={member.roleId || "none"} onValueChange={(val) => handleUpdateRole(member.id, val)}>
-                        <SelectTrigger className="h-10 w-48 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
-                          <SelectValue placeholder="Assign Role" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-2xl shadow-2xl">
-                          {roles?.map(role => (
-                            <SelectItem key={role.id} value={role.id} className="text-[10px] font-bold uppercase">{role.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
-                        member.status === 'Active' ? 'bg-green-50 text-green-600' : 
-                        member.status === 'Pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
-                      }`}>
-                        {member.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right px-10">
-                      <div className="flex items-center justify-end gap-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all"><MoreHorizontal className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
-                            <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Identity Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleToggleStatus(member.id, member.status)} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs ${member.status === 'Active' ? 'text-orange-600' : 'text-green-600'}`}>
-                              {member.status === 'Active' ? <ShieldAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                              <span>{member.status === 'Active' ? 'Suspend Access' : 'Authorize Entry'}</span>
-                            </DropdownMenuItem>
-                            {isAuthorizedToDelete && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
-                                    <Trash2 className="h-4 w-4" /> Delete Identity
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-                                  <AlertDialogHeader>
-                                    <div className="flex items-center gap-3 text-destructive mb-2">
-                                      <AlertTriangle className="h-6 w-6" />
-                                      <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
-                                    </div>
-                                    <AlertDialogDescription className="text-slate-500 font-medium">
-                                      This will permanently delete the identity <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the organization.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter className="gap-3 mt-6">
-                                    <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase">Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteUser(member.id, `${member.firstName} ${member.lastName}`)} className="bg-destructive text-white rounded-xl font-bold px-8 uppercase text-xs">Confirm Delete</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <Select value={member.roleId || "none"} onValueChange={(val) => handleUpdateRole(member.id, val)}>
+                          <SelectTrigger className="h-10 w-48 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
+                            <SelectValue placeholder="Assign Role" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl shadow-2xl">
+                            {roles?.map(role => (
+                              <SelectItem key={role.id} value={role.id} className="text-[10px] font-bold uppercase">{role.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
+                          member.status === 'Active' ? 'bg-green-50 text-green-600' : 
+                          member.status === 'Pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
+                        }`}>
+                          {member.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right px-10">
+                        <div className="flex items-center justify-end gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all"><MoreHorizontal className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
+                              <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Identity Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleToggleStatus(member.id, member.status)} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs ${member.status === 'Active' ? 'text-orange-600' : 'text-green-600'}`}>
+                                {member.status === 'Active' ? <ShieldAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                                <span>{member.status === 'Active' ? 'Suspend Access' : 'Authorize Entry'}</span>
+                              </DropdownMenuItem>
+                              {isAuthorizedToDelete && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
+                                      <Trash2 className="h-4 w-4" /> Delete Identity
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                                    <AlertDialogHeader>
+                                      <div className="flex items-center gap-3 text-destructive mb-2">
+                                        <AlertTriangle className="h-6 w-6" />
+                                        <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
+                                      </div>
+                                      <AlertDialogDescription className="text-slate-500 font-medium">
+                                        This will permanently delete the identity <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the organization.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className="gap-3 mt-6">
+                                      <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase">Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteUser(member.id, `${member.firstName} ${member.lastName}`)} className="bg-destructive text-white rounded-xl font-bold px-8 uppercase text-xs">Confirm Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
