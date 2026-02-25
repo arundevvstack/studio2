@@ -14,10 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Upload, Instagram, User, IndianRupee, Globe, Sparkles, X, CheckCircle2 } from "lucide-react";
+import { Loader2, Upload, Instagram, User, IndianRupee, Globe, Sparkles, Zap, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { fetchInstagramVisuals } from "@/ai/flows/instagram-visuals-flow";
 
 const CATEGORIES = [
   "Tech", "Lifestyle", "Fashion", "Beauty", "Travel", "Food", 
@@ -39,6 +40,7 @@ interface TalentFormProps {
 export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
   const db = useFirestore();
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
@@ -70,6 +72,54 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
     }
   }, [existingTalent]);
 
+  const extractUsername = (url: string) => {
+    try {
+      const parts = url.replace(/\/$/, "").split("/");
+      return parts[parts.length - 1];
+    } catch (e) {
+      return "";
+    }
+  };
+
+  const handleFetchInstagram = async () => {
+    if (!formData.instagram_url) {
+      toast({ variant: "destructive", title: "Identity Required", description: "Provide an Instagram URL to sync intelligence." });
+      return;
+    }
+
+    setIsFetching(true);
+    try {
+      const result = await fetchInstagramVisuals({
+        instagramUrl: formData.instagram_url,
+        category: selectedCategories[0] || "Professional"
+      });
+
+      let followerNum = 0;
+      const fStr = result.followers.toLowerCase();
+      if (fStr.includes('k')) followerNum = Math.round(parseFloat(fStr) * 1000);
+      else if (fStr.includes('m')) followerNum = Math.round(parseFloat(fStr) * 1000000);
+      else followerNum = Math.round(parseFloat(fStr)) || 0;
+
+      const engagementNum = parseFloat(result.engagementRate) || 0;
+
+      setFormData(prev => ({
+        ...prev,
+        followers: followerNum.toString(),
+        engagement_rate: engagementNum.toString(),
+        profile_picture: result.profilePictureUrl
+      }));
+
+      toast({
+        title: "Intelligence Synchronized",
+        description: `Retrieved ${result.followers} followers and profile portrait.`
+      });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Fetch Failed", description: "Could not retrieve Instagram metrics." });
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
   const toggleCategory = (cat: string) => {
     if (selectedCategories.includes(cat)) {
       setSelectedCategories(selectedCategories.filter(c => c !== cat));
@@ -86,26 +136,14 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
     }
   };
 
-  const extractUsername = (url: string) => {
-    try {
-      const parts = url.replace(/\/$/, "").split("/");
-      return parts[parts.length - 1];
-    } catch (e) {
-      return "";
-    }
-  };
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // In a real app we'd use Firebase Storage, here we use FileReader for immediate UI feedback in prototype
     setLoading(true);
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormData(prev => ({ ...prev, profile_picture: reader.result as string }));
       setLoading(false);
-      toast({ title: "Visual Asset Ready", description: "Portrait captured for synchronization." });
     };
     reader.readAsDataURL(file);
   };
@@ -125,7 +163,7 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
         instagram_url: formData.instagram_url,
         instagram_username: username,
         followers: Number(formData.followers) || 0,
-        category: selectedCategories, // Stored as array for multi-tag support
+        category: selectedCategories,
         location: formData.location,
         estimated_cost: Number(formData.estimated_cost) || 0,
         engagement_rate: Number(formData.engagement_rate) || 0,
@@ -141,11 +179,12 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
         const newDocRef = doc(collection(db, "talents"));
         await setDoc(newDocRef, {
           ...data,
+          id: newDocRef.id,
           verified: false,
           featured: false,
           created_at: serverTimestamp()
         });
-        toast({ title: "Talent Deployed", description: `${formData.name} added to the marketplace.` });
+        toast({ title: "Talent Deployed", description: `${formData.name} added to the registry.` });
       }
       onSuccess();
     } catch (error: any) {
@@ -157,28 +196,24 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 p-6">
-      {/* Visual Identity Section */}
       <div className="flex flex-col items-center gap-4 py-4">
         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
           <Avatar className="h-32 w-32 rounded-[2.5rem] border-4 border-slate-50 shadow-xl overflow-hidden bg-white">
             <AvatarImage src={formData.profile_picture} className="object-cover" />
             <AvatarFallback className="bg-slate-50 text-slate-300">
-              <Upload className="h-8 w-8" />
+              {isFetching ? <Loader2 className="h-8 w-8 animate-spin" /> : <Upload className="h-8 w-8" />}
             </AvatarFallback>
           </Avatar>
           <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded-[2.5rem] backdrop-blur-[2px]">
             <Upload className="h-6 w-6 text-white mb-1" />
-            <span className="text-[10px] font-bold text-white uppercase tracking-widest">Capture Portrait</span>
+            <span className="text-[10px] font-bold text-white uppercase tracking-widest">Update Portrait</span>
           </div>
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
         </div>
-        <div className="text-center">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Identifier Photo</p>
-        </div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile Identity Picture</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Core Identity */}
         <div className="space-y-6">
           <div className="space-y-2">
             <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Full Identity Name</Label>
@@ -194,7 +229,13 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Instagram Profile URL</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Instagram URL</Label>
+              <Button type="button" onClick={handleFetchInstagram} disabled={isFetching || !formData.instagram_url} variant="ghost" className="h-6 text-[9px] font-bold uppercase text-primary gap-1">
+                {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                Fetch Intel
+              </Button>
+            </div>
             <div className="relative group">
               <Instagram className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
               <Input 
@@ -218,7 +259,6 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
           </div>
         </div>
 
-        {/* Professional Metrics */}
         <div className="space-y-6">
           <div className="space-y-2">
             <Label className="text-[10px] font-bold uppercase text-slate-400 px-1">Location Hub (Kerala)</Label>
@@ -264,7 +304,6 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
         </div>
       </div>
 
-      {/* Talent Vertical Multi-Select Section */}
       <div className="space-y-4 pt-6 border-t border-slate-50">
         <div className="flex items-center justify-between">
           <Label className="text-[10px] font-bold uppercase text-slate-400 px-1 tracking-widest">
@@ -295,7 +334,6 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
         </div>
       </div>
 
-      {/* Strategic Toggles */}
       <div className="p-6 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
@@ -313,7 +351,6 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
         />
       </div>
 
-      {/* Action Footer */}
       <div className="flex justify-end gap-4 pt-8 border-t border-slate-50">
         <Button 
           type="button" 
@@ -326,7 +363,7 @@ export function TalentForm({ existingTalent, onSuccess }: TalentFormProps) {
         <Button 
           type="submit" 
           disabled={loading}
-          className="h-14 px-12 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/30 transition-all active:scale-95 gap-3 tracking-widest uppercase text-xs"
+          className="h-14 px-12 rounded-2xl font-bold bg-primary hover:bg-primary/90 text-white shadow-2xl shadow-primary/20 transition-all active:scale-95 gap-3 tracking-widest uppercase text-xs"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
           {existingTalent ? "Sync Changes" : "Deploy Talent"}

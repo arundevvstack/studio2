@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Settings,
   LogOut,
-  LogIn,
   Plus,
   ChevronRight,
   Briefcase,
@@ -21,8 +20,6 @@ import {
   Clock,
   Key,
   Shield,
-  Mic2,
-  Lock,
   Zap
 } from "lucide-react";
 import {
@@ -41,11 +38,9 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc } from "firebase/firestore";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { doc } from "firebase/firestore";
 
-// Icon Map for Dynamic Sidebar
 const ICON_MAP: Record<string, any> = {
   LayoutGrid,
   GitBranch,
@@ -58,7 +53,6 @@ const ICON_MAP: Record<string, any> = {
   ShieldCheck,
   Settings,
   LogOut,
-  LogIn,
   Plus,
   ChevronRight,
   Briefcase,
@@ -66,14 +60,12 @@ const ICON_MAP: Record<string, any> = {
   Clock,
   Key,
   Shield,
-  Mic2,
-  Lock,
   Zap
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
   { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
-  { id: "shoot-network", title: "Shoot Network", iconName: "Mic2", url: "/shoot-network", order: 2, isVisible: true },
+  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", order: 2, isVisible: true },
   { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 3, isVisible: true },
   { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 4, isVisible: true },
   { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 5, isVisible: true },

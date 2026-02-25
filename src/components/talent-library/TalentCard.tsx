@@ -13,7 +13,9 @@ import {
   Trash2, 
   Edit2, 
   Award,
-  MoreHorizontal
+  MoreHorizontal,
+  ShieldCheck,
+  Users
 } from "lucide-react";
 import { useFirestore } from "@/firebase";
 import { doc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
@@ -30,10 +32,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { TalentForm } from "./TalentForm";
 import Link from "next/link";
 
+/**
+ * @fileOverview High-Fidelity Talent Identity Card.
+ * Enhanced with reach indexing and strategic administrative controls.
+ */
+
 export function TalentCard({ talent }: { talent: any }) {
   const db = useFirestore();
 
   const formatFollowers = (count: number) => {
+    if (!count) return "0";
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toString();
@@ -41,11 +49,12 @@ export function TalentCard({ talent }: { talent: any }) {
 
   const handleVerify = async () => {
     try {
+      const isVerified = talent.verified === true;
       await updateDoc(doc(db, "talents", talent.id), {
-        verified: !talent.verified,
+        verified: !isVerified,
         last_verified_date: serverTimestamp()
       });
-      toast({ title: talent.verified ? "Verification Revoked" : "Identity Verified", description: talent.name });
+      toast({ title: isVerified ? "Verification Revoked" : "Identity Verified", description: talent.name });
     } catch (e: any) {
       toast({ variant: "destructive", title: "Update Failed", description: e.message });
     }
@@ -63,7 +72,7 @@ export function TalentCard({ talent }: { talent: any }) {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to purge this talent identity?")) return;
+    if (!confirm("Confirm permanent purge of this talent record?")) return;
     try {
       await deleteDoc(doc(db, "talents", talent.id));
       toast({ variant: "destructive", title: "Entity Purged", description: talent.name });
@@ -72,7 +81,6 @@ export function TalentCard({ talent }: { talent: any }) {
     }
   };
 
-  // Logic to handle both array and string categories
   const categories = Array.isArray(talent.category) ? talent.category : [talent.category].filter(Boolean);
 
   return (
@@ -95,7 +103,7 @@ export function TalentCard({ talent }: { talent: any }) {
           )}
           {talent.verified && (
             <Badge className="bg-white/90 backdrop-blur-md text-blue-600 border-none shadow-lg px-4 py-1.5 rounded-full font-bold text-[8px] uppercase tracking-widest gap-2">
-              <CheckCircle2 className="h-3 w-3" /> Verified
+              <ShieldCheck className="h-3 w-3" /> Verified
             </Badge>
           )}
           {talent.ready_to_collab && (
@@ -113,10 +121,10 @@ export function TalentCard({ talent }: { talent: any }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="rounded-[1.5rem] w-56 p-2 shadow-2xl border-slate-100">
-              <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Strategic Actions</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Administrative Control</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleVerify} className="rounded-xl p-3 cursor-pointer gap-3">
-                <CheckCircle2 className={`h-4 w-4 ${talent.verified ? 'text-slate-400' : 'text-blue-500'}`} />
+                <ShieldCheck className={`h-4 w-4 ${talent.verified ? 'text-slate-400' : 'text-blue-500'}`} />
                 <span className="font-bold text-xs">{talent.verified ? 'Revoke Verification' : 'Verify Identity'}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleToggleFeatured} className="rounded-xl p-3 cursor-pointer gap-3">
@@ -147,16 +155,11 @@ export function TalentCard({ talent }: { talent: any }) {
 
       <div className="p-8 pt-4 flex-grow space-y-6">
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight">{talent.name}</h3>
-          </div>
+          <h3 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight truncate">{talent.name}</h3>
           <div className="flex flex-wrap gap-1">
             {categories.slice(0, 2).map(cat => (
               <Badge key={cat} variant="outline" className="border-slate-100 text-[9px] font-bold uppercase text-slate-400 rounded-lg">{cat}</Badge>
             ))}
-            {categories.length > 2 && (
-              <Badge variant="outline" className="border-slate-100 text-[9px] font-bold uppercase text-slate-400 rounded-lg">+{categories.length - 2}</Badge>
-            )}
           </div>
           <p className="text-sm font-bold text-primary tracking-normal flex items-center gap-1">
             <Instagram className="h-3.5 w-3.5" /> @{talent.instagram_username || 'talent'}
@@ -166,11 +169,14 @@ export function TalentCard({ talent }: { talent: any }) {
         <div className="grid grid-cols-2 gap-6 py-6 border-y border-slate-50">
           <div>
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Reach Index</p>
-            <p className="text-xl font-bold text-slate-900 tabular-nums">{formatFollowers(talent.followers || 0)}</p>
+            <div className="flex items-center gap-1.5">
+              <Users className="h-3 w-3 text-primary" />
+              <span className="text-lg font-bold text-slate-900 tabular-nums">{formatFollowers(talent.followers || 0)}</span>
+            </div>
           </div>
           <div>
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Strategic Quote</p>
-            <p className="text-xl font-bold text-slate-900 tabular-nums flex items-center gap-0.5">
+            <p className="text-lg font-bold text-slate-900 tabular-nums flex items-center gap-0.5">
               <IndianRupee className="h-4 w-4 text-slate-300" />
               {talent.estimated_cost?.toLocaleString()}
             </p>
