@@ -35,8 +35,9 @@ function InvoiceViewContent({ invoiceId }: { invoiceId: string }) {
   const { data: client, isLoading: isClientLoading } = useDoc(clientRef);
 
   const billingSettingsRef = useMemoFirebase(() => {
+    if (!user) return null;
     return doc(db, "companyBillingSettings", "global");
-  }, [db]);
+  }, [db, user]);
   const { data: globalSettings, isLoading: isBillingLoading } = useDoc(billingSettingsRef);
 
   if (isProjectLoading || isClientLoading || isBillingLoading) {

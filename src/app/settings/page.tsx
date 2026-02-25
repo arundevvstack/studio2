@@ -148,10 +148,6 @@ const THEME_COLORS = [
   { name: "Rose Distinction", hsl: "330 81% 60%", color: "#EC4899" },
 ];
 
-/**
- * Converts a Hex color to HSL values used in CSS variables.
- * Format: "H S% L%" (no commas, space separated)
- */
 function hexToHslValues(hex: string): string {
   let r = 0, g = 0, b = 0;
   if (hex.length === 4) {
@@ -195,12 +191,13 @@ export default function SettingsPage() {
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
 
-  // --- Navigation Reordering State ---
   const [orderedModules, setOrderedModules] = useState(SIDEBAR_MODULES);
   
-  // Fetch Global Navigation Config
-  const navSettingsRef = useMemoFirebase(() => doc(db, "settings", "navigation"), [db]);
-  const { data: navSettings, isLoading: isNavLoading } = useDoc(navSettingsRef);
+  const navSettingsRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "settings", "navigation");
+  }, [db, user]);
+  const { data: navSettings } = useDoc(navSettingsRef);
 
   useEffect(() => {
     if (navSettings?.order && Array.isArray(navSettings.order)) {
@@ -215,14 +212,16 @@ export default function SettingsPage() {
     }
   }, [navSettings]);
 
-  // --- Auth & Permissions Logic ---
   const memberRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "teamMembers", user.uid);
   }, [db, user]);
   const { data: currentUserMember } = useDoc(memberRef);
 
-  const rolesQuery = useMemoFirebase(() => query(collection(db, "roles"), orderBy("name", "asc")), [db]);
+  const rolesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "roles"), orderBy("name", "asc"));
+  }, [db, user]);
   const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
 
   const userRoleRef = useMemoFirebase(() => {
@@ -252,7 +251,6 @@ export default function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Initialize theme
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("theme");
@@ -300,10 +298,12 @@ export default function SettingsPage() {
     changeThemeColor(hslValues);
   };
 
-  const billingSettingsRef = useMemoFirebase(() => doc(db, "companyBillingSettings", "global"), [db]);
+  const billingSettingsRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "companyBillingSettings", "global");
+  }, [db, user]);
   const { data: billingSettings } = useDoc(billingSettingsRef);
 
-  // Billing Form State
   const [billingForm, setBillingForm] = useState({
     companyName: "",
     companyAddress: "",
@@ -320,7 +320,6 @@ export default function SettingsPage() {
     logo: ""
   });
 
-  // Personal Profile Form State
   const [profileForm, setProfileForm] = useState({
     firstName: "",
     lastName: "",
@@ -359,7 +358,6 @@ export default function SettingsPage() {
     }
   }, [currentUserMember]);
 
-  // Role Form State
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
   const [roleForm, setRoleForm] = useState({
@@ -461,7 +459,6 @@ export default function SettingsPage() {
     }, 800);
   };
 
-  // --- DND Handlers ---
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -892,7 +889,6 @@ export default function SettingsPage() {
   );
 }
 
-// --- Sortable Item Component ---
 function SortableNavigationItem({ item, roles, selectedRoleId, db }: any) {
   const {
     attributes,

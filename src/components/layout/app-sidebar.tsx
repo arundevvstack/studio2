@@ -99,8 +99,9 @@ export function AppSidebar() {
   const { user } = useUser();
 
   const billingRef = useMemoFirebase(() => {
+    if (!user) return null;
     return doc(db, "companyBillingSettings", "global");
-  }, [db]);
+  }, [db, user]);
   const { data: globalSettings } = useDoc(billingRef);
 
   const memberRef = useMemoFirebase(() => {
@@ -115,7 +116,10 @@ export function AppSidebar() {
   }, [db, member?.roleId]);
   const { data: role } = useDoc(roleRef);
 
-  const navSettingsRef = useMemoFirebase(() => doc(db, "settings", "navigation"), [db]);
+  const navSettingsRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "settings", "navigation");
+  }, [db, user]);
   const { data: navSettings } = useDoc(navSettingsRef);
 
   const isSuperAdmin = role?.name === 'Super Admin' || member?.roleId === 'super-admin';
@@ -192,8 +196,8 @@ export function AppSidebar() {
                         isActive={isActive}
                         className={`rounded-md h-7 px-2 transition-all ${
                           isActive 
-                            ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
-                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-border" 
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         }`}
                       >
                         <Link href={item.url} className="flex items-center w-full">
@@ -216,15 +220,15 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-2 mt-auto">
-        <SidebarSeparator className="mb-2 bg-slate-100" />
+        <SidebarSeparator className="mb-2 bg-sidebar-border" />
         <SidebarMenu className="space-y-0">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               className={`rounded-md h-7 px-2 transition-all ${
                 pathname === "/settings" 
-                  ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm ring-1 ring-sidebar-border" 
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               }`}
             >
               <Link href="/settings" className="flex items-center">
@@ -238,7 +242,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="rounded-md h-7 px-2 text-slate-500 hover:bg-slate-50"
+              className="rounded-md h-7 px-2 text-sidebar-foreground/70 hover:bg-sidebar-accent"
             >
               <Link href="/logout" className="flex items-center">
                 <LogOut className="h-3.5 w-3.5" />
