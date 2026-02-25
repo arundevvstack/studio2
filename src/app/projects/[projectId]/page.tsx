@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -252,7 +251,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" className="h-14 px-10 rounded-full font-bold gap-3 bg-white border-slate-100 text-slate-600 hover:bg-slate-50 shadow-xl shadow-slate-200/20 transition-all active:scale-95">
-                <Settings2 className="h-5 w-5" /> Config Strategy
+                <Settings2 className="h-5 w-5" /> Edit
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">

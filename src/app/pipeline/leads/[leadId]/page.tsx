@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -247,7 +246,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
             <DialogTrigger asChild>
               <Button variant="outline" className="h-12 flex-1 md:flex-none px-6 rounded-xl font-bold gap-2 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors tracking-normal">
                 <Settings className="h-4 w-4" />
-                Configure Lead
+                Edit
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[700px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
