@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -263,7 +264,7 @@ export default function LoginPage() {
         <div className="space-y-3 max-w-md">
           <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Prohibited</h1>
           <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            This account identity is restricted and cannot enter the DP MediaFlow production engine. This decision is part of organizational security protocols.
+            This account identity is restricted and cannot enter the DP MediaFlow workspace. This decision is part of organizational security protocols.
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
