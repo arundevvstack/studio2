@@ -49,7 +49,8 @@ import {
   BarChart3,
   Globe,
   GripVertical,
-  Palette
+  Palette,
+  Pipette
 } from "lucide-react";
 import { 
   DndContext, 
@@ -147,12 +148,49 @@ const THEME_COLORS = [
   { name: "Rose Distinction", hsl: "330 81% 60%", color: "#EC4899" },
 ];
 
+/**
+ * Converts a Hex color to HSL values used in CSS variables.
+ * Format: "H S% L%" (no commas, space separated)
+ */
+function hexToHslValues(hex: string): string {
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else if (hex.length === 7) {
+    r = parseInt(hex.substring(1, 3), 16);
+    g = parseInt(hex.substring(3, 5), 16);
+    b = parseInt(hex.substring(5, 7), 16);
+  }
+  
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
 export default function SettingsPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isSaving, setIsGenerating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [selectedColor, setSelectedColor] = useState(THEME_COLORS[0].hsl);
+  const [customHex, setCustomHex] = useState("#2E86C1");
   const logoInputRef = useRef<HTMLInputElement>(null);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
@@ -170,7 +208,6 @@ export default function SettingsPage() {
         SIDEBAR_MODULES.find(m => m.id === id)
       ).filter(Boolean) as typeof SIDEBAR_MODULES;
       
-      // Append any new modules that weren't in the saved order
       const existingIds = new Set(navSettings.order);
       const newModules = SIDEBAR_MODULES.filter(m => !existingIds.has(m.id));
       
@@ -255,6 +292,12 @@ export default function SettingsPage() {
       title: "Tactical Color Updated",
       description: "Workspace primary identity has been synchronized."
     });
+  };
+
+  const handleCustomColorChange = (hex: string) => {
+    setCustomHex(hex);
+    const hslValues = hexToHslValues(hex);
+    changeThemeColor(hslValues);
   };
 
   const billingSettingsRef = useMemoFirebase(() => doc(db, "companyBillingSettings", "global"), [db]);
@@ -746,8 +789,8 @@ export default function SettingsPage() {
               </div>
               <DialogFooter className="bg-slate-50 p-8 flex justify-between items-center -mx-0">
                 <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest">Discard</Button></DialogClose>
-                <Button onClick={handleSaveRole} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-10 h-12 gap-3 tracking-widest shadow-2xl transition-all">
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                <Button onClick={handleSaveRole} disabled={isGenerating} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-10 h-12 gap-3 tracking-widest shadow-2xl transition-all">
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                   Deploy Policy
                 </Button>
               </DialogFooter>
@@ -780,7 +823,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white tracking-normal">Brand Alignment</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-normal">Select a tactical primary color for the global workspace.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-normal">Select a tactical primary color or define a custom hex value.</p>
                   </div>
                 </div>
 
@@ -809,6 +852,36 @@ export default function SettingsPage() {
                       )}
                     </button>
                   ))}
+
+                  {/* Custom Color Selector */}
+                  <div className={`p-4 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 relative ${
+                    !THEME_COLORS.some(c => c.hsl === selectedColor)
+                      ? "border-primary bg-primary/5 shadow-inner" 
+                      : "border-slate-50 bg-white hover:border-slate-200 dark:bg-slate-800 dark:border-slate-700"
+                  }`}>
+                    <div className="relative group/picker">
+                      <div 
+                        className="h-10 w-10 rounded-full shadow-lg ring-4 ring-white dark:ring-slate-900 flex items-center justify-center overflow-hidden cursor-pointer"
+                        style={{ backgroundColor: customHex }}
+                      >
+                        <Pipette className="h-4 w-4 text-white mix-blend-difference" />
+                        <input 
+                          type="color" 
+                          value={customHex} 
+                          onChange={(e) => handleCustomColorChange(e.target.value)}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full scale-150"
+                        />
+                      </div>
+                    </div>
+                    <span className={`text-[9px] font-bold uppercase tracking-widest ${
+                      !THEME_COLORS.some(c => c.hsl === selectedColor) ? "text-primary" : "text-slate-400"
+                    }`}>
+                      Custom Hex
+                    </span>
+                    {!THEME_COLORS.some(c => c.hsl === selectedColor) && (
+                      <CheckCircle2 className="h-3 w-3 text-primary" />
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
