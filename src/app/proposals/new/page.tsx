@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ChevronLeft, 
@@ -13,7 +12,6 @@ import {
   Target,
   Layers,
   IndianRupee,
-  Calendar,
   Zap,
   GitBranch,
   Folder,
@@ -142,11 +140,15 @@ export default function NewProposalPage() {
     }
   }, []);
 
+  const handleProjectTypeChange = useCallback((val: string) => {
+    setFormData(prev => ({ ...prev, projectType: val }));
+    syncVerticalDefaults(val);
+  }, [syncVerticalDefaults]);
+
   const handleSourceSelect = useCallback((id: string) => {
     if (sourceType === 'lead') {
       const lead = leads?.find(l => l.id === id);
       if (lead) {
-        // Attempt to find matching project type from lead industry
         const matchedType = PROJECT_TYPES.find(t => lead.industry?.includes(t)) || "Other";
         const verticalDefaults = VERTICAL_MAPPING[matchedType];
 
@@ -157,7 +159,7 @@ export default function NewProposalPage() {
           objective: `Strategic engagement for ${lead.industry || 'media production'}.`,
           deliverables: lead.deliverables || verticalDefaults?.deliverables || "",
           projectType: matchedType,
-          scope: verticalDefaults?.scope || []
+          scope: verticalDefaults?.scope || prev.scope
         }));
         setLineItems([{ description: "Project Mobilization", quantity: 1, unitPrice: lead.estimatedBudget || 0, total: lead.estimatedBudget || 0 }]);
         toast({ title: "Lead Intel Synced", description: `Proposal populated with parameters from ${lead.name}.` });
@@ -171,8 +173,8 @@ export default function NewProposalPage() {
           projectTitle: project.name || "",
           projectType: PROJECT_TYPES.includes(project.type) ? project.type : "Other",
           objective: project.description || "",
-          deliverables: verticalDefaults?.deliverables || "",
-          scope: verticalDefaults?.scope || []
+          deliverables: verticalDefaults?.deliverables || prev.deliverables || "",
+          scope: verticalDefaults?.scope || prev.scope
         }));
         setLineItems([{ description: "Production Services", quantity: 1, unitPrice: project.budget || 0, total: project.budget || 0 }]);
         toast({ title: "Project Assets Synced", description: `Proposal populated with production details for ${project.name}.` });
@@ -181,24 +183,26 @@ export default function NewProposalPage() {
   }, [sourceType, leads, projects]);
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { description: "", quantity: 1, unitPrice: 0, total: 0 }]);
+    setLineItems(prev => [...prev, { description: "", quantity: 1, unitPrice: 0, total: 0 }]);
   };
 
   const updateLineItem = (index: number, field: keyof LineItem, value: any) => {
-    const updated = [...lineItems];
-    const item = { ...updated[index], [field]: value };
-    
-    if (field === 'quantity' || field === 'unitPrice') {
-      item.total = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
-    }
-    
-    updated[index] = item;
-    setLineItems(updated);
+    setLineItems(prev => {
+      const updated = [...prev];
+      const item = { ...updated[index], [field]: value };
+      if (field === 'quantity' || field === 'unitPrice') {
+        item.total = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+      }
+      updated[index] = item;
+      return updated;
+    });
   };
 
   const removeLineItem = (index: number) => {
-    if (lineItems.length === 1) return;
-    setLineItems(lineItems.filter((_, i) => i !== index));
+    setLineItems(prev => {
+      if (prev.length === 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const totalInvestment = useMemo(() => {
@@ -308,11 +312,11 @@ export default function NewProposalPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Partnership Entity</Label>
-                <Input value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} placeholder="e.g. Nike Global" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" required />
+                <Input value={formData.clientName} onChange={e => setFormData(prev => ({...prev, clientName: e.target.value}))} placeholder="e.g. Nike Global" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" required />
               </div>
               <div className="space-y-3">
                 <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Active Brand</Label>
-                <Input value={formData.brandName} onChange={e => setFormData({...formData, brandName: e.target.value})} placeholder="e.g. Jordan Brand" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" />
+                <Input value={formData.brandName} onChange={e => setFormData(prev => ({...prev, brandName: e.target.value}))} placeholder="e.g. Jordan Brand" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" />
               </div>
             </div>
           </div>
@@ -326,7 +330,7 @@ export default function NewProposalPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Project Title</Label>
-                  <Input value={formData.projectTitle} onChange={e => setFormData({...formData, projectTitle: e.target.value})} placeholder="e.g. Summer '24 Campaign" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" required />
+                  <Input value={formData.projectTitle} onChange={e => setFormData(prev => ({...prev, projectTitle: e.target.value}))} placeholder="e.g. Summer '24 Campaign" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" required />
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-1">
@@ -337,10 +341,7 @@ export default function NewProposalPage() {
                       </Button>
                     )}
                   </div>
-                  <Select value={formData.projectType} onValueChange={val => {
-                    setFormData({...formData, projectType: val});
-                    syncVerticalDefaults(val);
-                  }}>
+                  <Select value={formData.projectType} onValueChange={handleProjectTypeChange}>
                     <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg shadow-inner px-6"><SelectValue placeholder="Identify type..." /></SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-xl">
                       {PROJECT_TYPES.map(t => <SelectItem key={t} value={t} className="font-medium">{t}</SelectItem>)}
@@ -353,17 +354,17 @@ export default function NewProposalPage() {
                 <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
                   <Target className="h-3 w-3" /> Strategic Objective
                 </Label>
-                <Textarea value={formData.objective} onChange={e => setFormData({...formData, objective: e.target.value})} placeholder="What is the core problem we are solving?" className="min-h-[120px] rounded-[2rem] bg-slate-50 border-none shadow-inner p-8 text-base font-medium resize-none" />
+                <Textarea value={formData.objective} onChange={e => setFormData(prev => ({...prev, objective: e.target.value}))} placeholder="What is the core problem we are solving?" className="min-h-[120px] rounded-[2rem] bg-slate-50 border-none shadow-inner p-8 text-base font-medium resize-none" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Target Demographic</Label>
-                  <Input value={formData.targetAudience} onChange={e => setFormData({...formData, targetAudience: e.target.value})} placeholder="e.g. Gen Z Athletes" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
+                  <Input value={formData.targetAudience} onChange={e => setFormData(prev => ({...prev, targetAudience: e.target.value}))} placeholder="e.g. Gen Z Athletes" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
                 </div>
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Deliverables Matrix</Label>
-                  <Input value={formData.deliverables} onChange={e => setFormData({...formData, deliverables: e.target.value})} placeholder="e.g. 3x TVC, 10x Reels" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
+                  <Input value={formData.deliverables} onChange={e => setFormData(prev => ({...prev, deliverables: e.target.value}))} placeholder="e.g. 3x TVC, 10x Reels" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
                 </div>
               </div>
             </div>
@@ -411,7 +412,7 @@ export default function NewProposalPage() {
               </div>
               <div className="space-y-1 text-right">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Delivery Timeline</p>
-                <Input value={formData.timeline} onChange={e => setFormData({...formData, timeline: e.target.value})} placeholder="e.g. 4 Weeks" className="h-10 bg-white/5 border-none text-white font-bold w-32 text-right p-0 focus-visible:ring-0" />
+                <Input value={formData.timeline} onChange={e => setFormData(prev => ({...prev, timeline: e.target.value}))} placeholder="e.g. 4 Weeks" className="h-10 bg-white/5 border-none text-white font-bold w-32 text-right p-0 focus-visible:ring-0" />
               </div>
             </div>
           </div>
@@ -424,7 +425,32 @@ export default function NewProposalPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {SCOPE_ITEMS.map(item => (
                 <div key={item} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleToggle('scope', item)}>
-                  <Checkbox checked={formData.scope.includes(item)} onCheckedChange={() => handleToggle('scope', item)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                  <Checkbox 
+                    checked={formData.scope.includes(item)} 
+                    onCheckedChange={() => handleToggle('scope', item)} 
+                    onClick={(e) => e.stopPropagation()}
+                    className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
+                  />
+                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Platforms */}
+          <div className="space-y-8 pt-8 border-t border-slate-50">
+            <h3 className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] flex items-center gap-2">
+              <Zap className="h-3 w-3" /> Active Platforms
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {PLATFORMS.map(item => (
+                <div key={item} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleToggle('platforms', item)}>
+                  <Checkbox 
+                    checked={formData.platforms.includes(item)} 
+                    onCheckedChange={() => handleToggle('platforms', item)} 
+                    onClick={(e) => e.stopPropagation()}
+                    className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
+                  />
                   <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item}</span>
                 </div>
               ))}
@@ -434,7 +460,7 @@ export default function NewProposalPage() {
 
         <div className="bg-slate-50 p-12 flex items-center justify-end gap-10">
           <Button type="button" variant="ghost" className="text-slate-500 font-bold text-sm uppercase tracking-widest hover:bg-transparent" onClick={() => router.back()}>Discard</Button>
-          <Button type="submit" disabled={isSubmitting} className="h-16 px-12 rounded-3xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-2xl shadow-primary/20 gap-3 group transition-all active:scale-95">
+          <Button type="submit" disabled={isSubmitting} className="h-16 px-12 rounded-3xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-2xl shadow-primary/20 gap-3 group transition-all active:scale-[0.98]">
             {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : (
               <>
                 Initiate Synthesis
