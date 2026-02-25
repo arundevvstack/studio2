@@ -42,7 +42,12 @@ import {
   Unlock,
   Shield,
   User,
-  GitBranch
+  GitBranch,
+  Trello,
+  Calendar,
+  Clock,
+  BarChart3,
+  Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -61,6 +66,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -77,23 +89,22 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 import WorkflowManager from "@/components/settings/WorkflowManager";
 
-const DEFAULT_WORKSPACE_ITEMS = [
-  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
-  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 2, isVisible: true },
-  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 3, isVisible: true },
-  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 4, isVisible: true },
-  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 5, isVisible: true },
-  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 6, isVisible: true },
-  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 7, isVisible: true },
-  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 8, isVisible: true },
-  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 9, isVisible: true },
-  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 10, isVisible: true },
-  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 11, isVisible: true },
-];
-
-const MANAGEMENT_MODULES = [
-  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", order: 100, isVisible: true },
-  { id: "user-management", title: "User Management", iconName: "Shield", url: "/admin/users", order: 101, isVisible: true },
+const SIDEBAR_MODULES = [
+  { id: "dashboard", title: "Dashboard", icon: LayoutGrid },
+  { id: "proposals", title: "Proposals", icon: FileText },
+  { id: "talent-library", title: "Talent Library", icon: Users },
+  { id: "pipeline", title: "Pipeline", icon: GitBranch },
+  { id: "projects", title: "Projects", icon: Briefcase },
+  { id: "board", title: "Board", icon: Trello },
+  { id: "clients", title: "Clients", icon: Briefcase },
+  { id: "schedule", title: "Schedule", icon: Calendar },
+  { id: "time", title: "Time Tracking", icon: Clock },
+  { id: "team", title: "Team", icon: Users },
+  { id: "billing", title: "Billing", icon: FileText },
+  { id: "intelligence", title: "Intelligence", icon: BarChart3 },
+  { id: "market", title: "Market Research", icon: Globe },
+  { id: "admin", title: "Admin Console", icon: ShieldCheck },
+  { id: "settings", title: "Settings", icon: Settings },
 ];
 
 const SETTINGS_TABS = [
@@ -116,6 +127,7 @@ export default function SettingsPage() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [newVertical, setNewVertical] = useState("");
+  const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
 
   // Auth & Permissions Logic
   const memberRef = useMemoFirebase(() => {
@@ -124,21 +136,30 @@ export default function SettingsPage() {
   }, [db, user]);
   const { data: currentUserMember } = useDoc(memberRef);
 
+  const rolesQuery = useMemoFirebase(() => query(collection(db, "roles"), orderBy("name", "asc")), [db]);
+  const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
+
   const userRoleRef = useMemoFirebase(() => {
     if (!currentUserMember?.roleId) return null;
     return doc(db, "roles", currentUserMember.roleId);
   }, [db, currentUserMember?.roleId]);
   const { data: userRole } = useDoc(userRoleRef);
 
+  useEffect(() => {
+    if (roles && roles.length > 0 && !selectedRoleIdForNav) {
+      setSelectedRoleIdForNav(roles[0].id);
+    }
+  }, [roles, selectedRoleIdForNav]);
+
   const hasPermission = (perm: string) => {
-    if (!userRole) return true; // Default to all access for prototype phase
-    return userRole.permissions?.includes(perm);
+    if (!userRole) return true; 
+    return userRole.permissions?.includes(perm) || userRole.name === 'Super Admin';
   };
 
   const visibleTabs = useMemo(() => {
     return SETTINGS_TABS.filter(tab => {
-      if (tab.id === 'profile') return true; // Personal profile always visible
-      if (tab.id === 'preferences') return true; // Appearance preferences always visible
+      if (tab.id === 'profile') return true; 
+      if (tab.id === 'preferences') return true; 
       return hasPermission(`settings:${tab.id}`);
     });
   }, [userRole]);
@@ -168,15 +189,8 @@ export default function SettingsPage() {
     }
   };
 
-  // Data Collections
   const teamQuery = useMemoFirebase(() => query(collection(db, "teamMembers"), orderBy("firstName", "asc")), [db]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
-
-  const navQuery = useMemoFirebase(() => query(collection(db, "sidebar_items"), orderBy("order", "asc")), [db]);
-  const { data: navItems, isLoading: navLoading } = useCollection(navQuery);
-
-  const rolesQuery = useMemoFirebase(() => query(collection(db, "roles"), orderBy("name", "asc")), [db]);
-  const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
 
   const projectSettingsRef = useMemoFirebase(() => doc(db, "settings", "projects"), [db]);
   const { data: projectSettings } = useDoc(projectSettingsRef);
@@ -328,8 +342,6 @@ export default function SettingsPage() {
   const handleSavePersonalProfile = () => {
     if (!memberRef || !user) return;
     setIsGenerating(true);
-    
-    // Use setDocumentNonBlocking with merge to ensure it works even if the teamMember doc doesn't exist yet
     setDocumentNonBlocking(memberRef, {
       ...profileForm,
       email: user.email,
@@ -501,6 +513,72 @@ export default function SettingsPage() {
           <WorkflowManager />
         </TabsContent>
 
+        <TabsContent value="navigation" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
+            <div className="p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-slate-50/30 dark:bg-slate-800/30">
+              <div className="space-y-1">
+                <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Role-Based Navigation</CardTitle>
+                <CardDescription className="tracking-normal">Toggle module visibility for specific strategic roles.</CardDescription>
+              </div>
+              <div className="flex items-center gap-4 w-full md:w-auto">
+                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Select Role:</Label>
+                <Select value={selectedRoleIdForNav} onValueChange={setSelectedRoleIdForNav}>
+                  <SelectTrigger className="h-12 w-full md:w-[240px] rounded-xl bg-white border-slate-100 font-bold text-xs uppercase tracking-widest shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                    <SelectValue placeholder="Choose Role" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl shadow-xl">
+                    {roles?.map(r => (
+                      <SelectItem key={r.id} value={r.id} className="text-xs font-bold uppercase">{r.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <CardContent className="p-0">
+              <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                {SIDEBAR_MODULES.map((item) => {
+                  const Icon = item.icon || Globe;
+                  const selectedRole = roles?.find(r => r.id === selectedRoleIdForNav);
+                  const hasAccess = selectedRole?.permissions?.includes(`module:${item.id}`) || selectedRole?.name === 'Super Admin';
+                  
+                  return (
+                    <div key={item.id} className="flex items-center justify-between p-8 hover:bg-slate-50/50 transition-colors dark:hover:bg-slate-800/50">
+                      <div className="flex items-center gap-6">
+                        <div className="h-12 w-12 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white tracking-normal">{item.title}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/{item.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${hasAccess ? 'text-primary' : 'text-slate-300'}`}>
+                          {hasAccess ? 'Authorized' : 'Restricted'}
+                        </span>
+                        <Switch 
+                          disabled={selectedRole?.name === 'Super Admin'}
+                          checked={!!hasAccess} 
+                          onCheckedChange={(checked) => {
+                            if (!selectedRole) return;
+                            const perm = `module:${item.id}`;
+                            const updatedPerms = checked 
+                              ? [...(selectedRole.permissions || []), perm]
+                              : (selectedRole.permissions || []).filter(p => p !== perm);
+                            updateDocumentNonBlocking(doc(db, "roles", selectedRole.id), { permissions: updatedPerms });
+                            toast({ title: "Authority Adjusted", description: `${item.title} visibility updated for ${selectedRole.name}.` });
+                          }} 
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="roles" className="animate-in slide-in-from-left-2 duration-300">
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
             <div className="p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-slate-50/30 dark:bg-slate-800/30">
@@ -575,7 +653,7 @@ export default function SettingsPage() {
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-3"><Layers className="h-4 w-4 text-primary" /> Module Entitlements</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {[...DEFAULT_WORKSPACE_ITEMS, ...MANAGEMENT_MODULES].map((item) => (
+                      {SIDEBAR_MODULES.map((item) => (
                         <div key={item.id} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleTogglePermission(`module:${item.id}`)}>
                           <Checkbox checked={roleForm.permissions.includes(`module:${item.id}`)} onCheckedChange={() => handleTogglePermission(`module:${item.id}`)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
                           <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item.title}</span>
@@ -606,180 +684,6 @@ export default function SettingsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </TabsContent>
-
-        <TabsContent value="team" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
-            <div className="p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-slate-50/30 dark:bg-slate-800/30">
-              <div>
-                <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Production Crew</CardTitle>
-                <CardDescription className="tracking-normal">Provision and manage internal resources and access permissions.</CardDescription>
-              </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="h-11 px-6 rounded-xl font-bold bg-slate-900 hover:bg-slate-800 text-white gap-2 tracking-normal dark:bg-white dark:text-slate-900">
-                    <Plus className="h-4 w-4" />
-                    Invite Member
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
-                  <DialogHeader className="p-8 pb-0">
-                    <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Member</DialogTitle>
-                  </DialogHeader>
-                  <TeamMemberForm />
-                </DialogContent>
-              </Dialog>
-            </div>
-            
-            <CardContent className="p-0">
-              {teamLoading ? (
-                <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-              ) : (
-                <Table>
-                  <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Crew Member</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal">Strategic Role</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal text-center">Status</TableHead>
-                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {team?.map((member) => (
-                      <TableRow key={member.id} className="group transition-colors border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
-                        <TableCell className="px-10 py-6">
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-10 w-10 rounded-xl"><AvatarImage src={member.thumbnail} /><AvatarFallback>{member.firstName[0]}</AvatarFallback></Avatar>
-                            <div>
-                              <p className="font-bold text-slate-900 dark:text-white">{member.firstName} {member.lastName}</p>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase">{member.email}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="border-slate-100 text-slate-600 font-bold text-[9px] uppercase tracking-normal">
-                            {roles?.find(r => r.id === member.roleId)?.name || member.roleId || "General Access"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full ${member.status === 'Suspended' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                            {member.status || "Active"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right px-10">
-                          <div className="flex items-center justify-end gap-2">
-                            <Dialog>
-                              <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-slate-300 hover:text-primary transition-all"><Edit2 className="h-4 w-4" /></Button></DialogTrigger>
-                              <DialogContent className="sm:max-w-[600px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
-                                <DialogHeader className="p-8 pb-0">
-                                  <DialogTitle className="text-2xl font-bold font-headline tracking-normal">Update Team Member</DialogTitle>
-                                </DialogHeader>
-                                <TeamMemberForm existingMember={member} />
-                              </DialogContent>
-                            </Dialog>
-                            <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "teamMembers", member.id))} className="h-10 w-10 rounded-xl text-slate-300 hover:text-destructive transition-all"><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="projects" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
-            <CardHeader className="p-10 pb-6 border-b border-slate-100 dark:border-slate-800">
-              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Execution Verticals</CardTitle>
-            </CardHeader>
-            <CardContent className="p-10 space-y-8">
-              <div className="flex gap-3">
-                <Input value={newVertical} onChange={(e) => setNewVertical(e.target.value)} placeholder="e.g. Cinematic Wedding Story" className="h-12 rounded-xl bg-slate-50 border-none shadow-inner dark:bg-slate-800 dark:text-white" />
-                <Button onClick={() => { if (!newVertical || !projectSettingsRef) return; const updated = [...(projectSettings?.projectTypes || []), newVertical]; updateDocumentNonBlocking(projectSettingsRef, { projectTypes: updated }); setNewVertical(""); }} className="h-12 rounded-xl font-bold px-6">Add Vertical</Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {projectSettings?.projectTypes?.map((type: string) => (
-                  <Badge key={type} className="bg-slate-100 text-slate-600 border-none px-4 py-2 rounded-xl font-bold text-[10px] uppercase gap-2 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer group">
-                    {type}
-                    <X className="h-3 w-3 opacity-0 group-hover:opacity-100" onClick={() => { if (!projectSettingsRef) return; const updated = projectSettings?.projectTypes.filter((v: string) => v !== type); updateDocumentNonBlocking(projectSettingsRef, { projectTypes: updated }); }} />
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="billing" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
-            <CardHeader className="p-10 pb-0">
-              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Settlement Details</CardTitle>
-            </CardHeader>
-            <CardContent className="p-10 space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Bank Name</Label>
-                  <Input value={billingForm.bankName} onChange={(e) => setBillingForm({...billingForm, bankName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Account Number</Label>
-                  <Input value={billingForm.bankAccountNumber} onChange={(e) => setBillingForm({...billingForm, bankAccountNumber: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none shadow-inner font-bold tracking-normal dark:bg-slate-800 dark:text-white" />
-                </div>
-              </div>
-              <div className="flex justify-end pt-6 border-t border-slate-100 dark:border-slate-800">
-                <Button onClick={() => { if (!billingSettingsRef) return; setIsGenerating(true); setDocumentNonBlocking(billingSettingsRef, { ...billingForm, updatedAt: serverTimestamp() }, { merge: true }); setTimeout(() => { setIsGenerating(false); toast({ title: "Financials Synchronized", description: "Settlement details updated." }); }, 800); }} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal">
-                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  Sync Financials
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="navigation" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
-            <div className="p-10 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/30">
-              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Workspace Sidebar</CardTitle>
-              <Button onClick={async () => { setIsGenerating(true); const batch = writeBatch(db); [...DEFAULT_WORKSPACE_ITEMS, ...MANAGEMENT_MODULES].forEach((item) => { const docRef = doc(collection(db, "sidebar_items"), item.id); batch.set(docRef, { ...item }); }); await batch.commit(); setIsGenerating(false); toast({ title: "Navigation Synchronized", description: "Standard modules provisioned." }); }} disabled={isSaving} variant="outline" className="h-11 px-6 rounded-xl font-bold bg-white text-slate-900 gap-2 border-slate-200">
-                <RotateCcw className="h-4 w-4" />
-                Initialize System
-              </Button>
-            </div>
-            <CardContent className="p-0">
-              {navLoading ? (
-                <div className="p-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-              ) : (
-                <Table>
-                  <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
-                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
-                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-normal">Module Identity</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-normal text-center">Status</TableHead>
-                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-normal">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {navItems?.map((item) => (
-                      <TableRow key={item.id} className="group transition-colors border-slate-100 dark:border-slate-800">
-                        <TableCell className="px-10 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400"><Sparkles className="h-4 w-4" /></div>
-                            <Input defaultValue={item.title} onBlur={(e) => updateDocumentNonBlocking(doc(db, "sidebar_items", item.id), { title: e.target.value })} className="h-9 min-w-[150px] bg-transparent border-none shadow-none font-bold text-slate-900 dark:text-white p-0 focus-visible:ring-0" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-normal ${item.isVisible !== false ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>{item.isVisible !== false ? 'Visible' : 'Hidden'}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right px-10">
-                          <Button variant="ghost" size="icon" onClick={() => updateDocumentNonBlocking(doc(db, "sidebar_items", item.id), { isVisible: !(item.isVisible !== false) })} className="h-10 w-10 rounded-xl text-slate-300 hover:text-primary transition-all">{item.isVisible !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}</Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="preferences" className="animate-in slide-in-from-left-2 duration-300">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -66,24 +67,24 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
-  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
-  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals", order: 2, isVisible: true },
-  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", order: 3, isVisible: true },
-  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 4, isVisible: true },
-  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 5, isVisible: true },
-  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 6, isVisible: true },
-  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 7, isVisible: true },
-  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 8, isVisible: true },
-  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 9, isVisible: true },
-  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 10, isVisible: true },
-  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 11, isVisible: true },
-  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 12, isVisible: true },
-  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 13, isVisible: true },
+  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1 },
+  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals", order: 2 },
+  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", order: 3 },
+  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 4 },
+  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 5 },
+  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 6 },
+  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 7 },
+  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 8 },
+  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 9 },
+  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 10 },
+  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 11 },
+  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 12 },
+  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 13 },
 ];
 
 const MANAGEMENT_ITEMS = [
-  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", order: 1, isVisible: true },
-  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", order: 2, isVisible: true },
+  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", order: 1 },
+  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", order: 2 },
 ];
 
 export function AppSidebar() {
@@ -95,6 +96,33 @@ export function AppSidebar() {
     return doc(db, "companyBillingSettings", "global");
   }, [db]);
   const { data: globalSettings } = useDoc(billingRef);
+
+  // Identity & Role Access Logic
+  const memberRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member } = useDoc(memberRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
+  const isSuperAdmin = role?.name === 'Super Admin' || member?.roleId === 'super-admin';
+
+  const filteredWorkspaceItems = DEFAULT_WORKSPACE_ITEMS.filter(item => {
+    if (isSuperAdmin) return true;
+    if (!role) return true; // Default to visible in prototype phase if role not yet configured
+    return role.permissions?.includes(`module:${item.id}`);
+  });
+
+  const filteredManagementItems = MANAGEMENT_ITEMS.filter(item => {
+    if (isSuperAdmin) return true;
+    if (!role) return true;
+    return role.permissions?.includes(`module:${item.id}`);
+  });
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -125,7 +153,7 @@ export function AppSidebar() {
             Workspace
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
-            {DEFAULT_WORKSPACE_ITEMS.map((item) => {
+            {filteredWorkspaceItems.map((item) => {
               const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
               const Icon = ICON_MAP[item.iconName] || Globe;
               
@@ -161,7 +189,7 @@ export function AppSidebar() {
             Management
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
-            {MANAGEMENT_ITEMS.map((item) => {
+            {filteredManagementItems.map((item) => {
               const isActive = pathname.startsWith(item.url);
               const Icon = ICON_MAP[item.iconName] || ShieldCheck;
               
