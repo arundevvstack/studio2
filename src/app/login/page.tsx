@@ -15,7 +15,8 @@ import {
   Eye,
   EyeOff,
   Zap,
-  Key
+  Key,
+  UserX
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,7 @@ import { toast } from "@/hooks/use-toast";
 /**
  * @fileOverview Login Portal for DP MediaFlow.
  * A high-fidelity authentication gateway supporting Email/Password and Google.
- * Handles automatic provisioning of pending user records for the organization.
+ * Handles automatic provisioning of active user records for the organization.
  */
 
 export default function LoginPage() {
@@ -73,10 +74,12 @@ export default function LoginPage() {
       }
       
       if (member) {
-        if (member.status === "Active") {
+        // PERMIT UNLESS SUSPENDED
+        if (member.status !== "Suspended") {
           router.push("/");
         }
       } else {
+        // Provision as ACTIVE by default
         const newMemberRef = doc(db, "teamMembers", user.uid);
         setDocumentNonBlocking(newMemberRef, {
           id: user.uid,
@@ -84,7 +87,7 @@ export default function LoginPage() {
           firstName: user.displayName?.split(' ')[0] || "New",
           lastName: user.displayName?.split(' ').slice(1).join(' ') || "User",
           thumbnail: user.photoURL || "",
-          status: "Pending",
+          status: "Active",
           type: "In-house",
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
@@ -210,21 +213,22 @@ export default function LoginPage() {
     );
   }
 
-  if (user && !user.isAnonymous && member?.status === "Pending") {
+  // SUSPENDED GATE
+  if (user && !user.isAnonymous && member?.status === "Suspended") {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-10 animate-in fade-in duration-1000">
         <div className="relative">
-          <div className="h-32 w-32 rounded-[3.5rem] bg-orange-50 flex items-center justify-center shadow-2xl shadow-orange-200/20">
-            <ShieldAlert className="h-14 w-14 text-orange-500" />
+          <div className="h-32 w-32 rounded-[3.5rem] bg-red-50 flex items-center justify-center shadow-2xl shadow-red-200/20">
+            <UserX className="h-14 w-14 text-red-500" />
           </div>
           <div className="absolute -top-2 -right-2 h-10 w-10 bg-white rounded-2xl shadow-lg flex items-center justify-center">
-            <Clock className="h-5 w-5 text-orange-400" />
+            <ShieldAlert className="h-5 w-5 text-red-400" />
           </div>
         </div>
         <div className="space-y-3 max-w-md">
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Pending</h1>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Revoked</h1>
           <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            Your account has been registered. An administrator must approve your access before you can enter the workspace.
+            Your organizational credentials have been suspended. Please contact a Root Administrator to restore workspace access.
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -232,7 +236,7 @@ export default function LoginPage() {
             Switch Account
           </Button>
           <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-primary/5">
-            Refresh Status
+            Check Status
           </Button>
         </div>
       </div>

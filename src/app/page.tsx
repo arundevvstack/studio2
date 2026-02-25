@@ -58,7 +58,7 @@ export default function Dashboard() {
     if (!isUserLoading && mounted) {
       if (!user) {
         router.push("/login");
-      } else if (!user.isAnonymous && member && member.status !== "Active") {
+      } else if (!user.isAnonymous && member && member.status === "Suspended") {
         router.push("/login");
       }
     }

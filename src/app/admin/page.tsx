@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect } from "react";
@@ -50,7 +49,7 @@ export default function AdminConsolePage() {
     if (!isUserLoading && !memberLoading) {
       if (!user) {
         router.push("/login");
-      } else if (!user.isAnonymous && member && member.status !== "Active") {
+      } else if (!user.isAnonymous && member && member.status === "Suspended") {
         router.push("/login");
       }
     }

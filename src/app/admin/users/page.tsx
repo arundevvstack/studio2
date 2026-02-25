@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -43,7 +42,7 @@ import {
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+} from "@/dropdown-menu";
 import { 
   Select, 
   SelectContent, 
@@ -104,7 +103,7 @@ export default function UserManagementPage() {
     if (!isUserLoading && !memberLoading) {
       if (!currentUser) {
         router.push("/login");
-      } else if (!currentUser.isAnonymous && currentUserMember && currentUserMember.status !== "Active") {
+      } else if (!currentUser.isAnonymous && currentUserMember && currentUserMember.status === "Suspended") {
         router.push("/login");
       }
     }
@@ -131,7 +130,7 @@ export default function UserManagementPage() {
     );
   }, [team, searchQuery]);
 
-  const pendingCount = useMemo(() => team?.filter(m => m.status === 'Pending').length || 0, [team]);
+  const suspendedCount = useMemo(() => team?.filter(m => m.status === 'Suspended').length || 0, [team]);
 
   const handleUpdateRole = (userId: string, roleId: string) => {
     const userRef = doc(db, "teamMembers", userId);
@@ -148,12 +147,6 @@ export default function UserManagementPage() {
       title: `Identity ${newStatus}`, 
       description: `Access policy updated for the selected account.` 
     });
-  };
-
-  const handleActivate = (userId: string) => {
-    const userRef = doc(db, "teamMembers", userId);
-    updateDocumentNonBlocking(userRef, { status: "Active", updatedAt: serverTimestamp() });
-    toast({ title: "Access Granted", description: "User has been activated in the workspace." });
   };
 
   const handlePurgeRegistry = async () => {
@@ -268,11 +261,11 @@ export default function UserManagementPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
-            <UserPlus className="h-5 w-5 text-orange-500" />
+            <ShieldAlert className="h-5 w-5 text-orange-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Activation</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{pendingCount}</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Suspended Accounts</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{suspendedCount}</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
@@ -376,7 +369,6 @@ export default function UserManagementPage() {
                       <TableCell>
                         <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
                           member.status === 'Active' ? 'bg-green-50 text-green-600' : 
-                          member.status === 'Pending' ? 'bg-orange-50 text-orange-600' :
                           'bg-red-50 text-red-600'
                         }`}>
                           {member.status || "Active"}
@@ -387,15 +379,6 @@ export default function UserManagementPage() {
                       </TableCell>
                       <TableCell className="text-right px-10">
                         <div className="flex items-center justify-end gap-2">
-                          {member.status === 'Pending' && (
-                            <Button 
-                              onClick={() => handleActivate(member.id)}
-                              disabled={!member.roleId || member.roleId === 'none'}
-                              className="h-9 px-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Approve
-                            </Button>
-                          )}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all">
