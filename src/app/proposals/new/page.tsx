@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
@@ -145,35 +146,39 @@ export default function NewProposalPage() {
     if (sourceType === 'lead') {
       const lead = leads?.find(l => l.id === id);
       if (lead) {
-        const matchedType = PROJECT_TYPES.find(t => lead.industry?.includes(t)) || "Other";
+        // Find best vertical match based on industry text
+        const matchedType = PROJECT_TYPES.find(t => lead.industry?.toLowerCase().includes(t.toLowerCase())) || "Other";
         const verticalDefaults = VERTICAL_MAPPING[matchedType];
 
         setFormData(prev => ({
           ...prev,
           clientName: lead.name || "",
           brandName: lead.company || "",
-          objective: `Strategic engagement for ${lead.industry || 'media production'}.`,
+          projectTitle: lead.company ? `${lead.company} - Strategic Bid` : `${lead.name} - Strategic Bid`,
+          objective: `Strategic production engagement for ${lead.industry || 'targeted industry'}.`,
           deliverables: lead.deliverables || verticalDefaults?.deliverables || "",
           projectType: matchedType,
           scope: verticalDefaults?.scope || prev.scope
         }));
-        setLineItems([{ description: "Project Mobilization", quantity: 1, unitPrice: lead.estimatedBudget || 0, total: lead.estimatedBudget || 0 }]);
-        toast({ title: "Lead Intel Synced", description: `Proposal populated with parameters from ${lead.name}.` });
+        setLineItems([{ description: "Project Mobilization & Production Services", quantity: 1, unitPrice: lead.estimatedBudget || 0, total: lead.estimatedBudget || 0 }]);
+        toast({ title: "Lead Intelligence Preloaded", description: `Proposal form synchronized with ${lead.name}'s parameters.` });
       }
     } else if (sourceType === 'project') {
       const project = projects?.find(p => p.id === id);
       if (project) {
-        const verticalDefaults = VERTICAL_MAPPING[project.type];
+        const matchedType = PROJECT_TYPES.includes(project.type) ? project.type : "Other";
+        const verticalDefaults = VERTICAL_MAPPING[matchedType];
+        
         setFormData(prev => ({
           ...prev,
           projectTitle: project.name || "",
-          projectType: PROJECT_TYPES.includes(project.type) ? project.type : "Other",
+          projectType: matchedType,
           objective: project.description || "",
           deliverables: verticalDefaults?.deliverables || prev.deliverables || "",
           scope: verticalDefaults?.scope || prev.scope
         }));
         setLineItems([{ description: "Production Services", quantity: 1, unitPrice: project.budget || 0, total: project.budget || 0 }]);
-        toast({ title: "Project Assets Synced", description: `Proposal populated with production details for ${project.name}.` });
+        toast({ title: "Project Assets Synced", description: `Proposal form synchronized with ${project.name}.` });
       }
     }
   }, [sourceType, leads, projects]);
@@ -240,7 +245,7 @@ export default function NewProposalPage() {
         </Button>
         <div>
           <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight leading-none">New Strategic Bid</h1>
-          <p className="text-slate-500 mt-1 font-medium">Define production parameters or select from your pipeline for automated synthesis.</p>
+          <p className="text-sm text-slate-500 mt-1 font-medium">Define production parameters or select from your pipeline for automated synthesis.</p>
         </div>
       </div>
 
@@ -250,7 +255,7 @@ export default function NewProposalPage() {
             <div className="w-full md:w-1/3 space-y-3">
               <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Strategy Source</Label>
               <Select value={sourceType} onValueChange={(val: any) => setSourceType(val)}>
-                <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-sm shadow-inner px-6">
+                <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-sm shadow-inner px-6 focus:ring-primary/20">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl shadow-xl">
@@ -267,7 +272,7 @@ export default function NewProposalPage() {
                   {sourceType === 'lead' ? 'Identify Target Lead' : 'Select Production Asset'}
                 </Label>
                 <Select key={sourceType} onValueChange={handleSourceSelect}>
-                  <SelectTrigger className="h-14 rounded-2xl bg-primary/5 border-2 border-primary/10 font-bold text-sm shadow-inner px-6 text-primary">
+                  <SelectTrigger className="h-14 rounded-2xl bg-primary/5 border-2 border-primary/10 font-bold text-sm shadow-inner px-6 text-primary focus:ring-primary/20">
                     <SelectValue placeholder={sourceType === 'lead' ? "Search pipeline..." : "Search projects..."} />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl shadow-xl max-h-[300px]">
@@ -308,11 +313,11 @@ export default function NewProposalPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Partnership Entity</Label>
-                <Input value={formData.clientName} onChange={e => setFormData(prev => ({...prev, clientName: e.target.value}))} placeholder="e.g. Nike Global" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" required />
+                <Input value={formData.clientName} onChange={e => setFormData(prev => ({...prev, clientName: e.target.value}))} placeholder="e.g. Nike Global" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg focus-visible:ring-primary/20" required />
               </div>
               <div className="space-y-3">
                 <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Active Brand</Label>
-                <Input value={formData.brandName} onChange={e => setFormData(prev => ({...prev, brandName: e.target.value}))} placeholder="e.g. Jordan Brand" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" />
+                <Input value={formData.brandName} onChange={e => setFormData(prev => ({...prev, brandName: e.target.value}))} placeholder="e.g. Jordan Brand" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg focus-visible:ring-primary/20" />
               </div>
             </div>
           </div>
@@ -326,7 +331,7 @@ export default function NewProposalPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Project Title</Label>
-                  <Input value={formData.projectTitle} onChange={e => setFormData(prev => ({...prev, projectTitle: e.target.value}))} placeholder="e.g. Summer '24 Campaign" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" required />
+                  <Input value={formData.projectTitle} onChange={e => setFormData(prev => ({...prev, projectTitle: e.target.value}))} placeholder="e.g. Summer '24 Campaign" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg focus-visible:ring-primary/20" required />
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-1">
@@ -338,7 +343,7 @@ export default function NewProposalPage() {
                     )}
                   </div>
                   <Select value={formData.projectType} onValueChange={handleProjectTypeChange}>
-                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg shadow-inner px-6"><SelectValue placeholder="Identify type..." /></SelectTrigger>
+                    <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg shadow-inner px-6 focus:ring-primary/20"><SelectValue placeholder="Identify type..." /></SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-xl">
                       {PROJECT_TYPES.map(t => <SelectItem key={t} value={t} className="font-medium">{t}</SelectItem>)}
                     </SelectContent>
@@ -350,17 +355,17 @@ export default function NewProposalPage() {
                 <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 flex items-center gap-2">
                   <Target className="h-3 w-3" /> Strategic Objective
                 </Label>
-                <Textarea value={formData.objective} onChange={e => setFormData(prev => ({...prev, objective: e.target.value}))} placeholder="What is the core problem we are solving?" className="min-h-[120px] rounded-[2rem] bg-slate-50 border-none shadow-inner p-8 text-base font-medium resize-none" />
+                <Textarea value={formData.objective} onChange={e => setFormData(prev => ({...prev, objective: e.target.value}))} placeholder="What is the core problem we are solving?" className="min-h-[120px] rounded-[2rem] bg-slate-50 border-none shadow-inner p-8 text-base font-medium resize-none focus-visible:ring-primary/20" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Target Demographic</Label>
-                  <Input value={formData.targetAudience} onChange={e => setFormData(prev => ({...prev, targetAudience: e.target.value}))} placeholder="e.g. Gen Z Athletes" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
+                  <Input value={formData.targetAudience} onChange={e => setFormData(prev => ({...prev, targetAudience: e.target.value}))} placeholder="e.g. Gen Z Athletes" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold focus-visible:ring-primary/20" />
                 </div>
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Deliverables Matrix</Label>
-                  <Input value={formData.deliverables} onChange={e => setFormData(prev => ({...prev, deliverables: e.target.value}))} placeholder="e.g. 3x TVC, 10x Reels" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
+                  <Input value={formData.deliverables} onChange={e => setFormData(prev => ({...prev, deliverables: e.target.value}))} placeholder="e.g. 3x TVC, 10x Reels" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold focus-visible:ring-primary/20" />
                 </div>
               </div>
             </div>
@@ -382,15 +387,15 @@ export default function NewProposalPage() {
                 <div key={idx} className="grid grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
                   <div className="col-span-6 space-y-2">
                     <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Description</Label>
-                    <Input value={item.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} placeholder="Service description..." className="h-10 rounded-xl bg-white border-none shadow-sm font-medium" />
+                    <Input value={item.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} placeholder="Service description..." className="h-10 rounded-xl bg-white border-none shadow-sm font-medium focus-visible:ring-primary/20" />
                   </div>
                   <div className="col-span-2 space-y-2">
                     <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Qty</Label>
-                    <Input type="number" value={item.quantity} onChange={e => updateLineItem(idx, 'quantity', e.target.value)} className="h-10 rounded-xl bg-white border-none shadow-sm font-bold" />
+                    <Input type="number" value={item.quantity} onChange={e => updateLineItem(idx, 'quantity', e.target.value)} className="h-10 rounded-xl bg-white border-none shadow-sm font-bold focus-visible:ring-primary/20" />
                   </div>
                   <div className="col-span-3 space-y-2">
                     <Label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Unit Price</Label>
-                    <Input type="number" value={item.unitPrice} onChange={e => updateLineItem(idx, 'unitPrice', e.target.value)} className="h-10 rounded-xl bg-white border-none shadow-sm font-bold" />
+                    <Input type="number" value={item.unitPrice} onChange={e => updateLineItem(idx, 'unitPrice', e.target.value)} className="h-10 rounded-xl bg-white border-none shadow-sm font-bold focus-visible:ring-primary/20" />
                   </div>
                   <div className="col-span-1 pb-1 flex justify-center">
                     <Button type="button" variant="ghost" size="icon" onClick={() => removeLineItem(idx)} className="h-8 w-8 rounded-full text-slate-300 hover:text-destructive">
