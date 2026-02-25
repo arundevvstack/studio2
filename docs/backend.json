@@ -216,37 +216,23 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/settings/navigation",
-        "definition": {
-          "entityName": "NavigationSettings",
-          "schema": {
-            "$ref": "#/backend/entities/NavigationSettings"
-          },
-          "description": "Stores global sidebar reordering preferences."
-        }
+    "/settings/navigation": {
+      "schema": {
+        "$ref": "#/backend/entities/NavigationSettings"
       },
-      {
-        "path": "/app_settings/modules",
-        "definition": {
-          "entityName": "AppSettings",
-          "schema": {
-            "$ref": "#/backend/entities/AppSettings"
-          },
-          "description": "Stores global application settings."
-        }
+      "description": "Stores global sidebar reordering preferences."
+    },
+    "/app_settings/modules": {
+      "schema": {
+        "$ref": "#/backend/entities/AppSettings"
       },
-      {
-        "path": "/market_validation/{validationId}",
-        "definition": {
-          "entityName": "MarketValidation",
-          "schema": {
-            "$ref": "#/backend/entities/MarketValidation"
-          },
-          "description": "Stores market analysis and competitor intelligence."
-        }
-      }
-    ]
+      "description": "Stores global application settings."
+    },
+    "/market_validation/{validationId}": {
+      "schema": {
+        "$ref": "#/backend/entities/MarketValidation"
+      },
+      "description": "Stores market analysis and competitor intelligence."
+    }
   }
 }

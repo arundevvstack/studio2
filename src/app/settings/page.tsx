@@ -408,10 +408,13 @@ export default function SettingsPage() {
       
       // Perform side effects OUTSIDE the render cycle/setter logic
       if (navSettingsRef) {
-        updateDocumentNonBlocking(navSettingsRef, {
+        // We use setDocumentNonBlocking with { merge: true } instead of updateDocumentNonBlocking
+        // to handle cases where the document does not exist yet.
+        setDocumentNonBlocking(navSettingsRef, {
           order: newOrder.map(m => m.id),
           updatedAt: serverTimestamp()
-        });
+        }, { merge: true });
+        
         toast({ 
           title: "Navigation Reordered", 
           description: "Global sidebar position updated." 
