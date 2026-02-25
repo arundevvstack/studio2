@@ -6,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   ChevronLeft, 
-  SendHorizontal,
-  Loader2,
-  IndianRupee,
-  MapPin,
-  Tag,
-  Sparkles,
-  Layers,
-  Zap
+  SendHorizontal, 
+  Loader2, 
+  IndianRupee, 
+  MapPin, 
+  Tag, 
+  Sparkles, 
+  Layers, 
+  Zap 
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
@@ -117,7 +117,6 @@ export default function AddProjectPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
     type: "",
     customType: "",
     clientId: "",
@@ -133,13 +132,13 @@ export default function AddProjectPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalType = formData.type === "Other (Custom Vertical)" ? formData.customType : formData.type;
+    const finalName = formData.type === "Other (Custom Vertical)" ? formData.customType : formData.type;
 
-    if (!formData.name || !formData.clientId || !finalType) {
+    if (!finalName || !formData.clientId) {
       toast({
         variant: "destructive",
         title: "Information Required",
-        description: "Please provide a project name, select a service type, and identify a client."
+        description: "Please select a service type and identify a client."
       });
       return;
     }
@@ -153,8 +152,8 @@ export default function AddProjectPage() {
 
       const projectData = {
         id: projectId,
-        name: formData.name,
-        type: finalType,
+        name: finalName,
+        type: finalName,
         clientId: formData.clientId,
         description: formData.description,
         budget: parseFloat(formData.budget) || 0,
@@ -187,7 +186,7 @@ export default function AddProjectPage() {
 
       await batch.commit();
       
-      toast({ title: "Project Added", description: `${formData.name} has been deployed to the workspace.` });
+      toast({ title: "Project Added", description: `${finalName} has been deployed to the workspace.` });
       router.push("/projects");
     } catch (error) {
       console.error("Error adding project:", error);
@@ -213,18 +212,27 @@ export default function AddProjectPage() {
         <div className="p-7 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Project Name</label>
-              <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="e.g. Nike Summer '24" className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20" required />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Service Type</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Service Type (Project Name)</label>
               <Select value={formData.type} onValueChange={(val) => setFormData({...formData, type: val})}>
                 <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
-                  <SelectValue placeholder="Identify type..." />
+                  <SelectValue placeholder="Identify service vertical..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[400px]">
                   {PROJECT_TYPES.map(type => (
                     <SelectItem key={type} value={type} className="font-medium tracking-normal">{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Client</label>
+              <Select onValueChange={(val) => setFormData({...formData, clientId: val})} value={formData.clientId}>
+                <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
+                  <SelectValue placeholder={isLoadingClients ? "Syncing partners..." : "Identify client..."} />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                  {clients?.map((client) => (
+                    <SelectItem key={client.id} value={client.id} className="font-medium tracking-normal">{client.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -251,34 +259,18 @@ export default function AddProjectPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Client</label>
-              <Select onValueChange={(val) => setFormData({...formData, clientId: val})} value={formData.clientId}>
-                <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
-                  <SelectValue placeholder={isLoadingClients ? "Syncing partners..." : "Identify client..."} />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                  {clients?.map((client) => (
-                    <SelectItem key={client.id} value={client.id} className="font-medium tracking-normal">{client.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Price</label>
               <div className="relative">
                 <IndianRupee className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
                 <Input name="budget" type="number" value={formData.budget} onChange={handleInputChange} placeholder="e.g. 50,000" className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20" />
               </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Location</label>
               <div className="relative">
                 <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
                 <Select value={formData.location} onValueChange={(val) => setFormData({...formData, location: val})}>
-                  <SelectTrigger className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20">
+                  <SelectTrigger className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
                     <SelectValue placeholder="Select location..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[300px]">
@@ -289,12 +281,13 @@ export default function AddProjectPage() {
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Roadmap Status</label>
-              <div className="h-14 rounded-xl bg-slate-50/50 border border-dashed border-slate-200 flex items-center px-6 gap-3">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Auto-Provisioning Enabled</span>
-              </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Roadmap Status</label>
+            <div className="h-14 rounded-xl bg-slate-50/50 border border-dashed border-slate-200 flex items-center px-6 gap-3">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Auto-Provisioning Enabled</span>
             </div>
           </div>
 
