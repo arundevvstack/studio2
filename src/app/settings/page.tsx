@@ -129,6 +129,15 @@ const SIDEBAR_MODULES = [
   { id: "settings", title: "Settings", icon: Settings },
 ];
 
+const DASHBOARD_ITEMS = [
+  { id: "stats", title: "Global Statistics" },
+  { id: "workspace", title: "Workspace Header" },
+  { id: "projects", title: "Project Grid" },
+  { id: "intelligence", title: "Intelligence Chart" },
+  { id: "efficiency", title: "Efficiency Index" },
+  { id: "market", title: "Market Strategy Hub" },
+];
+
 const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
   { id: "organization", label: "Organization", icon: Building2 },
@@ -1000,6 +1009,18 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="space-y-8">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-3"><LayoutGrid className="h-4 w-4 text-blue-500" /> Dashboard Modules</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {DASHBOARD_ITEMS.map((item) => (
+                          <div key={item.id} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleTogglePermission(`dash:${item.id}`)}>
+                            <Checkbox checked={roleForm.permissions.includes(`dash:${item.id}`)} onCheckedChange={() => handleTogglePermission(`dash:${item.id}`)} className="rounded-lg border-slate-200 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500" />
+                            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <div>
                       <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-3"><Layers className="h-4 w-4 text-primary" /> Module Entitlements</h4>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
