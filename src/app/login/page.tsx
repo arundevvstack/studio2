@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -38,6 +37,7 @@ import { toast } from "@/hooks/use-toast";
  * @fileOverview Login Portal for DP MediaFlow.
  * A high-fidelity authentication gateway supporting Email/Password and Google.
  * Handles Identity Governance with a Pending approval workflow.
+ * Autho-authorizes master email: defineperspective.in@gmail.com
  */
 
 export default function LoginPage() {
@@ -80,7 +80,8 @@ export default function LoginPage() {
           router.push("/");
         }
       } else {
-        // Provision as PENDING by default for new registrations (Identity Governance)
+        // Provision Identity
+        const isMaster = user.email === 'defineperspective.in@gmail.com';
         const newMemberRef = doc(db, "teamMembers", user.uid);
         const displayName = user.displayName || "";
         const nameParts = displayName.split(' ');
@@ -93,12 +94,16 @@ export default function LoginPage() {
           firstName: firstName,
           lastName: lastName,
           thumbnail: user.photoURL || "",
-          status: "Pending", // Manual approval required
+          status: isMaster ? "Active" : "Pending", // Master email is auto-activated
           type: "In-house",
-          roleId: "staff", // Default role
+          roleId: isMaster ? "root-admin" : "staff", 
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: true });
+
+        if (isMaster) {
+          router.push("/");
+        }
       }
     }
   }, [user, isUserLoading, member, isMemberLoading, router, db]);

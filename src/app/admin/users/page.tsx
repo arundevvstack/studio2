@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -25,7 +24,9 @@ import {
   AlertTriangle,
   Edit2,
   Plus,
-  Hourglass
+  Hourglass,
+  Zap,
+  RotateCcw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,7 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 /**
  * @fileOverview Role-Based Access Control (RBAC) Hub.
  * Provides high-level administrative oversight of all system users and their roles.
+ * Includes a restricted System Purge utility for defineperspective.in@gmail.com.
  */
 
 export default function UserManagementPage() {
@@ -91,6 +93,9 @@ export default function UserManagementPage() {
   const db = useFirestore();
   const { user: currentUser, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isPurging, setIsPurging] = useState(false);
+
+  const MASTER_EMAIL = 'defineperspective.in@gmail.com';
 
   // Fetch user record status
   const currentUserRef = useMemoFirebase(() => {
@@ -106,7 +111,8 @@ export default function UserManagementPage() {
   }, [db, currentUserMember?.roleId]);
   const { data: userRole } = useDoc(roleRef);
 
-  const isAuthorizedToDelete = userRole?.name === "Administrator" || userRole?.name === "root Administrator" || userRole?.name === "Root Administrator";
+  const isMasterUser = currentUser?.email === MASTER_EMAIL;
+  const isAuthorizedToDelete = userRole?.name === "Administrator" || userRole?.name === "root Administrator" || userRole?.name === "Root Administrator" || isMasterUser;
 
   // Strategic Access Guard
   useEffect(() => {
@@ -114,7 +120,6 @@ export default function UserManagementPage() {
       if (!currentUser) {
         router.push("/login");
       }
-      // Access to user management granted to authenticated users
     }
   }, [currentUser, isUserLoading, router]);
 
@@ -139,7 +144,33 @@ export default function UserManagementPage() {
     );
   }, [team, searchQuery]);
 
-  const pendingCount = useMemo(() => team?.filter(m => m.status === 'Pending').length || 0, [team]);
+  const handlePurgeOthers = async () => {
+    if (!isMasterUser || !team) return;
+    
+    setIsPurging(true);
+    try {
+      const batch = writeBatch(db);
+      let count = 0;
+      
+      team.forEach(member => {
+        if (member.email !== MASTER_EMAIL) {
+          batch.delete(doc(db, "teamMembers", member.id));
+          count++;
+        }
+      });
+
+      if (count > 0) {
+        await batch.commit();
+        toast({ title: "System Purge Complete", description: `Successfully removed ${count} identities from the registry.` });
+      } else {
+        toast({ title: "Purge Unnecessary", description: "No other identities found in the system." });
+      }
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Purge Failure", description: e.message });
+    } finally {
+      setIsPurging(false);
+    }
+  };
 
   const handleUpdateRole = (userId: string, roleId: string) => {
     const userRef = doc(db, "teamMembers", userId);
@@ -219,6 +250,33 @@ export default function UserManagementPage() {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
+          {isMasterUser && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" disabled={isPurging} className="h-12 px-6 rounded-xl font-bold text-destructive border-destructive/20 hover:bg-destructive/5 gap-2 tracking-normal transition-all">
+                  {isPurging ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                  Purge Others
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                <AlertDialogHeader>
+                  <div className="flex items-center gap-3 text-destructive mb-2">
+                    <AlertTriangle className="h-6 w-6" />
+                    <AlertDialogTitle className="font-headline text-xl">Critical Maintenance Action</AlertDialogTitle>
+                  </div>
+                  <AlertDialogDescription className="text-slate-500 font-medium">
+                    This will permanently remove **ALL** user identities from the system registry except for **{MASTER_EMAIL}**. This action is irreversible and should only be used for system cleanup.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-3 mt-6">
+                  <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePurgeOthers} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs">
+                    Confirm Full Purge
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Dialog>
             <DialogTrigger asChild>
               <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white gap-2 tracking-normal shadow-lg shadow-primary/20">
@@ -236,6 +294,7 @@ export default function UserManagementPage() {
         </div>
       </div>
 
+      {/* Stats and Filter sections remain same ... */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
@@ -243,7 +302,7 @@ export default function UserManagementPage() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting Approval</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{pendingCount}</h3>
+            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{team?.filter(m => m.status === 'Pending').length || 0}</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
@@ -318,7 +377,10 @@ export default function UserManagementPage() {
                             <AvatarFallback className="bg-primary/5 text-primary font-bold">{member.firstName?.[0] || 'U'}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
+                              {member.email === MASTER_EMAIL && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
+                            </div>
                             <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
                               <Mail className="h-3 w-3" /> {member.email}
                             </p>
@@ -380,7 +442,7 @@ export default function UserManagementPage() {
                                 </DropdownMenuItem>
                               )}
 
-                              {member.status === 'Active' && (
+                              {member.status === 'Active' && member.email !== MASTER_EMAIL && (
                                 <DropdownMenuItem 
                                   onClick={() => handleToggleStatus(member.id, member.status)}
                                   className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-orange-600 focus:text-orange-700"
@@ -394,6 +456,7 @@ export default function UserManagementPage() {
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <DropdownMenuItem 
+                                    disabled={member.email === MASTER_EMAIL}
                                     onSelect={(e) => e.preventDefault()}
                                     className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
                                   >
