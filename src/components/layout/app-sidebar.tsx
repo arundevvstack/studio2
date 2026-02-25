@@ -20,7 +20,8 @@ import {
   Clock,
   Key,
   Shield,
-  Zap
+  Zap,
+  Sparkles
 } from "lucide-react";
 import {
   Sidebar,
@@ -60,22 +61,24 @@ const ICON_MAP: Record<string, any> = {
   Clock,
   Key,
   Shield,
-  Zap
+  Zap,
+  Sparkles
 };
 
 const DEFAULT_WORKSPACE_ITEMS = [
   { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", order: 1, isVisible: true },
-  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", order: 2, isVisible: true },
-  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 3, isVisible: true },
-  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 4, isVisible: true },
-  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 5, isVisible: true },
-  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 6, isVisible: true },
-  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 7, isVisible: true },
-  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 8, isVisible: true },
-  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 9, isVisible: true },
-  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 10, isVisible: true },
-  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 11, isVisible: true },
-  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 12, isVisible: true },
+  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals", order: 2, isVisible: true },
+  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", order: 3, isVisible: true },
+  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", order: 4, isVisible: true },
+  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", order: 5, isVisible: true },
+  { id: "board", title: "Board", iconName: "Trello", url: "/board", order: 6, isVisible: true },
+  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", order: 7, isVisible: true },
+  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", order: 8, isVisible: true },
+  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", order: 9, isVisible: true },
+  { id: "team", title: "Team", iconName: "Users", url: "/team", order: 10, isVisible: true },
+  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", order: 11, isVisible: true },
+  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", order: 12, isVisible: true },
+  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", order: 13, isVisible: true },
 ];
 
 const MANAGEMENT_ITEMS = [
