@@ -288,7 +288,7 @@ export default function LoginPage() {
                 >
                   {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                     <>
-                      {mode === 'login' ? 'Validate & Enter' : 'Request Registry'}
+                      {mode === 'login' ? 'Sign In' : 'Sign Up'}
                       <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
@@ -300,7 +300,7 @@ export default function LoginPage() {
                   onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
                   className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] transition-all"
                 >
-                  {mode === 'login' ? "New Executive? Create Account" : "Return to Login Hub"}
+                  {mode === 'login' ? "Create Account" : "Return to Login Hub"}
                 </button>
               </div>
             </CardContent>
