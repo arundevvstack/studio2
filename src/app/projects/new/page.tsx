@@ -139,7 +139,7 @@ export default function AddProjectPage() {
       toast({
         variant: "destructive",
         title: "Information Required",
-        description: "Please provide a production identity, select a vertical, and identify a client."
+        description: "Please provide a project name, select a service type, and identify a client."
       });
       return;
     }
@@ -151,7 +151,6 @@ export default function AddProjectPage() {
       const projectRef = doc(collection(db, "projects"));
       const projectId = projectRef.id;
 
-      // Manually created projects start at "Pre Production" (30% progress)
       const projectData = {
         id: projectId,
         name: formData.name,
@@ -169,7 +168,6 @@ export default function AddProjectPage() {
 
       batch.set(projectRef, projectData);
 
-      // Provision Roadmap Objectives for all phases
       Object.entries(PHASE_ROADMAP).forEach(([phase, objectives]) => {
         objectives.forEach(obj => {
           const taskRef = doc(collection(db, "projects", projectId, "tasks"));
@@ -189,22 +187,22 @@ export default function AddProjectPage() {
 
       await batch.commit();
       
-      toast({ title: "Entity Initiated", description: `${formData.name} has been deployed to the Pre-Production workspace.` });
+      toast({ title: "Project Added", description: `${formData.name} has been deployed to the workspace.` });
       router.push("/projects");
     } catch (error) {
-      console.error("Error initiating project:", error);
+      console.error("Error adding project:", error);
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-start gap-6">
         <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl bg-white border-slate-200 shadow-sm shrink-0" onClick={() => router.back()}>
           <ChevronLeft className="h-5 w-5 text-slate-600" />
         </Button>
         <div>
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-tight">Initiate Entity</h1>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-tight">Add Project</h1>
           <p className="text-slate-500 mt-1 font-medium tracking-normal">Deploy a new high-growth media production strategy.</p>
         </div>
       </div>
@@ -212,17 +210,17 @@ export default function AddProjectPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden relative">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-primary" />
         
-        <div className="p-10 space-y-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Production Entity</label>
+        <div className="p-7 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Project Name</label>
               <Input name="name" value={formData.name} onChange={handleInputChange} placeholder="e.g. Nike Summer '24" className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20" required />
             </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Execution Vertical</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Service Type</label>
               <Select value={formData.type} onValueChange={(val) => setFormData({...formData, type: val})}>
                 <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
-                  <SelectValue placeholder="Identify vertical..." />
+                  <SelectValue placeholder="Identify type..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[400px]">
                   {PROJECT_TYPES.map(type => (
@@ -235,15 +233,15 @@ export default function AddProjectPage() {
 
           {formData.type === "Other (Custom Vertical)" && (
             <div className="animate-in slide-in-from-top-2 duration-300">
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <label className="text-[10px] font-bold text-primary uppercase px-1 tracking-normal flex items-center gap-2">
-                  <Zap className="h-3 w-3" /> Define Custom Vertical
+                  <Zap className="h-3 w-3" /> Define Custom Type
                 </label>
                 <Input 
                   name="customType" 
                   value={formData.customType} 
                   onChange={handleInputChange} 
-                  placeholder="e.g. Cinematic Wedding Narrative" 
+                  placeholder="e.g. Cinematic Narrative" 
                   className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20" 
                   required
                 />
@@ -251,9 +249,9 @@ export default function AddProjectPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Strategic Client</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Client</label>
               <Select onValueChange={(val) => setFormData({...formData, clientId: val})} value={formData.clientId}>
                 <SelectTrigger className="h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus:ring-primary/20">
                   <SelectValue placeholder={isLoadingClients ? "Syncing partners..." : "Identify client..."} />
@@ -265,8 +263,8 @@ export default function AddProjectPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Quote Price (INR)</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Price</label>
               <div className="relative">
                 <IndianRupee className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
                 <Input name="budget" type="number" value={formData.budget} onChange={handleInputChange} placeholder="e.g. 50,000" className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20" />
@@ -274,14 +272,14 @@ export default function AddProjectPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Project Hub (Location)</label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Location</label>
               <div className="relative">
                 <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
                 <Select value={formData.location} onValueChange={(val) => setFormData({...formData, location: val})}>
                   <SelectTrigger className="pl-14 h-14 rounded-xl bg-slate-50 border-none shadow-inner text-base px-6 font-bold tracking-normal focus-visible:ring-primary/20">
-                    <SelectValue placeholder="Select hub location..." />
+                    <SelectValue placeholder="Select location..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-[300px]">
                     {KERALA_DISTRICTS.map(district => (
@@ -291,7 +289,7 @@ export default function AddProjectPage() {
                 </Select>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Roadmap Status</label>
               <div className="h-14 rounded-xl bg-slate-50/50 border border-dashed border-slate-200 flex items-center px-6 gap-3">
                 <Sparkles className="h-4 w-4 text-primary" />
@@ -300,16 +298,16 @@ export default function AddProjectPage() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Executive Brief</label>
-            <Textarea name="description" value={formData.description} onChange={handleInputChange} placeholder="Outline the core creative direction, target demographics, and key deliverables..." className="min-h-[180px] rounded-[2rem] bg-slate-50 border-none shadow-inner text-base p-8 focus-visible:ring-primary/20 resize-none placeholder:text-slate-400 tracking-normal font-medium" />
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase px-1 tracking-normal">Project Requirement</label>
+            <Textarea name="description" value={formData.description} onChange={handleInputChange} placeholder="Outline the core creative direction, target demographics, and key deliverables..." className="min-h-[150px] rounded-[2rem] bg-slate-50 border-none shadow-inner text-base p-8 focus-visible:ring-primary/20 resize-none placeholder:text-slate-400 tracking-normal font-medium" />
           </div>
         </div>
 
-        <div className="px-10 py-8 border-t border-slate-50 flex items-center justify-end gap-10">
+        <div className="px-10 py-6 border-t border-slate-50 flex items-center justify-end gap-10">
           <Button type="button" variant="ghost" className="text-slate-900 font-bold text-sm hover:bg-transparent tracking-normal" onClick={() => router.back()}>Discard</Button>
           <Button type="submit" disabled={isSubmitting || !formData.clientId || !formData.type} className="h-14 px-10 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-lg shadow-primary/20 gap-3 group tracking-normal transition-all active:scale-[0.98]">
-            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Initiate Workspace <SendHorizontal className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></>}
+            {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Add Project <SendHorizontal className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></>}
           </Button>
         </div>
       </form>
