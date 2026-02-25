@@ -124,26 +124,22 @@ export default function NewProposalPage() {
     }));
   }, []);
 
-  // Sync Vertical Defaults
-  const syncVerticalDefaults = useCallback((type: string) => {
-    const mapping = VERTICAL_MAPPING[type];
+  const handleProjectTypeChange = useCallback((val: string) => {
+    const mapping = VERTICAL_MAPPING[val];
+    setFormData(prev => ({
+      ...prev,
+      projectType: val,
+      scope: mapping ? mapping.scope : prev.scope,
+      deliverables: (mapping && !prev.deliverables) ? mapping.deliverables : prev.deliverables
+    }));
+    
     if (mapping) {
-      setFormData(prev => ({
-        ...prev,
-        scope: mapping.scope,
-        deliverables: prev.deliverables || mapping.deliverables
-      }));
       toast({ 
         title: "Vertical Matrix Synced", 
-        description: `Applied standard scope and deliverables for ${type}.` 
+        description: `Applied standard scope and deliverables for ${val}.` 
       });
     }
   }, []);
-
-  const handleProjectTypeChange = useCallback((val: string) => {
-    setFormData(prev => ({ ...prev, projectType: val }));
-    syncVerticalDefaults(val);
-  }, [syncVerticalDefaults]);
 
   const handleSourceSelect = useCallback((id: string) => {
     if (sourceType === 'lead') {
@@ -336,7 +332,7 @@ export default function NewProposalPage() {
                   <div className="flex items-center justify-between mb-1">
                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Execution Vertical</Label>
                     {formData.projectType && (
-                      <Button type="button" variant="ghost" onClick={() => syncVerticalDefaults(formData.projectType)} className="h-6 text-[9px] font-bold text-primary gap-1 uppercase hover:bg-primary/5">
+                      <Button type="button" variant="ghost" onClick={() => handleProjectTypeChange(formData.projectType)} className="h-6 text-[9px] font-bold text-primary gap-1 uppercase hover:bg-primary/5">
                         <RotateCcw className="h-3 w-3" /> Sync Defaults
                       </Button>
                     )}
@@ -427,9 +423,8 @@ export default function NewProposalPage() {
                 <div key={item} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleToggle('scope', item)}>
                   <Checkbox 
                     checked={formData.scope.includes(item)} 
-                    onCheckedChange={() => handleToggle('scope', item)} 
-                    onClick={(e) => e.stopPropagation()}
-                    className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
+                    onCheckedChange={() => {}} // Controlled via parent div onClick
+                    className="rounded-lg border-slate-200 pointer-events-none data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
                   />
                   <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item}</span>
                 </div>
@@ -447,9 +442,8 @@ export default function NewProposalPage() {
                 <div key={item} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-all cursor-pointer group" onClick={() => handleToggle('platforms', item)}>
                   <Checkbox 
                     checked={formData.platforms.includes(item)} 
-                    onCheckedChange={() => handleToggle('platforms', item)} 
-                    onClick={(e) => e.stopPropagation()}
-                    className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
+                    onCheckedChange={() => {}} // Controlled via parent div onClick
+                    className="rounded-lg border-slate-200 pointer-events-none data-[state=checked]:bg-primary data-[state=checked]:border-primary" 
                   />
                   <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item}</span>
                 </div>
