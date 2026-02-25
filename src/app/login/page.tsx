@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -21,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { 
-  initiateAnonymousSignIn, 
   initiateEmailSignIn, 
   initiateEmailSignUp,
   initiateGoogleSignIn,
@@ -33,7 +31,7 @@ import { toast } from "@/hooks/use-toast";
 
 /**
  * @fileOverview Login Portal for DP MediaFlow.
- * A high-fidelity authentication gateway supporting Email/Password, Google, and Tactical Bypass.
+ * A high-fidelity authentication gateway supporting Email/Password and Google.
  * Handles automatic provisioning of pending user records for the organization.
  */
 
@@ -197,15 +195,6 @@ export default function LoginPage() {
       });
   };
 
-  const handleTacticalBypass = () => {
-    setIsProcessing(true);
-    toast({ title: "Authorizing Bypass", description: "Provisioning administrative session..." });
-    initiateAnonymousSignIn(auth).catch((err) => {
-      toast({ variant: "destructive", title: "Bypass Failed", description: err.message });
-      setIsProcessing(false);
-    });
-  };
-
   if (isUserLoading || (user && isMemberLoading)) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 space-y-6">
@@ -262,12 +251,9 @@ export default function LoginPage() {
               {globalSettings?.logo ? (
                 <img src={globalSettings.logo} alt="DP Logo" className="w-full h-full object-contain p-2" />
               ) : (
-                <img 
-                  src="https://picsum.photos/seed/dp-logo/200/200" 
-                  alt="DP Logo" 
-                  className="w-full h-full object-contain p-2" 
-                  data-ai-hint="DP logo"
-                />
+                <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                  <ShieldCheck className="h-8 w-8 text-white" />
+                </div>
               )}
             </div>
             <h2 className="text-4xl font-bold font-headline text-white tracking-tighter">DP MediaFlow</h2>
@@ -300,12 +286,9 @@ export default function LoginPage() {
               {globalSettings?.logo ? (
                 <img src={globalSettings.logo} alt="DP Logo" className="w-full h-full object-contain p-2" />
               ) : (
-                <img 
-                  src="https://picsum.photos/seed/dp-logo/200/200" 
-                  alt="DP Logo" 
-                  className="w-full h-full object-contain p-2" 
-                  data-ai-hint="DP logo"
-                />
+                <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                  <ShieldCheck className="h-8 w-8 text-white" />
+                </div>
               )}
             </div>
             <h1 className="text-3xl font-bold font-headline tracking-tighter">DP MediaFlow</h1>
@@ -418,22 +401,6 @@ export default function LoginPage() {
               </div>
             </CardContent>
           </Card>
-
-          <div className="pt-4 space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="h-px flex-1 bg-slate-100" />
-              <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em]">Developer Access</span>
-              <div className="h-px flex-1 bg-slate-100" />
-            </div>
-
-            <Button 
-              variant="outline" onClick={handleTacticalBypass} disabled={isProcessing}
-              className="w-full h-14 rounded-2xl border-2 border-primary/10 bg-primary/5 text-primary hover:bg-primary/10 font-bold text-xs uppercase tracking-widest gap-3 transition-all"
-            >
-              <ShieldCheck className="h-5 w-5" />
-              Administrator Bypass
-            </Button>
-          </div>
         </div>
 
         <div className="mt-auto pt-12 flex items-center gap-6 opacity-20 group hover:opacity-100 transition-opacity">
