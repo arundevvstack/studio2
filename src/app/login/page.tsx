@@ -35,9 +35,9 @@ import { toast } from "@/hooks/use-toast";
 
 /**
  * @fileOverview Standardized Identity Governance Portal.
- * Enforces a strict Onboarding -> Approval -> Activation lifecycle.
- * Master Account: defineperspective.in@gmail.com (Auto-Active)
- * Restricted Account: arunadhi.com@gmail.com (Strict Block)
+ * Protocol: Onboarding (Pending) -> Administrative Approval -> Activation (Active).
+ * Master Account: defineperspective.in@gmail.com (Bypasses Gate)
+ * Restricted Account: arunadhi.com@gmail.com (Global Block & Purge)
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -66,9 +66,9 @@ export default function LoginPage() {
     if (isUserLoading || isMemberLoading) return;
 
     if (user) {
-      // 1. STRICT BLACKLIST ENFORCEMENT
+      // 1. GLOBAL BLOCKLIST ENFORCEMENT
       if (user.email && RESTRICTED_EMAILS.includes(user.email.toLowerCase())) {
-        toast({ variant: "destructive", title: "Access Denied", description: "This identifier has been restricted by system policy." });
+        toast({ variant: "destructive", title: "Security Restriction", description: "This identifier has been restricted by system policy." });
         signOut(auth);
         setIsProcessing(false);
         return;
@@ -93,19 +93,21 @@ export default function LoginPage() {
       }
       
       // 3. MASTER IDENTITY AUTO-ACTIVATION
-      if (user.email === MASTER_EMAIL && (!member || member.status !== 'Active')) {
-        const masterRef = doc(db, "teamMembers", user.uid);
-        setDocumentNonBlocking(masterRef, {
-          id: user.uid,
-          email: user.email,
-          firstName: "Master",
-          lastName: "Admin",
-          status: "Active",
-          type: "In-house",
-          roleId: "root-admin",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }, { merge: true });
+      if (user.email && user.email.toLowerCase() === MASTER_EMAIL.toLowerCase()) {
+        if (!member || member.status !== 'Active') {
+          const masterRef = doc(db, "teamMembers", user.uid);
+          setDocumentNonBlocking(masterRef, {
+            id: user.uid,
+            email: user.email,
+            firstName: "Master",
+            lastName: "Administrator",
+            status: "Active",
+            type: "In-house",
+            roleId: "root-admin",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
         router.push("/");
         return;
       }
@@ -120,7 +122,7 @@ export default function LoginPage() {
       } else if (user.email) {
         // PROVISION NEW PENDING IDENTITY
         const newMemberRef = doc(db, "teamMembers", user.uid);
-        const nameParts = (user.displayName || "New User").split(' ');
+        const nameParts = (user.displayName || "New Expert").split(' ');
         
         setDocumentNonBlocking(newMemberRef, {
           id: user.uid,
@@ -141,12 +143,12 @@ export default function LoginPage() {
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast({ variant: "destructive", title: "Credentials Required", description: "Enter email and password to proceed." });
+      toast({ variant: "destructive", title: "Credentials Required", description: "Enter email and password to authorize session." });
       return;
     }
     
     if (RESTRICTED_EMAILS.includes(email.toLowerCase())) {
-      toast({ variant: "destructive", title: "Security Restriction", description: "Identity restricted from registry." });
+      toast({ variant: "destructive", title: "Security Restriction", description: "Identifier restricted from registry." });
       return;
     }
 
@@ -191,17 +193,17 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="space-y-3 max-w-md">
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Onboarding Required</h1>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Authorization Required</h1>
           <p className="text-sm text-slate-500 font-medium leading-relaxed">
             Your identity has been registered in the production library. Entry requires manual activation by a Root Administrator.
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
-          <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white">
-            Switch Account
+          <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white shadow-sm">
+            Switch Identity
           </Button>
           <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-primary/5">
-            <RotateCcw className="h-4 w-4 mr-2" /> Refresh Authorization
+            <RotateCcw className="h-4 w-4 mr-2" /> Refresh Status
           </Button>
         </div>
       </div>
@@ -216,9 +218,9 @@ export default function LoginPage() {
           <ShieldBan className="h-14 w-14 text-red-500" />
         </div>
         <div className="space-y-3 max-w-md">
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Restricted</h1>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Security Restriction</h1>
           <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            Your organization privileges have been suspended. Contact an administrator to restore access to production tools.
+            Your organization privileges have been suspended. Contact an administrator to restore access to production assets.
           </p>
         </div>
         <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white w-full max-w-xs">
@@ -245,9 +247,9 @@ export default function LoginPage() {
           </div>
           
           <div className="space-y-6">
-            <h3 className="text-5xl font-bold text-white tracking-tight leading-[1.1]">The Production Operating System</h3>
+            <h3 className="text-5xl font-bold text-white tracking-tight leading-[1.1]">Premium Agency Operations</h3>
             <p className="text-xl text-slate-400 font-medium leading-relaxed">
-              Consolidated intelligence for premium media agencies. Orchestrate your crew, automate your billing, and scale your production throughput.
+              Consolidated intelligence for media agencies. Orchestrate your crew, automate your billing, and scale your production throughput.
             </p>
           </div>
         </div>
@@ -257,7 +259,7 @@ export default function LoginPage() {
         <div className="w-full max-w-[440px] space-y-10">
           <div className="space-y-2 text-center lg:text-left">
             <h2 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">
-              {mode === 'login' ? 'System Sign In' : 'Organization Enrollment'}
+              {mode === 'login' ? 'System Sign In' : 'Onboard Identity'}
             </h2>
             <p className="text-sm text-slate-500 font-medium leading-relaxed">
               {mode === 'login' ? 'Identify yourself to access organizational intelligence.' : 'Register your profile for administrative validation.'}
@@ -284,7 +286,7 @@ export default function LoginPage() {
                 
                 <div className="relative flex items-center">
                   <div className="flex-grow border-t border-slate-100"></div>
-                  <span className="flex-shrink mx-4 text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">or use credentials</span>
+                  <span className="flex-shrink mx-4 text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">credential access</span>
                   <div className="flex-grow border-t border-slate-100"></div>
                 </div>
               </div>
@@ -295,7 +297,7 @@ export default function LoginPage() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Institutional Email</label>
                     <div className="relative group">
                       <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@agency.com" className="h-14 rounded-2xl bg-slate-50 border-none pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" />
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="expert@agency.com" className="h-14 rounded-2xl bg-slate-50 border-none pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -319,14 +321,14 @@ export default function LoginPage() {
 
                 <Button type="submit" disabled={isProcessing} className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm uppercase tracking-widest shadow-xl shadow-slate-200/50 transition-all group">
                   {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                    <>{mode === 'login' ? 'Authorize Session' : 'Request Enrollment'} <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" /></>
+                    <>{mode === 'login' ? 'Authorize Session' : 'Request Onboarding'} <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" /></>
                   )}
                 </Button>
               </form>
 
               <div className="text-center">
                 <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] transition-all">
-                  {mode === 'login' ? "Create New Profile" : "Return to Sign In"}
+                  {mode === 'login' ? "Provision New Identity" : "Return to Sign In"}
                 </button>
               </div>
             </CardContent>

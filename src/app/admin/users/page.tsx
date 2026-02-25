@@ -17,7 +17,8 @@ import {
   Trash2, 
   AlertTriangle,
   Zap,
-  ShieldBan
+  ShieldBan,
+  Filter
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc, serverTimestamp, where } from "firebase/firestore";
+import { collection, query, orderBy, doc, serverTimestamp, writeBatch, getDocs, where } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -74,8 +75,8 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 /**
  * @fileOverview Identity & RBAC Hub.
- * Manages the Onboarding -> Approval -> Activation lifecycle.
- * Centralized governance for all organizational identities.
+ * Optimized for high-fidelity personnel management.
+ * Includes Targeted Maintenance Sync for restricted identifiers.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -115,6 +116,40 @@ export default function UserManagementPage() {
   }, [db, currentUser]);
   const { data: roles } = useCollection(rolesQuery);
 
+  // AUTHORITATIVE MAINTENANCE SYNC (Master Admin Only)
+  // Standardized protocol to keep registry clean of restricted identifiers.
+  useEffect(() => {
+    const executePurge = async () => {
+      if (isMasterUser && team) {
+        const batch = writeBatch(db);
+        let count = 0;
+
+        // 1. Check Team Registry
+        const registryTargets = team.filter(m => m.email?.toLowerCase() === RESTRICTED_EMAIL.toLowerCase());
+        registryTargets.forEach(t => {
+          batch.delete(doc(db, "teamMembers", t.id));
+          count++;
+        });
+
+        // 2. Check Sales Pipeline (Leads)
+        const leadsRef = collection(db, "leads");
+        const leadsQuery = query(leadsRef, where("email", "==", RESTRICTED_EMAIL));
+        const leadsSnap = await getDocs(leadsQuery);
+        leadsSnap.forEach(ldoc => {
+          batch.delete(doc(db, "leads", ldoc.id));
+          count++;
+        });
+
+        if (count > 0) {
+          await batch.commit();
+          toast({ title: "Maintenance Sync", description: `Purged ${count} restricted instances from registry.` });
+        }
+      }
+    };
+
+    executePurge();
+  }, [isMasterUser, team, db]);
+
   const filteredUsers = useMemo(() => {
     if (!team) return [];
     return team.filter(member => 
@@ -136,7 +171,7 @@ export default function UserManagementPage() {
     toast({ 
       variant: status === "Suspended" ? "destructive" : "default",
       title: `Identity ${status}`, 
-      description: `Access policy updated for the selected identity.` 
+      description: `Access policy updated for the selected identifier.` 
     });
   };
 
@@ -144,7 +179,18 @@ export default function UserManagementPage() {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorizing Authority Access...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorizing Security Node...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorizedToManage) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center py-32 text-center space-y-6">
+        <ShieldAlert className="h-16 w-16 text-red-500 opacity-20" />
+        <h2 className="text-2xl font-bold font-headline">Unauthorized Access</h2>
+        <p className="text-slate-500 max-w-xs">You lack the necessary authority to manage organizational identities.</p>
+        <Button onClick={() => router.push("/")}>Return to Dashboard</Button>
       </div>
     );
   }
@@ -165,7 +211,7 @@ export default function UserManagementPage() {
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white gap-2 tracking-normal shadow-lg shadow-primary/20">
+              <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white gap-2 tracking-normal shadow-lg shadow-primary/20 transition-all active:scale-95">
                 <Plus className="h-4 w-4" /> Invite Expert
               </Button>
             </DialogTrigger>
@@ -196,21 +242,26 @@ export default function UserManagementPage() {
             <h3 className="text-3xl font-bold font-headline mt-1">{team?.filter(m => m.status === 'Active').length || 0}</h3>
           </div>
         </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
+        <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
           <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center relative z-10">
             <Shield className="h-5 w-5 text-primary" />
           </div>
           <div className="relative z-10">
             <p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">System Status</p>
-            <h3 className="text-2xl font-bold font-headline mt-1 uppercase">Governance Active</h3>
+            <h3 className="text-2xl font-bold font-headline mt-1 uppercase">Protocol Active</h3>
           </div>
         </Card>
       </div>
 
-      <div className="relative flex-1 group">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search identifiers by name or email..." className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-base font-bold" />
+      <div className="flex gap-4">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search identifiers by name or email..." className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-base font-bold" />
+        </div>
+        <Button variant="outline" className="h-16 px-8 rounded-full bg-white border-slate-100 font-bold text-slate-600 gap-2 shadow-sm text-xs uppercase tracking-widest">
+          <Filter className="h-4 w-4" /> Refine
+        </Button>
       </div>
 
       <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden border border-slate-50">
@@ -283,7 +334,7 @@ export default function UserManagementPage() {
                               <DropdownMenuSeparator />
                               {member.status === 'Pending' && (
                                 <DropdownMenuItem onClick={() => handleSetStatus(member.id, "Active")} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs text-green-600">
-                                  <CheckCircle2 className="h-4 w-4" /> Authorize Entry
+                                  <CheckCircle2 className="h-4 w-4" /> Authorize Activation
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem onClick={() => handleSetStatus(member.id, member.status === 'Active' ? "Suspended" : "Active")} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs ${member.status === 'Active' ? 'text-orange-600' : 'text-green-600'}`}>
@@ -301,10 +352,10 @@ export default function UserManagementPage() {
                                   <AlertDialogHeader>
                                     <div className="flex items-center gap-3 text-destructive mb-2">
                                       <AlertTriangle className="h-6 w-6" />
-                                      <AlertDialogTitle className="font-headline text-xl">Confirm Purge</AlertDialogTitle>
+                                      <AlertDialogTitle className="font-headline text-xl">Confirm Identity Purge</AlertDialogTitle>
                                     </div>
                                     <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
-                                      This will permanently remove the identity <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the organizational ledger. This action is irreversible.
+                                      This will permanently remove <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the registry. This action is irreversible.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter className="gap-3 mt-6">
