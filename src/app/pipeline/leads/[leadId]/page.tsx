@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -19,7 +20,8 @@ import {
   Zap,
   ArrowRight,
   TrendingUp,
-  Target
+  Target,
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +76,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
         priority: lead.priority || "Medium",
         status: lead.status || "Lead",
         estimatedBudget: lead.estimatedBudget || 0,
+        deliverables: lead.deliverables || "",
         notes: lead.notes || []
       });
     }
@@ -91,7 +94,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
         clientId: "PIPELINE", // Sentinel ID for projects still in sales
         budget: currentLead.estimatedBudget || 0,
         status: "Discussion",
-        description: `Lead from pipeline source: ${currentLead.source}. Industry: ${currentLead.industry}`,
+        description: `Lead from pipeline source: ${currentLead.source}. Industry: ${currentLead.industry}. Deliverables: ${currentLead.deliverables}`,
         updatedAt: serverTimestamp(),
         createdAt: currentLead.createdAt || serverTimestamp()
       }, { merge: true });
@@ -319,31 +322,53 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Status phase</label>
-                  <Select value={editData?.status} onValueChange={(val) => setEditData({...editData, status: val})}>
-                    <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none tracking-normal">
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                      <SelectItem value="Lead">Lead</SelectItem>
-                      <SelectItem value="Contacted">Contacted</SelectItem>
-                      <SelectItem value="Discussion">Discussion</SelectItem>
-                      <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
-                      <SelectItem value="Negotiation">Negotiation</SelectItem>
-                      <SelectItem value="Won">Won</SelectItem>
-                      <SelectItem value="Lost">Lost</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Status phase</label>
+                    <Select value={editData?.status} onValueChange={(val) => setEditData({...editData, status: val})}>
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none tracking-normal">
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectItem value="Lead">Lead</SelectItem>
+                        <SelectItem value="Contacted">Contacted</SelectItem>
+                        <SelectItem value="Discussion">Discussion</SelectItem>
+                        <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
+                        <SelectItem value="Negotiation">Negotiation</SelectItem>
+                        <SelectItem value="Won">Won</SelectItem>
+                        <SelectItem value="Lost">Lost</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Industry Focus</label>
+                    <Input 
+                      value={editData?.industry} 
+                      onChange={(e) => setEditData({...editData, industry: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
+                      placeholder="e.g. Real Estate"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Estimated Budget (INR)</label>
-                  <Input 
-                    type="number"
-                    value={editData?.estimatedBudget} 
-                    onChange={(e) => setEditData({...editData, estimatedBudget: parseFloat(e.target.value) || 0})}
-                    className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Estimated Budget (INR)</label>
+                    <Input 
+                      type="number"
+                      value={editData?.estimatedBudget} 
+                      onChange={(e) => setEditData({...editData, estimatedBudget: parseFloat(e.target.value) || 0})}
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Deliverables</label>
+                    <Input 
+                      value={editData?.deliverables} 
+                      onChange={(e) => setEditData({...editData, deliverables: e.target.value})}
+                      className="rounded-xl bg-slate-50 border-none h-12 tracking-normal"
+                      placeholder="e.g. 5x Reels"
+                    />
+                  </div>
                 </div>
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
@@ -470,8 +495,8 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                         <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">{lead.industry || "Unspecified"}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">Lifecycle</p>
-                        <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">{lead.status}</p>
+                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-normal">Target Deliverables</p>
+                        <p className="text-sm font-bold text-slate-900 mt-1 tracking-normal">{lead.deliverables || "TBD"}</p>
                       </div>
                     </div>
                   </div>
@@ -482,7 +507,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Sales Intelligence Brief</h4>
                 <div className="p-8 rounded-[2rem] bg-slate-50/50 border border-slate-100">
                   <p className="text-sm font-medium leading-relaxed text-slate-600 italic tracking-normal">
-                    "This lead shows high interest in {lead.industry || 'media production'} with an estimated budget of ₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}. Focus on {lead.status === 'Negotiation' ? 'closing arguments' : 'initial value proposition'} to drive conversion."
+                    "This lead shows high interest in {lead.industry || 'media production'} with an estimated budget of ₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}. Target deliverables include: {lead.deliverables || 'yet to be defined'}. Focus on {lead.status === 'Negotiation' ? 'closing arguments' : 'initial value proposition'} to drive conversion."
                   </p>
                 </div>
               </div>

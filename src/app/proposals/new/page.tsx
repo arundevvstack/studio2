@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ChevronLeft, 
@@ -17,7 +18,8 @@ import {
   GitBranch,
   Folder,
   Plus,
-  Trash2
+  Trash2,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,33 @@ const SCOPE_ITEMS = [
   "Influencer Marketing", "Social Media Management", "Media Buying", 
   "CGI / VFX", "Photography", "Other"
 ];
+
+const VERTICAL_MAPPING: Record<string, { scope: string[], deliverables: string }> = {
+  "Ad Film": {
+    scope: ["Pre Production", "Production", "Post Production", "CGI / VFX"],
+    deliverables: "1x 30s Master TVC, 2x 15s Social Cut-downs"
+  },
+  "Social Media Campaign": {
+    scope: ["Production", "Post Production", "Social Media Management", "Influencer Marketing"],
+    deliverables: "12x Instagram Reels, 20x Stories, 1x Campaign Wrap Video"
+  },
+  "AI Content": {
+    scope: ["AI Content Creation", "Post Production", "CGI / VFX"],
+    deliverables: "5x AI Synthesized Ad Creatives, 1x Brand Avatar Message"
+  },
+  "Corporate Video": {
+    scope: ["Pre Production", "Production", "Post Production"],
+    deliverables: "1x 3min Brand Story, 1x 60s Executive Summary"
+  },
+  "Product Shoot": {
+    scope: ["Production", "Photography", "Post Production"],
+    deliverables: "25x Professional Product Stills, 1x 15s Product Spotlight"
+  },
+  "Influencer Campaign": {
+    scope: ["Influencer Marketing", "Social Media Management", "Media Buying"],
+    deliverables: "Coordination with 5x Verified Influencers, Performance Report"
+  }
+};
 
 interface LineItem {
   description: string;
@@ -97,27 +126,53 @@ export default function NewProposalPage() {
     }));
   }, []);
 
+  // Sync Vertical Defaults
+  const syncVerticalDefaults = useCallback((type: string) => {
+    const mapping = VERTICAL_MAPPING[type];
+    if (mapping) {
+      setFormData(prev => ({
+        ...prev,
+        scope: mapping.scope,
+        deliverables: prev.deliverables || mapping.deliverables
+      }));
+      toast({ 
+        title: "Vertical Matrix Synced", 
+        description: `Applied standard scope and deliverables for ${type}.` 
+      });
+    }
+  }, []);
+
   const handleSourceSelect = useCallback((id: string) => {
     if (sourceType === 'lead') {
       const lead = leads?.find(l => l.id === id);
       if (lead) {
+        // Attempt to find matching project type from lead industry
+        const matchedType = PROJECT_TYPES.find(t => lead.industry?.includes(t)) || "Other";
+        const verticalDefaults = VERTICAL_MAPPING[matchedType];
+
         setFormData(prev => ({
           ...prev,
           clientName: lead.name || "",
           brandName: lead.company || "",
           objective: `Strategic engagement for ${lead.industry || 'media production'}.`,
+          deliverables: lead.deliverables || verticalDefaults?.deliverables || "",
+          projectType: matchedType,
+          scope: verticalDefaults?.scope || []
         }));
         setLineItems([{ description: "Project Mobilization", quantity: 1, unitPrice: lead.estimatedBudget || 0, total: lead.estimatedBudget || 0 }]);
-        toast({ title: "Lead Intel Synced", description: `Proposal populated with data from ${lead.name}.` });
+        toast({ title: "Lead Intel Synced", description: `Proposal populated with parameters from ${lead.name}.` });
       }
     } else if (sourceType === 'project') {
       const project = projects?.find(p => p.id === id);
       if (project) {
+        const verticalDefaults = VERTICAL_MAPPING[project.type];
         setFormData(prev => ({
           ...prev,
           projectTitle: project.name || "",
           projectType: PROJECT_TYPES.includes(project.type) ? project.type : "Other",
           objective: project.description || "",
+          deliverables: verticalDefaults?.deliverables || "",
+          scope: verticalDefaults?.scope || []
         }));
         setLineItems([{ description: "Production Services", quantity: 1, unitPrice: project.budget || 0, total: project.budget || 0 }]);
         toast({ title: "Project Assets Synced", description: `Proposal populated with production details for ${project.name}.` });
@@ -163,7 +218,7 @@ export default function NewProposalPage() {
         ...formData,
         lineItems,
         totalBudget: totalInvestment,
-        budgetRange: `₹${totalInvestment.toLocaleString('en-IN')}`, // For legacy display if needed
+        budgetRange: `₹${totalInvestment.toLocaleString('en-IN')}`, 
         status: "Draft",
         creatorId: user?.uid,
         createdAt: serverTimestamp(),
@@ -274,8 +329,18 @@ export default function NewProposalPage() {
                   <Input value={formData.projectTitle} onChange={e => setFormData({...formData, projectTitle: e.target.value})} placeholder="e.g. Summer '24 Campaign" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-lg" required />
                 </div>
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Execution Vertical</Label>
-                  <Select value={formData.projectType} onValueChange={val => setFormData({...formData, projectType: val})}>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Execution Vertical</Label>
+                    {formData.projectType && (
+                      <Button type="button" variant="ghost" onClick={() => syncVerticalDefaults(formData.projectType)} className="h-6 text-[9px] font-bold text-primary gap-1 uppercase hover:bg-primary/5">
+                        <RotateCcw className="h-3 w-3" /> Sync Defaults
+                      </Button>
+                    )}
+                  </div>
+                  <Select value={formData.projectType} onValueChange={val => {
+                    setFormData({...formData, projectType: val});
+                    syncVerticalDefaults(val);
+                  }}>
                     <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg shadow-inner px-6"><SelectValue placeholder="Identify type..." /></SelectTrigger>
                     <SelectContent className="rounded-2xl shadow-xl">
                       {PROJECT_TYPES.map(t => <SelectItem key={t} value={t} className="font-medium">{t}</SelectItem>)}
@@ -297,7 +362,7 @@ export default function NewProposalPage() {
                   <Input value={formData.targetAudience} onChange={e => setFormData({...formData, targetAudience: e.target.value})} placeholder="e.g. Gen Z Athletes" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
                 </div>
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Deliverables</Label>
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Deliverables Matrix</Label>
                   <Input value={formData.deliverables} onChange={e => setFormData({...formData, deliverables: e.target.value})} placeholder="e.g. 3x TVC, 10x Reels" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold" />
                 </div>
               </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -22,7 +23,8 @@ import {
   Star,
   ArrowRight,
   Filter,
-  Clock
+  Clock,
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,7 +126,8 @@ export default function PipelineEnginePage() {
     estimatedBudget: "",
     source: "Instagram",
     priority: "Medium",
-    industry: ""
+    industry: "",
+    deliverables: ""
   });
 
   const handleCreateLead = () => {
@@ -137,7 +140,7 @@ export default function PipelineEnginePage() {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-    setNewLead({ name: "", company: "", email: "", phone: "", estimatedBudget: "", source: "Instagram", priority: "Medium", industry: "" });
+    setNewLead({ name: "", company: "", email: "", phone: "", estimatedBudget: "", source: "Instagram", priority: "Medium", industry: "", deliverables: "" });
     setIsAddingLead(false);
     toast({ title: "Lead Created", description: `${newLead.name} added to the engine.` });
   };
@@ -231,9 +234,21 @@ export default function PipelineEnginePage() {
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Estimated Budget (INR)</label>
-                  <Input type="number" value={newLead.estimatedBudget} onChange={(e) => setNewLead({...newLead, estimatedBudget: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="50000" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Estimated Budget (INR)</label>
+                    <div className="relative">
+                      <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300" />
+                      <Input type="number" value={newLead.estimatedBudget} onChange={(e) => setNewLead({...newLead, estimatedBudget: e.target.value})} className="h-12 pl-10 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="50000" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Deliverables Summary</label>
+                    <div className="relative">
+                      <Package className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300" />
+                      <Input value={newLead.deliverables} onChange={(e) => setNewLead({...newLead, deliverables: e.target.value})} className="h-12 pl-10 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="e.g. 5x Reels, 1x TVC" />
+                    </div>
+                  </div>
                 </div>
               </div>
               <DialogFooter className="bg-slate-50 p-6">
@@ -323,7 +338,7 @@ export default function PipelineEnginePage() {
                   <TableHeader className="bg-slate-50/50">
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="px-6 sm:px-10 text-[10px] font-bold uppercase tracking-widest">Lead Identity</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest hidden sm:table-cell">Source</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest hidden sm:table-cell">Deliverables</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Priority</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-widest">Budget (INR)</TableHead>
                       <TableHead className="text-right px-6 sm:px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
@@ -345,7 +360,12 @@ export default function PipelineEnginePage() {
                               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{lead.company || "Individual Entity"}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-xs font-bold text-slate-500 tracking-widest hidden sm:table-cell">{lead.source || "—"}</TableCell>
+                          <TableCell className="text-xs font-bold text-slate-500 tracking-widest hidden sm:table-cell">
+                            <div className="flex items-center gap-2">
+                              <Package className="h-3 w-3 text-slate-300" />
+                              <span className="truncate max-w-[150px]">{lead.deliverables || "No deliverables defined"}</span>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-center">
                             <Badge className={`text-[8px] font-bold uppercase rounded-md tracking-widest border-none px-3 py-1 ${PRIORITY_COLORS[lead.priority || "Medium"]}`}>
                               {lead.priority || "Medium"}
