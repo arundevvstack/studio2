@@ -22,7 +22,8 @@ import {
   Key,
   Shield,
   Zap,
-  Sparkles
+  Sparkles,
+  User
 } from "lucide-react";
 import {
   Sidebar,
@@ -63,25 +64,33 @@ const ICON_MAP: Record<string, any> = {
   Key,
   Shield,
   Zap,
-  Sparkles
+  Sparkles,
+  User
 };
 
 const ALL_MODULES = [
-  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", group: "workspace" },
-  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals", group: "workspace" },
-  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "workspace" },
-  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "workspace" },
-  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "workspace" },
-  { id: "board", title: "Board", iconName: "Trello", url: "/board", group: "workspace" },
-  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "workspace" },
-  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", group: "workspace" },
-  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", group: "workspace" },
-  { id: "team", title: "Team", iconName: "Users", url: "/team", group: "workspace" },
-  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", group: "workspace" },
-  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", group: "workspace" },
-  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", group: "workspace" },
-  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", group: "management" },
-  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", group: "management" },
+  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", group: "sales_marketing" },
+  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "sales_marketing" },
+  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals", group: "sales_marketing" },
+  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", group: "sales_marketing" },
+  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", group: "sales_marketing" },
+  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "production" },
+  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", group: "production" },
+  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "production" },
+  { id: "board", title: "Board", iconName: "Trello", url: "/board", group: "production" },
+  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", group: "production" },
+  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", group: "production" },
+  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network" },
+  { id: "team", title: "Team", iconName: "Users", url: "/team", group: "organisation" },
+  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", group: "organisation" },
+  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", group: "organisation" },
+];
+
+const GROUPS = [
+  { id: "sales_marketing", label: "Sales & Marketing" },
+  { id: "production", label: "Production" },
+  { id: "network", label: "Network" },
+  { id: "organisation", label: "Organisation" },
 ];
 
 export function AppSidebar() {
@@ -111,32 +120,35 @@ export function AppSidebar() {
 
   const isSuperAdmin = role?.name === 'Super Admin' || member?.roleId === 'super-admin';
 
-  // Master Sorting & Filtering Logic
-  const menuItems = useMemo(() => {
+  // Master Sorting & Grouping Logic
+  const groupedMenuItems = useMemo(() => {
     const hasCustomOrder = navSettings?.order && Array.isArray(navSettings.order);
     const orderMap = hasCustomOrder 
       ? new Map(navSettings.order.map((id: string, index: number) => [id, index]))
       : null;
 
-    const items = [...ALL_MODULES]
-      .filter(item => {
-        if (isSuperAdmin) return true;
-        if (!role) return true; 
-        return role.permissions?.includes(`module:${item.id}`);
-      })
-      .sort((a, b) => {
-        if (orderMap) {
-          const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 999;
-          const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 999;
-          return orderA - orderB;
-        }
-        // Default sort: Group first, then standard sequence
-        if (a.group !== b.group) return a.group === 'workspace' ? -1 : 1;
-        return 0;
-      });
+    // Filter allowed modules
+    const allowedModules = ALL_MODULES.filter(item => {
+      if (isSuperAdmin) return true;
+      if (!role) return true; 
+      return role.permissions?.includes(`module:${item.id}`);
+    });
 
-    return items;
-  }, [navSettings, role, isSuperAdmin]);
+    // Create groups
+    return GROUPS.map(group => ({
+      ...group,
+      items: allowedModules
+        .filter(item => item.group === group.id)
+        .sort((a, b) => {
+          if (orderMap) {
+            const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 999;
+            const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 999;
+            return orderA - orderB;
+          }
+          return 0; // Default sequence
+        })
+    })).filter(g => g.items.length > 0);
+  }, [navSettings, role, isSuperAdmin, member]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -154,54 +166,75 @@ export function AppSidebar() {
         </div>
 
         <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-6 font-bold text-sm shadow-lg shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
-          <Link href="/projects/new">
+          <Link href="/pipeline">
             <Plus className="h-5 w-5 mr-2 group-data-[collapsible=icon]:mr-0" />
-            <span className="group-data-[collapsible=icon]:hidden">Add Project</span>
+            <span className="group-data-[collapsible=icon]:hidden">New Lead</span>
           </Link>
         </Button>
       </SidebarHeader>
 
-      <SidebarContent className="px-4 py-4 space-y-6">
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
-            Workspace Navigation
-          </SidebarGroupLabel>
-          <SidebarMenu className="space-y-1">
-            {menuItems.map((item) => {
-              const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
-              const Icon = ICON_MAP[item.iconName] || Globe;
-              
-              return (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive}
-                    className={`rounded-xl h-11 px-3 transition-all ${
-                      isActive 
-                        ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    <Link href={item.url} className="flex items-center w-full">
-                      <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
-                      <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                        {item.title}
-                      </span>
-                      {isActive && (
-                        <ChevronRight className="ml-auto h-3 w-3 opacity-40 group-data-[collapsible=icon]:hidden" />
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
+      <SidebarContent className="px-4 py-4 space-y-2">
+        {groupedMenuItems.map((group) => (
+          <SidebarGroup key={group.id}>
+            <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-2 group-data-[collapsible=icon]:hidden">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                {group.items.map((item) => {
+                  const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
+                  const Icon = ICON_MAP[item.iconName] || Globe;
+                  
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        className={`rounded-xl h-11 px-3 transition-all ${
+                          isActive 
+                            ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
+                            : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <Link href={item.url} className="flex items-center w-full">
+                          <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
+                          <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                            {item.title}
+                          </span>
+                          {isActive && (
+                            <ChevronRight className="ml-auto h-3 w-3 opacity-40 group-data-[collapsible=icon]:hidden" />
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto">
         <SidebarSeparator className="mb-4 bg-slate-100" />
         <SidebarMenu className="space-y-1">
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className={`rounded-xl h-11 px-3 transition-all ${
+                pathname === "/settings" 
+                  ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <Link href="/settings" className="flex items-center">
+                <User className="h-[18px] w-[18px]" />
+                <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
+                  Profile
+                </span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
