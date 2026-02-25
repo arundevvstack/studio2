@@ -114,7 +114,7 @@ export default function UserManagementPage() {
   }, [db, currentUserMember?.roleId]);
   const { data: userRole } = useDoc(roleRef);
 
-  const isMasterUser = currentUser?.email === MASTER_EMAIL;
+  const isMasterUser = currentUser?.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
   const isAuthorizedToDelete = userRole?.name === "Administrator" || userRole?.name === "root Administrator" || userRole?.name === "Root Administrator" || isMasterUser;
 
   // Strategic Access Guard
@@ -138,9 +138,9 @@ export default function UserManagementPage() {
   }, [db, currentUser]);
   const { data: roles } = useCollection(rolesQuery);
 
-  // Auto-Cleanup logic for blacklisted emails if found in registry
+  // AUTO-MAINTENANCE SYNC logic for blacklisted emails if found in registry
   useEffect(() => {
-    if (isMasterUser && team) {
+    if (isMasterUser && team && team.length > 0) {
       const blacklistedInRegistry = team.filter(m => BLACKLISTED_EMAILS.includes(m.email?.toLowerCase() || ""));
       if (blacklistedInRegistry.length > 0) {
         const batch = writeBatch(db);
@@ -148,7 +148,11 @@ export default function UserManagementPage() {
           batch.delete(doc(db, "teamMembers", m.id));
         });
         batch.commit().then(() => {
-          toast({ title: "Maintenance Sync", description: "Removed restricted identities from the registry." });
+          toast({ 
+            variant: "destructive",
+            title: "Maintenance Sync Triggered", 
+            description: `Auto-purged ${blacklistedInRegistry.length} restricted identifiers from the registry.` 
+          });
         });
       }
     }

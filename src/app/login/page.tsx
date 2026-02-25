@@ -74,13 +74,13 @@ export default function LoginPage() {
     if (isUserLoading || isMemberLoading) return;
 
     if (user) {
-      // BLACKLIST CHECK
-      if (BLACKLISTED_EMAILS.includes(user.email || "")) {
+      // BLACKLIST CHECK - Immediate Termination
+      if (BLACKLISTED_EMAILS.includes(user.email?.toLowerCase() || "")) {
         auth.signOut();
         toast({ 
           variant: "destructive", 
           title: "Access Terminated", 
-          description: "This account has been blacklisted from the organizational workspace." 
+          description: "This account identifier is strictly restricted from the DP MediaFlow workspace." 
         });
         setIsProcessing(false);
         return;
@@ -139,8 +139,8 @@ export default function LoginPage() {
     if (BLACKLISTED_EMAILS.includes(email.toLowerCase())) {
       toast({ 
         variant: "destructive", 
-        title: "Access Blocked", 
-        description: "This email identifier is restricted." 
+        title: "Access Restricted", 
+        description: "This organizational identifier is blocked." 
       });
       return;
     }
@@ -198,7 +198,7 @@ export default function LoginPage() {
         let errorMessage = err.message || "Could not authorize via Google.";
         
         if (err.code === 'auth/operation-not-allowed') {
-          errorMessage = "Google Sign-In is not enabled. Please enable it in the Firebase Console (Authentication > Sign-in method).";
+          errorMessage = "Google Sign-In is not enabled. Please enable it in the Firebase Console.";
         }
         
         toast({ 
@@ -252,7 +252,7 @@ export default function LoginPage() {
   }
 
   // BLACKLISTED GATE
-  if (user && !user.isAnonymous && BLACKLISTED_EMAILS.includes(user.email || "")) {
+  if (user && !user.isAnonymous && BLACKLISTED_EMAILS.includes(user.email?.toLowerCase() || "")) {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-10 animate-in fade-in duration-1000">
         <div className="relative">
@@ -261,13 +261,13 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="space-y-3 max-w-md">
-          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Restricted</h1>
+          <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Prohibited</h1>
           <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            This account has been blacklisted from the DP MediaFlow production engine. If you believe this is an error, please contact the system administrator.
+            This account identity is restricted and cannot enter the DP MediaFlow production engine. This decision is part of organizational security protocols.
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
-          <Button variant="outline" onClick={() => auth.signOut()} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white">
+          <Button variant="outline" onClick={() => auth.signOut()} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white shadow-sm">
             Exit Portal
           </Button>
         </div>
