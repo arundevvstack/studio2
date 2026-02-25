@@ -66,25 +66,22 @@ const ICON_MAP: Record<string, any> = {
   Sparkles
 };
 
-const DEFAULT_WORKSPACE_ITEMS = [
-  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/" },
-  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals" },
-  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library" },
-  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline" },
-  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects" },
-  { id: "board", title: "Board", iconName: "Trello", url: "/board" },
-  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients" },
-  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule" },
-  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time" },
-  { id: "team", title: "Team", iconName: "Users", url: "/team" },
-  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices" },
-  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast" },
-  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research" },
-];
-
-const MANAGEMENT_ITEMS = [
-  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin" },
-  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings" },
+const ALL_MODULES = [
+  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/", group: "workspace" },
+  { id: "proposals", title: "Proposals", iconName: "FileText", url: "/proposals", group: "workspace" },
+  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "workspace" },
+  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "workspace" },
+  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "workspace" },
+  { id: "board", title: "Board", iconName: "Trello", url: "/board", group: "workspace" },
+  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "workspace" },
+  { id: "schedule", title: "Schedule", iconName: "Calendar", url: "/schedule", group: "workspace" },
+  { id: "time", title: "Time Tracking", iconName: "Clock", url: "/time", group: "workspace" },
+  { id: "team", title: "Team", iconName: "Users", url: "/team", group: "workspace" },
+  { id: "billing", title: "Billing", iconName: "FileText", url: "/invoices", group: "workspace" },
+  { id: "intelligence", title: "Intelligence", iconName: "BarChart3", url: "/sales-forecast", group: "workspace" },
+  { id: "market", title: "Market Research", iconName: "Globe", url: "/market-research", group: "workspace" },
+  { id: "admin", title: "Admin Console", iconName: "ShieldCheck", url: "/admin", group: "management" },
+  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", group: "management" },
 ];
 
 export function AppSidebar() {
@@ -97,7 +94,6 @@ export function AppSidebar() {
   }, [db]);
   const { data: globalSettings } = useDoc(billingRef);
 
-  // Identity & Role Access Logic
   const memberRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "teamMembers", user.uid);
@@ -110,36 +106,37 @@ export function AppSidebar() {
   }, [db, member?.roleId]);
   const { data: role } = useDoc(roleRef);
 
-  // Fetch Global Navigation Config for Reordering
   const navSettingsRef = useMemoFirebase(() => doc(db, "settings", "navigation"), [db]);
   const { data: navSettings } = useDoc(navSettingsRef);
 
   const isSuperAdmin = role?.name === 'Super Admin' || member?.roleId === 'super-admin';
 
-  // Apply Global Order
-  const sortedWorkspaceItems = useMemo(() => {
-    if (!navSettings?.order || !Array.isArray(navSettings.order)) return DEFAULT_WORKSPACE_ITEMS;
-    
-    const orderMap = new Map(navSettings.order.map((id: string, index: number) => [id, index]));
-    
-    return [...DEFAULT_WORKSPACE_ITEMS].sort((a, b) => {
-      const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 999;
-      const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 999;
-      return orderA - orderB;
-    });
-  }, [navSettings]);
+  // Master Sorting & Filtering Logic
+  const menuItems = useMemo(() => {
+    const hasCustomOrder = navSettings?.order && Array.isArray(navSettings.order);
+    const orderMap = hasCustomOrder 
+      ? new Map(navSettings.order.map((id: string, index: number) => [id, index]))
+      : null;
 
-  const filteredWorkspaceItems = sortedWorkspaceItems.filter(item => {
-    if (isSuperAdmin) return true;
-    if (!role) return true; 
-    return role.permissions?.includes(`module:${item.id}`);
-  });
+    const items = [...ALL_MODULES]
+      .filter(item => {
+        if (isSuperAdmin) return true;
+        if (!role) return true; 
+        return role.permissions?.includes(`module:${item.id}`);
+      })
+      .sort((a, b) => {
+        if (orderMap) {
+          const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 999;
+          const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 999;
+          return orderA - orderB;
+        }
+        // Default sort: Group first, then standard sequence
+        if (a.group !== b.group) return a.group === 'workspace' ? -1 : 1;
+        return 0;
+      });
 
-  const filteredManagementItems = MANAGEMENT_ITEMS.filter(item => {
-    if (isSuperAdmin) return true;
-    if (!role) return true;
-    return role.permissions?.includes(`module:${item.id}`);
-  });
+    return items;
+  }, [navSettings, role, isSuperAdmin]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -167,48 +164,12 @@ export function AppSidebar() {
       <SidebarContent className="px-4 py-4 space-y-6">
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
-            Workspace
+            Workspace Navigation
           </SidebarGroupLabel>
           <SidebarMenu className="space-y-1">
-            {filteredWorkspaceItems.map((item) => {
+            {menuItems.map((item) => {
               const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
               const Icon = ICON_MAP[item.iconName] || Globe;
-              
-              return (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive}
-                    className={`rounded-xl h-11 px-3 transition-all ${
-                      isActive 
-                        ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    <Link href={item.url} className="flex items-center w-full">
-                      <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
-                      <span className="ml-3 font-semibold text-[13px] group-data-[collapsible=icon]:hidden">
-                        {item.title}
-                      </span>
-                      {isActive && (
-                        <ChevronRight className="ml-auto h-3 w-3 opacity-40 group-data-[collapsible=icon]:hidden" />
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase text-slate-400 mb-4 group-data-[collapsible=icon]:hidden">
-            Management
-          </SidebarGroupLabel>
-          <SidebarMenu className="space-y-1">
-            {filteredManagementItems.map((item) => {
-              const isActive = pathname.startsWith(item.url);
-              const Icon = ICON_MAP[item.iconName] || ShieldCheck;
               
               return (
                 <SidebarMenuItem key={item.id}>
