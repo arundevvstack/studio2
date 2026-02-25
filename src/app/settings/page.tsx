@@ -48,7 +48,8 @@ import {
   Clock,
   BarChart3,
   Globe,
-  GripVertical
+  GripVertical,
+  Palette
 } from "lucide-react";
 import { 
   DndContext, 
@@ -137,11 +138,21 @@ const SETTINGS_TABS = [
   { id: "preferences", label: "Preferences", icon: Monitor },
 ];
 
+const THEME_COLORS = [
+  { name: "Strategic Blue", hsl: "204 61% 47%", color: "#2E86C1" },
+  { name: "Emerald Growth", hsl: "142 71% 45%", color: "#10B981" },
+  { name: "Royal Vision", hsl: "262 83% 58%", color: "#8B5CF6" },
+  { name: "Sunset Impact", hsl: "24 95% 53%", color: "#F97316" },
+  { name: "Midnight Slate", hsl: "215 25% 27%", color: "#334155" },
+  { name: "Rose Distinction", hsl: "330 81% 60%", color: "#EC4899" },
+];
+
 export default function SettingsPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isSaving, setIsGenerating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(THEME_COLORS[0].hsl);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
@@ -208,10 +219,18 @@ export default function SettingsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("theme");
+      const savedColor = localStorage.getItem("theme-color");
       const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      
       if (savedTheme === "dark" || (!savedTheme && systemDark)) {
         setIsDarkMode(true);
         document.documentElement.classList.add("dark");
+      }
+
+      if (savedColor) {
+        setSelectedColor(savedColor);
+        document.documentElement.style.setProperty('--primary', savedColor);
+        document.documentElement.style.setProperty('--ring', savedColor);
       }
     }
   }, []);
@@ -225,6 +244,17 @@ export default function SettingsPage() {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
+  };
+
+  const changeThemeColor = (hsl: string) => {
+    setSelectedColor(hsl);
+    document.documentElement.style.setProperty('--primary', hsl);
+    document.documentElement.style.setProperty('--ring', hsl);
+    localStorage.setItem("theme-color", hsl);
+    toast({
+      title: "Tactical Color Updated",
+      description: "Workspace primary identity has been synchronized."
+    });
   };
 
   const billingSettingsRef = useMemoFirebase(() => doc(db, "companyBillingSettings", "global"), [db]);
@@ -403,13 +433,9 @@ export default function SettingsPage() {
       const newIndex = orderedModules.findIndex((i) => i.id === over.id);
       const newOrder = arrayMove(orderedModules, oldIndex, newIndex);
       
-      // Update local state immediately for UI responsiveness
       setOrderedModules(newOrder);
       
-      // Perform side effects OUTSIDE the render cycle/setter logic
       if (navSettingsRef) {
-        // We use setDocumentNonBlocking with { merge: true } instead of updateDocumentNonBlocking
-        // to handle cases where the document does not exist yet.
         setDocumentNonBlocking(navSettingsRef, {
           order: newOrder.map(m => m.id),
           updatedAt: serverTimestamp()
@@ -733,8 +759,9 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
             <CardHeader className="p-10 pb-0">
               <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Workspace Appearance</CardTitle>
+              <CardDescription className="tracking-normal">Customize your executive interface for maximum operational comfort.</CardDescription>
             </CardHeader>
-            <CardContent className="p-10 space-y-10">
+            <CardContent className="p-10 space-y-12">
               <div className="flex items-center justify-between p-8 rounded-[2rem] bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-6">
                   <div className="h-14 w-14 rounded-2xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">{isDarkMode ? <Moon className="h-6 w-6 text-primary" /> : <Sun className="h-6 w-6 text-primary" />}</div>
@@ -744,6 +771,45 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <Switch checked={isDarkMode} onCheckedChange={toggleTheme} className="data-[state=checked]:bg-primary" />
+              </div>
+
+              <div className="space-y-8 pt-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
+                    <Palette className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white tracking-normal">Brand Alignment</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-normal">Select a tactical primary color for the global workspace.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {THEME_COLORS.map((color) => (
+                    <button
+                      key={color.hsl}
+                      onClick={() => changeThemeColor(color.hsl)}
+                      className={`group p-4 rounded-3xl border-2 transition-all flex flex-col items-center gap-3 ${
+                        selectedColor === color.hsl 
+                          ? "border-primary bg-primary/5 shadow-inner" 
+                          : "border-slate-50 bg-white hover:border-slate-200 dark:bg-slate-800 dark:border-slate-700"
+                      }`}
+                    >
+                      <div 
+                        className="h-10 w-10 rounded-full shadow-lg ring-4 ring-white dark:ring-slate-900" 
+                        style={{ backgroundColor: color.color }} 
+                      />
+                      <span className={`text-[9px] font-bold uppercase tracking-widest ${
+                        selectedColor === color.hsl ? "text-primary" : "text-slate-400"
+                      }`}>
+                        {color.name}
+                      </span>
+                      {selectedColor === color.hsl && (
+                        <CheckCircle2 className="h-3 w-3 text-primary" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
