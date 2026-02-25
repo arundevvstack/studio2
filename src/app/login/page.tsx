@@ -33,7 +33,7 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
 /**
- * @fileOverview Executive Entry Portal.
+ * @fileOverview Login Portal.
  * A high-fidelity authentication gateway supporting Email/Password, Google, and Tactical Bypass.
  * Handles automatic provisioning of pending user records for the organization.
  */
@@ -76,7 +76,7 @@ export default function LoginPage() {
           id: user.uid,
           email: user.email,
           firstName: user.displayName?.split(' ')[0] || "New",
-          lastName: user.displayName?.split(' ').slice(1).join(' ') || "Executive",
+          lastName: user.displayName?.split(' ').slice(1).join(' ') || "User",
           thumbnail: user.photoURL || "",
           status: "Pending",
           type: "In-house",
@@ -93,7 +93,7 @@ export default function LoginPage() {
       toast({ 
         variant: "destructive", 
         title: "Missing Credentials", 
-        description: "Identify email and secure password to proceed." 
+        description: "Please enter your email and password." 
       });
       return;
     }
@@ -110,30 +110,30 @@ export default function LoginPage() {
       })
       .catch((err: any) => {
         console.error("Auth Error:", err);
-        let errorMessage = "Identity verification failed.";
+        let errorMessage = "Authentication failed.";
         
         switch (err.code) {
           case 'auth/email-already-in-use':
-            errorMessage = "This identity identifier is already registered. Please sign in.";
+            errorMessage = "This email is already registered. Please sign in instead.";
             break;
           case 'auth/invalid-email':
-            errorMessage = "The provided email identifier is not a valid format.";
+            errorMessage = "Please enter a valid email address.";
             break;
           case 'auth/weak-password':
-            errorMessage = "Security protocol requires a password of at least 6 characters.";
+            errorMessage = "Password should be at least 6 characters.";
             break;
           case 'auth/user-not-found':
           case 'auth/wrong-password':
           case 'auth/invalid-credential':
-            errorMessage = "Invalid executive credentials provided.";
+            errorMessage = "Invalid email or password.";
             break;
           default:
-            errorMessage = err.message || "An unexpected security exception occurred.";
+            errorMessage = err.message || "An unexpected error occurred.";
         }
         
         toast({ 
           variant: "destructive", 
-          title: mode === 'signup' ? "Provisioning Error" : "Access Denied", 
+          title: mode === 'signup' ? "Registration Error" : "Login Failed", 
           description: errorMessage 
         });
         setIsProcessing(false);
@@ -147,10 +147,17 @@ export default function LoginPage() {
         // Handled by useEffect
       })
       .catch((err) => {
+        console.error("Google Auth Error:", err);
+        let errorMessage = err.message || "Could not authorize via Google.";
+        
+        if (err.code === 'auth/operation-not-allowed') {
+          errorMessage = "Google Sign-In is not enabled. Please enable it in the Firebase Console (Authentication > Sign-in method).";
+        }
+        
         toast({ 
           variant: "destructive", 
-          title: "Google Sync Error", 
-          description: err.message || "Could not authorize via Google." 
+          title: "Google Login Error", 
+          description: errorMessage 
         });
         setIsProcessing(false);
       });
@@ -161,7 +168,7 @@ export default function LoginPage() {
       toast({ 
         variant: "destructive", 
         title: "Email Required", 
-        description: "Please enter your executive email address to reset your password." 
+        description: "Please enter your email address to reset your password." 
       });
       return;
     }
@@ -201,7 +208,7 @@ export default function LoginPage() {
           <Loader2 className="h-16 w-16 text-primary animate-spin opacity-20" />
           <Fingerprint className="h-8 w-8 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Verifying Identity Matrix...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Verifying Identity...</p>
       </div>
     );
   }
@@ -220,15 +227,15 @@ export default function LoginPage() {
         <div className="space-y-3 max-w-md">
           <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Access Pending</h1>
           <p className="text-sm text-slate-500 font-medium leading-relaxed">
-            Your identity has been registered in the system. To maintain organizational integrity, a root administrator must validate your credentials before you can enter the workspace.
+            Your account has been registered. An administrator must approve your access before you can enter the workspace.
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
           <Button variant="outline" onClick={() => auth.signOut()} className="h-14 rounded-2xl font-bold text-sm uppercase tracking-widest border-slate-200 bg-white">
-            Switch Identity
+            Switch Account
           </Button>
           <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-primary/5">
-            Refresh Authorization
+            Refresh Status
           </Button>
         </div>
       </div>
@@ -283,12 +290,12 @@ export default function LoginPage() {
 
           <div className="space-y-2 text-center lg:text-left">
             <h2 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">
-              {mode === 'login' ? 'Executive Login' : 'Request Access'}
+              {mode === 'login' ? 'Sign In' : 'Create Account'}
             </h2>
             <p className="text-sm text-slate-500 font-medium leading-relaxed">
               {mode === 'login' 
-                ? 'Authorized personnel only. Please verify your identity.' 
-                : 'Enter your credentials to request an organization account.'}
+                ? 'Welcome back. Please enter your credentials.' 
+                : 'Join the organization to start managing production entities.'}
             </p>
           </div>
 
@@ -312,7 +319,7 @@ export default function LoginPage() {
                 
                 <div className="relative flex items-center">
                   <div className="flex-grow border-t border-slate-100"></div>
-                  <span className="flex-shrink mx-4 text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">or use identity email</span>
+                  <span className="flex-shrink mx-4 text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em]">or use email</span>
                   <div className="flex-grow border-t border-slate-100"></div>
                 </div>
               </div>
@@ -320,19 +327,19 @@ export default function LoginPage() {
               <form onSubmit={handleAuth} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Email Identifier</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Email Address</label>
                     <div className="relative group">
                       <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                       <Input 
                         type="email" value={email} onChange={(e) => setEmail(e.target.value)} 
-                        placeholder="executive@mediaflow.pro" 
+                        placeholder="name@agency.com" 
                         className="h-14 rounded-2xl bg-slate-50 border-none pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20"
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between px-1">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Secure Password</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Password</label>
                       {mode === 'login' && (
                         <button 
                           type="button"
@@ -383,7 +390,7 @@ export default function LoginPage() {
                   }}
                   className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] transition-all"
                 >
-                  {mode === 'login' ? "Create Account" : "Return to Login Hub"}
+                  {mode === 'login' ? "Create Account" : "Back to Sign In"}
                 </button>
               </div>
             </CardContent>
@@ -392,7 +399,7 @@ export default function LoginPage() {
           <div className="pt-4 space-y-6">
             <div className="flex items-center gap-4">
               <div className="h-px flex-1 bg-slate-100" />
-              <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em]">Developer Context</span>
+              <span className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em]">Developer Access</span>
               <div className="h-px flex-1 bg-slate-100" />
             </div>
 
@@ -401,18 +408,14 @@ export default function LoginPage() {
               className="w-full h-14 rounded-2xl border-2 border-primary/10 bg-primary/5 text-primary hover:bg-primary/10 font-bold text-xs uppercase tracking-widest gap-3 transition-all"
             >
               <ShieldCheck className="h-5 w-5" />
-              Root Administrator Bypass
+              Administrator Bypass
             </Button>
-            
-            <p className="text-[9px] text-slate-400 text-center uppercase tracking-widest font-bold px-8 leading-relaxed">
-              Restricted access portal. Unauthorized entry attempts are logged and audited.
-            </p>
           </div>
         </div>
 
         <div className="mt-auto pt-12 flex items-center gap-6 opacity-20 group hover:opacity-100 transition-opacity">
           <Globe className="h-4 w-4 text-slate-400" />
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">System Version 2.4.0 • Node: TRV-01</p>
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">System Node: TRV-01</p>
         </div>
       </div>
     </div>
