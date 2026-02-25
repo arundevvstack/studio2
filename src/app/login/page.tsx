@@ -14,7 +14,9 @@ import {
   Fingerprint,
   ChevronRight,
   Globe,
-  Clock
+  Clock,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +47,7 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -357,10 +360,17 @@ export default function LoginPage() {
                     <div className="relative group">
                       <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                       <Input 
-                        type="password" value={password} onChange={(e) => setPassword(e.target.value)} 
+                        type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} 
                         placeholder="••••••••" 
-                        className="h-14 rounded-2xl bg-slate-50 border-none pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20"
+                        className="h-14 rounded-2xl bg-slate-50 border-none pl-14 pr-14 font-bold text-base shadow-inner focus-visible:ring-primary/20"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 hover:text-primary transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -380,7 +390,10 @@ export default function LoginPage() {
 
               <div className="text-center">
                 <button 
-                  onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                  onClick={() => {
+                    setMode(mode === 'login' ? 'signup' : 'login');
+                    setShowPassword(false);
+                  }}
                   className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] transition-all"
                 >
                   {mode === 'login' ? "Create Account" : "Return to Login Hub"}
