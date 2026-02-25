@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -23,7 +24,8 @@ import {
   Trash2, 
   AlertTriangle,
   Edit2,
-  Plus
+  Plus,
+  Hourglass
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,7 +115,7 @@ export default function UserManagementPage() {
     if (!isUserLoading && !memberLoading) {
       if (!currentUser) {
         router.push("/login");
-      } else if (!currentUser.isAnonymous && currentUserMember && currentUserMember.status === "Suspended") {
+      } else if (!currentUser.isAnonymous && currentUserMember && currentUserMember.status !== "Active") {
         router.push("/login");
       }
     }
@@ -140,7 +142,7 @@ export default function UserManagementPage() {
     );
   }, [team, searchQuery]);
 
-  const suspendedCount = useMemo(() => team?.filter(m => m.status === 'Suspended').length || 0, [team]);
+  const pendingCount = useMemo(() => team?.filter(m => m.status === 'Pending').length || 0, [team]);
 
   const handleUpdateRole = (userId: string, roleId: string) => {
     const userRef = doc(db, "teamMembers", userId);
@@ -150,7 +152,11 @@ export default function UserManagementPage() {
 
   const handleToggleStatus = (userId: string, currentStatus: string) => {
     const userRef = doc(db, "teamMembers", userId);
-    const newStatus = currentStatus === "Active" ? "Suspended" : "Active";
+    let newStatus = "Active";
+    if (currentStatus === "Active") newStatus = "Suspended";
+    else if (currentStatus === "Pending") newStatus = "Active";
+    else if (currentStatus === "Suspended") newStatus = "Active";
+
     updateDocumentNonBlocking(userRef, { status: newStatus, updatedAt: serverTimestamp() });
     toast({ 
       variant: newStatus === "Suspended" ? "destructive" : "default",
@@ -169,34 +175,6 @@ export default function UserManagementPage() {
         title: "Identity Deleted", 
         description: `${userName} has been removed from the registry.` 
       });
-    }
-  };
-
-  const handlePurgeRegistry = async () => {
-    if (!isAuthorizedToDelete) {
-      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to execute a registry delete." });
-      return;
-    }
-    setIsPurging(true);
-    try {
-      const batch = writeBatch(db);
-      const snapshot = await getDocs(collection(db, "teamMembers"));
-      
-      snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
-      await batch.commit();
-      toast({ 
-        variant: "destructive",
-        title: "Registry Deleted", 
-        description: "All personnel records have been successfully removed from the system." 
-      });
-      
-      router.push("/logout");
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Delete Failed", description: error.message });
-      setIsPurging(false);
     }
   };
 
@@ -222,7 +200,7 @@ export default function UserManagementPage() {
     );
   }
 
-  if (!currentUser) return null;
+  if (!currentUser || currentUserMember?.status !== "Active") return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
@@ -244,7 +222,7 @@ export default function UserManagementPage() {
                 Root Authority
               </Badge>
             </div>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage Role-Based Access Control, verify identities, and enforce system policies.</p>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage Role-Based Access Control, verify identities, and approve system access.</p>
           </div>
         </div>
 
@@ -263,47 +241,17 @@ export default function UserManagementPage() {
               <TeamMemberForm />
             </DialogContent>
           </Dialog>
-
-          {isAuthorizedToDelete && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="h-12 px-6 rounded-xl font-bold border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2 transition-all shadow-sm">
-                  <Trash2 className="h-4 w-4" />
-                  Delete Registry
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-                <AlertDialogHeader>
-                  <div className="flex items-center gap-3 text-red-600 mb-2">
-                    <AlertTriangle className="h-6 w-6" />
-                    <AlertDialogTitle className="font-headline text-xl">Critical Action: Delete Registry</AlertDialogTitle>
-                  </div>
-                  <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
-                    This will permanently delete **ALL** registered identity records from the Firestore database. You and all other users will lose workspace access until new identities are provisioned and approved. 
-                    <br /><br />
-                    <span className="font-bold text-slate-900">Note:</span> This does not delete Firebase Authentication accounts. You must remove those manually in the Firebase Console.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="gap-3 mt-6">
-                  <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handlePurgeRegistry} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
-                    Confirm Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
-            <ShieldAlert className="h-5 w-5 text-orange-500" />
+            <Hourglass className="h-5 w-5 text-orange-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Suspended Accounts</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{suspendedCount}</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting Approval</p>
+            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{pendingCount}</h3>
           </div>
         </Card>
         <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
@@ -331,7 +279,7 @@ export default function UserManagementPage() {
           </div>
           <div className="relative z-10">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Access Protocol</p>
-            <h3 className="text-2xl font-bold font-headline mt-1 uppercase">RBAC Active</h3>
+            <h3 className="text-2xl font-bold font-headline mt-1 uppercase">RBAC Enforced</h3>
           </div>
         </Card>
       </div>
@@ -346,16 +294,12 @@ export default function UserManagementPage() {
             className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-base font-bold" 
           />
         </div>
-        <Button variant="outline" className="h-16 px-8 bg-white border-slate-100 rounded-full font-bold text-slate-600 gap-2 shadow-sm tracking-widest uppercase text-xs">
-          <Filter className="h-4 w-4" />
-          Refine
-        </Button>
       </div>
 
       <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden">
         <CardHeader className="p-10 pb-6 border-b border-slate-50 bg-slate-50/30">
-          <CardTitle className="text-xl font-bold font-headline tracking-normal">Role-Based Access Control Hub</CardTitle>
-          <CardDescription className="tracking-normal">Audit and manage system-wide entitlements for all provisioned production experts.</CardDescription>
+          <CardTitle className="text-xl font-bold font-headline tracking-normal">Identity Governance Ledger</CardTitle>
+          <CardDescription className="tracking-normal">Audit, approve, and manage system-wide entitlements for all production experts.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {teamLoading ? (
@@ -407,6 +351,7 @@ export default function UserManagementPage() {
                       <TableCell>
                         <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
                           member.status === 'Active' ? 'bg-green-50 text-green-600' : 
+                          member.status === 'Pending' ? 'bg-orange-50 text-orange-600' :
                           'bg-red-50 text-red-600'
                         }`}>
                           {member.status || "Active"}
@@ -446,25 +391,35 @@ export default function UserManagementPage() {
                                   <TeamMemberForm existingMember={member} />
                                 </DialogContent>
                               </Dialog>
-                              {isAuthorizedToDelete && (
-                                <>
-                                  <DropdownMenuItem 
-                                    onClick={() => handleToggleStatus(member.id, member.status)}
-                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
-                                  >
-                                    {member.status === 'Active' ? <ShieldAlert className="h-4 w-4 text-orange-500" /> : <UserCheck className="h-4 w-4 text-green-500" />}
-                                    <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
-                                    onClick={() => handleDeleteUser(member.id, `${member.firstName} ${member.lastName}`)}
-                                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span className="font-bold text-xs">Delete Identity</span>
-                                  </DropdownMenuItem>
-                                </>
+                              
+                              {member.status !== 'Active' && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleToggleStatus(member.id, member.status)}
+                                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-green-600 focus:text-green-700"
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  <span className="font-bold text-xs">Approve Access</span>
+                                </DropdownMenuItem>
                               )}
+
+                              {member.status === 'Active' && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleToggleStatus(member.id, member.status)}
+                                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-orange-600 focus:text-orange-700"
+                                >
+                                  <ShieldAlert className="h-4 w-4" />
+                                  <span className="font-bold text-xs">Suspend Access</span>
+                                </DropdownMenuItem>
+                              )}
+
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteUser(member.id, `${member.firstName} ${member.lastName}`)}
+                                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="font-bold text-xs">Delete Identity</span>
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

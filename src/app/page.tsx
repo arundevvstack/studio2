@@ -73,7 +73,7 @@ export default function Dashboard() {
     if (!isUserLoading && mounted) {
       if (!user) {
         router.push("/login");
-      } else if (!user.isAnonymous && member && member.status === "Suspended") {
+      } else if (!user.isAnonymous && member && member.status !== "Active") {
         router.push("/login");
       }
     }
@@ -136,7 +136,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!user) return null;
+  if (!user || member?.status !== "Active") return null;
 
   return (
     <div className="space-y-6 sm:space-y-10 animate-in fade-in duration-700 pb-20">
