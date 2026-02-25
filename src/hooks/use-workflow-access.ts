@@ -36,18 +36,21 @@ export function useWorkflowAccess(moduleType?: string, projectId?: string) {
   return useMemo(() => {
     if (!member || !workflow) return { canView: false, permissions: null, isLoading: true };
 
-    const userRole = member.roleId; // This is the role NAME or ID
+    const userRoleId = member.roleId; // This is the role ID or NAME identifier
     const nodes = workflow.nodes || [];
+
+    // Master Access Check
+    const isMasterAdmin = userRoleId === 'super-admin' || userRoleId === 'Root Administrator';
 
     // Global Module Check (if no project context)
     if (moduleType && !projectId) {
       const moduleNodes = nodes.filter((n: any) => n.data.moduleType === moduleType);
       const hasAccess = moduleNodes.some((n: any) => 
-        (n.data.allowedRoles || []).includes(userRole) || userRole === 'Super Admin'
+        (n.data.allowedRoles || []).includes(userRoleId) || isMasterAdmin
       );
       
       return {
-        canView: hasAccess || userRole === 'Super Admin',
+        canView: hasAccess || isMasterAdmin,
         permissions: null,
         isLoading: false
       };
@@ -59,11 +62,17 @@ export function useWorkflowAccess(moduleType?: string, projectId?: string) {
       
       if (!currentNode) return { canView: true, permissions: null, isLoading: false }; // Fallback
 
-      const isAllowedRole = (currentNode.data.allowedRoles || []).includes(userRole) || userRole === 'Super Admin';
+      const isAllowedRole = (currentNode.data.allowedRoles || []).includes(userRoleId) || isMasterAdmin;
       
       return {
         canView: isAllowedRole,
-        permissions: currentNode.data.permissions || null,
+        permissions: isMasterAdmin ? {
+          view: true,
+          edit: true,
+          approve: true,
+          delete: true,
+          moveStage: true
+        } : (currentNode.data.permissions || null),
         isLoading: false
       };
     }

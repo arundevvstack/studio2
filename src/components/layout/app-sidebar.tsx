@@ -122,7 +122,7 @@ export function AppSidebar() {
   }, [db, user]);
   const { data: navSettings } = useDoc(navSettingsRef);
 
-  const isSuperAdmin = role?.name === 'Super Admin' || member?.roleId === 'super-admin';
+  const isSuperAdmin = role?.name === 'Super Admin' || role?.name === 'Root Administrator' || member?.roleId === 'super-admin';
 
   // Master Sorting & Grouping Logic
   const groupedMenuItems = useMemo(() => {

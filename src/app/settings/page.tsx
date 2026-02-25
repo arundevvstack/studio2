@@ -230,6 +230,8 @@ export default function SettingsPage() {
   }, [db, currentUserMember?.roleId]);
   const { data: userRole } = useDoc(userRoleRef);
 
+  const isMasterAdmin = userRole?.name === 'Root Administrator' || userRole?.name === 'Super Admin' || currentUserMember?.roleId === 'super-admin';
+
   useEffect(() => {
     if (roles && roles.length > 0 && !selectedRoleIdForNav) {
       setSelectedRoleIdForNav(roles[0].id);
@@ -238,7 +240,7 @@ export default function SettingsPage() {
 
   const hasPermission = (perm: string) => {
     if (!userRole) return true; 
-    return userRole.permissions?.includes(perm) || userRole.name === 'Super Admin';
+    return userRole.permissions?.includes(perm) || isMasterAdmin;
   };
 
   const visibleTabs = useMemo(() => {
@@ -247,7 +249,7 @@ export default function SettingsPage() {
       if (tab.id === 'preferences') return true; 
       return hasPermission(`settings:${tab.id}`);
     });
-  }, [userRole]);
+  }, [userRole, isMasterAdmin]);
 
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -718,19 +720,36 @@ export default function SettingsPage() {
                       <TableRow key={role.id} className="group transition-colors border-slate-50 dark:border-slate-800">
                         <TableCell className="px-10 py-6">
                           <div>
-                            <p className="font-bold text-slate-900 dark:text-white">{role.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-900 dark:text-white">{role.name}</p>
+                              {(role.name === 'Root Administrator' || role.name === 'Super Admin') && (
+                                <Shield className="h-3.5 w-3.5 text-primary fill-primary/10" />
+                              )}
+                            </div>
                             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{role.description || "No description provided."}</p>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            <Badge className="bg-slate-100 text-slate-500 border-none text-[8px] font-bold uppercase px-2">{role.permissions?.length || 0} Permissions</Badge>
+                            {role.name === 'Root Administrator' || role.name === 'Super Admin' ? (
+                              <Badge className="bg-primary/10 text-primary border-none text-[8px] font-bold uppercase px-3 py-1 rounded-lg">Master Authority</Badge>
+                            ) : (
+                              <Badge className="bg-slate-100 text-slate-500 border-none text-[8px] font-bold uppercase px-2">{role.permissions?.length || 0} Permissions</Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-right px-10">
                           <div className="flex items-center justify-end gap-2">
                             <Button variant="ghost" size="icon" onClick={() => handleOpenRoleDialog(role)} className="h-10 w-10 rounded-xl text-slate-300 hover:text-primary transition-all"><Edit2 className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "roles", role.id))} className="h-10 w-10 rounded-xl text-slate-300 hover:text-destructive transition-all"><Trash2 className="h-4 w-4" /></Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              disabled={role.name === 'Root Administrator' || role.name === 'Super Admin'}
+                              onClick={() => deleteDocumentNonBlocking(doc(db, "roles", role.id))} 
+                              className="h-10 w-10 rounded-xl text-slate-300 hover:text-destructive transition-all"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -758,31 +777,41 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-8">
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-3"><Layers className="h-4 w-4 text-primary" /> Module Entitlements</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {SIDEBAR_MODULES.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleTogglePermission(`module:${item.id}`)}>
-                          <Checkbox checked={roleForm.permissions.includes(`module:${item.id}`)} onCheckedChange={() => handleTogglePermission(`module:${item.id}`)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-                          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item.title}</span>
-                        </div>
-                      ))}
+                {roleForm.name === 'Root Administrator' || roleForm.name === 'Super Admin' ? (
+                  <div className="p-8 rounded-[2.5rem] bg-primary/5 border-2 border-dashed border-primary/20 text-center space-y-4">
+                    <ShieldCheck className="h-12 w-12 text-primary mx-auto" />
+                    <div className="space-y-1">
+                      <h4 className="text-lg font-bold text-slate-900">Master Authority Detected</h4>
+                      <p className="text-sm text-slate-500 font-medium max-w-sm mx-auto">This role is granted global bypass permissions for all modules and administrative settings by default.</p>
                     </div>
                   </div>
+                ) : (
+                  <div className="space-y-8">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-3"><Layers className="h-4 w-4 text-primary" /> Module Entitlements</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {SIDEBAR_MODULES.map((item) => (
+                          <div key={item.id} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleTogglePermission(`module:${item.id}`)}>
+                            <Checkbox checked={roleForm.permissions.includes(`module:${item.id}`)} onCheckedChange={() => handleTogglePermission(`module:${item.id}`)} className="rounded-lg border-slate-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{item.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-3"><Settings className="h-4 w-4 text-accent" /> Control Panel Access</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {SETTINGS_TABS.map((tab) => (
-                        <div key={tab.id} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleTogglePermission(`settings:${tab.id}`)}>
-                          <Checkbox checked={roleForm.permissions.includes(`settings:${tab.id}`)} onCheckedChange={() => handleTogglePermission(`settings:${tab.id}`)} className="rounded-lg border-slate-200 data-[state=checked]:bg-accent data-[state=checked]:border-accent" />
-                          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{tab.label}</span>
-                        </div>
-                      ))}
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-3"><Settings className="h-4 w-4 text-accent" /> Control Panel Access</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {SETTINGS_TABS.map((tab) => (
+                          <div key={tab.id} className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50/50 border border-slate-100 hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => handleTogglePermission(`settings:${tab.id}`)}>
+                            <Checkbox checked={roleForm.permissions.includes(`settings:${tab.id}`)} onCheckedChange={() => handleTogglePermission(`settings:${tab.id}`)} className="rounded-lg border-slate-200 data-[state=checked]:bg-accent data-[state=checked]:border-accent" />
+                            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-normal">{tab.label}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
               <DialogFooter className="bg-slate-50 p-8 flex justify-between items-center -mx-0">
                 <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest">Discard</Button></DialogClose>
@@ -908,7 +937,8 @@ function SortableNavigationItem({ item, roles, selectedRoleId, db }: any) {
 
   const Icon = item.icon || Globe;
   const selectedRole = roles?.find((r: any) => r.id === selectedRoleId);
-  const hasAccess = selectedRole?.permissions?.includes(`module:${item.id}`) || selectedRole?.name === 'Super Admin';
+  const isMasterRole = selectedRole?.name === 'Root Administrator' || selectedRole?.name === 'Super Admin';
+  const hasAccess = selectedRole?.permissions?.includes(`module:${item.id}`) || isMasterRole;
 
   return (
     <div 
@@ -933,7 +963,7 @@ function SortableNavigationItem({ item, roles, selectedRoleId, db }: any) {
           {hasAccess ? 'Authorized' : 'Restricted'}
         </span>
         <Switch 
-          disabled={selectedRole?.name === 'Super Admin'}
+          disabled={isMasterRole}
           checked={!!hasAccess} 
           onCheckedChange={(checked) => {
             if (!selectedRole) return;
