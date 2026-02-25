@@ -49,10 +49,11 @@ export default function AdminConsolePage() {
     if (!isUserLoading) {
       if (!user) {
         router.push("/login");
+      } else if (member && member.status !== "Active") {
+        router.push("/login");
       }
-      // Access to admin console granted to authenticated users
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, member]);
 
   const teamQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -66,7 +67,7 @@ export default function AdminConsolePage() {
   }, [db, user]);
   const { data: roles } = useDoc(rolesQuery);
 
-  if (isUserLoading) {
+  if (isUserLoading || (user && !member)) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -75,7 +76,7 @@ export default function AdminConsolePage() {
     );
   }
 
-  if (!user) return null;
+  if (!user || member?.status !== "Active") return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">

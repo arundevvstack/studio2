@@ -38,7 +38,7 @@ import {
 
 /**
  * @fileOverview Master Dashboard Node.
- * Features dynamic role-based filtering and granular module visibility.
+ * Features dynamic role-based filtering and identity governance guards.
  */
 
 export default function Dashboard() {
@@ -67,15 +67,16 @@ export default function Dashboard() {
   }, [db, member?.roleId]);
   const { data: role } = useDoc(roleRef);
 
-  // Strategic Access Guard
+  // Strategic Access Guard (Identity Governance)
   useEffect(() => {
     if (!isUserLoading && mounted) {
       if (!user) {
         router.push("/login");
+      } else if (member && member.status !== "Active") {
+        router.push("/login"); // Gateway logic handles status-specific UI
       }
-      // Access granted to all authenticated users
     }
-  }, [user, isUserLoading, router, mounted]);
+  }, [user, isUserLoading, router, mounted, member]);
 
   // Visibility Logic
   const isAdmin = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
@@ -131,7 +132,7 @@ export default function Dashboard() {
     }));
   }, [mounted, isSeniorProducer]);
 
-  if (!mounted || isUserLoading) {
+  if (!mounted || isUserLoading || (user && !member)) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -140,7 +141,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!user) return null;
+  if (!user || member?.status !== "Active") return null;
 
   return (
     <div className="space-y-6 sm:space-y-10 animate-in fade-in duration-700 pb-20">
@@ -222,7 +223,7 @@ export default function Dashboard() {
                       <h3 className="text-sm sm:text-base font-bold font-headline leading-tight tracking-tight line-clamp-2">{project.name}</h3>
                       <div className="flex items-center gap-2 mt-2 sm:mt-3">
                         <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                        <span className={`text-[8px] font-bold uppercase tracking-widest ${idx % 2 === 0 ? 'text-slate-500' : 'text-white/60'}`}>{project.status}</span>
+                        <span className={`text-[8px] font-bold uppercase tracking-widest ${idx % 2 === 0 ? 'text-slate-50' : 'text-white/60'}`}>{project.status}</span>
                       </div>
                     </div>
                   </div>
