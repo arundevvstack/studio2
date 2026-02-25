@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo } from "react";
@@ -39,7 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from "@/firebase";
 import { collection, query, orderBy, deleteDoc, doc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 
@@ -52,6 +53,21 @@ export default function ProposalsRegistryPage() {
   const db = useFirestore();
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = React.useState("");
+
+  // Fetch Member & Role for Deletion Authority
+  const memberRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member } = useDoc(memberRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
+  const isAuthorizedToDelete = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
 
   const proposalsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -84,6 +100,10 @@ export default function ProposalsRegistryPage() {
   }, [proposals, searchQuery]);
 
   const handleDelete = async (id: string, name: string) => {
+    if (!isAuthorizedToDelete) {
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to purge strategic bids." });
+      return;
+    }
     if (!confirm(`Are you sure you want to purge proposal: ${name}?`)) return;
     try {
       await deleteDoc(doc(db, "proposals", id));
@@ -229,7 +249,7 @@ export default function ProposalsRegistryPage() {
                     </TableCell>
                     <TableCell className="text-right px-10">
                       <div className="flex items-center justify-end gap-3">
-                        <Button asChild className="h-11 px-6 rounded-xl bg-slate-900 hover:bg-primary text-white font-bold text-[10px] uppercase transition-all shadow-lg shadow-slate-200 border-none">
+                        <Button asChild className="h-11 px-6 rounded-xl bg-slate-900 hover:bg-primary text-white font-bold text-[10px] uppercase transition-all shadow-lg shadow-primary/20 border-none">
                           <Link href={`/proposals/${p.id}`}>
                             Open Hub
                           </Link>
@@ -255,14 +275,18 @@ export default function ProposalsRegistryPage() {
                                 <span className="font-bold text-xs">AI Synthesis</span>
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(p.id, p.projectTitle)}
-                              className="rounded-xl p-3 cursor-pointer gap-3 text-destructive focus:text-destructive focus:bg-destructive/5"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="font-bold text-xs">Purge Bid</span>
-                            </DropdownMenuItem>
+                            {isAuthorizedToDelete && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(p.id, p.projectTitle)}
+                                  className="rounded-xl p-3 cursor-pointer gap-3 text-destructive focus:text-destructive focus:bg-destructive/5"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="font-bold text-xs">Purge Bid</span>
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

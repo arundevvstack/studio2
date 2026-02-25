@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -111,6 +112,21 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   }, [db, projectId, user]);
   const { data: project, isLoading: isProjectLoading } = useDoc(projectRef);
 
+  // Fetch Member & Role for Deletion Authority
+  const memberRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member } = useDoc(memberRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
+  const isAuthorizedToDelete = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
+
   const tasksQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, "projects", projectId, "tasks"), orderBy("createdAt", "asc"));
@@ -159,7 +175,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
   };
 
   const handleDeleteProject = () => {
-    if (!projectRef) return;
+    if (!projectRef || !isAuthorizedToDelete) {
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack authority to purge projects." });
+      return;
+    }
     deleteDocumentNonBlocking(projectRef);
     toast({
       variant: "destructive",
@@ -313,12 +332,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                 </div>
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
-                <DialogClose asChild>
-                  <Button variant="ghost" onClick={handleDeleteProject} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
-                    <Trash2 className="h-4 w-4" />
-                    Purge Entity
-                  </Button>
-                </DialogClose>
+                {isAuthorizedToDelete ? (
+                  <DialogClose asChild>
+                    <Button variant="ghost" onClick={handleDeleteProject} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Purge Entity
+                    </Button>
+                  </DialogClose>
+                ) : <div />}
                 <div className="flex gap-3">
                   <DialogClose asChild>
                     <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button>
@@ -421,7 +442,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                             </div>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id))} className="text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all rounded-full"><X className="h-5 w-5" /></Button>
+                        {isAuthorizedToDelete && (
+                          <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "projects", projectId, "tasks", task.id))} className="text-slate-200 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all rounded-full"><X className="h-5 w-5" /></Button>
+                        )}
                       </div>
                     </div>
                   </Card>
@@ -525,7 +548,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ projec
                         <div className="p-4 flex-grow">
                           <div className="relative aspect-square overflow-hidden rounded-[2.2rem]">
                             <img src={member.thumbnail} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={member.name} />
-                            <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-5 w-5" /></Button>
+                            {isAuthorizedToDelete && (
+                              <Button onClick={() => updateDocumentNonBlocking(projectRef!, { crew: project.crew.filter((c: any) => c.talentId !== member.talentId) })} variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-destructive opacity-0 group-hover:opacity-100 transition-all"><X className="h-5 w-5" /></Button>
+                            )}
                           </div>
                           <div className="px-4 py-6 space-y-2">
                             <div className="flex items-center gap-2">

@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { useFirestore } from "@/firebase";
+import { useFirestore, useUser, useMemoFirebase, useDoc } from "@/firebase";
 import { doc, serverTimestamp } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
@@ -47,7 +47,23 @@ import { TalentForm } from "./TalentForm";
 
 export function TalentCard({ talent }: { talent: any }) {
   const db = useFirestore();
+  const { user } = useUser();
   const displayThumbnail = talent.thumbnail || `https://picsum.photos/seed/${talent.id}/400/500`;
+
+  // Fetch Member & Role for Deletion Authority
+  const memberRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member } = useDoc(memberRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
+  const isAuthorizedToDelete = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
 
   const formatFollowers = (count: number) => {
     if (!count) return "0";
@@ -75,6 +91,10 @@ export function TalentCard({ talent }: { talent: any }) {
   };
 
   const handleDelete = () => {
+    if (!isAuthorizedToDelete) {
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to purge personnel records." });
+      return;
+    }
     deleteDocumentNonBlocking(doc(db, "shoot_network", talent.id));
     toast({ variant: "destructive", title: "Entity Purged", description: talent.name });
   };
@@ -182,11 +202,15 @@ export function TalentCard({ talent }: { talent: any }) {
                 <TalentForm existingTalent={talent} />
               </DialogContent>
             </Dialog>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleDelete} className="rounded-xl p-3 cursor-pointer gap-3 text-destructive focus:text-destructive focus:bg-destructive/5">
-              <Trash2 className="h-4 w-4" />
-              <span className="font-bold text-xs">Purge Record</span>
-            </DropdownMenuItem>
+            {isAuthorizedToDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} className="rounded-xl p-3 cursor-pointer gap-3 text-destructive focus:text-destructive focus:bg-destructive/5">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="font-bold text-xs">Purge Record</span>
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

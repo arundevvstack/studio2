@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -60,6 +61,21 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
     return doc(db, "leads", leadId);
   }, [db, leadId, user]);
   const { data: lead, isLoading: isLeadLoading } = useDoc(leadRef);
+
+  // Fetch Member & Role for Deletion Authority
+  const memberRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member } = useDoc(memberRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
+  const isAuthorizedToDelete = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
 
   const [editData, setEditData] = useState<any>(null);
 
@@ -133,7 +149,10 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
   };
 
   const handleDeleteLead = () => {
-    if (!leadRef || !lead) return;
+    if (!leadRef || !lead || !isAuthorizedToDelete) {
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to purge leads." });
+      return;
+    }
     
     // Always attempt to cleanup mirror on delete
     deleteDocumentNonBlocking(doc(db, "projects", lead.id));
@@ -330,12 +349,12 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                         <SelectItem value="Lead">Lead</SelectItem>
-                        <SelectItem value="Contacted">Contacted</SelectItem>
-                        <SelectItem value="Discussion">Discussion</SelectItem>
-                        <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
-                        <SelectItem value="Negotiation">Negotiation</SelectItem>
-                        <SelectItem value="Won">Won</SelectItem>
-                        <SelectItem value="Lost">Lost</SelectItem>
+                        <SelectItem value="Contacted" className="text-xs font-bold uppercase">Contacted</SelectItem>
+                        <SelectItem value="Discussion" className="text-xs font-bold uppercase">Discussion</SelectItem>
+                        <SelectItem value="Proposal Sent" className="text-xs font-bold uppercase">Proposal Sent</SelectItem>
+                        <SelectItem value="Negotiation" className="text-xs font-bold uppercase">Negotiation</SelectItem>
+                        <SelectItem value="Won" className="text-xs font-bold uppercase">Won</SelectItem>
+                        <SelectItem value="Lost" className="text-xs font-bold uppercase">Lost</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -371,12 +390,14 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
                 </div>
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
-                <DialogClose asChild>
-                  <Button variant="ghost" onClick={handleDeleteLead} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
-                    <Trash2 className="h-4 w-4" />
-                    Purge Lead
-                  </Button>
-                </DialogClose>
+                {isAuthorizedToDelete ? (
+                  <DialogClose asChild>
+                    <Button variant="ghost" onClick={handleDeleteLead} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Purge Lead
+                    </Button>
+                  </DialogClose>
+                ) : <div />}
                 <div className="flex gap-3">
                   <DialogClose asChild>
                     <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button>

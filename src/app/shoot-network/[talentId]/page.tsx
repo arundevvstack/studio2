@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -57,6 +58,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 /**
  * @fileOverview Talent Profile Page (Consolidated Master View).
  * Enhanced with professional metrics, project count, rank, media gallery, and direct messaging channels.
+ * Restricted destructive actions to Administrator and root Administrator.
  */
 
 export default function TalentProfilePage({ params }: { params: Promise<{ talentId: string }> }) {
@@ -72,8 +74,26 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
 
   const { data: talent, isLoading: isTalentLoading } = useDoc(talentRef);
 
+  // Fetch Member & Role for Deletion Authority
+  const memberRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member } = useDoc(memberRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
+  const isAuthorizedToDelete = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
+
   const handleArchive = () => {
-    if (!talentRef) return;
+    if (!talentRef || !isAuthorizedToDelete) {
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack authority to archive personnel." });
+      return;
+    }
     updateDocumentNonBlocking(talentRef, {
       isArchived: true,
       updatedAt: serverTimestamp()
@@ -86,7 +106,10 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
   };
 
   const handleDelete = () => {
-    if (!talentRef) return;
+    if (!talentRef || !isAuthorizedToDelete) {
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack authority to purge personnel records." });
+      return;
+    }
     deleteDocumentNonBlocking(talentRef);
     toast({
       variant: "destructive",
@@ -171,37 +194,41 @@ export default function TalentProfilePage({ params }: { params: Promise<{ talent
             </DialogContent>
           </Dialog>
 
-          <Button 
-            variant="outline" 
-            onClick={handleArchive}
-            className="h-11 px-6 rounded-xl bg-white border-slate-200 text-slate-600 font-bold text-[10px] uppercase gap-2 hover:bg-slate-50 transition-all tracking-widest"
-          >
-            <Archive className="h-3.5 w-3.5" />
-            Archive
-          </Button>
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" className="h-11 px-6 rounded-xl text-destructive font-bold text-[10px] uppercase gap-2 hover:bg-destructive/5 transition-all tracking-widest">
-                <Trash2 className="h-3.5 w-3.5" />
-                Purge
+          {isAuthorizedToDelete && (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={handleArchive}
+                className="h-11 px-6 rounded-xl bg-white border-slate-200 text-slate-600 font-bold text-[10px] uppercase gap-2 hover:bg-slate-50 transition-all tracking-widest"
+              >
+                <Archive className="h-3.5 w-3.5" />
+                Archive
               </Button>
-            </DialogTrigger>
-            <DialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-              <DialogHeader>
-                <DialogTitle className="font-headline tracking-normal text-xl">Permanent Purge Confirmation</DialogTitle>
-              </DialogHeader>
-              <div className="py-6">
-                <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                  Confirm permanent deletion of <span className="font-bold text-slate-900">{talent.name}</span>. This removes all associated credentials, engagement logs, and gallery assets from the system.
-                </p>
-              </div>
-              <DialogFooter className="gap-3">
-                <DialogClose asChild><Button variant="ghost" className="font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
-                <Button onClick={handleDelete} variant="destructive" className="rounded-xl font-bold px-8 tracking-normal">Confirm Purge</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" className="h-11 px-6 rounded-xl text-destructive font-bold text-[10px] uppercase gap-2 hover:bg-destructive/5 transition-all tracking-widest">
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Purge
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="font-headline tracking-normal text-xl">Permanent Purge Confirmation</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-6">
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                      Confirm permanent deletion of <span className="font-bold text-slate-900">{talent.name}</span>. This removes all associated credentials, engagement logs, and gallery assets from the system.
+                    </p>
+                  </div>
+                  <DialogFooter className="gap-3">
+                    <DialogClose asChild><Button variant="ghost" className="font-bold text-xs uppercase tracking-normal">Cancel</Button></DialogClose>
+                    <Button onClick={handleDelete} variant="destructive" className="rounded-xl font-bold px-8 tracking-normal">Confirm Purge</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
         </div>
       </div>
 

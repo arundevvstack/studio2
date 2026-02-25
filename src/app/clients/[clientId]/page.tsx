@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -52,6 +53,21 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   }, [db, clientId, user]);
   const { data: client, isLoading: isClientLoading } = useDoc(clientRef);
 
+  // Fetch Member & Role for Deletion Authority
+  const memberRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, "teamMembers", user.uid);
+  }, [db, user]);
+  const { data: member } = useDoc(memberRef);
+
+  const roleRef = useMemoFirebase(() => {
+    if (!member?.roleId) return null;
+    return doc(db, "roles", member.roleId);
+  }, [db, member?.roleId]);
+  const { data: role } = useDoc(roleRef);
+
+  const isAuthorizedToDelete = role?.name === "Administrator" || role?.name === "root Administrator" || role?.name === "Root Administrator";
+
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
@@ -102,7 +118,10 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
   };
 
   const handleDeleteClient = () => {
-    if (!clientRef) return;
+    if (!clientRef || !isAuthorizedToDelete) {
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to purge client entities." });
+      return;
+    }
     deleteDocumentNonBlocking(clientRef);
     toast({
       variant: "destructive",
@@ -247,12 +266,14 @@ export default function ClientEngagementPage({ params }: { params: Promise<{ cli
                 </div>
               </div>
               <DialogFooter className="bg-slate-50 p-6 flex justify-between items-center sm:justify-between">
-                <DialogClose asChild>
-                  <Button variant="ghost" onClick={handleDeleteClient} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
-                    <Trash2 className="h-4 w-4" />
-                    Purge Entity
-                  </Button>
-                </DialogClose>
+                {isAuthorizedToDelete ? (
+                  <DialogClose asChild>
+                    <Button variant="ghost" onClick={handleDeleteClient} className="text-destructive font-bold text-xs uppercase tracking-normal hover:bg-destructive/5 hover:text-destructive gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Purge Entity
+                    </Button>
+                  </DialogClose>
+                ) : <div />}
                 <div className="flex gap-3">
                   <DialogClose asChild>
                     <Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-normal">Cancel</Button>

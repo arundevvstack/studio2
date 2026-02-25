@@ -73,7 +73,7 @@ import {
 /**
  * @fileOverview Role-Based Access Control (RBAC) Hub.
  * Provides high-level administrative oversight of all system users and their roles.
- * Includes a "Purge Registry" tactical utility to clear the personnel database.
+ * Restricted destructive actions to Administrator and root Administrator.
  */
 
 export default function UserManagementPage() {
@@ -89,6 +89,15 @@ export default function UserManagementPage() {
     return doc(db, "teamMembers", currentUser.uid);
   }, [db, currentUser]);
   const { data: currentUserMember, isLoading: memberLoading } = useDoc(currentUserRef);
+
+  // Fetch Role for Authority Check
+  const roleRef = useMemoFirebase(() => {
+    if (!currentUserMember?.roleId) return null;
+    return doc(db, "roles", currentUserMember.roleId);
+  }, [db, currentUserMember?.roleId]);
+  const { data: userRole } = useDoc(roleRef);
+
+  const isAuthorizedToDelete = userRole?.name === "Administrator" || userRole?.name === "root Administrator" || userRole?.name === "Root Administrator";
 
   // Strategic Access Guard
   useEffect(() => {
@@ -148,6 +157,10 @@ export default function UserManagementPage() {
   };
 
   const handlePurgeRegistry = async () => {
+    if (!isAuthorizedToDelete) {
+      toast({ variant: "destructive", title: "Access Denied", description: "You lack the authority to execute a registry purge." });
+      return;
+    }
     setIsPurging(true);
     try {
       const batch = writeBatch(db);
@@ -220,33 +233,35 @@ export default function UserManagementPage() {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" className="h-12 px-6 rounded-xl font-bold border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2 transition-all shadow-sm">
-                <Trash2 className="h-4 w-4" />
-                Purge Registry
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
-              <AlertDialogHeader>
-                <div className="flex items-center gap-3 text-red-600 mb-2">
-                  <AlertTriangle className="h-6 w-6" />
-                  <AlertDialogTitle className="font-headline text-xl">Critical Action: Purge Registry</AlertDialogTitle>
-                </div>
-                <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
-                  This will permanently delete **ALL** registered identity records from the Firestore database. You and all other users will lose workspace access until new identities are provisioned and approved. 
-                  <br /><br />
-                  <span className="font-bold text-slate-900">Note:</span> This does not delete Firebase Authentication accounts. You must remove those manually in the Firebase Console.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="gap-3 mt-6">
-                <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handlePurgeRegistry} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
-                  Confirm Purge
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {isAuthorizedToDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="h-12 px-6 rounded-xl font-bold border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2 transition-all shadow-sm">
+                  <Trash2 className="h-4 w-4" />
+                  Purge Registry
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                <AlertDialogHeader>
+                  <div className="flex items-center gap-3 text-red-600 mb-2">
+                    <AlertTriangle className="h-6 w-6" />
+                    <AlertDialogTitle className="font-headline text-xl">Critical Action: Purge Registry</AlertDialogTitle>
+                  </div>
+                  <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
+                    This will permanently delete **ALL** registered identity records from the Firestore database. You and all other users will lose workspace access until new identities are provisioned and approved. 
+                    <br /><br />
+                    <span className="font-bold text-slate-900">Note:</span> This does not delete Firebase Authentication accounts. You must remove those manually in the Firebase Console.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="gap-3 mt-6">
+                  <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePurgeRegistry} className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
+                    Confirm Purge
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
 
@@ -396,13 +411,15 @@ export default function UserManagementPage() {
                                   <span className="font-bold text-xs">View Full Intel</span>
                                 </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleToggleStatus(member.id, member.status)}
-                                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
-                              >
-                                {member.status === 'Active' ? <UserMinus className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
-                                <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
-                              </DropdownMenuItem>
+                              {isAuthorizedToDelete && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleToggleStatus(member.id, member.status)}
+                                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive"
+                                >
+                                  {member.status === 'Active' ? <UserMinus className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                                  <span className="font-bold text-xs">{member.status === 'Active' ? 'Suspend Account' : 'Activate Account'}</span>
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
