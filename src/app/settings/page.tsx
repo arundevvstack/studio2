@@ -399,22 +399,24 @@ export default function SettingsPage() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      setOrderedModules((items) => {
-        const oldIndex = items.findIndex((i) => i.id === active.id);
-        const newIndex = items.findIndex((i) => i.id === over.id);
-        const newOrder = arrayMove(items, oldIndex, newIndex);
-        
-        // Save to Firestore
-        if (navSettingsRef) {
-          updateDocumentNonBlocking(navSettingsRef, {
-            order: newOrder.map(m => m.id),
-            updatedAt: serverTimestamp()
-          });
-          toast({ title: "Navigation Reordered", description: "Global sidebar position updated." });
-        }
-        
-        return newOrder;
-      });
+      const oldIndex = orderedModules.findIndex((i) => i.id === active.id);
+      const newIndex = orderedModules.findIndex((i) => i.id === over.id);
+      const newOrder = arrayMove(orderedModules, oldIndex, newIndex);
+      
+      // Update local state immediately for UI responsiveness
+      setOrderedModules(newOrder);
+      
+      // Perform side effects OUTSIDE the render cycle/setter logic
+      if (navSettingsRef) {
+        updateDocumentNonBlocking(navSettingsRef, {
+          order: newOrder.map(m => m.id),
+          updatedAt: serverTimestamp()
+        });
+        toast({ 
+          title: "Navigation Reordered", 
+          description: "Global sidebar position updated." 
+        });
+      }
     }
   };
 
