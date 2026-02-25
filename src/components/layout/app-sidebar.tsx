@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from "react";
@@ -167,13 +166,6 @@ export function AppSidebar() {
             </div>
           )}
         </div>
-
-        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-lg py-4 font-bold text-[10px] uppercase shadow-md shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
-          <Link href="/pipeline">
-            <Plus className="h-3 w-3 mr-1.5 group-data-[collapsible=icon]:mr-0" />
-            <span className="group-data-[collapsible=icon]:hidden">New Lead</span>
-          </Link>
-        </Button>
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-1 space-y-0">
