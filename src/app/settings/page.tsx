@@ -51,7 +51,8 @@ import {
   GripVertical,
   Palette,
   Pipette,
-  Tag
+  Tag,
+  Check
 } from "lucide-react";
 import { 
   DndContext, 
@@ -464,6 +465,8 @@ export default function SettingsPage() {
   const projectSettingsRef = useMemoFirebase(() => doc(db, "settings", "projects"), [db]);
   const { data: projectSettings } = useDoc(projectSettingsRef);
   const [newServiceType, setNewServiceType] = useState("");
+  const [editingServiceType, setEditingServiceType] = useState<string | null>(null);
+  const [editServiceValue, setEditServiceValue] = useState("");
 
   const handleAddServiceType = async () => {
     if (!newServiceType) return;
@@ -492,6 +495,39 @@ export default function SettingsPage() {
       } else {
         toast({ variant: "destructive", title: "Sync Error", description: e.message });
       }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleStartEditService = (type: string) => {
+    setEditingServiceType(type);
+    setEditServiceValue(type);
+  };
+
+  const handleUpdateServiceType = async () => {
+    if (!editingServiceType || !editServiceValue || editingServiceType === editServiceValue) {
+      setEditingServiceType(null);
+      return;
+    }
+
+    const currentTypes = projectSettings?.serviceTypes || [];
+    if (currentTypes.includes(editServiceValue) && editServiceValue !== editingServiceType) {
+      toast({ variant: "destructive", title: "Conflict", description: "Another vertical already uses this name." });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updatedTypes = currentTypes.map((t: string) => t === editingServiceType ? editServiceValue : t);
+      await updateDoc(projectSettingsRef, {
+        serviceTypes: updatedTypes,
+        updatedAt: serverTimestamp()
+      });
+      setEditingServiceType(null);
+      toast({ title: "Vertical Refined", description: "Service nomenclature updated successfully." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Update Failed", description: e.message });
     } finally {
       setIsSaving(false);
     }
@@ -681,8 +717,8 @@ export default function SettingsPage() {
         <TabsContent value="project" className="animate-in slide-in-from-left-2 duration-300">
           <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900">
             <CardHeader className="p-10 pb-0">
-              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Project Settings</CardTitle>
-              <CardDescription className="tracking-normal">Manage the authoritative library of service verticals and project types.</CardDescription>
+              <CardTitle className="text-xl font-bold font-headline tracking-normal dark:text-white">Project Matrix Configuration</CardTitle>
+              <CardDescription className="tracking-normal">Manage the authoritative library of service verticals and project archetypes.</CardDescription>
             </CardHeader>
             <CardContent className="p-10 space-y-10">
               <div className="space-y-6">
@@ -706,25 +742,55 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-4 pt-6 border-t border-slate-50 dark:border-slate-800">
-                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Service Type Library</Label>
+                  <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Service Vertical Library</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {projectSettings?.serviceTypes?.length > 0 ? (
                       projectSettings.serviceTypes.map((type: string) => (
-                        <div key={type} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 group">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
-                              <Briefcase className="h-4 w-4 text-primary" />
+                        <div key={type} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 dark:bg-slate-800 dark:border-slate-700 group transition-all hover:shadow-md hover:border-primary/20">
+                          {editingServiceType === type ? (
+                            <div className="flex items-center gap-2 flex-1 animate-in fade-in slide-in-from-left-1">
+                              <Input 
+                                value={editServiceValue} 
+                                onChange={e => setEditServiceValue(e.target.value)}
+                                className="h-10 rounded-xl bg-white border-primary/20 font-bold text-sm flex-1"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && handleUpdateServiceType()}
+                              />
+                              <Button size="icon" variant="ghost" onClick={handleUpdateServiceType} className="h-10 w-10 text-green-600 bg-white shadow-sm border border-slate-100">
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" onClick={() => setEditingServiceType(null)} className="h-10 w-10 text-slate-400 bg-white shadow-sm border border-slate-100">
+                                <X className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <span className="text-sm font-bold text-slate-900 dark:text-white">{type}</span>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleRemoveServiceType(type)}
-                            className="h-8 w-8 rounded-full text-slate-300 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center">
+                                  <Briefcase className="h-4 w-4 text-primary" />
+                                </div>
+                                <span className="text-sm font-bold text-slate-900 dark:text-white">{type}</span>
+                              </div>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => handleStartEditService(type)}
+                                  className="h-8 w-8 rounded-full text-slate-400 hover:text-primary hover:bg-white transition-all"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => handleRemoveServiceType(type)}
+                                  className="h-8 w-8 rounded-full text-slate-400 hover:text-destructive hover:bg-white transition-all"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))
                     ) : (
