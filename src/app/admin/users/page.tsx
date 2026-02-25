@@ -12,17 +12,17 @@ import {
   UserMinus, 
   Key, 
   ArrowRight, 
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Mail,
-  ShieldAlert,
-  ChevronLeft,
-  UserPlus,
-  Clock,
-  Shield,
-  Trash2,
-  AlertTriangle
+  Loader2, 
+  CheckCircle2, 
+  AlertCircle, 
+  Mail, 
+  ShieldAlert, 
+  ChevronLeft, 
+  UserPlus, 
+  Clock, 
+  Shield, 
+  Trash2, 
+  AlertTriangle 
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -375,7 +375,8 @@ export default function UserManagementPage() {
                           {member.status === 'Pending' && (
                             <Button 
                               onClick={() => handleActivate(member.id)}
-                              className="h-9 px-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase gap-2"
+                              disabled={!member.roleId || member.roleId === 'none'}
+                              className="h-9 px-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-[10px] uppercase gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                             </Button>
