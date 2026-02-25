@@ -26,7 +26,8 @@ import {
   initiateEmailSignUp,
   initiateGoogleSignIn
 } from "@/firebase/non-blocking-login";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp } from "firebase/firestore";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
 /**
@@ -51,10 +52,13 @@ export default function LoginPage() {
     if (!user) return null;
     return doc(db, "teamMembers", user.uid);
   }, [db, user]);
-  const { data: member } = useDoc(memberRef);
+  const { data: member, isLoading: isMemberLoading } = useDoc(memberRef);
 
   useEffect(() => {
-    if (user && !isUserLoading) {
+    // Wait for auth and member check to finish
+    if (isUserLoading || isMemberLoading) return;
+
+    if (user) {
       // Emergency/Anonymous bypass directly into the workspace
       if (user.isAnonymous) {
         router.push("/");
@@ -66,10 +70,11 @@ export default function LoginPage() {
         if (member.status === "Active") {
           router.push("/");
         }
-      } else if (!isProcessing) {
+      } else {
         // Automatically provision a "Pending" record for new authenticated identities
+        // This ensures they appear in the Admin Hub for approval
         const newMemberRef = doc(db, "teamMembers", user.uid);
-        setDoc(newMemberRef, {
+        setDocumentNonBlocking(newMemberRef, {
           id: user.uid,
           email: user.email,
           firstName: user.displayName?.split(' ')[0] || "New",
@@ -82,7 +87,7 @@ export default function LoginPage() {
         }, { merge: true });
       }
     }
-  }, [user, isUserLoading, member, router, db, isProcessing]);
+  }, [user, isUserLoading, member, isMemberLoading, router, db]);
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +171,7 @@ export default function LoginPage() {
     });
   };
 
-  if (isUserLoading) {
+  if (isUserLoading || (user && isMemberLoading)) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-50 space-y-6">
         <div className="relative">
