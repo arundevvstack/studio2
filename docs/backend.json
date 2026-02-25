@@ -1,40 +1,879 @@
 {
   "entities": {
-    "Talent": {
-      "title": "Talent",
+    "Company": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Company",
       "type": "object",
-      "description": "An influencer or media talent record for the marketplace.",
+      "description": "Represents a company within the multi-tenant application, serving as a container for its data.",
       "properties": {
-        "name": { "type": "string" },
-        "instagram_url": { "type": "string" },
-        "instagram_username": { "type": "string" },
-        "followers": { "type": "number" },
-        "category": { "type": "string" },
-        "location": { "type": "string" },
-        "estimated_cost": { "type": "number" },
-        "engagement_rate": { "type": "number" },
-        "ready_to_collab": { "type": "boolean" },
-        "profile_picture": { "type": "string" },
-        "verified": { "type": "boolean" },
-        "featured": { "type": "boolean" },
-        "last_verified_date": { "type": "string", "format": "date-time" },
-        "created_at": { "type": "string", "format": "date-time" }
-      }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Company entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the company."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the company."
+        },
+        "billingEmail": {
+          "type": "string",
+          "description": "Email address for billing communications.",
+          "format": "email"
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the company."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The primary contact phone number for the company."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the company record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the company record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "billingEmail",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Role": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Role",
+      "type": "object",
+      "description": "Defines a user role within the application, used for access control and workflow permissions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Role entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the role (e.g., 'Admin', 'Sales Manager', 'Client')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the role's responsibilities and purpose."
+        },
+        "permissions": {
+          "type": "array",
+          "description": "A list of high-level capabilities or system-level actions associated with this role, which are not directly controlled by the workflow system (e.g., 'configure_roles', 'manage_company_settings').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the role was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the role was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "permissions",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TeamMember": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TeamMember",
+      "type": "object",
+      "description": "Represents a user or team member within the application, associated with a company and a role.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TeamMember entity."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to the Company this team member belongs to. (Relationship: Company 1:N TeamMember)"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the team member."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the team member."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the team member, used for login and communication.",
+          "format": "email"
+        },
+        "roleId": {
+          "type": "string",
+          "description": "Reference to the Role assigned to this team member. (Relationship: Role 1:N TeamMember)"
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "The contact phone number for the team member."
+        },
+        "profilePictureUrl": {
+          "type": "string",
+          "description": "URL to the team member's profile picture.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the team member record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the team member record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "companyId",
+        "firstName",
+        "lastName",
+        "email",
+        "roleId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
+      "type": "object",
+      "description": "Manages details and communication logs for external clients.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Client entity."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to the Company that manages this client. (Relationship: Company 1:N Client)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the client's organization or individual client name."
+        },
+        "contactPerson": {
+          "type": "string",
+          "description": "The primary contact person at the client's organization."
+        },
+        "email": {
+          "type": "string",
+          "description": "The primary email address for the client.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The primary phone number for the client."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the client."
+        },
+        "description": {
+          "type": "string",
+          "description": "Additional notes or description for the client."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the client record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the client record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "companyId",
+        "name",
+        "contactPerson",
+        "email",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Workflow": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Workflow",
+      "type": "object",
+      "description": "Defines a complete workflow, comprising a series of interconnected nodes, for managing processes within the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Workflow entity."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to the Company that owns this workflow. (Relationship: Company 1:N Workflow)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the workflow (e.g., 'Default Media Production Workflow')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the workflow's purpose and scope."
+        },
+        "isTemplate": {
+          "type": "boolean",
+          "description": "Indicates if this workflow is a reusable template (true) or an active instance (false)."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of workflow (e.g., 'Default', 'Project-Specific', 'Company-Specific') for scalability."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version identifier for the workflow, allowing for changes over time (e.g., '1.0', '1.1')."
+        },
+        "workflowNodeIds": {
+          "type": "array",
+          "description": "An ordered list of references to WorkflowNode entities that constitute this workflow. (Relationship: Workflow 1:N WorkflowNode)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the workflow was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the workflow was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "companyId",
+        "name",
+        "description",
+        "isTemplate",
+        "type",
+        "version",
+        "workflowNodeIds",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WorkflowNode": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "WorkflowNode",
+      "type": "object",
+      "description": "Represents a single step or feature block within a workflow, defining access controls and transitions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the WorkflowNode entity."
+        },
+        "workflowId": {
+          "type": "string",
+          "description": "Reference to the Workflow this node belongs to. (Relationship: Workflow 1:N WorkflowNode)"
+        },
+        "nodeName": {
+          "type": "string",
+          "description": "The user-editable name of this workflow node."
+        },
+        "moduleType": {
+          "type": "string",
+          "description": "The type of feature or module this node represents (e.g., 'Sales Phase', 'Production Phase', 'Finance')."
+        },
+        "phase": {
+          "type": "string",
+          "description": "A higher-level grouping or category for the node (e.g., 'Sales', 'Production', 'Release')."
+        },
+        "stage": {
+          "type": "string",
+          "description": "A granular step or stage within its phase (e.g., 'Lead', 'Proposal', 'Pre-Production')."
+        },
+        "allowedRoleIds": {
+          "type": "array",
+          "description": "References to Roles that are allowed to interact with this workflow node. (Relationship: Role N:N WorkflowNode)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "description": "A list of granted permissions for specific actions within this workflow node (e.g., 'view', 'edit', 'approve', 'delete', 'moveStage').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "autoTransition": {
+          "type": "boolean",
+          "description": "Toggle to enable or disable automatic transition to the next stage upon completion of this node."
+        },
+        "requiredApprovalRoleId": {
+          "type": "string",
+          "description": "Optional reference to a Role whose approval is required to complete this node or transition. (Relationship: Role 1:N WorkflowNode)"
+        },
+        "nextWorkflowNodeIds": {
+          "type": "array",
+          "description": "References to WorkflowNode IDs that can follow this node, supporting multiple branches in the workflow. (Relationship: WorkflowNode N:N WorkflowNode)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "positionX": {
+          "type": "number",
+          "description": "X-coordinate for UI positioning on the workflow canvas."
+        },
+        "positionY": {
+          "type": "number",
+          "description": "Y-coordinate for UI positioning on the workflow canvas."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the workflow node was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the workflow node was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "workflowId",
+        "nodeName",
+        "moduleType",
+        "phase",
+        "stage",
+        "allowedRoleIds",
+        "permissions",
+        "autoTransition",
+        "nextWorkflowNodeIds",
+        "positionX",
+        "positionY",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Manages individual media production projects, tracking progress, resources, and associated clients.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Project entity."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to the Company that owns this project. (Relationship: Company 1:N Project)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the project."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the project scope and objectives."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the Client associated with this project. (Relationship: Client 1:N Project)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current overall status of the project (e.g., 'Planned', 'In Progress', 'Completed', 'Archived')."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The planned start date of the project.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The planned end date of the project.",
+          "format": "date-time"
+        },
+        "budget": {
+          "type": "number",
+          "description": "The allocated budget for the project."
+        },
+        "assignedTeamMemberIds": {
+          "type": "array",
+          "description": "References to TeamMember entities assigned to this project. (Relationship: TeamMember N:N Project)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "workflowId": {
+          "type": "string",
+          "description": "Reference to the specific Workflow guiding this project. (Relationship: Workflow 1:N Project)"
+        },
+        "currentWorkflowNodeId": {
+          "type": "string",
+          "description": "Tracks the current WorkflowNode ID representing the project's current stage."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the project record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the project record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "companyId",
+        "name",
+        "clientId",
+        "status",
+        "startDate",
+        "endDate",
+        "budget",
+        "workflowId",
+        "currentWorkflowNodeId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a discrete unit of work within a project, for which time can be tracked.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Task entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to the Project this task belongs to. (Relationship: Project 1:N Task)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name or title of the task."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the task requirements."
+        },
+        "assignedTeamMemberId": {
+          "type": "string",
+          "description": "Reference to the TeamMember assigned to this task. (Relationship: TeamMember 1:N Task)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the task (e.g., 'Pending', 'In Progress', 'Completed', 'Blocked')."
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The deadline for completing the task.",
+          "format": "date-time"
+        },
+        "estimatedHours": {
+          "type": "number",
+          "description": "The estimated number of hours required to complete the task."
+        },
+        "actualHours": {
+          "type": "number",
+          "description": "The actual total number of hours spent on the task."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the task was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the task was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "name",
+        "assignedTeamMemberId",
+        "status",
+        "dueDate",
+        "estimatedHours",
+        "actualHours",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TimesheetEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TimesheetEntry",
+      "type": "object",
+      "description": "Records a period of time a team member spent working on a specific task.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TimesheetEntry entity."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "Reference to the Task this time entry is for. (Relationship: Task 1:N TimesheetEntry)"
+        },
+        "teamMemberId": {
+          "type": "string",
+          "description": "Reference to the TeamMember who logged this time. (Relationship: TeamMember 1:N TimesheetEntry)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The start date and time of the work period.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The end date and time of the work period.",
+          "format": "date-time"
+        },
+        "durationHours": {
+          "type": "number",
+          "description": "The calculated duration of the work period in hours."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional notes or a brief description of the work performed during this entry."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the timesheet entry was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "taskId",
+        "teamMemberId",
+        "startTime",
+        "endTime",
+        "durationHours",
+        "createdAt"
+      ]
+    },
+    "Invoice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Invoice",
+      "type": "object",
+      "description": "Represents a bill issued to a client for services rendered on a project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Invoice entity."
+        },
+        "companyId": {
+          "type": "string",
+          "description": "Reference to the Company that issued this invoice. (Relationship: Company 1:N Invoice)"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the Client to whom this invoice is issued. (Relationship: Client 1:N Invoice)"
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to the Project related to this invoice. (Relationship: Project 1:N Invoice)"
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "description": "A unique identifier or number for the invoice."
+        },
+        "issueDate": {
+          "type": "string",
+          "description": "The date when the invoice was issued.",
+          "format": "date-time"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The deadline for payment of the invoice.",
+          "format": "date-time"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total amount of the invoice."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency of the invoice amount (e.g., 'USD', 'EUR')."
+        },
+        "status": {
+          "type": "string",
+          "description": "The payment status of the invoice (e.g., 'Pending', 'Paid', 'Overdue', 'Cancelled')."
+        },
+        "lineItems": {
+          "type": "array",
+          "description": "A list of individual items or services included in the invoice, each with its own description, quantity, unit price, and total.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "The date when the invoice was paid (if applicable).",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the invoice record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the invoice record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "companyId",
+        "clientId",
+        "projectId",
+        "invoiceNumber",
+        "issueDate",
+        "dueDate",
+        "amount",
+        "currency",
+        "status",
+        "lineItems",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "auth": {
-    "providers": ["password", "google", "anonymous"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/talents/{talentId}",
+        "path": "companies/{companyId}",
         "definition": {
-          "entityName": "Talent",
-          "schema": { "$ref": "#/backend/entities/Talent" },
-          "description": "Influencer database."
+          "entityName": "Company",
+          "schema": {
+            "$ref": "#/backend/entities/Company"
+          },
+          "description": "Root collection for all company-specific data. All subcollections for a given company will be nested here. Includes `id` as the document ID. Authorization will determine who can manage company-level settings, typically Super Admins or specific company Admins."
+        }
+      },
+      {
+        "path": "companies/{companyId}/roles/{roleId}",
+        "definition": {
+          "entityName": "Role",
+          "schema": {
+            "$ref": "#/backend/entities/Role"
+          },
+          "description": "Defines the roles available within a specific company (e.g., 'Admin', 'Sales Manager'). Authorization for managing these role definitions is based on company-level roles (e.g., 'Super Admin')."
+        }
+      },
+      {
+        "path": "companies/{companyId}/teamMembers/{teamMemberUid}",
+        "definition": {
+          "entityName": "TeamMember",
+          "schema": {
+            "$ref": "#/backend/entities/TeamMember"
+          },
+          "description": "Contains profile information for team members within a specific company. The document ID (`teamMemberUid`) is the Firebase Auth `uid` of the user. Includes `roleId` to define the user's primary role within the company. For security rules, this `roleId` will be used in a `get()` operation on the user's own document to establish context-specific authority without relying on parent data of the resource being accessed.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "The unique identifier of the company."
+            },
+            {
+              "name": "teamMemberUid",
+              "description": "The Firebase Authentication UID of the team member, serving as the document ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "companies/{companyId}/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/backend/entities/Client"
+          },
+          "description": "Stores information about clients associated with a specific company. Includes `companyId` for authorization independence. Access is controlled by company-level roles.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "The unique identifier of the company this client belongs to."
+            },
+            {
+              "name": "clientId",
+              "description": "The unique identifier for the client."
+            }
+          ]
+        }
+      },
+      {
+        "path": "companies/{companyId}/workflows/{workflowId}",
+        "definition": {
+          "entityName": "Workflow",
+          "schema": {
+            "$ref": "#/backend/entities/Workflow"
+          },
+          "description": "Defines a complete workflow (template or active instance) for a specific company. Includes `companyId` for authorization independence. Fields like `isTemplate` and `type` support multiple workflow templates per company or project type. Authorization for managing workflows is typically restricted to 'Admin' roles within the company.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "The unique identifier of the company that owns this workflow."
+            },
+            {
+              "name": "workflowId",
+              "description": "The unique identifier for the workflow."
+            }
+          ]
+        }
+      },
+      {
+        "path": "companies/{companyId}/workflows/{workflowId}/workflowNodes/{workflowNodeId}",
+        "definition": {
+          "entityName": "WorkflowNode",
+          "schema": {
+            "$ref": "#/backend/entities/WorkflowNode"
+          },
+          "description": "Represents a single step or feature block within a workflow. Includes `workflowId` for hierarchical integrity, and crucial denormalized authorization fields: `allowedRoleIds`, `permissions` (view, edit, approve, delete, moveStage), and `requiredApprovalRoleId` for Authorization Independence and QAPs. This allows client-side logic to determine feature visibility/interactivity without additional `get()` calls for node-specific permissions. Authorization for modifying nodes is restricted to workflow managers/admins.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "The unique identifier of the company this workflow node belongs to."
+            },
+            {
+              "name": "workflowId",
+              "description": "The unique identifier of the parent workflow."
+            },
+            {
+              "name": "workflowNodeId",
+              "description": "The unique identifier for the workflow node."
+            }
+          ]
+        }
+      },
+      {
+        "path": "companies/{companyId}/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Manages individual media production projects for a company. Includes `companyId` for authorization. Crucially, contains `workflowId` and `currentWorkflowNodeId` to link to the active workflow configuration, enabling dynamic access control via the Workflow Manager. Access depends on the user's company role and the permissions defined in the `currentWorkflowNode`.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "The unique identifier of the company that owns this project."
+            },
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "companies/{companyId}/projects/{projectId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Represents tasks within a specific project. Includes `projectId` for hierarchical integrity. Access depends on project-level permissions and assigned `teamMemberId`, determined by the user's role within the company and the workflow configuration.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "The unique identifier of the company this task belongs to."
+            },
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the parent project."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier for the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "companies/{companyId}/projects/{projectId}/tasks/{taskId}/timesheetEntries/{timesheetEntryId}",
+        "definition": {
+          "entityName": "TimesheetEntry",
+          "schema": {
+            "$ref": "#/backend/entities/TimesheetEntry"
+          },
+          "description": "Records time spent by a team member on a specific task. Includes `taskId` and `teamMemberId` for hierarchical integrity and ownership tracking. Access is restricted to the owning team member and authorized company roles.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "The unique identifier of the company this timesheet entry belongs to."
+            },
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the parent project."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier of the parent task."
+            },
+            {
+              "name": "timesheetEntryId",
+              "description": "The unique identifier for the timesheet entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "companies/{companyId}/invoices/{invoiceId}",
+        "definition": {
+          "entityName": "Invoice",
+          "schema": {
+            "$ref": "#/backend/entities/Invoice"
+          },
+          "description": "Stores invoices issued by the company to clients for projects. Includes `companyId`, `clientId`, and `projectId` for denormalized context, supporting authorization independence for financial data. Access is restricted to authorized company roles.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "The unique identifier of the company that issued this invoice."
+            },
+            {
+              "name": "invoiceId",
+              "description": "The unique identifier for the invoice."
+            }
+          ]
         }
       }
-    ]
+    ],
+    "reasoning": "The recommended Firestore data structure prioritizes multi-tenancy and robust, auditable access control through a hierarchical design rooted in the `companies` collection. All core business data (roles, team members, clients, workflows, projects, tasks, invoices) are nested under `/companies/{companyId}`, ensuring strict data segregation per company and enabling efficient querying for company-specific contexts. This aligns with the 'Structural Segregation' principle by ensuring homogenous security posture within each company's data.\n\n**Authorization Independence (CRITICAL):**\n1.  **Company-Level Roles:** For overall company data access, authorization relies on the user's role within the `companyId` context. A user's Firebase Auth UID (`request.auth.uid`) directly maps to a `TeamMember` document at `/companies/{companyId}/teamMembers/{teamMemberUid}`. This `TeamMember` document explicitly stores the `roleId` for that company. While security rules often caution against `get()` calls, accessing the `roleId` from the user's *own* `teamMember` document (`get(/databases/$(database)/documents/companies/$(companyId)/teamMembers/$(request.auth.uid)).data.roleId`) is a controlled and pragmatic compromise for DBAC in a multi-tenant environment. This `get()` is performed on the requesting user's identity data, not on a parent resource's authorization data, thereby minimizing the complexity and debugging challenges associated with true hierarchical authorization dependencies.\n2.  **Workflow Node-Specific Permissions:** The `WorkflowNode` entity is designed for maximum Authorization Independence. Each `WorkflowNode` document (located at `/companies/{companyId}/workflows/{workflowId}/workflowNodes/{workflowNodeId}`) explicitly includes all necessary authorization context: `allowedRoleIds`, `permissions` (view, edit, approve, delete, moveStage), and `requiredApprovalRoleId`. This denormalization means that when the application needs to determine feature access or permissible actions for a given workflow stage, it can simply fetch the relevant `WorkflowNode` document and check its fields against the user's `roleId` (obtained once at the company level). No additional `get()` calls are required within the rules for node-specific permissions, making rules simple, atomic, and debuggable for workflow-driven access.\n\n**QAPs (Rules are not Filters):**\n1.  **Company Scope:** By nesting all data under `companies/{companyId}`, Firestore security rules can easily enforce that users can only interact with data belonging to companies they are members of. The `companyId` is explicitly part of the path, inherently enforcing this top-level filter.\n2.  **Workflow Configuration Fetching:** The `Workflow` and `WorkflowNode` collections are primarily configuration data. The application will fetch the entire workflow configuration for a specific company (e.g., `/companies/{companyId}/workflows/{workflowId}/workflowNodes`). The security rules for these collections will restrict *who can modify the workflow settings* (e.g., only 'Admins' within that company). The application then performs client-side filtering and UI adjustments based on the user's `roleId` and the `allowedRoleIds`/`permissions` denormalized directly within each `WorkflowNode`. This prevents rules from becoming complex filters and keeps them focused on data integrity and authorization for configuration changes.\n3.  **Project & Task Access:** For entities like `Project` and `Task`, access control is primarily based on the user's role within the `companyId` and potentially explicit assignments (`assignedTeamMemberIds`). The `Project` document's `currentWorkflowNodeId` links to the active workflow stage, allowing the *application logic* to leverage the denormalized `WorkflowNode` permissions for dynamic UI and action enablement, while rules ensure general data access based on company role membership.\n\n**Scalability and Future Proofing:**\n-   **Multi-Company SaaS:** The `/companies/{companyId}` root provides inherent multi-tenancy.\n-   **Multiple Workflows:** The `Workflow` entity includes `isTemplate` and `type` fields, allowing for default workflows, project-specific workflows, or company-wide templates. Each `Project` directly links to a `workflowId`.\n-   **Complex Flows:** `WorkflowNode.nextWorkflowNodeIds` supports branching and complex flow structures. `requiredApprovalRoleId` facilitates approval chains. Workflow versioning is supported by `Workflow.version`.\n-   **Explicit State Modeling:** Entities like `Project` and `Task` use a single `status` field for predictable state management."
   }
 }

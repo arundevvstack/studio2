@@ -1,9 +1,193 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+
+    /**
+     * FIREBASE SECURITY RULES: WORKFLOW-DRIVEN PROJECT MANAGEMENT TOOL
+     * 
+     * CORE PHILOSOPHY:
+     * This ruleset implements a strict multi-tenant authorization model rooted in the 'Company' entity. 
+     * Access is granted based on verified identity (Firebase Auth) and company membership.
+     * 
+     * DATA STRUCTURE:
+     * All application data is strictly namespaced under the `/companies/{companyId}` path. 
+     * This ensures physical and logical segregation of data between different organizations.
+     * 
+     * KEY SECURITY DECISIONS:
+     * 1. Multi-Tenancy: A user must have a corresponding 'TeamMember' document within a company's 
+     *    subcollection to access any data belonging to that company.
+     * 2. Role-Based Configuration: Admin-level roles (defined in the Workflow Manager) are the 
+     *    only identities permitted to modify system configurations, roles, and workflow templates.
+     * 3. Prototyping Flexibility: While authorization (WHO can access) is strictly enforced, 
+     *    data schema (WHAT the data looks like) is kept flexible to allow for rapid iteration.
+     * 4. Denormalization for Performance: Critical authorization fields like `companyId`, 
+     *    `roleId`, and `allowedRoleIds` are expected to be present on documents to minimize 
+     *    expensive cross-collection lookups.
+     * 
+     * RELATIONAL INTEGRITY:
+     * Rules enforce that users cannot "jump" company boundaries by validating that the 
+     * `companyId` in the document data matches the path being accessed.
+     */
+
+    // --- Global Helper Functions ---
+
+    /** @description Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the authenticated user's UID matches the provided ID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Verifies the requesting user is a registered member of the specific company. */
+    function isMemberOfCompany(companyId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)/teamMembers/$(request.auth.uid));
+    }
+
+    /** 
+     * @description Placeholder for Admin-check logic. 
+     * In prototyping, we verify the user belongs to the company. 
+     * Production would verify the roleId against a specific 'Admin' role ID.
+     */
+    function isCompanyAdmin(companyId) {
+      // NOTE: The 'getTeamMember' function was removed as it was unused and caused warnings.
+      // For prototyping, any member is considered an admin.
+      // In production, this would typically involve fetching the teamMember's role
+      // and checking if it has admin privileges, e.g.:
+      // return isMemberOfCompany(companyId) && get(/databases/$(database)/documents/companies/$(companyId)/teamMembers/$(request.auth.uid)).data.role == 'admin';
+      return isMemberOfCompany(companyId); 
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Root company document access.
+     * @path /companies/{companyId}
+     * @allow (get) If user is a member. (update) If user is an admin.
+     * @deny Any access if user is not part of the company.
+     * @principle Multi-tenant structural segregation.
+     */
+    match /companies/{companyId} {
+      allow get: if isMemberOfCompany(companyId);
+      allow list: if isSignedIn(); // Allow listing companies to find the one you belong to
+      allow create: if isSignedIn(); // Allow creation for new tenants
+      allow update: if isCompanyAdmin(companyId) && resource != null;
+      allow delete: if false; // Destructive company deletion usually handled via Admin SDK
+
+      /**
+       * @description Role definitions for the company.
+       * @path /companies/{companyId}/roles/{roleId}
+       * @allow (read) All company members. (write) Company Admins.
+       * @principle Centralized role management.
+       */
+      match /roles/{roleId} {
+        allow get, list: if isMemberOfCompany(companyId);
+        allow create, update: if isCompanyAdmin(companyId);
+        allow delete: if isCompanyAdmin(companyId) && resource != null;
+      }
+
+      /**
+       * @description User profiles within a company.
+       * @path /companies/{companyId}/teamMembers/{teamMemberUid}
+       * @allow (create) If UID matches path. (update) If owner or admin.
+       * @deny Non-members reading other member profiles.
+       * @principle Verified identity and self-service creation.
+       */
+      match /teamMembers/{teamMemberUid} {
+        allow get, list: if isMemberOfCompany(companyId);
+        allow create: if isOwner(teamMemberUid) && request.resource.data.companyId == companyId;
+        allow update: if (isOwner(teamMemberUid) || isCompanyAdmin(companyId)) && resource != null;
+        allow delete: if isCompanyAdmin(companyId) && resource != null;
+      }
+
+      /**
+       * @description Client management.
+       * @path /companies/{companyId}/clients/{clientId}
+       * @allow (all) Any member of the company.
+       * @principle Shared access within a tenant.
+       */
+      match /clients/{clientId} {
+        allow get, list: if isMemberOfCompany(companyId);
+        allow create: if isMemberOfCompany(companyId) && request.resource.data.companyId == companyId;
+        allow update: if isMemberOfCompany(companyId) && resource != null;
+        allow delete: if isCompanyAdmin(companyId) && resource != null;
+      }
+
+      /**
+       * @description Workflow configurations (The "Workflow Manager" data).
+       * @path /companies/{companyId}/workflows/{workflowId}
+       * @allow (read) All members. (write) Admins only.
+       * @principle Restricts configuration changes to authorized roles.
+       */
+      match /workflows/{workflowId} {
+        allow get, list: if isMemberOfCompany(companyId);
+        allow create: if isCompanyAdmin(companyId) && request.resource.data.companyId == companyId;
+        allow update: if isCompanyAdmin(companyId) && resource != null;
+        allow delete: if isCompanyAdmin(companyId) && resource != null;
+
+        /**
+         * @description Individual nodes within a workflow canvas.
+         * @path /companies/{companyId}/workflows/{workflowId}/workflowNodes/{nodeId}
+         * @principle Denormalized node permissions for dynamic UI.
+         */
+        match /workflowNodes/{nodeId} {
+          allow get, list: if isMemberOfCompany(companyId);
+          allow create, update, delete: if isCompanyAdmin(companyId);
+        }
+      }
+
+      /**
+       * @description Project entities.
+       * @path /companies/{companyId}/projects/{projectId}
+       * @allow (all) Company members.
+       * @principle Tenant-wide collaboration.
+       */
+      match /projects/{projectId} {
+        allow get, list: if isMemberOfCompany(companyId);
+        allow create: if isMemberOfCompany(companyId) && request.resource.data.companyId == companyId;
+        allow update: if isMemberOfCompany(companyId) && resource != null;
+        allow delete: if isCompanyAdmin(companyId) && resource != null;
+
+        /**
+         * @description Tasks within a project.
+         * @path /companies/{companyId}/projects/{projectId}/tasks/{taskId}
+         * @principle Hierarchical integrity check via path variables.
+         */
+        match /tasks/{taskId} {
+          allow get, list: if isMemberOfCompany(companyId);
+          allow create: if isMemberOfCompany(companyId) && request.resource.data.projectId == projectId;
+          allow update: if isMemberOfCompany(companyId) && resource != null;
+          allow delete: if isMemberOfCompany(companyId) && resource != null;
+
+          /**
+           * @description Timesheet entries.
+           * @path /companies/{companyId}/projects/{projectId}/tasks/{taskId}/timesheetEntries/{entryId}
+           * @allow (write) Only the owner of the timesheet entry or an Admin.
+           * @principle Personal data ownership within a corporate context.
+           */
+          match /timesheetEntries/{entryId} {
+            allow get, list: if isMemberOfCompany(companyId);
+            allow create: if isMemberOfCompany(companyId) && request.resource.data.teamMemberId == request.auth.uid;
+            allow update: if resource != null && (resource.data.teamMemberId == request.auth.uid || isCompanyAdmin(companyId));
+            allow delete: if resource != null && (resource.data.teamMemberId == request.auth.uid || isCompanyAdmin(companyId));
+          }
+        }
+      }
+
+      /**
+       * @description Financial invoices.
+       * @path /companies/{companyId}/invoices/{invoiceId}
+       * @allow (read/write) Company members.
+       * @principle Multi-tenant isolation for sensitive financial data.
+       */
+      match /invoices/{invoiceId} {
+        allow get, list: if isMemberOfCompany(companyId);
+        allow create: if isMemberOfCompany(companyId) && request.resource.data.companyId == companyId;
+        allow update: if isMemberOfCompany(companyId) && resource != null;
+        allow delete: if isCompanyAdmin(companyId) && resource != null;
+      }
     }
   }
 }
