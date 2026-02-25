@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  Zap, 
   ShieldCheck, 
   Mail, 
   Lock, 
@@ -33,7 +32,7 @@ import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
 /**
- * @fileOverview Login Portal.
+ * @fileOverview Login Portal for DP MediaFlow.
  * A high-fidelity authentication gateway supporting Email/Password, Google, and Tactical Bypass.
  * Handles automatic provisioning of pending user records for the organization.
  */
@@ -49,6 +48,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Fetch global branding settings
+  const billingSettingsRef = useMemoFirebase(() => {
+    return doc(db, "companyBillingSettings", "global");
+  }, [db]);
+  const { data: globalSettings } = useDoc(billingSettingsRef);
 
   // Check user record status in the organization's registry
   const memberRef = useMemoFirebase(() => {
@@ -252,9 +257,18 @@ export default function LoginPage() {
         </div>
         
         <div className="relative z-10 space-y-12 max-w-xl">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-[1.5rem] bg-primary flex items-center justify-center shadow-2xl shadow-primary/40">
-              <Zap className="h-10 w-10 text-white fill-white" />
+          <div className="flex items-center gap-6">
+            <div className="h-20 w-20 rounded-[1.5rem] bg-white flex items-center justify-center shadow-2xl shadow-white/10 overflow-hidden">
+              {globalSettings?.logo ? (
+                <img src={globalSettings.logo} alt="DP Logo" className="w-full h-full object-contain p-2" />
+              ) : (
+                <img 
+                  src="https://picsum.photos/seed/dp-logo/200/200" 
+                  alt="DP Logo" 
+                  className="w-full h-full object-contain p-2" 
+                  data-ai-hint="DP logo"
+                />
+              )}
             </div>
             <h2 className="text-4xl font-bold font-headline text-white tracking-tighter">DP MediaFlow</h2>
           </div>
@@ -282,8 +296,17 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 relative bg-white">
         <div className="w-full max-w-[440px] space-y-10">
           <div className="lg:hidden flex flex-col items-center text-center space-y-6 mb-12">
-            <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center shadow-xl shadow-primary/20">
-              <Zap className="h-8 w-8 text-white fill-white" />
+            <div className="h-20 w-20 rounded-2xl bg-white flex items-center justify-center shadow-xl shadow-slate-200 overflow-hidden border border-slate-100">
+              {globalSettings?.logo ? (
+                <img src={globalSettings.logo} alt="DP Logo" className="w-full h-full object-contain p-2" />
+              ) : (
+                <img 
+                  src="https://picsum.photos/seed/dp-logo/200/200" 
+                  alt="DP Logo" 
+                  className="w-full h-full object-contain p-2" 
+                  data-ai-hint="DP logo"
+                />
+              )}
             </div>
             <h1 className="text-3xl font-bold font-headline tracking-tighter">DP MediaFlow</h1>
           </div>
