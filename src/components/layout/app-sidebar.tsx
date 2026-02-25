@@ -152,35 +152,35 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="p-4 pb-1 space-y-4">
+      <SidebarHeader className="p-3 pb-1 space-y-2">
         <div className="flex flex-col items-center gap-1 group-data-[collapsible=icon]:hidden">
           {globalSettings?.logo ? (
-            <div className="h-12 w-auto mb-1 flex items-center justify-center">
+            <div className="h-10 w-auto mb-0.5 flex items-center justify-center">
               <img src={globalSettings.logo} alt="Organization Logo" className="h-full w-auto object-contain" />
             </div>
           ) : (
-            <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-              <Zap className="h-5 w-5 text-white fill-white" />
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <Zap className="h-4 w-4 text-white fill-white" />
             </div>
           )}
         </div>
 
-        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl py-5 font-bold text-xs shadow-lg shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
+        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-lg py-4 font-bold text-[10px] uppercase shadow-md shadow-primary/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
           <Link href="/pipeline">
-            <Plus className="h-4 w-4 mr-2 group-data-[collapsible=icon]:mr-0" />
+            <Plus className="h-3 w-3 mr-1.5 group-data-[collapsible=icon]:mr-0" />
             <span className="group-data-[collapsible=icon]:hidden">New Lead</span>
           </Link>
         </Button>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-2 space-y-1">
+      <SidebarContent className="px-2 py-1 space-y-0">
         {groupedMenuItems.map((group) => (
-          <SidebarGroup key={group.id} className="py-1">
-            <SidebarGroupLabel className="px-2 text-[9px] font-bold uppercase text-slate-400 mb-1 h-6 group-data-[collapsible=icon]:hidden tracking-wider">
+          <SidebarGroup key={group.id} className="py-0.5">
+            <SidebarGroupLabel className="px-2 text-[8px] font-bold uppercase text-slate-400 mb-0.5 h-4 group-data-[collapsible=icon]:hidden tracking-widest">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="space-y-0.5">
+              <SidebarMenu className="space-y-0">
                 {group.items.map((item) => {
                   const isActive = item.url === "/" ? pathname === "/" : pathname.startsWith(item.url);
                   const Icon = ICON_MAP[item.iconName] || Globe;
@@ -190,19 +190,19 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         asChild
                         isActive={isActive}
-                        className={`rounded-lg h-8 px-2 transition-all ${
+                        className={`rounded-md h-7 px-2 transition-all ${
                           isActive 
                             ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
                             : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                         }`}
                       >
                         <Link href={item.url} className="flex items-center w-full">
-                          <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
-                          <span className="ml-3 font-semibold text-[12px] group-data-[collapsible=icon]:hidden">
+                          <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-primary' : 'text-slate-400'}`} />
+                          <span className="ml-2.5 font-bold text-[11px] group-data-[collapsible=icon]:hidden">
                             {item.title}
                           </span>
                           {isActive && (
-                            <ChevronRight className="ml-auto h-3 w-3 opacity-40 group-data-[collapsible=icon]:hidden" />
+                            <ChevronRight className="ml-auto h-2.5 w-2.5 opacity-40 group-data-[collapsible=icon]:hidden" />
                           )}
                         </Link>
                       </SidebarMenuButton>
@@ -215,21 +215,21 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-3 mt-auto">
-        <SidebarSeparator className="mb-3 bg-slate-100" />
-        <SidebarMenu className="space-y-0.5">
+      <SidebarFooter className="p-2 mt-auto">
+        <SidebarSeparator className="mb-2 bg-slate-100" />
+        <SidebarMenu className="space-y-0">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className={`rounded-lg h-8 px-2 transition-all ${
+              className={`rounded-md h-7 px-2 transition-all ${
                 pathname === "/settings" 
                   ? "bg-slate-50 text-slate-900 shadow-sm ring-1 ring-slate-100" 
                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
               <Link href="/settings" className="flex items-center">
-                <User className="h-4 w-4" />
-                <span className="ml-3 font-semibold text-[12px] group-data-[collapsible=icon]:hidden">
+                <User className="h-3.5 w-3.5" />
+                <span className="ml-2.5 font-bold text-[11px] group-data-[collapsible=icon]:hidden">
                   Profile
                 </span>
               </Link>
@@ -238,11 +238,11 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="rounded-lg h-8 px-2 text-slate-500 hover:bg-slate-50"
+              className="rounded-md h-7 px-2 text-slate-500 hover:bg-slate-50"
             >
               <Link href="/logout" className="flex items-center">
-                <LogOut className="h-4 w-4" />
-                <span className="ml-3 font-semibold text-[12px] group-data-[collapsible=icon]:hidden">
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="ml-2.5 font-bold text-[11px] group-data-[collapsible=icon]:hidden">
                   Log Out
                 </span>
               </Link>
