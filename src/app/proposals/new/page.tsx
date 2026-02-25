@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -31,6 +30,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
 import { useFirestore, useUser, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
