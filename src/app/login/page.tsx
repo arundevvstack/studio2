@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge"
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
