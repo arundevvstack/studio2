@@ -31,10 +31,11 @@ import { doc, serverTimestamp } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 /**
  * @fileOverview High-Fidelity Illustrative Identity Governance Portal.
- * Re-architected to match the specific 3-column layout with grayscale imagery and premium navigation.
+ * Precisely matched to the 3-column reference design with cinematic centerpiece.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -175,12 +176,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#fcfcfe] relative overflow-hidden flex flex-col font-body selection:bg-primary/10">
-      {/* Background Mesh Gradients */}
+      {/* Mesh Gradients */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100/40 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] bg-orange-100/30 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-purple-100/20 rounded-full blur-[80px] pointer-events-none" />
 
-      {/* Navbar */}
+      {/* Global Navbar */}
       <nav className="relative z-50 flex items-center justify-between px-8 md:px-20 py-8">
         <div className="flex items-center gap-12">
           <div className="flex items-center gap-2">
@@ -190,10 +190,10 @@ export default function LoginPage() {
             <span className="font-headline font-bold text-lg tracking-tight text-slate-900">DP MediaFlow</span>
           </div>
           <div className="hidden lg:flex items-center gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-            <span className="hover:text-primary cursor-pointer transition-colors">Home</span>
-            <span className="hover:text-primary cursor-pointer transition-colors">Verticals</span>
-            <span className="hover:text-primary cursor-pointer transition-colors">Portfolio</span>
-            <span className="hover:text-primary cursor-pointer transition-colors">Contact</span>
+            <Link href="/" className="hover:text-primary cursor-pointer transition-colors">Home</Link>
+            <Link href="/verticals" className="hover:text-primary cursor-pointer transition-colors">Verticals</Link>
+            <Link href="/portfolio" className="hover:text-primary cursor-pointer transition-colors">Portfolio</Link>
+            <Link href="/contact" className="hover:text-primary cursor-pointer transition-colors">Contact</Link>
           </div>
         </div>
         <div className="flex items-center gap-6">
@@ -218,18 +218,18 @@ export default function LoginPage() {
         </div>
       </nav>
 
-      {/* Main Content */}
+      {/* Main Layout Grid */}
       <main className="flex-1 relative z-10 flex items-center justify-center px-8 md:px-20 pb-20">
         <div className="max-w-[1400px] w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          {/* Left Column: Text Content */}
+          {/* Column 1: Briefing */}
           <div className="lg:col-span-4 space-y-8 animate-in fade-in slide-in-from-left-4 duration-1000">
             <div className="space-y-4">
               <h1 className="text-5xl md:text-6xl font-bold font-headline text-slate-900 tracking-tight leading-[1.1]">
                 {mode === 'login' ? 'Sign In to' : 'Join the'} <br/>
                 <span className="text-primary">{mode === 'login' ? 'System Portal' : 'Creative Engine'}</span>
               </h1>
-              <p className="text-base text-slate-400 font-medium leading-relaxed max-w-sm">
+              <p className="text-base text-slate-500 font-medium leading-relaxed max-w-sm">
                 {mode === 'login' 
                   ? 'Authorize your session to access organizational intel and manage production assets.' 
                   : 'Initiate your professional identity request to join our premium production network.'
@@ -247,20 +247,20 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Middle Column: Centerpiece Image */}
+          {/* Column 2: Cinematic Centerpiece */}
           <div className="hidden lg:flex lg:col-span-4 justify-center items-center relative animate-in fade-in zoom-in duration-1000 delay-300">
             <div className="relative w-full aspect-square max-w-[400px] rounded-[2rem] overflow-hidden shadow-2xl grayscale hover:grayscale-0 transition-all duration-700">
               <img 
-                src="https://picsum.photos/seed/japanese-lantern/800/800" 
+                src="https://picsum.photos/seed/production-depth/800/800" 
                 alt="Strategic Context" 
                 className="w-full h-full object-cover"
-                data-ai-hint="japanese lantern"
+                data-ai-hint="cinematic camera"
               />
               <div className="absolute inset-0 bg-primary/5 rounded-full blur-[100px] -z-10" />
             </div>
           </div>
 
-          {/* Right Column: Form Card */}
+          {/* Column 3: Identity Card */}
           <div className="lg:col-span-4 flex justify-center lg:justify-end animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
             <Card className="w-full max-w-[420px] bg-white/40 backdrop-blur-md border border-white/60 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] rounded-[2.5rem] p-10 space-y-10">
               <form onSubmit={handleAuth} className="space-y-6">

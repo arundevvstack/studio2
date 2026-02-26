@@ -15,13 +15,20 @@ import { Zap } from "lucide-react";
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Define routes where the sidebar should be hidden
-  const noSidebarRoutes = ["/login", "/logout"];
-  const isAuthRoute = noSidebarRoutes.includes(pathname);
+  // Define routes where the sidebar should be hidden (Public Pages)
+  const noSidebarRoutes = [
+    "/login", 
+    "/logout", 
+    "/verticals", 
+    "/portfolio", 
+    "/contact", 
+    "/docs"
+  ];
+  const isPublicRoute = noSidebarRoutes.includes(pathname);
 
-  if (isAuthRoute) {
+  if (isPublicRoute) {
     return (
-      <main className="min-h-screen w-full">
+      <main className="min-h-screen w-full bg-white">
         {children}
       </main>
     );
