@@ -279,23 +279,10 @@ export default function LoginPage() {
 
       {/* Right Side: Illustrative Design (Hidden on mobile, 50% on desktop) */}
       <div className="hidden lg:flex flex-1 relative bg-slate-950 overflow-hidden items-center justify-center p-12">
-        <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/studio-premium/1200/1200')] bg-cover bg-center opacity-40 scale-110 blur-[2px]" data-ai-hint="production studio" />
+        <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/office-collaboration/1200/1200')] bg-cover bg-center opacity-40 scale-110 blur-[2px]" data-ai-hint="office collaboration" />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-slate-950/80" />
         
         <div className="relative w-full h-full max-w-xl">
-          {/* Floating UI Widget 1: Task Alert */}
-          <div className="absolute top-[15%] right-[5%] bg-yellow-400 p-5 rounded-2xl shadow-2xl animate-in slide-in-from-right-8 duration-700 delay-300">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-black/10 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-black" />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-black/60">Active Priority</p>
-                <p className="text-xs font-bold text-black">Final Cut Review: Nike</p>
-              </div>
-            </div>
-          </div>
-
           {/* Floating UI Widget 2: Calendar Node */}
           <div className="absolute bottom-[25%] left-[5%] bg-white/10 backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-left-8 duration-700 delay-500">
             <div className="space-y-5">
@@ -310,25 +297,6 @@ export default function LoginPage() {
                     <span className="text-sm font-bold">{day}</span>
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Floating UI Widget 3: Task Preview */}
-          <div className="absolute top-[45%] right-[15%] bg-white p-6 rounded-3xl shadow-2xl max-w-[220px] animate-in zoom-in-95 duration-1000 delay-700">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-accent" />
-                <p className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Daily Brief</p>
-              </div>
-              <p className="text-xs font-medium text-slate-500 leading-relaxed">Coordinate drone shots for Kerala Tourism campaign.</p>
-              <div className="flex -space-x-2 pt-2">
-                {[1, 2, 3].map(i => (
-                  <Avatar key={i} className="h-8 w-8 border-2 border-white rounded-lg">
-                    <AvatarImage src={`https://picsum.photos/seed/crew${i}/100/100`} />
-                  </Avatar>
-                ))}
-                <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center border-2 border-white text-[9px] font-bold text-slate-400">+2</div>
               </div>
             </div>
           </div>
