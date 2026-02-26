@@ -11,11 +11,7 @@ import {
   Eye,
   EyeOff,
   Zap,
-  RotateCcw,
-  Sparkles,
-  CheckCircle2,
-  Calendar,
-  Plus
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +26,6 @@ import { doc, serverTimestamp } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 /**
  * @fileOverview Full-Screen Responsive Identity Governance Portal.
@@ -278,9 +273,9 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side: Illustrative Design (Hidden on mobile, 50% on desktop) */}
-      <div className="hidden lg:flex flex-1 relative bg-slate-950 overflow-hidden items-center justify-center p-12">
-        <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/office-collaboration/1200/1200')] bg-cover bg-center opacity-40 scale-110 blur-[2px]" data-ai-hint="office collaboration" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-slate-950/80" />
+      <div className="hidden lg:flex flex-1 relative bg-slate-900 overflow-hidden items-center justify-center p-12">
+        <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/creative-team-collaboration/1200/1200')] bg-cover bg-center opacity-50 scale-105" data-ai-hint="team collaboration" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-slate-900/90" />
         
         <div className="relative w-full h-full max-w-xl">
           {/* Visual Centerpiece */}
@@ -293,7 +288,7 @@ export default function LoginPage() {
                 <h3 className="text-5xl sm:text-6xl font-bold text-white tracking-tight leading-tight font-headline">
                   Premium Agency <br/><span className="text-primary">Intelligence.</span>
                 </h3>
-                <p className="text-base text-slate-400 font-medium max-w-sm mx-auto leading-relaxed">
+                <p className="text-base text-slate-300 font-medium max-w-sm mx-auto leading-relaxed">
                   The authoritative operational hub for media production strategy and asset throughput.
                 </p>
               </div>
