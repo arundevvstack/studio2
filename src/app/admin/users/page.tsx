@@ -73,7 +73,7 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com', 'anonymous-root@mediaflow.internal'];
+const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com'];
 
 export default function UserManagementPage() {
   const router = useRouter();

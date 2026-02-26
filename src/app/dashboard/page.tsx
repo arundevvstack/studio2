@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
@@ -33,6 +34,7 @@ import {
 
 /**
  * @fileOverview Master Dashboard Node - Authenticated Workspace.
+ * Gated by strictly "Active" Permit Status.
  */
 
 export default function Dashboard() {
@@ -60,9 +62,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isUserLoading && mounted) {
-      if (!user || user.isAnonymous) {
+      if (!user) {
         router.push("/login");
       } else if (member && member.status !== "Active") {
+        // If logged in but permit is not active, force back to login to show Restricted UI
         router.push("/login");
       }
     }
@@ -105,7 +108,7 @@ export default function Dashboard() {
     }));
   }, [mounted]);
 
-  if (!mounted || isUserLoading || (user && !member)) {
+  if (!mounted || isUserLoading || (user && !member) || memberLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-32 space-y-4 bg-[#f5f5f7] dark:bg-black">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -245,7 +248,7 @@ export default function Dashboard() {
                 ].map((s, i) => (
                   <div key={i} className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">{s.label}</p>
-                    <p className={`text-4xl font-bold font-headline tracking-tight text-slate-950 dark:text-white tabular-nums`}>{s.val}</p>
+                    <p className={`text-4xl font-bold font-headline tracking-tight text-slate-900 dark:text-white tabular-nums`}>{s.val}</p>
                   </div>
                 ))}
               </div>

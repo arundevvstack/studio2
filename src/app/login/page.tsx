@@ -28,14 +28,14 @@ import {
   initiateEmailSignUp,
   initiateGoogleSignIn
 } from "@/firebase/non-blocking-login";
-import { doc, serverTimestamp, collection, query, where, writeBatch } from "firebase/firestore";
+import { doc, serverTimestamp, collection, query, where, writeBatch, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com', 'anonymous-root@mediaflow.internal'];
+const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com'];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -61,7 +61,7 @@ export default function LoginPage() {
   const member = memberDocs?.[0] || null;
 
   useEffect(() => {
-    if (isUserLoading || isMemberLoading || isMigrating) return;
+    if (isUserLoading || isMemberLoading || isMigrating || isProvisioning) return;
 
     if (user) {
       const userEmail = user.email?.toLowerCase();
@@ -85,11 +85,10 @@ export default function LoginPage() {
               const newRef = doc(db, "teamMembers", user.uid);
               const oldRef = doc(db, "teamMembers", member.id);
               
+              // We use the existing member data exactly as is, just moving the document
               batch.set(newRef, {
                 ...member,
                 id: user.uid,
-                email: userEmail,
-                thumbnail: member.thumbnail || user.photoURL || "",
                 updatedAt: serverTimestamp()
               }, { merge: true });
               
@@ -106,17 +105,17 @@ export default function LoginPage() {
           return;
         }
 
-        // Redirect if authorized, otherwise stop and wait for permit
+        // Redirect if authorized, otherwise stay on this page to show restricted UI
         if (member.status === "Active") {
           router.push("/dashboard");
         } else {
           setIsProcessing(false);
         }
-        return; // CRITICAL: Stop here for existing members to prevent clobbering
+        return; 
       } 
       
       // 3. New Identity Provisioning (Only if member is confirmed null)
-      if (userEmail && !isProvisioning) {
+      if (userEmail && !member && !isMemberLoading) {
         // Auto-authorize Master Node
         if (userEmail === MASTER_EMAIL.toLowerCase()) {
           setIsProvisioning(true);
@@ -134,7 +133,7 @@ export default function LoginPage() {
           }, { merge: true });
           router.push("/dashboard");
         } 
-        // Provision baseline user identity
+        // Provision baseline user identity as PENDING
         else {
           setIsProvisioning(true);
           const nameParts = (user.displayName || "New Expert").split(' ');
@@ -154,6 +153,7 @@ export default function LoginPage() {
           }, { merge: true });
           
           toast({ title: "Identity Provisioned", description: "Awaiting strategic permit authorization." });
+          setIsProcessing(false);
         }
       }
     }
@@ -191,27 +191,28 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || (user && isMemberLoading) || isMigrating) {
+  if (isUserLoading || (user && isMemberLoading) || isMigrating || isProvisioning) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-6">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-          {isMigrating ? "Consolidating Identity..." : "Synchronizing Node..."}
+          {isMigrating ? "Consolidating Identity..." : isProvisioning ? "Provisioning Profile..." : "Synchronizing Node..."}
         </p>
       </div>
     );
   }
 
+  // Strictly block users who are not active
   if (user && member?.status === "Pending") {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-[10px] shadow-2xl p-16 max-w-lg w-full flex flex-col items-center text-center space-y-10">
-          <div className="h-24 w-24 rounded-[10px] bg-orange-50 flex items-center justify-center shadow-xl">
-            <Hourglass className="h-10 w-10 text-orange-500 animate-pulse" />
+        <div className="bg-white rounded-[10px] shadow-2xl p-12 max-w-lg w-full flex flex-col items-center text-center space-y-10">
+          <div className="h-20 w-20 rounded-[10px] bg-orange-50 flex items-center justify-center shadow-lg">
+            <Hourglass className="h-8 w-8 text-orange-500 animate-pulse" />
           </div>
           <div className="space-y-3">
-            <h1 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">Access Restricted</h1>
-            <p className="text-sm text-slate-500 font-medium leading-relaxed">Your identity is provisioned. Entry requires administrative validation from the Root Node to authorize your strategic permit.</p>
+            <h1 className="text-2xl font-bold font-headline text-slate-900 tracking-tight">Access Restricted</h1>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed">Your identity has been provisioned. entry into the operational workspace requires administrative validation from the Root Node to authorize your strategic permit.</p>
           </div>
           <div className="flex flex-col gap-3 w-full">
             <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-[10px] font-bold text-xs uppercase tracking-widest border-slate-100 bg-slate-50 hover:bg-slate-100">Switch Identity</Button>
