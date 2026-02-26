@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Badge } from "@/components/ui/badge"
@@ -60,13 +61,16 @@ export default function LoginPage() {
 
     if (user) {
       const userEmail = user.email?.toLowerCase();
+      
+      // Enforce restricted list and non-anonymous sessions
       if (user.isAnonymous || (userEmail && RESTRICTED_EMAILS.includes(userEmail))) {
-        toast({ variant: "destructive", title: "Security Restriction", description: "Identifier restricted or unauthorized session type." });
+        toast({ variant: "destructive", title: "Security Restriction", description: "This identifier is restricted or unauthorized." });
         signOut(auth);
         setIsProcessing(false);
         return;
       }
       
+      // Auto-authorize Master Node
       if (userEmail === MASTER_EMAIL.toLowerCase()) {
         if (!member || member.status !== 'Active') {
           const masterRef = doc(db, "teamMembers", user.uid);
@@ -86,6 +90,7 @@ export default function LoginPage() {
         return;
       }
 
+      // Handle standard users
       if (member) {
         if (member.status === "Active") {
           router.push("/dashboard");
@@ -93,6 +98,7 @@ export default function LoginPage() {
           setIsProcessing(false);
         }
       } else if (user.email && !isProvisioning) {
+        // Provision new Google or Email sign-up identity
         setIsProvisioning(true);
         const nameParts = (user.displayName || "New Expert").split(' ');
         const newMemberRef = doc(db, "teamMembers", user.uid);
@@ -109,6 +115,8 @@ export default function LoginPage() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         }, { merge: true });
+        
+        toast({ title: "Identity Provisioned", description: "Your account is awaiting strategic permit authorization." });
       }
     }
   }, [user, isUserLoading, member, isMemberLoading, router, db, auth, isProvisioning]);
@@ -133,12 +141,16 @@ export default function LoginPage() {
     });
   };
 
-  const handleGoogleAuth = () => {
+  const handleGoogleAuth = async () => {
     setIsProcessing(true);
-    initiateGoogleSignIn(auth).catch((err) => {
-      toast({ variant: "destructive", title: "Authentication Error", description: err.message });
+    try {
+      await initiateGoogleSignIn(auth);
+    } catch (err: any) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        toast({ variant: "destructive", title: "Google Auth Error", description: err.message });
+      }
       setIsProcessing(false);
-    });
+    }
   };
 
   if (isUserLoading || (user && isMemberLoading)) {
@@ -159,7 +171,7 @@ export default function LoginPage() {
           </div>
           <div className="space-y-3">
             <h1 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">Access Restricted</h1>
-            <p className="text-sm text-slate-500 font-medium leading-relaxed">Your identity is provisioned. Entry requires administrative validation from the Root Node.</p>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed">Your identity is provisioned. Entry requires administrative validation from the Root Node to authorize your strategic permit.</p>
           </div>
           <div className="flex flex-col gap-3 w-full">
             <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-[10px] font-bold text-xs uppercase tracking-widest border-slate-100 bg-slate-50 hover:bg-slate-100">Switch Identity</Button>
@@ -283,6 +295,7 @@ export default function LoginPage() {
                 <Button 
                   type="button" 
                   onClick={handleGoogleAuth} 
+                  disabled={isProcessing}
                   variant="outline" 
                   className="w-full h-14 rounded-[10px] bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-all active:scale-95 gap-3"
                 >
