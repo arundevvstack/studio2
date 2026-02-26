@@ -28,6 +28,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 interface TeamMemberFormProps {
@@ -46,6 +47,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   const { user: currentUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -151,6 +153,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
 
   const handleDelete = () => {
     if (!existingMember || !isAuthorizedToDelete) return;
+    setIsDeleting(true);
     const memberRef = doc(db, "teamMembers", existingMember.id);
     deleteDocumentNonBlocking(memberRef);
     toast({ variant: "destructive", title: "Identity Deleted", description: "Member has been removed from the registry." });

@@ -80,6 +80,7 @@ export default function UserManagementPage() {
   const db = useFirestore();
   const { user: currentUser, isUserLoading } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
+  const [userToDelete, setUserToDelete] = useState<any>(null);
 
   const currentUserRef = useMemoFirebase(() => {
     if (!currentUser || currentUser.isAnonymous) return null;
@@ -108,7 +109,7 @@ export default function UserManagementPage() {
         const batch = writeBatch(db);
         let count = 0;
 
-        RESTRICTED_EMAILS.forEach(async (email) => {
+        for (const email of RESTRICTED_EMAILS) {
           const registryTargets = team.filter(m => m.email?.toLowerCase() === email.toLowerCase());
           registryTargets.forEach(t => {
             batch.delete(doc(db, "teamMembers", t.id));
@@ -122,7 +123,7 @@ export default function UserManagementPage() {
             batch.delete(doc(db, "leads", ldoc.id));
             count++;
           });
-        });
+        }
 
         if (count > 0) {
           await batch.commit();
@@ -161,6 +162,14 @@ export default function UserManagementPage() {
         ? "User now has active operational privileges." 
         : "System access has been suspended." 
     });
+  };
+
+  const executePurge = () => {
+    if (userToDelete) {
+      deleteDocumentNonBlocking(doc(db, "teamMembers", userToDelete.id));
+      toast({ variant: "destructive", title: "Identity Purged", description: `${userToDelete.firstName} has been removed from the registry.` });
+      setUserToDelete(null);
+    }
   };
 
   if (isUserLoading) {
@@ -311,26 +320,12 @@ export default function UserManagementPage() {
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
-                              <AlertDialog>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
-                                  <Trash2 className="h-4 w-4" /> Purge Identity Record
-                                </DropdownMenuItem>
-                                <AlertDialogContent className="rounded-[10px] border-none shadow-2xl">
-                                  <AlertDialogHeader>
-                                    <div className="flex items-center gap-3 text-destructive mb-2">
-                                      <AlertTriangle className="h-6 w-6" />
-                                      <AlertDialogTitle className="font-headline text-xl">Confirm Identity Purge</AlertDialogTitle>
-                                    </div>
-                                    <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
-                                      This will permanently remove <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the registry. This action is irreversible and terminates all historical permit tracking.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter className="gap-3 mt-6">
-                                    <AlertDialogCancel className="rounded-[10px] font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, "teamMembers", member.id))} className="bg-destructive hover:bg-destructive/90 text-white rounded-[10px] font-bold px-8 uppercase text-xs tracking-normal">Confirm Purge</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <DropdownMenuItem 
+                                onClick={() => setUserToDelete(member)} 
+                                className="flex items-center gap-3 p-3 rounded-lg cursor-pointer text-destructive focus:text-destructive font-bold text-xs"
+                              >
+                                <Trash2 className="h-4 w-4" /> Purge Identity Record
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -343,6 +338,29 @@ export default function UserManagementPage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent className="rounded-[10px] border-none shadow-2xl">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 text-destructive mb-2">
+              <AlertTriangle className="h-6 w-6" />
+              <AlertDialogTitle className="font-headline text-xl">Confirm Identity Purge</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
+              This will permanently remove <span className="font-bold text-slate-900">{userToDelete?.firstName} {userToDelete?.lastName}</span> from the registry. This action is irreversible and terminates all historical permit tracking.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 mt-6">
+            <AlertDialogCancel className="rounded-[10px] font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executePurge} 
+              className="bg-destructive hover:bg-destructive/90 text-white rounded-[10px] font-bold px-8 uppercase text-xs tracking-normal"
+            >
+              Confirm Purge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
