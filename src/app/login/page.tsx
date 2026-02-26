@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -29,7 +28,8 @@ import {
   initiatePasswordReset,
   initiateAnonymousSignIn
 } from "@/firebase/non-blocking-login";
-import { doc, serverTimestamp, signOut } from "firebase/firestore";
+import { doc, serverTimestamp } from "firebase/firestore";
+import { signOut } from "firebase/auth";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 
