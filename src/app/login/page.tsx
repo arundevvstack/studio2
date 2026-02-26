@@ -35,7 +35,7 @@ import Link from "next/link";
 
 /**
  * @fileOverview High-Fidelity Strategic Identity Governance Portal.
- * Updated to use Inter font exclusively.
+ * Updated to align logo with form content and use Inter font exclusively.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -208,17 +208,15 @@ export default function LoginPage() {
         {/* Right Pane - Authentication Engine */}
         <div className="w-full lg:w-1/2 bg-white p-8 md:p-20 flex flex-col justify-center relative">
           
-          {/* Brand Identity */}
-          <div className="absolute top-12 left-8 md:left-20 lg:left-auto lg:right-12">
-            <div className="flex items-center gap-2">
+          <div className="max-w-sm mx-auto w-full space-y-10">
+            {/* Brand Identity - Aligned Left with content */}
+            <div className="flex items-center gap-2 mb-2">
               <div className="h-6 w-6 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
                 <Zap className="h-4 w-4 text-white fill-white" />
               </div>
               <span className="font-headline font-bold text-sm tracking-tight text-slate-900 uppercase">DP MediaFlow</span>
             </div>
-          </div>
 
-          <div className="max-w-sm mx-auto w-full space-y-10">
             <div className="space-y-3">
               <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">
                 {mode === 'login' ? 'Welcome Back' : 'Join the System'}
