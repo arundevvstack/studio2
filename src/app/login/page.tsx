@@ -35,11 +35,15 @@ import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com'];
+const RESTRICTED_EMAILS = [
+  'arunadhi.com@gmail.com',
+  'anonymous-root@mediaflow.internal'
+];
 
 /**
  * @fileOverview Authoritative Login Node.
  * Handles identity resolution without clobbering existing Admin assignments.
+ * Enforces strict restricted email blockade.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -73,7 +77,7 @@ export default function LoginPage() {
       
       // 1. Security Restriction Gate
       if (user.isAnonymous || (userEmail && RESTRICTED_EMAILS.includes(userEmail))) {
-        toast({ variant: "destructive", title: "Security Restriction", description: "This identifier is unauthorized." });
+        toast({ variant: "destructive", title: "Security Restriction", description: "This identifier is unauthorized and restricted." });
         signOut(auth);
         setIsProcessing(false);
         return;

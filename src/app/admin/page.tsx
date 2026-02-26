@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   ShieldCheck, 
   Users, 
@@ -20,12 +21,18 @@ import { useRouter } from "next/navigation";
 /**
  * @fileOverview Strategic Admin Console.
  * Manages system-wide metrics, operational status, and global audit logs.
+ * Gated by strictly "Active" Permit Status.
  */
 
 export default function AdminConsolePage() {
   const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch user record status
   const memberRef = useMemoFirebase(() => {
@@ -36,14 +43,17 @@ export default function AdminConsolePage() {
 
   // Strategic Access Guard
   useEffect(() => {
-    if (!isUserLoading) {
+    if (!isUserLoading && mounted && !memberLoading) {
       if (!user || user.isAnonymous) {
         router.push("/login");
       } else if (member && member.status !== "Active") {
         router.push("/login");
+      } else if (!member && !isUserLoading) {
+        // Redirect if no organizational identity exists
+        router.push("/login");
       }
     }
-  }, [user, isUserLoading, router, member]);
+  }, [user, isUserLoading, router, member, memberLoading, mounted]);
 
   const teamQuery = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
@@ -51,9 +61,9 @@ export default function AdminConsolePage() {
   }, [db, user]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
 
-  if (isUserLoading || (user && !member)) {
+  if (!mounted || isUserLoading || (user && memberLoading)) {
     return (
-      <div className="h-full flex flex-col items-center justify-center py-24 space-y-4">
+      <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
         <p className="text-slate-400 font-bold text-xs uppercase tracking-normal">Authorizing Executive Access...</p>
       </div>

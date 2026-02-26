@@ -73,8 +73,15 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com'];
+const RESTRICTED_EMAILS = [
+  'arunadhi.com@gmail.com',
+  'anonymous-root@mediaflow.internal'
+];
 
+/**
+ * @fileOverview Identity Governance Hub.
+ * Manages Strategic Permits, Roles, and Identity Purging.
+ */
 export default function UserManagementPage() {
   const router = useRouter();
   const db = useFirestore();
@@ -220,7 +227,8 @@ export default function UserManagementPage() {
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((member) => {
-                  const isRestricted = RESTRICTED_EMAILS.includes(member.email?.toLowerCase());
+                  const memberEmail = member.email?.toLowerCase();
+                  const isRestricted = RESTRICTED_EMAILS.includes(memberEmail);
                   const isActive = member.status === 'Active';
                   const isPending = member.status === 'Pending';
                   
@@ -239,7 +247,7 @@ export default function UserManagementPage() {
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-bold text-slate-900 tracking-tight">{member.firstName} {member.lastName}</p>
-                              {(member.email?.toLowerCase() === MASTER_EMAIL.toLowerCase() || member.roleId === 'root-admin') && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
+                              {(memberEmail === MASTER_EMAIL.toLowerCase() || member.roleId === 'root-admin') && <Zap className="h-3.5 w-3.5 text-primary fill-primary/10" />}
                               {isRestricted && <ShieldBan className="h-3.5 w-3.5 text-red-500" />}
                             </div>
                             <p className="text-[10px] font-bold text-slate-400 uppercase">{member.email}</p>
