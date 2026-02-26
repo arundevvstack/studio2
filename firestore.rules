@@ -1,169 +1,56 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * MEDIAFLOW SECURITY RULES
-     *
-     * CORE PHILOSOPHY:
-     * This ruleset implements a Database-Backed Access Control (DBAC) model. Authorization state 
-     * (roles, status, permits) is stored within Firestore documents rather than relying on 
-     * Custom Claims. This ensures that permission changes (like suspension) are instantaneous.
-     *
-     * DATA STRUCTURE:
-     * - /users/{userId}: Primary authorization profile.
-     * - /roles_admin/{adminUid}: Existence-based administrative override.
-     * - /projects, /clients, /invoices: Protected by 'Strategic Permit' and 'Active' status.
-     *
-     * KEY SECURITY DECISIONS:
-     * 1. Admin Override: A global `isAdmin()` check permits full access to designated users.
-     * 2. Strategic Access: Most business entities require the user to have `strategicPermit: true` 
-     *    and `status: 'active'`, verified via a `get()` call to the user's own profile.
-     * 3. Denormalization: To optimize performance and ensure rule atomicity, critical IDs (like 
-     *    projectManagerId and teamMemberIds) are denormalized onto child documents (Tasks, 
-     *    TimeEntries).
-     * 4. Prototyping Flexibility: Rules enforce "Who" can access data and "Relational Integrity" 
-     *    (ensuring documents are linked to the correct owner) but do not strictly validate 
-     *    the internal data schema of non-authorization fields.
+     * MEDIAFLOW STRATEGIC PERMIT RULES
+     * 
+     * Access requires:
+     * 1. Auth token claims: strategicPermit == true
+     * 2. Auth token claims: status == "active"
      */
-
-    // --- HELPER FUNCTIONS ---
 
     function isSignedIn() {
       return request.auth != null;
     }
 
+    function hasStrategicPermit() {
+      // Logic for checking custom claims or reading from the users collection
+      // For immediate development effect, we fall back to a direct get() check on the users doc
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return userDoc.strategicPermit == true && userDoc.status == "active";
+    }
+
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Retrieves the current authenticated user's profile document
-    function currentUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    // Checks if the user is active and has a strategic permit
-    function isActiveStrategic() {
-      return isSignedIn() && 
-             currentUserData().status == 'active' && 
-             currentUserData().strategicPermit == true;
-    }
-
-    // Validates if the user is a manager or team member based on denormalized fields
-    function isProjectParticipant(data) {
-      return isSignedIn() && (
-        request.auth.uid == data.projectManagerId || 
-        request.auth.uid in data.projectTeamMemberIds
-      );
-    }
-
-    // --- COLLECTION RULES ---
-
-    /**
-     * @description Rules for User profiles. Users can read their own data. Admins manage status/roles.
-     * @path /users/{userId}
-     * @allow User 'abc' (get) if their UID is 'abc'.
-     * @deny User 'abc' (update) attempting to change their own 'strategicPermit'.
-     * @principle Ownership for reads; Administrative control for authorization state.
-     */
     match /users/{userId} {
-      allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.status == 'pending';
-      allow update, delete: if isAdmin();
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.status == "pending";
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if false;
     }
 
-    /**
-     * @description Administrative privileges collection. Only existence matters.
-     * @path /roles_admin/{adminUid}
-     * @allow Admin (get) to check their own status.
-     * @deny Non-admin (create) attempting to make themselves an admin.
-     * @principle Restricted administrative membership.
-     */
-    match /roles_admin/{adminUid} {
-      allow read: if isSignedIn();
-      allow write: if false; // Managed exclusively via Admin SDK/Service Account
-    }
-
-    /**
-     * @description Client management. Accessible to strategic active users.
-     * @path /clients/{clientId}
-     * @allow Active Strategic User (list) all clients.
-     * @deny Suspended User (get) client details.
-     * @principle Status-based access control.
-     */
-    match /clients/{clientId} {
-      allow read: if isAdmin() || isActiveStrategic();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Project details. Accessible to strategic users or assigned project members.
-     * @path /projects/{projectId}
-     * @allow Project Manager (get) their assigned project.
-     * @deny Strategic user with 'suspended' status (list) projects.
-     * @principle Multi-layered authorization (Role-based + Membership-based).
-     */
     match /projects/{projectId} {
-      allow get: if isAdmin() || isActiveStrategic() || request.auth.uid == resource.data.managerId || request.auth.uid in resource.data.teamMemberIds;
-      allow list: if isAdmin() || isActiveStrategic();
-      allow create, update, delete: if isAdmin();
+      allow read, write: if isSignedIn() && hasStrategicPermit();
     }
 
-    /**
-     * @description Tasks within projects. Uses denormalized project IDs for efficient checks.
-     * @path /projects/{projectId}/tasks/{taskId}
-     * @allow Assigned user (update) task status.
-     * @deny User not in projectTeamMemberIds (get) task details.
-     * @principle Authorization independence via denormalization.
-     */
-    match /projects/{projectId}/tasks/{taskId} {
-      allow read: if isAdmin() || isActiveStrategic() || isProjectParticipant(resource.data) || request.auth.uid == resource.data.assignedToId;
-      allow create: if isAdmin() || (isActiveStrategic() && request.resource.data.projectId == projectId);
-      allow update: if isAdmin() || (resource != null && (isProjectParticipant(resource.data) || request.auth.uid == resource.data.assignedToId));
-      allow delete: if isAdmin();
+    match /clients/{clientId} {
+      allow read, write: if isSignedIn() && hasStrategicPermit();
     }
 
-    /**
-     * @description Time entries for work performed. Flat collection for query flexibility.
-     * @path /timeEntries/{timeEntryId}
-     * @allow User (create) a time entry for themselves.
-     * @deny User (create) a time entry for another user's UID.
-     * @principle Resource ownership and relational integrity.
-     */
-    match /timeEntries/{timeEntryId} {
-      allow read: if isAdmin() || isActiveStrategic() || resource.data.userId == request.auth.uid || isProjectParticipant(resource.data);
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAdmin() || (resource != null && resource.data.userId == request.auth.uid);
-      allow delete: if isAdmin() || (resource != null && resource.data.userId == request.auth.uid);
-    }
-
-    /**
-     * @description Invoices for clients/projects.
-     * @path /invoices/{invoiceId}
-     * @allow Strategic User (list) all invoices.
-     * @deny Project Team Member (delete) an invoice.
-     * @principle Role-based write restrictions.
-     */
     match /invoices/{invoiceId} {
-      allow read: if isAdmin() || isActiveStrategic() || isProjectParticipant(resource.data);
-      allow create, update, delete: if isAdmin();
+      allow read, write: if isSignedIn() && hasStrategicPermit();
     }
 
-    /**
-     * @description Individual line items for invoices.
-     * @path /invoices/{invoiceId}/items/{invoiceItemId}
-     * @allow Project Manager (get) items for their project's invoice.
-     * @deny Random user (list) invoice items.
-     * @principle Path-based and denormalized field authorization.
-     */
-    match /invoices/{invoiceId}/items/{invoiceItemId} {
-      allow read: if isAdmin() || isActiveStrategic() || isProjectParticipant(resource.data);
-      allow create, update, delete: if isAdmin();
+    match /leads/{leadId} {
+      allow read, write: if isSignedIn() && hasStrategicPermit();
     }
 
+    match /talents/{talentId} {
+      allow read, write: if isSignedIn() && hasStrategicPermit();
+    }
   }
 }
