@@ -4,46 +4,83 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * MEDIAFLOW STRATEGIC PERMIT RULES
-     * 
-     * Access requires:
-     * 1. Auth token claims or User document: strategicPermit == true
-     * 2. Auth token claims or User document: status == "active"
+     * MEDIAFLOW STRATEGIC SECURITY CORE
      */
 
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Authoritative check against the user document for real-time consistency
+    // Helper to get the user's registry document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Authoritative check for Strategic Permit & Active Status
     function hasStrategicPermit() {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return userDoc.strategicPermit == true && userDoc.status == "active";
+      let user = getUserData();
+      return user.strategicPermit == true && user.status == "active";
     }
 
+    // Check for Root Administrative Authority
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+      return getUserData().role == "admin";
     }
 
+    /**
+     * IDENTITY & AUTHORIZATION REGISTRY
+     */
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      // Users can create their initial pending record on sign-up
+      // Users can read their own profile; Admins can see everyone
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // Admins need to list users for the Identity Ledger
+      allow list: if isSignedIn() && isAdmin();
+      // Allow initial provisioning during sign-up
       allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.status == "pending";
-      // Only admins can update role, status, and permits
+      // Only Admins can authorize permits or assign roles
       allow update: if isSignedIn() && isAdmin();
       allow delete: if false;
     }
 
+    /**
+     * ORGANIZATIONAL INFRASTRUCTURE
+     */
+    match /teamMembers/{memberId} {
+      // Authorized experts need to see their team; Admins manage it
+      allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
+      allow write: if isSignedIn() && isAdmin();
+      
+      // Allow session tracking for the authenticated user
+      match /sessions/{sessionId} {
+        allow read, write: if isSignedIn() && request.auth.uid == memberId;
+      }
+    }
+
+    match /roles/{roleId} {
+      // All users need to read roles to resolve nomenclature
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isAdmin();
+    }
+
+    /**
+     * CORE PRODUCTION ENTITIES
+     */
     match /projects/{projectId} {
       allow read, write: if isSignedIn() && hasStrategicPermit();
+      
+      // Nested task roadmap
+      match /tasks/{taskId} {
+        allow read, write: if isSignedIn() && hasStrategicPermit();
+      }
     }
 
     match /clients/{clientId} {
       allow read, write: if isSignedIn() && hasStrategicPermit();
-    }
-
-    match /invoices/{invoiceId} {
-      allow read, write: if isSignedIn() && hasStrategicPermit();
+      
+      // Client-specific billing
+      match /invoices/{invoiceId} {
+        allow read, write: if isSignedIn() && hasStrategicPermit();
+      }
     }
 
     match /leads/{leadId} {
@@ -51,6 +88,39 @@ service cloud.firestore {
     }
 
     match /talents/{talentId} {
+      allow read, write: if isSignedIn() && hasStrategicPermit();
+    }
+
+    match /shoot_network/{talentId} {
+      allow read, write: if isSignedIn() && hasStrategicPermit();
+    }
+
+    /**
+     * APP CONFIGURATION & SETTINGS
+     */
+    match /settings/{settingId} {
+      allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
+      allow write: if isSignedIn() && isAdmin();
+    }
+
+    match /companyBillingSettings/{id} {
+      allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
+      allow write: if isSignedIn() && isAdmin();
+    }
+
+    match /workflowSettings/{id} {
+      allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
+      allow write: if isSignedIn() && isAdmin();
+    }
+
+    /**
+     * PIPELINE & MARKETING INTELLIGENCE
+     */
+    match /followUps/{id} {
+      allow read, write: if isSignedIn() && hasStrategicPermit();
+    }
+
+    match /campaigns/{id} {
       allow read, write: if isSignedIn() && hasStrategicPermit();
     }
   }
