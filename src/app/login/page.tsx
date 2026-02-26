@@ -37,6 +37,10 @@ import Link from "next/link";
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
 const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com'];
 
+/**
+ * @fileOverview Authoritative Login Node.
+ * Handles identity resolution without clobbering existing Admin assignments.
+ */
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
@@ -58,9 +62,10 @@ export default function LoginPage() {
   }, [db, user]);
   const { data: memberDocs, isLoading: isMemberLoading } = useCollection(memberQuery);
   
-  const member = memberDocs?.[0] || null;
+  const existingMember = memberDocs?.[0] || null;
 
   useEffect(() => {
+    // Wait for all data streams to stabilize
     if (isUserLoading || isMemberLoading || isMigrating || isProvisioning) return;
 
     if (user) {
@@ -74,27 +79,28 @@ export default function LoginPage() {
         return;
       }
       
-      // 2. Existing Identity Resolution
-      if (member) {
-        // ID Consolidation: If the record exists under a different ID (e.g. invite-based), move it to the UID
-        if (member.id !== user.uid) {
+      // 2. Existing Identity Resolution (THE PRESERVATION LOGIC)
+      if (existingMember) {
+        // ID Consolidation: If record exists under a legacy ID, move it to the UID
+        if (existingMember.id !== user.uid) {
           const migrateIdentity = async () => {
             setIsMigrating(true);
             try {
               const batch = writeBatch(db);
               const newRef = doc(db, "teamMembers", user.uid);
-              const oldRef = doc(db, "teamMembers", member.id);
+              const oldRef = doc(db, "teamMembers", existingMember.id);
               
-              // We use the existing member data exactly as is, just moving the document
+              // CRITICAL: We spread the existing member data exactly as is.
+              // This preserves the status (Permit Phase) and roleId assigned by admin.
               batch.set(newRef, {
-                ...member,
+                ...existingMember,
                 id: user.uid,
                 updatedAt: serverTimestamp()
               }, { merge: true });
               
               batch.delete(oldRef);
               await batch.commit();
-              toast({ title: "Identity Consolidated", description: "Strategic profile successfully linked." });
+              toast({ title: "Identity Synchronized", description: "Expert profile successfully linked." });
             } catch (e: any) {
               console.error("Migration Error:", e);
             } finally {
@@ -105,18 +111,20 @@ export default function LoginPage() {
           return;
         }
 
-        // Redirect if authorized, otherwise stay on this page to show restricted UI
-        if (member.status === "Active") {
+        // Access Control: Only let them in if Admin has set status to Active
+        if (existingMember.status === "Active") {
           router.push("/dashboard");
         } else {
           setIsProcessing(false);
+          // If status is Suspended or Pending, the UI below shows the "Access Restricted" screen
         }
         return; 
       } 
       
-      // 3. New Identity Provisioning (Only if member is confirmed null)
-      if (userEmail && !member && !isMemberLoading) {
-        // Auto-authorize Master Node
+      // 3. New Identity Provisioning (Only if userEmail is confirmed NOT in database)
+      if (userEmail && !existingMember && !isMemberLoading) {
+        
+        // Auto-authorize Master Node once
         if (userEmail === MASTER_EMAIL.toLowerCase()) {
           setIsProvisioning(true);
           const masterRef = doc(db, "teamMembers", user.uid);
@@ -152,12 +160,12 @@ export default function LoginPage() {
             updatedAt: serverTimestamp()
           }, { merge: true });
           
-          toast({ title: "Identity Provisioned", description: "Awaiting strategic permit authorization." });
+          toast({ title: "Identity Provisioned", description: "Awaiting strategic permit authorization from Root Node." });
           setIsProcessing(false);
         }
       }
     }
-  }, [user, isUserLoading, member, isMemberLoading, router, db, auth, isProvisioning, isMigrating]);
+  }, [user, isUserLoading, existingMember, isMemberLoading, router, db, auth, isProvisioning, isMigrating]);
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,14 +204,14 @@ export default function LoginPage() {
       <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-6">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-          {isMigrating ? "Consolidating Identity..." : isProvisioning ? "Provisioning Profile..." : "Synchronizing Node..."}
+          {isMigrating ? "Synchronizing Assignment..." : isProvisioning ? "Provisioning Permit..." : "Verifying Identity Node..."}
         </p>
       </div>
     );
   }
 
-  // Strictly block users who are not active
-  if (user && member?.status === "Pending") {
+  // Strictly block users who are not active in the DATABASE (assigned by admin)
+  if (user && existingMember?.status !== "Active") {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-6">
         <div className="bg-white rounded-[10px] shadow-2xl p-12 max-w-lg w-full flex flex-col items-center text-center space-y-10">
@@ -212,7 +220,11 @@ export default function LoginPage() {
           </div>
           <div className="space-y-3">
             <h1 className="text-2xl font-bold font-headline text-slate-900 tracking-tight">Access Restricted</h1>
-            <p className="text-sm text-slate-500 font-medium leading-relaxed">Your identity has been provisioned. entry into the operational workspace requires administrative validation from the Root Node to authorize your strategic permit.</p>
+            <p className="text-sm text-slate-500 font-medium leading-relaxed">
+              Your identity has been identified but your operational status is currently 
+              <span className="text-primary font-bold ml-1 uppercase">{existingMember?.status || 'Pending'}</span>.
+              Access requires administrative authorization from the Admin Console.
+            </p>
           </div>
           <div className="flex flex-col gap-3 w-full">
             <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-[10px] font-bold text-xs uppercase tracking-widest border-slate-100 bg-slate-50 hover:bg-slate-100">Switch Identity</Button>
@@ -243,7 +255,7 @@ export default function LoginPage() {
         <div className="p-8 lg:p-24 space-y-12 animate-in fade-in slide-in-from-left-4 duration-1000">
           <div className="space-y-6">
             <Badge className="bg-primary/5 text-primary border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">
-              Identity Node v2.4
+              Identity Node v2.5
             </Badge>
             <h1 className="text-5xl lg:text-7xl font-bold font-headline text-slate-900 tracking-tight leading-[1.1]">
               Secure <br/> <span className="text-primary">Workspace.</span>
@@ -256,13 +268,13 @@ export default function LoginPage() {
           <div className="flex items-center gap-4">
             <div className="h-px w-12 bg-slate-200" />
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              {mode === 'login' ? "Don't have an account?" : "Already provisioned?"}
+              {mode === 'login' ? "Don't have an account?" : "Already registered?"}
             </p>
             <button 
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
             >
-              {mode === 'login' ? 'Join the System' : 'Sign In'}
+              {mode === 'login' ? 'Join System' : 'Sign In'}
             </button>
           </div>
         </div>
@@ -279,9 +291,9 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
-                  {mode === 'login' ? 'Welcome Back' : 'Join the Network'}
+                  {mode === 'login' ? 'Welcome Back' : 'Join Network'}
                 </h3>
-                <p className="text-sm text-slate-400 font-medium">Enter your credentials to access the hub.</p>
+                <p className="text-sm text-slate-400 font-medium">Enter credentials to access the operational hub.</p>
               </div>
             </div>
 

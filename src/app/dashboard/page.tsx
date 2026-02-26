@@ -34,9 +34,8 @@ import {
 
 /**
  * @fileOverview Master Dashboard Node - Authenticated Workspace.
- * Gated by strictly "Active" Permit Status.
+ * Gated by strictly "Active" Permit Status assigned in Admin Console.
  */
-
 export default function Dashboard() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -48,12 +47,14 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
+  // Fetch Member Record to validate Status and Role
   const memberRef = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
     return doc(db, "teamMembers", user.uid);
   }, [db, user]);
   const { data: member, isLoading: memberLoading } = useDoc(memberRef);
 
+  // Fetch Role configuration for permissions
   const roleRef = useMemoFirebase(() => {
     if (!member?.roleId) return null;
     return doc(db, "roles", member.roleId);
@@ -64,14 +65,18 @@ export default function Dashboard() {
     if (!isUserLoading && mounted) {
       if (!user) {
         router.push("/login");
-      } else if (member && member.status !== "Active") {
-        // If logged in but permit is not active, force back to login to show Restricted UI
+      } else if (!memberLoading && member && member.status !== "Active") {
+        // If logged in but permit is not active (assigned by Admin), force back to login
+        router.push("/login");
+      } else if (!memberLoading && !member && !isUserLoading) {
+        // Edge case: Auth exists but database record is missing
         router.push("/login");
       }
     }
-  }, [user, isUserLoading, router, mounted, member]);
+  }, [user, isUserLoading, router, mounted, member, memberLoading]);
 
   const isAdmin = (role?.name === "Administrator" || role?.name === "Root Administrator" || member?.roleId === 'root-admin') && !user?.isAnonymous;
+  
   const canSee = (item: string) => {
     if (isAdmin) return true;
     return role?.permissions?.includes(`dash:${item}`) || false;
@@ -108,9 +113,9 @@ export default function Dashboard() {
     }));
   }, [mounted]);
 
-  if (!mounted || isUserLoading || (user && !member) || memberLoading) {
+  if (!mounted || isUserLoading || memberLoading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center py-32 space-y-4 bg-[#f5f5f7] dark:bg-black">
+      <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
         <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em]">Synchronizing Executive Hub...</p>
       </div>
