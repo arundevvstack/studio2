@@ -173,12 +173,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#fcfcfe] flex flex-col font-body selection:bg-primary/10">
       {/* Global Public Nav */}
       <nav className="w-full h-20 px-8 lg:px-20 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-[10px] bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-            <Zap className="h-4 w-4 text-white fill-white" />
-          </div>
-          <span className="font-headline font-bold text-lg tracking-tight text-slate-900">DP MediaFlow</span>
-        </Link>
         <div className="hidden lg:flex items-center gap-10">
           <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Home</Link>
           <Link href="/verticals" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Verticals</Link>
@@ -192,11 +186,11 @@ export default function LoginPage() {
         </div>
       </nav>
 
-      {/* Main Three-Column Illustrative Design */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 items-center">
+      {/* Main Two-Column Layout */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 items-center max-w-[1400px] mx-auto w-full">
         
         {/* Column 1: Strategic Brief (Left) */}
-        <div className="lg:col-span-4 p-8 lg:p-24 space-y-12 animate-in fade-in slide-in-from-left-4 duration-1000">
+        <div className="p-8 lg:p-24 space-y-12 animate-in fade-in slide-in-from-left-4 duration-1000">
           <div className="space-y-6">
             <Badge className="bg-primary/5 text-primary border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">
               Identity Node v2.4
@@ -223,28 +217,24 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Column 2: Visual Anchor (Middle) */}
-        <div className="hidden lg:block lg:col-span-4 h-full relative overflow-hidden bg-slate-50 animate-in fade-in zoom-in-95 duration-1000 delay-300">
-          <img 
-            src="https://picsum.photos/seed/production-depth/1200/1200" 
-            alt="Cinematic Identity" 
-            className="w-full h-full object-cover grayscale brightness-110 contrast-125 opacity-80"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/40" />
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-center space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-900">Quality over Quantity</p>
-            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 italic">Established MMXXIV</p>
-          </div>
-        </div>
-
-        {/* Column 3: Command Card (Right) */}
-        <div className="lg:col-span-4 p-8 lg:p-20 flex justify-center lg:justify-start animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
+        {/* Column 2: Command Card (Right) */}
+        <div className="p-8 lg:p-20 flex justify-center lg:justify-end animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
           <Card className="w-full max-w-[420px] bg-white border border-slate-100 shadow-2xl rounded-[10px] p-10 space-y-10">
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
-                {mode === 'login' ? 'Welcome Back' : 'Join the Network'}
-              </h3>
-              <p className="text-sm text-slate-400 font-medium">Enter your credentials to access the hub.</p>
+            {/* Logo Aligned Left with Header */}
+            <div className="space-y-10">
+              <Link href="/" className="flex items-center gap-2 group">
+                <div className="h-10 w-10 rounded-[10px] bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:rotate-6">
+                  <Zap className="h-5 w-5 text-white fill-white" />
+                </div>
+                <span className="font-headline font-bold text-xl tracking-tight text-slate-900">DP MediaFlow</span>
+              </Link>
+
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
+                  {mode === 'login' ? 'Welcome Back' : 'Join the Network'}
+                </h3>
+                <p className="text-sm text-slate-400 font-medium">Enter your credentials to access the hub.</p>
+              </div>
             </div>
 
             <form onSubmit={handleAuth} className="space-y-6">
