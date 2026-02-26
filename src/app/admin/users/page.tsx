@@ -181,7 +181,7 @@ export default function UserManagementPage() {
           </Button>
           <div className="space-y-1">
             <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-none">Identity Governance</h1>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage the Onboarding -> Approval -> Activation lifecycle.</p>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage the Onboarding &rarr; Approval &rarr; Activation lifecycle.</p>
           </div>
         </div>
 
