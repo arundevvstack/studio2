@@ -14,7 +14,8 @@ import {
   Zap,
   RotateCcw,
   X,
-  Globe
+  Globe,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,7 @@ import { toast } from "@/hooks/use-toast";
 
 /**
  * @fileOverview High-Fidelity Illustrative Identity Governance Portal.
- * Redesigned to match the requested aesthetic with 3D character and mesh gradients.
+ * Re-architected to match the specific 3-column layout with grayscale imagery and premium navigation.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -196,9 +197,10 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer">
             <Globe className="h-3 w-3" />
             <span>English</span>
+            <ChevronDown className="h-3 w-3" />
           </div>
           <div className="h-px w-4 bg-slate-200 hidden sm:block" />
           <button 
@@ -220,7 +222,7 @@ export default function LoginPage() {
       <main className="flex-1 relative z-10 flex items-center justify-center px-8 md:px-20 pb-20">
         <div className="max-w-[1400px] w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          {/* Left Text Block */}
+          {/* Left Column: Text Content */}
           <div className="lg:col-span-4 space-y-8 animate-in fade-in slide-in-from-left-4 duration-1000">
             <div className="space-y-4">
               <h1 className="text-5xl md:text-6xl font-bold font-headline text-slate-900 tracking-tight leading-[1.1]">
@@ -234,7 +236,7 @@ export default function LoginPage() {
                 }
               </p>
             </div>
-            <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="flex items-center gap-2 text-sm font-medium pt-4">
               <span className="text-slate-400">{mode === 'login' ? "if you don't have an identity" : "already provisioned?"}</span>
               <button 
                 onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
@@ -245,21 +247,20 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Middle Illustration (Desktop only) */}
-          <div className="hidden lg:flex lg:col-span-4 justify-center items-center relative h-[500px]">
-            <div className="relative w-full h-full animate-in fade-in zoom-in duration-1000 delay-300">
+          {/* Middle Column: Centerpiece Image */}
+          <div className="hidden lg:flex lg:col-span-4 justify-center items-center relative animate-in fade-in zoom-in duration-1000 delay-300">
+            <div className="relative w-full aspect-square max-w-[400px] rounded-[2rem] overflow-hidden shadow-2xl grayscale hover:grayscale-0 transition-all duration-700">
               <img 
-                src="https://picsum.photos/seed/creative-character/800/800" 
-                alt="3D Character" 
-                className="w-full h-full object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.1)]"
-                data-ai-hint="3d character"
+                src="https://picsum.photos/seed/japanese-lantern/800/800" 
+                alt="Strategic Context" 
+                className="w-full h-full object-cover"
+                data-ai-hint="japanese lantern"
               />
-              {/* Subtle background glow behind character */}
               <div className="absolute inset-0 bg-primary/5 rounded-full blur-[100px] -z-10" />
             </div>
           </div>
 
-          {/* Right Form Card */}
+          {/* Right Column: Form Card */}
           <div className="lg:col-span-4 flex justify-center lg:justify-end animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
             <Card className="w-full max-w-[420px] bg-white/40 backdrop-blur-md border border-white/60 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] rounded-[2.5rem] p-10 space-y-10">
               <form onSubmit={handleAuth} className="space-y-6">
