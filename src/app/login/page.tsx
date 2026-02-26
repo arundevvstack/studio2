@@ -22,13 +22,13 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useAuth, useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { 
   initiateEmailSignIn, 
   initiateEmailSignUp,
   initiateGoogleSignIn
 } from "@/firebase/non-blocking-login";
-import { doc, serverTimestamp } from "firebase/firestore";
+import { doc, serverTimestamp, collection, query, where, writeBatch } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
@@ -49,15 +49,19 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProvisioning, setIsProvisioning] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
 
-  const memberRef = useMemoFirebase(() => {
+  // Identify expert by Email instead of just UID to handle pre-registered invites
+  const memberQuery = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
-    return doc(db, "teamMembers", user.uid);
+    return query(collection(db, "teamMembers"), where("email", "==", user.email));
   }, [db, user]);
-  const { data: member, isLoading: isMemberLoading } = useDoc(memberRef);
+  const { data: memberDocs, isLoading: isMemberLoading } = useCollection(memberQuery);
+  
+  const member = memberDocs?.[0] || null;
 
   useEffect(() => {
-    if (isUserLoading || isMemberLoading) return;
+    if (isUserLoading || isMemberLoading || isMigrating) return;
 
     if (user) {
       const userEmail = user.email?.toLowerCase();
@@ -70,35 +74,65 @@ export default function LoginPage() {
         return;
       }
       
-      // Auto-authorize Master Node
-      if (userEmail === MASTER_EMAIL.toLowerCase()) {
-        if (!member || member.status !== 'Active') {
-          const masterRef = doc(db, "teamMembers", user.uid);
-          setDocumentNonBlocking(masterRef, {
-            id: user.uid,
-            email: user.email,
-            firstName: "Master",
-            lastName: "Administrator",
-            status: "Active",
-            type: "In-house",
-            roleId: "root-admin",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          }, { merge: true });
-        }
-        router.push("/dashboard");
-        return;
-      }
-
-      // Handle standard users
+      // Found an existing identity record by email
       if (member) {
+        // ID Mismatch Migration: Consolidate legacy or invite-based IDs into the official UID
+        if (member.id !== user.uid) {
+          const migrateIdentity = async () => {
+            setIsMigrating(true);
+            try {
+              const batch = writeBatch(db);
+              const newRef = doc(db, "teamMembers", user.uid);
+              const oldRef = doc(db, "teamMembers", member.id);
+              
+              // Copy data to new UID-based record
+              batch.set(newRef, {
+                ...member,
+                id: user.uid,
+                thumbnail: member.thumbnail || user.photoURL || "",
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+              
+              // Purge old record
+              batch.delete(oldRef);
+              
+              await batch.commit();
+              toast({ title: "Identity Consolidated", description: "Strategic profile successfully linked." });
+            } catch (e: any) {
+              console.error("Migration Error:", e);
+            } finally {
+              setIsMigrating(false);
+            }
+          };
+          migrateIdentity();
+          return;
+        }
+
+        // Handle Status Redirects
         if (member.status === "Active") {
           router.push("/dashboard");
         } else {
           setIsProcessing(false);
         }
-      } else if (user.email && !isProvisioning) {
-        // Provision new Google or Email sign-up identity
+      } 
+      // Auto-authorize Master Node (if no record exists or needs sync)
+      else if (userEmail === MASTER_EMAIL.toLowerCase()) {
+        const masterRef = doc(db, "teamMembers", user.uid);
+        setDocumentNonBlocking(masterRef, {
+          id: user.uid,
+          email: user.email,
+          firstName: "Master",
+          lastName: "Administrator",
+          status: "Active",
+          type: "In-house",
+          roleId: "root-admin",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        router.push("/dashboard");
+      }
+      // Provision NEW identity only if completely unknown to the system
+      else if (user.email && !isProvisioning) {
         setIsProvisioning(true);
         const nameParts = (user.displayName || "New Expert").split(' ');
         const newMemberRef = doc(db, "teamMembers", user.uid);
@@ -119,7 +153,7 @@ export default function LoginPage() {
         toast({ title: "Identity Provisioned", description: "Your account is awaiting strategic permit authorization." });
       }
     }
-  }, [user, isUserLoading, member, isMemberLoading, router, db, auth, isProvisioning]);
+  }, [user, isUserLoading, member, isMemberLoading, router, db, auth, isProvisioning, isMigrating]);
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,11 +187,13 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || (user && isMemberLoading)) {
+  if (isUserLoading || (user && isMemberLoading) || isMigrating) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-6">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Synchronizing Identity...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+          {isMigrating ? "Consolidating Identity..." : "Synchronizing Node..."}
+        </p>
       </div>
     );
   }
