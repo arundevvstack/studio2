@@ -173,7 +173,7 @@ export default function LoginPage() {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-6">
         <Loader2 className="h-12 w-12 text-primary animate-spin opacity-20" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Synchronizing Credentials...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Synchronizing Credentials...</p>
       </div>
     );
   }
@@ -190,7 +190,7 @@ export default function LoginPage() {
         </div>
         <div className="flex flex-col gap-4 w-full max-w-xs">
           <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-xs uppercase tracking-widest bg-white">Switch Identity</Button>
-          <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-[10px] uppercase tracking-[0.2em]"><RotateCcw className="h-4 w-4 mr-2" /> Refresh Status</Button>
+          <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-[10px] uppercase tracking-widest"><RotateCcw className="h-4 w-4 mr-2" /> Refresh Status</Button>
         </div>
       </div>
     );
@@ -252,7 +252,7 @@ export default function LoginPage() {
                 </div>
                 <Button type="submit" disabled={isProcessing} className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm uppercase tracking-widest transition-all group">{isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <>{mode === 'login' ? 'Authorize Session' : 'Request Onboarding'} <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1" /></>}</Button>
               </form>
-              <div className="text-center"><button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-[0.2em] transition-all">{mode === 'login' ? "Provision New Identity" : "Return to Sign In"}</button></div>
+              <div className="text-center"><button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-[10px] font-bold text-slate-400 hover:text-primary uppercase tracking-widest transition-all">{mode === 'login' ? "Provision New Identity" : "Return to Sign In"}</button></div>
             </CardContent>
           </Card>
         </div>

@@ -312,12 +312,6 @@ export default function SettingsPage() {
     toast({ title: "Tactical Color Updated", description: "Workspace identity synchronized." });
   };
 
-  const handleCustomColorChange = (hex: string) => {
-    setCustomHex(hex);
-    const hslValues = hexToHslValues(hex);
-    changeThemeColor(hslValues);
-  };
-
   const billingSettingsRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "companyBillingSettings", "global");
@@ -616,7 +610,7 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {DASHBOARD_ITEMS.map(item => (
                       <div key={item.id} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer" onClick={() => handleTogglePermission(`dash:${item.id}`)}>
-                        <Checkbox checked={roleForm.permissions.includes(`dash:${item.id}`)} onCheckedChange={() => {}} className="rounded-lg border-slate-200 pointer-events-none" />
+                        <Checkbox checked={roleForm.permissions.includes(`dash:${item.id}`)} onCheckedChange={() => {}} className="rounded-md border-slate-200 pointer-events-none" />
                         <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{item.title}</span>
                       </div>
                     ))}
@@ -627,7 +621,7 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {['settings:view', 'settings:organization', 'settings:workflow', 'settings:roles', 'settings:project', 'settings:billing', 'settings:navigation'].map(perm => (
                       <div key={perm} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer" onClick={() => handleTogglePermission(perm)}>
-                        <Checkbox checked={roleForm.permissions.includes(perm)} onCheckedChange={() => {}} className="rounded-lg border-slate-200 pointer-events-none" />
+                        <Checkbox checked={roleForm.permissions.includes(perm)} onCheckedChange={() => {}} className="rounded-md border-slate-200 pointer-events-none" />
                         <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{perm.split(':')[1].toUpperCase()} Access</span>
                       </div>
                     ))}
