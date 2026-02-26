@@ -110,7 +110,7 @@ export default function ProjectsPage() {
               <List className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
-          <Button asChild className="h-12 sm:h-14 flex-1 sm:flex-none px-6 sm:px-10 shadow-2xl shadow-primary/30 font-bold rounded-full tracking-widest bg-primary hover:bg-primary/90 text-white border-none transition-all active:scale-95 text-[10px] sm:text-xs uppercase">
+          <Button asChild className="h-12 sm:h-14 flex-1 sm:flex-none px-6 sm:px-10 shadow-2xl shadow-primary/30 font-bold rounded-[10px] tracking-widest bg-primary hover:bg-primary/90 text-white border-none transition-all active:scale-95 text-[10px] sm:text-xs uppercase">
             <Link href="/projects/new">
               <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               Add Project
@@ -124,7 +124,7 @@ export default function ProjectsPage() {
         <Input 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-12 sm:pl-16 h-12 sm:h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-sm sm:text-base tracking-normal placeholder:text-slate-400 font-bold" 
+          className="pl-12 sm:pl-16 h-12 sm:h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-[10px] text-sm sm:text-base tracking-normal placeholder:text-slate-400 font-bold" 
           placeholder="Filter projects partners..." 
         />
       </div>
@@ -132,7 +132,7 @@ export default function ProjectsPage() {
       {pipelineProjects.length > 0 && (
         <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
           <div className="flex items-center gap-4 px-2 sm:px-4">
-            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-[1.2rem] sm:rounded-[1.5rem] bg-blue-50 border border-blue-100 flex items-center justify-center shadow-sm shrink-0">
+            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-[10px] bg-blue-50 border border-blue-100 flex items-center justify-center shadow-sm shrink-0">
               <GitBranch className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
             </div>
             <div>
@@ -143,7 +143,7 @@ export default function ProjectsPage() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-8">
             {pipelineProjects.map((p) => (
-              <Card key={p.id} className="border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3rem] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 border border-slate-50 h-56 sm:h-64 flex flex-col justify-between p-8 sm:p-10">
+              <Card key={p.id} className="border-none shadow-2xl shadow-slate-200/50 rounded-[10px] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 border border-slate-50 h-56 sm:h-64 flex flex-col justify-between p-8 sm:p-10">
                 <div className="space-y-3 sm:space-y-4">
                   <div className="flex justify-between items-start">
                     <Badge className="bg-blue-50 text-blue-600 border-none text-[8px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
@@ -156,7 +156,7 @@ export default function ProjectsPage() {
                     <h4 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight leading-tight line-clamp-2">{p.name}</h4>
                   </div>
                 </div>
-                <Button asChild variant="ghost" className="w-full h-10 sm:h-12 rounded-full bg-slate-50 hover:bg-blue-500 hover:text-white text-slate-900 font-bold text-[9px] sm:text-[10px] uppercase transition-all gap-2 tracking-widest border-none">
+                <Button asChild variant="ghost" className="w-full h-10 sm:h-12 rounded-[10px] bg-slate-50 hover:bg-blue-500 hover:text-white text-slate-900 font-bold text-[9px] sm:text-[10px] uppercase transition-all gap-2 tracking-widest border-none">
                   <Link href={`/pipeline/leads/${p.id}`}>Analyze Lead +</Link>
                 </Button>
               </Card>
@@ -175,9 +175,9 @@ export default function ProjectsPage() {
           viewMode === 'grid' ? (
             <div className="grid gap-6 sm:gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
               {productionProjects.map((project) => (
-                <Card key={project.id} className="border-none shadow-2xl shadow-slate-200/50 rounded-[2.5rem] sm:rounded-[3rem] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
+                <Card key={project.id} className="border-none shadow-2xl shadow-slate-200/50 rounded-[10px] bg-white overflow-hidden group hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
                   <div className="p-3 sm:p-4 flex-grow">
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] sm:rounded-[2.2rem] shadow-sm">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-[10px] shadow-sm">
                       <img 
                         src={`https://picsum.photos/seed/${project.id}/600/450`} 
                         className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
@@ -204,7 +204,7 @@ export default function ProjectsPage() {
                           <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strategic Value</p>
                           <p className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">₹{(project.budget || 0).toLocaleString('en-IN')}</p>
                         </div>
-                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-[10px] bg-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
                           <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                         </div>
                       </div>
@@ -218,7 +218,7 @@ export default function ProjectsPage() {
                             </Avatar>
                           ))}
                         </div>
-                        <Button asChild className="rounded-full h-9 sm:h-11 px-6 sm:px-8 bg-slate-900 hover:bg-primary text-white font-bold text-[9px] sm:text-[10px] uppercase transition-all gap-2 tracking-widest shadow-xl shadow-slate-200 border-none">
+                        <Button asChild className="rounded-[10px] h-9 sm:h-11 px-6 sm:px-8 bg-slate-900 hover:bg-primary text-white font-bold text-[9px] sm:text-[10px] uppercase transition-all gap-2 tracking-widest shadow-xl shadow-slate-200 border-none">
                           <Link href={`/projects/${project.id}`}>Open +</Link>
                         </Button>
                       </div>
@@ -228,7 +228,7 @@ export default function ProjectsPage() {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="bg-white rounded-[10px] border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-slate-50/50">
@@ -273,8 +273,8 @@ export default function ProjectsPage() {
                           <span className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight">₹{(p.budget || 0).toLocaleString('en-IN')}</span>
                         </TableCell>
                         <TableCell className="text-right px-6 sm:px-10">
-                          <Button asChild variant="ghost" size="sm" className="h-9 sm:h-11 rounded-full px-4 sm:px-8 font-bold text-[9px] sm:text-[10px] uppercase gap-2 hover:bg-primary hover:text-white transition-all shadow-none border-none">
-                            <Link href={`/projects/${p.id}`}>Open</Link>
+                          <Button asChild variant="ghost" size="sm" className="h-9 sm:h-11 rounded-[10px] px-4 sm:px-8 font-bold text-[9px] sm:text-[10px] uppercase gap-2 hover:bg-primary hover:text-white transition-all shadow-none border-none">
+                            <Link href={`/projects/${project.id}`}>Open</Link>
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -285,14 +285,14 @@ export default function ProjectsPage() {
             </div>
           )
         ) : (
-          <div className="col-span-full border-2 border-dashed border-slate-100 rounded-[2.5rem] sm:rounded-[4rem] flex flex-col items-center justify-center p-20 sm:p-40 min-h-[400px] sm:min-h-[500px] bg-white/30 text-center space-y-6 sm:space-y-8 px-6">
-            <div className="h-16 w-16 sm:h-24 sm:w-24 rounded-[2rem] sm:rounded-[2.5rem] bg-slate-50 flex items-center justify-center shadow-inner">
+          <div className="col-span-full border-2 border-dashed border-slate-100 rounded-[10px] flex flex-col items-center justify-center p-20 sm:p-40 min-h-[400px] sm:min-h-[500px] bg-white/30 text-center space-y-6 sm:space-y-8 px-6">
+            <div className="h-16 w-16 sm:h-24 sm:w-24 rounded-[10px] bg-slate-50 flex items-center justify-center shadow-inner">
               <Briefcase className="h-8 w-8 sm:h-12 sm:w-12 text-slate-200" />
             </div>
             <div className="space-y-2 sm:space-y-3">
               <p className="text-xl sm:text-2xl font-bold font-headline text-slate-400 uppercase tracking-widest">No Projects Found</p>
               <p className="text-xs sm:text-sm text-slate-300 italic tracking-normal max-w-sm mx-auto">Your pipeline is currently empty. Initiate a new high-growth production asset.</p>
-              <Button asChild className="mt-6 sm:mt-10 rounded-full px-10 sm:px-14 h-14 sm:h-16 font-bold tracking-widest bg-primary text-white shadow-2xl shadow-primary/20 transition-all active:scale-95 uppercase text-[10px] sm:text-xs">
+              <Button asChild className="mt-6 sm:mt-10 rounded-[10px] px-10 sm:px-14 h-14 sm:h-16 font-bold tracking-widest bg-primary text-white shadow-2xl shadow-primary/20 transition-all active:scale-95 uppercase text-[10px] sm:text-xs">
                 <Link href="/projects/new">Initiate First Project</Link>
               </Button>
             </div>

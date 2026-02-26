@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
@@ -126,9 +125,9 @@ export default function Dashboard() {
             { title: "Production Load", value: `${stats.inProgress} Entities`, icon: Activity },
             { title: "Internal Team", value: `${teamMembers?.length || 0} Experts`, icon: Users }
           ].map((item, i) => (
-            <Card key={i} className="border-none shadow-sm rounded-[2.5rem] p-10 group hover:shadow-md transition-all bg-white overflow-hidden relative">
+            <Card key={i} className="border-none shadow-sm rounded-[10px] p-10 group hover:shadow-md transition-all bg-white overflow-hidden relative">
               <div className="flex items-center justify-between mb-8">
-                <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                <div className="h-12 w-12 rounded-[10px] bg-slate-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
                   <item.icon className="h-5 w-5 text-slate-900" />
                 </div>
                 <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
@@ -143,10 +142,10 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-12">
           {canSee('workspace') && (
-            <div className="relative group overflow-hidden bg-white p-10 rounded-[3rem] shadow-sm border border-slate-50">
+            <div className="relative group overflow-hidden bg-white p-10 rounded-[10px] shadow-sm border border-slate-50">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
                 <div className="flex items-center gap-8">
-                  <div className="h-20 w-20 rounded-3xl bg-slate-950 flex items-center justify-center shadow-2xl shrink-0 group-hover:rotate-6 transition-transform duration-700">
+                  <div className="h-20 w-20 rounded-[10px] bg-slate-950 flex items-center justify-center shadow-2xl shrink-0 group-hover:rotate-6 transition-transform duration-700">
                     <Zap className="h-10 w-10 text-white fill-white" />
                   </div>
                   <div>
@@ -164,7 +163,7 @@ export default function Dashboard() {
                       <span className="text-lg font-bold text-slate-950 tabular-nums">{stats.percent}%</span>
                     </div>
                   </div>
-                  <Button asChild size="icon" className="h-14 w-14 rounded-full bg-slate-950 hover:bg-slate-800 text-white shadow-xl transition-all active:scale-95">
+                  <Button asChild size="icon" className="h-14 w-14 rounded-[10px] bg-slate-950 hover:bg-slate-800 text-white shadow-xl transition-all active:scale-95">
                     <Link href="/projects/new"><Plus className="h-6 w-6" /></Link>
                   </Button>
                 </div>
@@ -176,10 +175,10 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {allProjects?.slice(0, 4).map((project, idx) => (
                 <Link key={project.id} href={`/projects/${project.id}`} className="group">
-                  <Card className={`border-none shadow-sm rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1 h-56 flex flex-col ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                  <Card className={`border-none shadow-sm rounded-[10px] overflow-hidden transition-all duration-500 hover:shadow-md hover:-translate-y-1 h-56 flex flex-col ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                     <div className="p-8 flex-grow flex flex-col justify-between">
                       <div className="flex justify-between items-start">
-                        <div className="p-2.5 rounded-2xl bg-white shadow-sm border border-slate-100">
+                        <div className="p-2.5 rounded-[10px] bg-white shadow-sm border border-slate-100">
                           <Briefcase className="h-4 w-4 text-slate-900" />
                         </div>
                         <ArrowUpRight className="h-5 w-5 text-slate-300 group-hover:text-slate-900 transition-colors" />
@@ -196,16 +195,16 @@ export default function Dashboard() {
           )}
 
           {canSee('intelligence') && (
-            <Card className="border-none shadow-sm rounded-[3rem] bg-white p-12">
+            <Card className="border-none shadow-sm rounded-[10px] bg-white p-12">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-16 gap-6">
                 <div className="space-y-2">
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em]">Intelligence Hub</p>
                   <h3 className="text-3xl font-bold font-headline text-slate-950 tracking-tight">Revenue Projections</h3>
                 </div>
-                <Tabs value={forecastView} onValueChange={setForecastView} className="bg-slate-50 p-1.5 rounded-full border border-slate-100">
+                <Tabs value={forecastView} onValueChange={setForecastView} className="bg-slate-50 p-1.5 rounded-[10px] border border-slate-100">
                   <TabsList className="bg-transparent h-10 gap-1 p-0">
-                    <TabsTrigger value="weekly" className="text-[10px] font-bold uppercase px-6 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm">Weekly</TabsTrigger>
-                    <TabsTrigger value="monthly" className="text-[10px] font-bold uppercase px-6 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm">Monthly</TabsTrigger>
+                    <TabsTrigger value="weekly" className="text-[10px] font-bold uppercase px-6 rounded-[10px] data-[state=active]:bg-white data-[state=active]:shadow-sm">Weekly</TabsTrigger>
+                    <TabsTrigger value="monthly" className="text-[10px] font-bold uppercase px-6 rounded-[10px] data-[state=active]:bg-white data-[state=active]:shadow-sm">Monthly</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -222,7 +221,7 @@ export default function Dashboard() {
                     <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} dy={15} stroke="#94a3b8" />
                     <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} stroke="#94a3b8" />
                     <Tooltip 
-                      contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.1)', padding: '1rem' }}
+                      contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.1)', padding: '1rem' }}
                       cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}
                     />
                     <Area type="monotone" dataKey="revenue" stroke="#0f172a" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" animationDuration={2000} />
@@ -235,7 +234,7 @@ export default function Dashboard() {
 
         <div className="lg:col-span-4 space-y-8">
           {canSee('efficiency') && (
-            <Card className="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-50 space-y-10">
+            <Card className="bg-white rounded-[10px] p-10 shadow-sm border border-slate-50 space-y-10">
               <h3 className="font-bold text-xl tracking-tight text-slate-950">Efficiency Index</h3>
               <div className="grid grid-cols-2 gap-10">
                 {[
@@ -254,21 +253,21 @@ export default function Dashboard() {
           )}
 
           {canSee('market') && (
-            <Card className="border-none shadow-xl rounded-[3rem] bg-slate-950 text-white p-10 space-y-8 relative overflow-hidden group">
+            <Card className="border-none shadow-xl rounded-[10px] bg-slate-950 text-white p-10 space-y-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] rounded-full -mr-32 -mt-32 group-hover:scale-150 transition-transform duration-1000" />
               <div className="space-y-4 relative z-10">
                 <Badge className="bg-white/10 text-white border-none rounded-full px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em]">Live Intel</Badge>
                 <h4 className="text-3xl font-bold font-headline tracking-tight leading-tight">Market Strategy Hub</h4>
                 <p className="text-sm text-slate-400 leading-relaxed font-medium">Deploy AI research to identify production leads in Kerala districts.</p>
               </div>
-              <Button asChild className="w-full h-16 bg-white text-slate-950 hover:bg-slate-100 rounded-full py-6 font-bold text-[11px] uppercase tracking-[0.2em] relative z-10 shadow-2xl transition-all active:scale-95">
+              <Button asChild className="w-full h-16 bg-white text-slate-950 hover:bg-slate-100 rounded-[10px] py-6 font-bold text-[11px] uppercase tracking-[0.2em] relative z-10 shadow-2xl transition-all active:scale-95">
                 <Link href="/market-research">Analyze Markets</Link>
               </Button>
             </Card>
           )}
 
-          <div className="flex flex-col items-center justify-center p-10 rounded-[3rem] border border-dashed border-slate-200 bg-white/50 space-y-4 text-center">
-            <div className="h-12 w-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center p-10 rounded-[10px] border border-dashed border-slate-200 bg-white/50 space-y-4 text-center">
+            <div className="h-12 w-12 rounded-[10px] bg-white shadow-sm border border-slate-100 flex items-center justify-center">
               <ShieldCheck className="h-6 w-6 text-slate-900" />
             </div>
             <div className="space-y-1">

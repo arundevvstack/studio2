@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -226,12 +225,12 @@ export default function PipelineEnginePage() {
         <div className="flex gap-3 w-full md:w-auto">
           <Dialog open={isAddingLead} onOpenChange={setIsAddingLead}>
             <DialogTrigger asChild>
-              <Button className="h-12 flex-1 md:flex-none px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal transition-all active:scale-95 text-xs uppercase">
+              <Button className="h-12 flex-1 md:flex-none px-8 rounded-[10px] font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 gap-2 tracking-normal transition-all active:scale-95 text-xs uppercase">
                 <Plus className="h-4 w-4" />
                 New Lead
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden">
+            <DialogContent className="sm:max-w-[600px] rounded-[10px] p-0 border-none shadow-2xl overflow-hidden">
               <DialogHeader className="p-8 pb-4">
                 <DialogTitle className="text-xl sm:text-2xl font-bold font-headline tracking-normal">New Lead Portal</DialogTitle>
               </DialogHeader>
@@ -239,31 +238,31 @@ export default function PipelineEnginePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Lead Name</label>
-                    <Input value={newLead.name} onChange={(e) => setNewLead({...newLead, name: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="John Doe" />
+                    <Input value={newLead.name} onChange={(e) => setNewLead({...newLead, name: e.target.value})} className="h-12 rounded-[10px] bg-slate-50 border-none tracking-normal" placeholder="John Doe" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Company Entity</label>
-                    <Input value={newLead.company} onChange={(e) => setNewLead({...newLead, company: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="Nike Global" />
+                    <Input value={newLead.company} onChange={(e) => setNewLead({...newLead, company: e.target.value})} className="h-12 rounded-[10px] bg-slate-50 border-none tracking-normal" placeholder="Nike Global" />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Email Address</label>
-                    <Input type="email" value={newLead.email} onChange={(e) => setNewLead({...newLead, email: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="j.doe@nike.com" />
+                    <Input type="email" value={newLead.email} onChange={(e) => setNewLead({...newLead, email: e.target.value})} className="h-12 rounded-[10px] bg-slate-50 border-none tracking-normal" placeholder="j.doe@nike.com" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Phone Hotline</label>
-                    <Input value={newLead.phone} onChange={(e) => setNewLead({...newLead, phone: e.target.value})} className="h-12 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="+1 555 0000" />
+                    <Input value={newLead.phone} onChange={(e) => setNewLead({...newLead, phone: e.target.value})} className="h-12 rounded-[10px] bg-slate-50 border-none tracking-normal" placeholder="+1 555 0000" />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Source</label>
                     <Select value={newLead.source} onValueChange={(val) => setNewLead({...newLead, source: val})}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none tracking-normal">
+                      <SelectTrigger className="h-12 rounded-[10px] bg-slate-50 border-none tracking-normal">
                         <SelectValue placeholder="Select Source" />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                      <SelectContent className="rounded-[10px] border-slate-100 shadow-xl">
                         <SelectItem value="Instagram">Instagram</SelectItem>
                         <SelectItem value="WhatsApp">WhatsApp</SelectItem>
                         <SelectItem value="Referral">Referral</SelectItem>
@@ -275,10 +274,10 @@ export default function PipelineEnginePage() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Priority Level</label>
                     <Select value={newLead.priority} onValueChange={(val) => setNewLead({...newLead, priority: val})}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none tracking-normal">
+                      <SelectTrigger className="h-12 rounded-[10px] bg-slate-50 border-none tracking-normal">
                         <SelectValue placeholder="Select Priority" />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                      <SelectContent className="rounded-[10px] border-slate-100 shadow-xl">
                         <SelectItem value="Low">Low</SelectItem>
                         <SelectItem value="Medium">Medium</SelectItem>
                         <SelectItem value="High">High</SelectItem>
@@ -292,14 +291,14 @@ export default function PipelineEnginePage() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Estimated Budget (INR)</label>
                     <div className="relative">
                       <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300" />
-                      <Input type="number" value={newLead.estimatedBudget} onChange={(e) => setNewLead({...newLead, estimatedBudget: e.target.value})} className="h-12 pl-10 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="50000" />
+                      <Input type="number" value={newLead.estimatedBudget} onChange={(e) => setNewLead({...newLead, estimatedBudget: e.target.value})} className="h-12 pl-10 rounded-[10px] bg-slate-50 border-none tracking-normal" placeholder="50000" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Deliverables Summary</label>
                     <div className="relative">
                       <Package className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-300" />
-                      <Input value={newLead.deliverables} onChange={(e) => setNewLead({...newLead, deliverables: e.target.value})} className="h-12 pl-10 rounded-xl bg-slate-50 border-none tracking-normal" placeholder="e.g. 5x Reels, 1x TVC" />
+                      <Input value={newLead.deliverables} onChange={(e) => setNewLead({...newLead, deliverables: e.target.value})} className="h-12 pl-10 rounded-[10px] bg-slate-50 border-none tracking-normal" placeholder="e.g. 5x Reels, 1x TVC" />
                     </div>
                   </div>
                 </div>
@@ -307,7 +306,7 @@ export default function PipelineEnginePage() {
               <DialogFooter className="bg-slate-50 p-6">
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <DialogClose asChild><Button variant="ghost" className="flex-1 font-bold text-xs uppercase tracking-normal order-2 sm:order-1">Cancel</Button></DialogClose>
-                  <Button onClick={handleCreateLead} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl font-bold h-11 tracking-normal order-1 sm:order-2">Create Lead</Button>
+                  <Button onClick={handleCreateLead} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-[10px] font-bold h-11 tracking-normal order-1 sm:order-2">Create Lead</Button>
                 </div>
               </DialogFooter>
             </DialogContent>
@@ -323,9 +322,9 @@ export default function PipelineEnginePage() {
           { label: "Value", val: `₹${(stats.activeValue / 1000).toFixed(0)}k`, icon: IndianRupee, color: "bg-slate-50 text-slate-600" },
           { label: "Forecast", val: `₹${(stats.forecast / 1000).toFixed(0)}k`, icon: TrendingUp, color: "bg-slate-900 text-white", dark: true }
         ].map((s, i) => (
-          <Card key={i} className={`border-none shadow-sm rounded-[2rem] p-5 sm:p-8 space-y-3 sm:space-y-4 relative overflow-hidden ${s.dark ? 'bg-slate-900 text-white' : 'bg-white'}`}>
+          <Card key={i} className={`border-none shadow-sm rounded-[10px] p-5 sm:p-8 space-y-3 sm:space-y-4 relative overflow-hidden ${s.dark ? 'bg-slate-900 text-white' : 'bg-white'}`}>
             {s.dark && <div className="absolute top-0 right-0 w-24 h-24 bg-primary/20 blur-3xl rounded-full -mr-12 -mt-12" />}
-            <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-xl flex items-center justify-center relative z-10 ${s.dark ? 'bg-white/10' : s.color}`}>
+            <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-[10px] flex items-center justify-center relative z-10 ${s.dark ? 'bg-white/10' : s.color}`}>
               <s.icon className={`h-4 w-4 sm:h-5 sm:w-5 ${s.dark ? 'text-primary' : ''}`} />
             </div>
             <div className="relative z-10">
@@ -337,30 +336,30 @@ export default function PipelineEnginePage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 group">
+        <div className="relative flex-1 group w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           <Input 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 h-12 sm:h-14 bg-white border-none shadow-sm rounded-xl text-sm sm:text-base placeholder:text-slate-400 tracking-normal" 
+            className="pl-12 h-12 sm:h-14 bg-white border-none shadow-sm rounded-[10px] text-sm sm:text-base placeholder:text-slate-400 tracking-normal" 
             placeholder="Search leads..." 
           />
         </div>
-        <Button variant="outline" className="h-12 sm:h-14 px-6 bg-white border-slate-100 rounded-xl font-bold text-slate-600 gap-2 shadow-sm text-xs uppercase tracking-widest">
+        <Button variant="outline" className="h-12 sm:h-14 px-6 bg-white border-slate-100 rounded-[10px] font-bold text-slate-600 gap-2 shadow-sm text-xs uppercase tracking-widest">
           <Filter className="h-4 w-4" />
           Refine
         </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 sm:space-y-8">
-        <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1 flex w-full overflow-x-auto no-scrollbar">
+        <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-[10px] shadow-sm gap-1 flex w-full overflow-x-auto no-scrollbar">
           {[
             { id: "list", icon: Briefcase, label: "Ledger" },
             { id: "followups", icon: Calendar, label: "Schedule" },
             { id: "marketing", icon: Globe, label: "Campaigns" },
             { id: "analytics", icon: BarChart3, label: "Intel" }
           ].map(t => (
-            <TabsTrigger key={t.id} value={t.id} className="flex-1 rounded-xl px-4 sm:px-8 py-3 text-[10px] font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest whitespace-nowrap">
+            <TabsTrigger key={t.id} value={t.id} className="flex-1 rounded-[10px] px-4 sm:px-8 py-3 text-[10px] font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-widest whitespace-nowrap">
               <t.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {t.label}
             </TabsTrigger>
@@ -371,12 +370,12 @@ export default function PipelineEnginePage() {
           <div className="space-y-6">
             <div className="w-full overflow-x-auto no-scrollbar pb-2">
               <Tabs value={activeStageTab} onValueChange={setActiveStageTab} className="w-full">
-                <TabsList className="bg-slate-100/50 p-1 h-auto rounded-xl gap-1 inline-flex">
+                <TabsList className="bg-slate-100/50 p-1 h-auto rounded-[10px] gap-1 inline-flex">
                   {STAGES.map((stage) => (
                     <TabsTrigger 
                       key={stage.id} 
                       value={stage.id} 
-                      className="rounded-lg px-4 sm:px-6 py-2 text-[9px] sm:text-[10px] font-bold uppercase data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all tracking-widest whitespace-nowrap"
+                      className="rounded-[10px] px-4 sm:px-6 py-2 text-[9px] sm:text-[10px] font-bold uppercase data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all tracking-widest whitespace-nowrap"
                     >
                       {stage.title}
                     </TabsTrigger>
@@ -385,7 +384,7 @@ export default function PipelineEnginePage() {
               </Tabs>
             </div>
 
-            <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[10px] border border-slate-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-slate-50/50">
@@ -426,7 +425,7 @@ export default function PipelineEnginePage() {
                           </TableCell>
                           <TableCell className="font-bold text-slate-900 tracking-tight text-xs sm:text-sm">₹{(lead.estimatedBudget || 0).toLocaleString('en-IN')}</TableCell>
                           <TableCell className="text-right px-6 sm:px-10">
-                            <Button asChild variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                            <Button asChild variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10 rounded-[10px] bg-slate-50 hover:bg-primary hover:text-white transition-all">
                               <Link href={`/pipeline/leads/${lead.id}`}>
                                 <ArrowRight className="h-4 w-4" />
                               </Link>
@@ -438,7 +437,7 @@ export default function PipelineEnginePage() {
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-24 px-6">
                           <div className="flex flex-col items-center justify-center space-y-4">
-                            <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center">
+                            <div className="h-12 w-12 rounded-[10px] bg-slate-50 flex items-center justify-center">
                               <Search className="h-6 w-6 text-slate-200" />
                             </div>
                             <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No leads in this stage</p>
@@ -460,9 +459,9 @@ export default function PipelineEnginePage() {
               {followUps && followUps.filter(f => !f.completed).length > 0 ? (
                 <div className="space-y-4">
                   {followUps.filter(f => !f.completed).map((f) => (
-                    <Card key={f.id} className="border-none shadow-sm rounded-[2rem] p-6 sm:p-8 flex items-center justify-between group hover:shadow-md transition-all bg-white">
+                    <Card key={f.id} className="border-none shadow-sm rounded-[10px] p-6 sm:p-8 flex items-center justify-between group hover:shadow-md transition-all bg-white">
                       <div className="flex items-center gap-4 sm:gap-6">
-                        <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/5 transition-colors shrink-0">
+                        <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-[10px] bg-slate-50 flex items-center justify-center group-hover:bg-primary/5 transition-colors shrink-0">
                           {f.type === 'WhatsApp' && <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />}
                           {f.type === 'Call' && <Phone className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />}
                           {f.type === 'Email' && <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />}
@@ -481,20 +480,20 @@ export default function PipelineEnginePage() {
                           </div>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 sm:h-11 sm:w-11 bg-slate-50 hover:bg-accent hover:text-white transition-all shrink-0 ml-2">
+                      <Button variant="ghost" size="icon" className="rounded-[10px] h-10 w-10 sm:h-11 sm:w-11 bg-slate-50 hover:bg-accent hover:text-white transition-all shrink-0 ml-2">
                         <CheckCircle2 className="h-5 w-5" />
                       </Button>
                     </Card>
                   ))}
                 </div>
               ) : (
-                <div className="p-20 border-2 border-dashed border-slate-100 rounded-[2.5rem] sm:rounded-[3rem] text-center bg-white/50 px-6">
+                <div className="p-20 border-2 border-dashed border-slate-100 rounded-[10px] text-center bg-white/50 px-6">
                   <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest">No scheduled activities</p>
                 </div>
               )}
             </div>
             <div className="lg:col-span-4">
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-8 sm:p-10 space-y-6 sm:space-y-8 relative overflow-hidden">
+              <Card className="border-none shadow-sm rounded-[10px] bg-slate-900 text-white p-8 sm:p-10 space-y-6 sm:space-y-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 blur-3xl rounded-full -mr-24 -mt-24" />
                 <div className="space-y-2 relative z-10">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Efficiency Metrics</p>
@@ -519,10 +518,10 @@ export default function PipelineEnginePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {campaigns && campaigns.length > 0 ? (
               campaigns.map((c) => (
-                <Card key={c.id} className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden group hover:shadow-xl transition-all border border-slate-50">
+                <Card key={c.id} className="border-none shadow-sm rounded-[10px] bg-white overflow-hidden group hover:shadow-xl transition-all border border-slate-50">
                   <CardHeader className="p-8 sm:p-10 pb-4">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-primary/5 flex items-center justify-center">
+                      <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-[10px] bg-primary/5 flex items-center justify-center">
                         <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                       </div>
                       <Badge className="bg-slate-100 text-slate-500 border-none text-[8px] sm:text-[10px] font-bold uppercase tracking-widest">{c.channel}</Badge>
@@ -553,9 +552,9 @@ export default function PipelineEnginePage() {
                 </Card>
               ))
             ) : (
-              <div className="col-span-full p-20 sm:p-24 border-2 border-dashed border-slate-100 rounded-[2.5rem] sm:rounded-[3rem] text-center bg-white/50 px-6">
+              <div className="col-span-full p-20 sm:p-24 border-2 border-dashed border-slate-100 rounded-[10px] text-center bg-white/50 px-6">
                 <p className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-widest">No active marketing campaigns</p>
-                <Button className="mt-6 rounded-xl font-bold text-[10px] uppercase tracking-widest h-11 px-8">Launch Strategy</Button>
+                <Button className="mt-6 rounded-[10px] font-bold text-[10px] uppercase tracking-widest h-11 px-8">Launch Strategy</Button>
               </div>
             )}
           </div>
@@ -563,14 +562,14 @@ export default function PipelineEnginePage() {
 
         <TabsContent value="analytics" className="m-0 animate-in slide-in-from-left-2 duration-300">
           <div className="space-y-10">
-            <Card className="border-none shadow-sm rounded-[2.5rem] sm:rounded-[3rem] bg-white p-8 sm:p-12">
+            <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 sm:p-12">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 sm:gap-12 mb-10 sm:mb-12">
                 <div>
                   <h3 className="text-xl sm:text-2xl font-bold font-headline tracking-tight">Sales Intelligence Core</h3>
                   <p className="text-xs sm:text-sm text-slate-500 font-medium tracking-normal mt-1">Visualizing pipeline performance and growth vectors.</p>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" className="rounded-xl h-11 px-8 font-bold text-[10px] uppercase gap-2 border-slate-100 tracking-widest">
+                  <Button variant="outline" className="rounded-[10px] h-11 px-8 font-bold text-[10px] uppercase gap-2 border-slate-100 tracking-widest">
                     <BarChart3 className="h-4 w-4" />
                     Export Brief
                   </Button>
@@ -609,7 +608,7 @@ export default function PipelineEnginePage() {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue Forecast</p>
                     <h4 className="text-4xl sm:text-5xl font-bold font-headline tracking-tight text-accent">₹{(stats.forecast / 1000).toFixed(0)}k</h4>
                   </div>
-                  <div className="p-5 sm:p-6 rounded-2xl bg-accent/5 border border-accent/10">
+                  <div className="p-5 sm:p-6 rounded-[10px] bg-accent/5 border border-accent/10">
                     <p className="text-[10px] text-accent font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
                       <Rocket className="h-3 w-3" />
                       Growth Vector
@@ -621,7 +620,7 @@ export default function PipelineEnginePage() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
+              <Card className="border-none shadow-sm rounded-[10px] bg-white p-10">
                 <CardHeader className="p-0 mb-8">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Source ROI Analysis</CardTitle>
@@ -636,7 +635,7 @@ export default function PipelineEnginePage() {
                       <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
                       <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} />
                       <Tooltip 
-                        contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                        contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                         formatter={(v: any) => [`₹${v.toLocaleString()}`, 'Potential']}
                       />
                       <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={32}>
@@ -647,7 +646,7 @@ export default function PipelineEnginePage() {
                 </div>
               </Card>
 
-              <Card className="border-none shadow-sm rounded-[2.5rem] bg-white p-10">
+              <Card className="border-none shadow-sm rounded-[10px] bg-white p-10">
                 <CardHeader className="p-0 mb-8">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strategic Segmenting</CardTitle>
@@ -670,7 +669,7 @@ export default function PipelineEnginePage() {
                         {stats.industryData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                       </Pie>
                       <Tooltip 
-                        contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                        contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                       />
                     </PieChart>
                   </ResponsiveContainer>

@@ -12,7 +12,6 @@ import {
   EyeOff,
   Zap,
   RotateCcw,
-  X,
   Globe,
   ChevronDown
 } from "lucide-react";
@@ -32,11 +31,6 @@ import { signOut } from "firebase/auth";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
-
-/**
- * @fileOverview High-Fidelity Strategic Identity Governance Portal.
- * Updated to align logo with form content and use Inter font exclusively.
- */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
 const RESTRICTED_EMAIL = 'arunadhi.com@gmail.com';
@@ -147,7 +141,7 @@ export default function LoginPage() {
 
   if (isUserLoading || (user && isMemberLoading)) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-black space-y-6">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-6">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Synchronizing Identity...</p>
       </div>
@@ -156,9 +150,9 @@ export default function LoginPage() {
 
   if (user && member?.status === "Pending") {
     return (
-      <div className="min-h-screen w-full bg-black flex items-center justify-center p-6">
-        <div className="bg-white rounded-[3rem] shadow-2xl p-16 max-w-lg w-full flex flex-col items-center text-center space-y-10">
-          <div className="h-24 w-24 rounded-[2rem] bg-orange-50 flex items-center justify-center shadow-xl">
+      <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-[10px] shadow-2xl p-16 max-w-lg w-full flex flex-col items-center text-center space-y-10">
+          <div className="h-24 w-24 rounded-[10px] bg-orange-50 flex items-center justify-center shadow-xl">
             <Hourglass className="h-10 w-10 text-orange-500 animate-pulse" />
           </div>
           <div className="space-y-3">
@@ -166,8 +160,8 @@ export default function LoginPage() {
             <p className="text-sm text-slate-500 font-medium leading-relaxed">Your identity is provisioned. Entry requires administrative validation from the Root Node.</p>
           </div>
           <div className="flex flex-col gap-3 w-full">
-            <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-xs uppercase tracking-widest border-slate-100 bg-slate-50 hover:bg-slate-100">Switch Identity</Button>
-            <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-xs uppercase tracking-widest gap-2"><RotateCcw className="h-4 w-4" /> Refresh Status</Button>
+            <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-[10px] font-bold text-xs uppercase tracking-widest border-slate-100 bg-slate-50 hover:bg-slate-100">Switch Identity</Button>
+            <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-[10px] font-bold text-primary text-xs uppercase tracking-widest gap-2"><RotateCcw className="h-4 w-4" /> Refresh Status</Button>
           </div>
         </div>
       </div>
@@ -175,116 +169,137 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-4 md:p-10 flex items-center justify-center font-body selection:bg-primary/10">
-      <div className="max-w-7xl w-full min-h-[85vh] bg-white rounded-[3rem] overflow-hidden flex flex-col lg:flex-row shadow-2xl relative">
-        
-        {/* Left Pane - Cinematic Visuals */}
-        <div className="hidden lg:flex w-1/2 relative overflow-hidden p-16 flex-col justify-between text-white">
-          <div className="absolute inset-0 z-0">
-            <img 
-              src="https://picsum.photos/seed/production-depth/1200/1200" 
-              alt="Cinematic Background" 
-              className="w-full h-full object-cover"
-              data-ai-hint="abstract fluid"
-            />
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+    <div className="min-h-screen bg-[#fcfcfe] flex flex-col font-body selection:bg-primary/10">
+      {/* Global Public Nav */}
+      <nav className="w-full h-20 px-8 lg:px-20 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-50">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-[10px] bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+            <Zap className="h-4 w-4 text-white fill-white" />
           </div>
-          
-          <div className="relative z-10 flex items-center gap-4">
-            <span className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-80">A Wise Quote</span>
-            <div className="h-px w-24 bg-white/30" />
+          <span className="font-headline font-bold text-lg tracking-tight text-slate-900">DP MediaFlow</span>
+        </Link>
+        <div className="hidden lg:flex items-center gap-10">
+          <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Home</Link>
+          <Link href="/verticals" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Verticals</Link>
+          <Link href="/portfolio" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Portfolio</Link>
+          <Link href="/contact" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Contact</Link>
+        </div>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 gap-2">
+            <Globe className="h-3 w-3" /> EN <ChevronDown className="h-3 w-3" />
+          </Button>
+          <Button asChild className="rounded-[10px] bg-slate-900 text-white font-bold h-10 px-6 text-[10px] uppercase tracking-widest shadow-xl shadow-slate-200">
+            <Link href="/admin">Root Portal</Link>
+          </Button>
+        </div>
+      </nav>
+
+      {/* Main Three-Column Illustrative Design */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 items-center">
+        
+        {/* Column 1: Strategic Brief (Left) */}
+        <div className="lg:col-span-4 p-8 lg:p-24 space-y-12 animate-in fade-in slide-in-from-left-4 duration-1000">
+          <div className="space-y-6">
+            <Badge className="bg-primary/5 text-primary border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">
+              Identity Node v2.4
+            </Badge>
+            <h1 className="text-5xl lg:text-7xl font-bold font-headline text-slate-900 tracking-tight leading-[1.1]">
+              Secure <br/> <span className="text-primary">Workspace.</span>
+            </h1>
+            <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-sm">
+              The authoritative operational hub for media production strategy and asset throughput.
+            </p>
           </div>
 
-          <div className="relative z-10 space-y-6 max-w-md">
-            <h2 className="text-6xl font-bold font-headline leading-tight tracking-tight">
-              Get Everything You Want
-            </h2>
-            <p className="text-sm font-medium leading-relaxed text-white/80">
-              You can get everything you want if you work hard, trust the process, and stick to the plan.
+          <div className="flex items-center gap-4">
+            <div className="h-px w-12 bg-slate-200" />
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {mode === 'login' ? "Don't have an account?" : "Already provisioned?"}
             </p>
+            <button 
+              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+              className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
+            >
+              {mode === 'login' ? 'Join the System' : 'Sign In'}
+            </button>
           </div>
         </div>
 
-        {/* Right Pane - Authentication Engine */}
-        <div className="w-full lg:w-1/2 bg-white p-8 md:p-20 flex flex-col justify-center relative">
-          
-          <div className="max-w-sm mx-auto w-full space-y-10">
-            {/* Brand Identity - Aligned Left with content */}
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-6 w-6 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                <Zap className="h-4 w-4 text-white fill-white" />
-              </div>
-              <span className="font-headline font-bold text-sm tracking-tight text-slate-900 uppercase">DP MediaFlow</span>
-            </div>
+        {/* Column 2: Visual Anchor (Middle) */}
+        <div className="hidden lg:block lg:col-span-4 h-full relative overflow-hidden bg-slate-50 animate-in fade-in zoom-in-95 duration-1000 delay-300">
+          <img 
+            src="https://picsum.photos/seed/production-depth/1200/1200" 
+            alt="Cinematic Identity" 
+            className="w-full h-full object-cover grayscale brightness-110 contrast-125 opacity-80"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/40" />
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-center space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-900">Quality over Quantity</p>
+            <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 italic">Established MMXXIV</p>
+          </div>
+        </div>
 
-            <div className="space-y-3">
-              <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">
-                {mode === 'login' ? 'Welcome Back' : 'Join the System'}
-              </h1>
-              <p className="text-sm text-slate-500 font-medium">
-                Enter your email and password to access your account
-              </p>
+        {/* Column 3: Command Card (Right) */}
+        <div className="lg:col-span-4 p-8 lg:p-20 flex justify-center lg:justify-start animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
+          <Card className="w-full max-w-[420px] bg-white border border-slate-100 shadow-2xl rounded-[10px] p-10 space-y-10">
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
+                {mode === 'login' ? 'Welcome Back' : 'Join the Network'}
+              </h3>
+              <p className="text-sm text-slate-400 font-medium">Enter your credentials to access the hub.</p>
             </div>
 
             <form onSubmit={handleAuth} className="space-y-6">
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-1">Email</Label>
+              <div className="space-y-4">
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                   <Input 
                     type="email" 
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)} 
-                    placeholder="Enter your email" 
-                    className="h-12 rounded-xl bg-slate-50 border-none px-4 font-medium shadow-inner focus-visible:ring-primary/20" 
+                    placeholder="Expert Email" 
+                    className="h-14 rounded-[10px] bg-slate-50 border-none pl-12 font-bold shadow-inner focus-visible:ring-primary/20" 
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-1">
-                    <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Password</Label>
-                    {mode === 'login' && (
-                      <button type="button" className="text-[10px] font-bold uppercase text-slate-400 hover:text-primary transition-colors">
-                        Forgot Password
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <Input 
-                      type={showPassword ? "text" : "password"} 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      placeholder="Enter your password" 
-                      className="h-12 rounded-xl bg-slate-50 border-none px-4 font-medium shadow-inner focus-visible:ring-primary/20" 
-                      required
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPassword(!showPassword)} 
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    placeholder="Access Key" 
+                    className="h-14 rounded-[10px] bg-slate-50 border-none pl-12 pr-12 font-bold shadow-inner focus-visible:ring-primary/20" 
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 px-1">
-                <Checkbox id="remember" className="rounded-md border-slate-200 data-[state=checked]:bg-black data-[state=checked]:border-black" />
-                <label htmlFor="remember" className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer select-none">
-                  Remember me
-                </label>
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="remember" className="rounded-[4px] border-slate-200 data-[state=checked]:bg-primary" />
+                  <label htmlFor="remember" className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer">Remember Node</label>
+                </div>
+                <button type="button" className="text-[10px] font-bold uppercase text-primary hover:underline">Reset Key</button>
               </div>
 
               <div className="space-y-4 pt-4">
-                <Button type="submit" disabled={isProcessing} className="w-full h-12 rounded-xl bg-black hover:bg-slate-800 text-white font-bold text-sm transition-all active:scale-[0.98] shadow-xl shadow-black/10">
-                  {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (mode === 'login' ? 'Sign In' : 'Register')}
+                <Button type="submit" disabled={isProcessing} className="w-full h-14 rounded-[10px] bg-primary hover:bg-primary/90 text-white font-bold text-sm uppercase tracking-widest transition-all active:scale-[0.98] shadow-xl shadow-primary/20">
+                  {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (mode === 'login' ? 'Sign In' : 'Provision Account')}
                 </Button>
                 
                 <Button 
                   type="button" 
                   onClick={handleGoogleAuth} 
                   variant="outline" 
-                  className="w-full h-12 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-all active:scale-95 gap-3"
+                  className="w-full h-14 rounded-[10px] bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-all active:scale-95 gap-3"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -292,22 +307,20 @@ export default function LoginPage() {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
-                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Sign in with Google</span>
+                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Expert Auth with Google</span>
                 </Button>
               </div>
             </form>
-
-            <div className="pt-8 text-center border-t border-slate-50">
-              <p className="text-xs font-medium text-slate-400">
-                {mode === 'login' ? "Don't have an account?" : "Already provisioned?"}{' '}
-                <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-slate-900 font-bold hover:underline">
-                  {mode === 'login' ? 'Sign Up' : 'Sign In'}
-                </button>
-              </p>
-            </div>
-          </div>
+          </Card>
         </div>
-      </div>
+      </main>
+
+      {/* Footer Meta */}
+      <footer className="w-full h-16 border-t border-slate-100 flex items-center justify-center bg-white px-8">
+        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.5em]">
+          DP MediaFlow Operating System • Built for high-stakes production
+        </p>
+      </footer>
     </div>
   );
 }

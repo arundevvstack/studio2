@@ -118,11 +118,11 @@ export default function TalentLibraryPage() {
               <Input 
                 value={searchQuery} 
                 onChange={(e) => setSearchQuery(e.target.value)} 
-                className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-base tracking-normal placeholder:text-slate-400 font-bold" 
+                className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-[10px] text-base tracking-normal placeholder:text-slate-400 font-bold" 
                 placeholder="Search by name or @handle..." 
               />
             </div>
-            <div className="flex items-center bg-white p-1.5 rounded-full shadow-sm border border-slate-100 shrink-0">
+            <div className="flex items-center bg-white p-1.5 rounded-[10px] shadow-sm border border-slate-100 shrink-0">
               <div className="lg:hidden px-2 border-r border-slate-100">
                 <Sheet>
                   <SheetTrigger asChild>
@@ -139,13 +139,13 @@ export default function TalentLibraryPage() {
                   </SheetContent>
                 </Sheet>
               </div>
-              <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')} className={`h-11 w-11 rounded-full transition-all ${viewMode === 'grid' ? 'bg-slate-100 text-primary' : 'text-slate-400'}`}><LayoutGrid className="h-5 w-5" /></Button>
-              <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')} className={`h-11 w-11 rounded-full transition-all ${viewMode === 'list' ? 'bg-slate-100 text-primary' : 'text-slate-400'}`}><List className="h-5 w-5" /></Button>
+              <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')} className={`h-11 w-11 rounded-[10px] transition-all ${viewMode === 'grid' ? 'bg-slate-100 text-primary' : 'text-slate-400'}`}><LayoutGrid className="h-5 w-5" /></Button>
+              <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')} className={`h-11 w-11 rounded-[10px] transition-all ${viewMode === 'list' ? 'bg-slate-100 text-primary' : 'text-slate-400'}`}><List className="h-5 w-5" /></Button>
             </div>
           </div>
 
           {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-3 p-6 bg-white/50 rounded-[2rem] border border-slate-100 shadow-sm animate-in fade-in duration-300">
+            <div className="flex flex-wrap items-center gap-3 p-6 bg-white/50 rounded-[10px] border border-slate-100 shadow-sm animate-in fade-in duration-300">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Strategic Filters:</span>
               
               {filters.location && (
@@ -186,8 +186,8 @@ export default function TalentLibraryPage() {
             ))}
           </div>
         ) : (
-          <div className="py-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[4rem] bg-white/30 text-center space-y-8 px-6">
-            <div className="h-24 w-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center shadow-inner">
+          <div className="py-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[10px] bg-white/30 text-center space-y-8 px-6">
+            <div className="h-24 w-24 rounded-[10px] bg-slate-50 flex items-center justify-center shadow-inner">
               <Users className="h-12 w-12 text-slate-200" />
             </div>
             <div className="space-y-3">

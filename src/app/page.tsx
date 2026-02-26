@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -58,10 +57,10 @@ export default function SaaSLandingPage() {
             Manage Sales, Production, Release & Social Media workflows in one intelligent system. Designed for Agencies, Studios, and AI Media Companies.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button asChild className="h-16 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
+            <Button asChild className="h-16 px-10 rounded-[10px] bg-primary hover:bg-primary/90 text-white font-bold text-base shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
               <Link href="/book-demo">Book a Demo <ArrowRight className="h-5 w-5" /></Link>
             </Button>
-            <Button variant="outline" className="h-16 px-10 rounded-2xl border-slate-200 bg-white text-slate-600 font-bold text-base shadow-sm gap-3">
+            <Button variant="outline" className="h-16 px-10 rounded-[10px] border-slate-200 bg-white text-slate-600 font-bold text-base shadow-sm gap-3">
               <Play className="h-5 w-5 fill-slate-600" /> Watch Overview
             </Button>
           </div>
@@ -74,7 +73,7 @@ export default function SaaSLandingPage() {
               { icon: ShieldCheck, label: "AI Media Ready" }
             ].map((f, i) => (
               <div key={i} className="flex flex-col items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-white shadow-md flex items-center justify-center text-primary">
+                <div className="h-12 w-12 rounded-[10px] bg-white shadow-md flex items-center justify-center text-primary">
                   <f.icon className="h-6 w-6" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{f.label}</span>
@@ -100,8 +99,8 @@ export default function SaaSLandingPage() {
               { title: "Release Risk", desc: "Poor visibility on asset distribution across social platforms after production." },
               { title: "Financial Gaps", desc: "Difficulty in reconciling production loads with accurate billing and forecasting." }
             ].map((p, i) => (
-              <Card key={i} className="p-8 border-none shadow-sm bg-slate-50/50 rounded-[2.5rem] group hover:bg-white hover:shadow-xl transition-all">
-                <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform">
+              <Card key={i} className="p-8 border-none shadow-sm bg-slate-50/50 rounded-[10px] group hover:bg-white hover:shadow-xl transition-all">
+                <div className="h-10 w-10 rounded-[10px] bg-red-50 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform">
                   <AlertCircle className="h-5 w-5" />
                 </div>
                 <h4 className="text-lg font-bold text-slate-900 mb-2">{p.title}</h4>
@@ -132,7 +131,7 @@ export default function SaaSLandingPage() {
                 { title: "Management Phase", desc: "Social media tracking and performance analysis.", icon: Globe }
               ].map((s, i) => (
                 <div key={i} className="flex items-start gap-6 group">
-                  <div className="h-12 w-12 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
+                  <div className="h-12 w-12 rounded-[10px] bg-white border border-slate-100 shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
                     <s.icon className="h-6 w-6" />
                   </div>
                   <div>
@@ -145,8 +144,8 @@ export default function SaaSLandingPage() {
           </div>
           
           <div className="relative">
-            <div className="absolute inset-0 bg-primary/10 rounded-[4rem] blur-3xl -z-10 rotate-6 scale-90" />
-            <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white">
+            <div className="absolute inset-0 bg-primary/10 rounded-[10px] blur-3xl -z-10 rotate-6 scale-90" />
+            <Card className="border-none shadow-2xl rounded-[10px] overflow-hidden bg-white">
               <div className="p-8 border-b border-slate-50 bg-slate-50/30">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-red-400" />
@@ -161,7 +160,7 @@ export default function SaaSLandingPage() {
                 </div>
                 <div className="space-y-4">
                   {["Lead Identification", "Creative Discussion", "Proposal Synthesis", "Pre-Production Lock", "Release Ready"].map((step, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <div key={i} className="flex items-center justify-between p-4 rounded-[10px] bg-slate-50 border border-slate-100">
                       <span className="text-sm font-bold text-slate-700">{step}</span>
                       <CheckCircle2 className={`h-5 w-5 ${i < 3 ? 'text-primary' : 'text-slate-200'}`} />
                     </div>
@@ -201,7 +200,7 @@ export default function SaaSLandingPage() {
           </div>
 
           <div className="pt-12 text-center">
-            <Button asChild className="h-16 px-12 rounded-2xl bg-white text-slate-950 hover:bg-slate-100 font-bold text-base shadow-2xl shadow-primary/10 transition-all active:scale-95">
+            <Button asChild className="h-16 px-12 rounded-[10px] bg-white text-slate-950 hover:bg-slate-100 font-bold text-base shadow-2xl shadow-primary/10 transition-all active:scale-95">
               <Link href="/book-demo">See It In Action – Book Demo</Link>
             </Button>
           </div>
@@ -231,8 +230,8 @@ export default function SaaSLandingPage() {
               { icon: Globe, title: "Social Manager", desc: "Release tracking and platform performance monitoring." },
               { icon: ShieldCheck, title: "AI Media Tools", desc: "Ready for GenAI production workflows and synthetic media." }
             ].map((m, i) => (
-              <Card key={i} className="p-10 border-none shadow-sm bg-slate-50 rounded-[2.5rem] group hover:bg-white hover:shadow-xl transition-all">
-                <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary mb-8 group-hover:scale-110 transition-transform">
+              <Card key={i} className="p-10 border-none shadow-sm bg-slate-50 rounded-[10px] group hover:bg-white hover:shadow-xl transition-all">
+                <div className="h-14 w-14 rounded-[10px] bg-white shadow-sm flex items-center justify-center text-primary mb-8 group-hover:scale-110 transition-transform">
                   <m.icon className="h-7 w-7" />
                 </div>
                 <h4 className="text-xl font-bold text-slate-900 mb-3">{m.title}</h4>
@@ -257,8 +256,8 @@ export default function SaaSLandingPage() {
             {[
               "Ad Agencies", "Production Houses", "Influencer Agencies", "Content Studios", "Film Units", "AI Media Startups"
             ].map((ind, i) => (
-              <Card key={i} className="p-6 rounded-[2rem] border-none shadow-sm bg-white flex flex-col items-center justify-center text-center gap-4 hover:-translate-y-1 transition-all">
-                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary">
+              <Card key={i} className="p-6 rounded-[10px] border-none shadow-sm bg-white flex flex-col items-center justify-center text-center gap-4 hover:-translate-y-1 transition-all">
+                <div className="h-10 w-10 rounded-[10px] bg-primary/5 flex items-center justify-center text-primary">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <span className="text-xs font-bold text-slate-900 leading-tight">{ind}</span>
@@ -270,7 +269,7 @@ export default function SaaSLandingPage() {
 
       {/* Section 7: Demo CTA */}
       <section className="px-6 py-24 bg-white">
-        <div className="max-w-5xl mx-auto rounded-[4rem] bg-slate-900 p-12 md:p-24 relative overflow-hidden text-center text-white">
+        <div className="max-w-5xl mx-auto rounded-[10px] bg-slate-900 p-12 md:p-24 relative overflow-hidden text-center text-white">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -mr-32 -mt-32 rounded-full" />
           <div className="relative z-10 space-y-10">
             <div className="space-y-4">
@@ -291,7 +290,7 @@ export default function SaaSLandingPage() {
                 </div>
               ))}
             </div>
-            <Button asChild className="h-16 px-12 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-2xl transition-all active:scale-95">
+            <Button asChild className="h-16 px-12 rounded-[10px] bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-2xl transition-all active:scale-95">
               <Link href="/book-demo">Book Free Demo</Link>
             </Button>
           </div>
@@ -311,7 +310,7 @@ export default function SaaSLandingPage() {
               { name: "Pro", price: "Custom", desc: "For growing production houses and ad agencies.", features: ["Unlimited Projects", "AI Proposal Generator", "Workflow Builder", "Advanced Analytics"], highlight: true },
               { name: "Enterprise", price: "Contact", desc: "Full organizational engine for large media conglomerates.", features: ["White-labeled Portal", "Custom Integrations", "SLA Support", "Dedicated Strategist"] }
             ].map((plan, i) => (
-              <Card key={i} className={`p-12 border-none shadow-sm rounded-[3rem] bg-white relative flex flex-col justify-between ${plan.highlight ? 'ring-2 ring-primary shadow-xl scale-105 z-10' : ''}`}>
+              <Card key={i} className={`p-12 border-none shadow-sm rounded-[10px] bg-white relative flex flex-col justify-between ${plan.highlight ? 'ring-2 ring-primary shadow-xl scale-105 z-10' : ''}`}>
                 <div className="space-y-8">
                   <div>
                     <h4 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h4>
@@ -329,7 +328,7 @@ export default function SaaSLandingPage() {
                     </ul>
                   </div>
                 </div>
-                <Button asChild variant={plan.highlight ? "default" : "outline"} className={`mt-12 h-14 rounded-xl font-bold text-xs uppercase tracking-widest w-full ${plan.highlight ? 'shadow-xl shadow-primary/20' : ''}`}>
+                <Button asChild variant={plan.highlight ? "default" : "outline"} className={`mt-12 h-14 rounded-[10px] font-bold text-xs uppercase tracking-widest w-full ${plan.highlight ? 'shadow-xl shadow-primary/20' : ''}`}>
                   <Link href="/book-demo">Book Demo</Link>
                 </Button>
               </Card>
@@ -366,11 +365,11 @@ export default function SaaSLandingPage() {
 
       {/* Section 10: Final CTA */}
       <section className="px-6 py-24 md:py-32 bg-slate-50">
-        <div className="max-w-5xl mx-auto p-12 md:p-24 rounded-[4rem] bg-primary text-white text-center space-y-10 relative overflow-hidden shadow-[0_20px_50px_-12px_rgba(46,134,193,0.3)]">
+        <div className="max-w-5xl mx-auto p-12 md:p-24 rounded-[10px] bg-primary text-white text-center space-y-10 relative overflow-hidden shadow-[0_20px_50px_-12px_rgba(46,134,193,0.3)]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
           <h2 className="text-4xl md:text-6xl font-bold font-headline tracking-tight relative z-10">Structure Your Media Business Like a Production Powerhouse.</h2>
           <div className="relative z-10">
-            <Button asChild className="h-16 px-12 rounded-2xl bg-white text-primary hover:bg-slate-50 font-bold text-lg shadow-2xl transition-all active:scale-95">
+            <Button asChild className="h-16 px-12 rounded-[10px] bg-white text-primary hover:bg-slate-50 font-bold text-lg shadow-2xl transition-all active:scale-95">
               <Link href="/book-demo">Book Your Demo Now</Link>
             </Button>
           </div>
