@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -231,9 +230,6 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
               {/* Fallback system roles */}
               {!roles?.find(r => r.id === 'root-admin') && (
                 <SelectItem value="root-admin" className="font-bold text-slate-900">ROOT ADMINISTRATOR (System)</SelectItem>
-              )}
-              {!roles?.find(r => r.id === 'staff') && (
-                <SelectItem value="staff" className="font-bold text-slate-900">STAFF (Default)</SelectItem>
               )}
               {(!roles || roles.length === 0) && !rolesLoading && (
                 <SelectItem value="none" disabled>No roles found. Create roles in Settings.</SelectItem>

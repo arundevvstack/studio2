@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -233,7 +232,7 @@ export default function UserManagementPage() {
                   const isPending = member.status === 'Pending';
                   
                   // Role resolution with system fallbacks
-                  const memberRoleId = member.roleId || "staff";
+                  const memberRoleId = member.roleId || "";
                   const resolvedRole = roles?.find(r => r.id === memberRoleId);
                   
                   return (
@@ -267,9 +266,6 @@ export default function UserManagementPage() {
                             {/* System Role Fallbacks if collection is empty or missing these keys */}
                             {!roles?.find(r => r.id === 'root-admin') && (
                               <SelectItem value="root-admin" className="text-[10px] font-bold uppercase">ROOT ADMINISTRATOR (System)</SelectItem>
-                            )}
-                            {!roles?.find(r => r.id === 'staff') && (
-                              <SelectItem value="staff" className="text-[10px] font-bold uppercase">STAFF (Default)</SelectItem>
                             )}
                             {roles?.map(role => (
                               <SelectItem key={role.id} value={role.id} className="text-[10px] font-bold uppercase">{role.name}</SelectItem>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Badge } from "@/components/ui/badge"
@@ -159,7 +158,7 @@ export default function LoginPage() {
             thumbnail: user.photoURL || "",
             status: "Pending", 
             type: "In-house",
-            roleId: "staff", 
+            roleId: "", // Removed default staff role
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           }, { merge: true });
