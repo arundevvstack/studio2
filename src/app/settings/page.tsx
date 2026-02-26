@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -251,7 +252,7 @@ export default function SettingsPage() {
   }, [db, currentUserMember?.roleId]);
   const { data: userRole } = useDoc(userRoleRef);
 
-  const isMasterAdmin = userRole?.name === 'Root Administrator' || userRole?.name === 'Super Admin' || currentUserMember?.roleId === 'super-admin';
+  const isMasterAdmin = userRole?.name === 'Root Administrator' || userRole?.name === 'Super Admin' || currentUserMember?.roleId === 'root-admin';
 
   useEffect(() => {
     if (roles && roles.length > 0 && !selectedRoleIdForNav) {
@@ -571,6 +572,73 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="roles" className="animate-in slide-in-from-left-2 duration-300">
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h3 className="text-2xl font-bold font-headline">Administrative Access Roles</h3>
+                <p className="text-sm text-slate-500 font-medium">Configure module access and action permissions for the production team.</p>
+              </div>
+              <Button onClick={() => handleOpenRoleDialog()} className="rounded-xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"><Plus className="h-4 w-4" /> Create Role</Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {roles?.map((role) => (
+                <Card key={role.id} className="border-none shadow-sm rounded-[2.5rem] bg-white group hover:shadow-xl transition-all">
+                  <CardHeader className="p-8 pb-4 flex flex-row items-start justify-between">
+                    <div className="space-y-1">
+                      <h4 className="text-xl font-bold font-headline">{role.name}</h4>
+                      <Badge variant="outline" className="text-[8px] font-bold uppercase border-slate-100">{role.permissions?.length || 0} Permissions</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenRoleDialog(role)} className="h-10 w-10 rounded-xl bg-slate-50"><Edit2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "roles", role.id))} className="h-10 w-10 rounded-xl bg-slate-50 text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-8 pt-0">
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed">{role.description || "No strategic description provided."}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+            <DialogContent className="sm:max-w-[800px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
+              <DialogHeader className="p-10 pb-4"><DialogTitle className="text-2xl font-bold font-headline">{editingRole ? 'Update Access Role' : 'Provision New Role'}</DialogTitle></DialogHeader>
+              <div className="p-10 pt-0 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3"><Label className="text-[10px] font-bold uppercase text-slate-400">Role Nomenclature</Label><Input value={roleForm.name} onChange={e => setRoleForm({...roleForm, name: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg" placeholder="e.g. Executive Producer" /></div>
+                  <div className="space-y-3"><Label className="text-[10px] font-bold uppercase text-slate-400">Strategic Description</Label><Input value={roleForm.description} onChange={e => setRoleForm({...roleForm, description: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold" /></div>
+                </div>
+                <div className="space-y-6">
+                  <h4 className="text-sm font-bold font-headline flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Dashboard Modules</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {DASHBOARD_ITEMS.map(item => (
+                      <div key={item.id} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer" onClick={() => handleTogglePermission(`dash:${item.id}`)}>
+                        <Checkbox checked={roleForm.permissions.includes(`dash:${item.id}`)} onCheckedChange={() => {}} className="rounded-lg border-slate-200 pointer-events-none" />
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{item.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <h4 className="text-sm font-bold font-headline flex items-center gap-2"><Key className="h-4 w-4 text-primary" /> System Capabilities</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {['settings:view', 'settings:organization', 'settings:workflow', 'settings:roles', 'settings:project', 'settings:billing', 'settings:navigation'].map(perm => (
+                      <div key={perm} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer" onClick={() => handleTogglePermission(perm)}>
+                        <Checkbox checked={roleForm.permissions.includes(perm)} onCheckedChange={() => {}} className="rounded-lg border-slate-200 pointer-events-none" />
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{perm.split(':')[1].toUpperCase()} Access</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <DialogFooter className="bg-slate-50 p-10"><Button onClick={handleSaveRole} disabled={isSaving} className="h-14 px-12 rounded-full font-bold bg-primary text-white shadow-2xl shadow-primary/20 transition-all active:scale-95">{isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />} Deploy Role</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -581,13 +649,41 @@ function SortableNavigationItem({ item, roles, selectedRoleId, db }: any) {
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : 1, opacity: isDragging ? 0.5 : 1 };
   const Icon = item.icon || Globe;
   const selectedRole = roles?.find((r: any) => r.id === selectedRoleId);
-  const isMasterRole = selectedRole?.name === 'Root Administrator' || selectedRole?.name === 'Super Admin';
+  const isMasterRole = selectedRole?.name === 'Root Administrator' || selectedRole?.name === 'Super Admin' || selectedRole?.id === 'root-admin';
   const hasAccess = selectedRole?.permissions?.includes(`module:${item.id}`) || isMasterRole;
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center justify-between p-8 hover:bg-slate-50/50 transition-colors bg-white dark:bg-slate-900">
-      <div className="flex items-center gap-6"><button {...attributes} {...listeners} className="p-2 hover:bg-slate-100 rounded-lg"><GripVertical className="h-5 w-5 text-slate-300" /></button><div className="h-12 w-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center"><Icon className="h-5 w-5 text-primary" /></div><div><p className="font-bold text-slate-900 dark:text-white">{item.title}</p><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/{item.id}</p></div></div>
-      <div className="flex items-center gap-4"><span className={`text-[10px] font-bold uppercase tracking-widest ${hasAccess ? 'text-primary' : 'text-slate-300'}`}>{hasAccess ? 'Authorized' : 'Restricted'}</span><Switch disabled={isMasterRole} checked={!!hasAccess} onCheckedChange={checked => { if (!selectedRole) return; const perm = `module:${item.id}`; const updatedPerms = checked ? [...(selectedRole.permissions || []), perm] : (selectedRole.permissions || []).filter((p: string) => p !== perm); updateDocumentNonBlocking(doc(db, "roles", selectedRole.id), { permissions: updatedPerms }); toast({ title: "Authority Adjusted", description: `${item.title} visibility updated.` }); }} /></div>
+      <div className="flex items-center gap-6">
+        <button {...attributes} {...listeners} className="p-2 hover:bg-slate-100 rounded-lg">
+          <GripVertical className="h-5 w-5 text-slate-300" />
+        </button>
+        <div className="h-12 w-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <p className="font-bold text-slate-900 dark:text-white">{item.title}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">/{item.id}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${hasAccess ? 'text-primary' : 'text-slate-300'}`}>
+          {hasAccess ? 'Authorized' : 'Restricted'}
+        </span>
+        <Switch 
+          disabled={isMasterRole} 
+          checked={!!hasAccess} 
+          onCheckedChange={checked => { 
+            if (!selectedRole) return; 
+            const perm = `module:${item.id}`; 
+            const updatedPerms = checked 
+              ? [...(selectedRole.permissions || []), perm] 
+              : (selectedRole.permissions || []).filter((p: string) => p !== perm); 
+            updateDocumentNonBlocking(doc(db, "roles", selectedRole.id), { permissions: updatedPerms }); 
+            toast({ title: "Authority Adjusted", description: `${item.title} visibility updated.` }); 
+          }} 
+        />
+      </div>
     </div>
   );
 }
