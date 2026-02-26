@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -123,8 +122,8 @@ export default function LoginPage() {
       } else if (user.email && !isProvisioning) {
         // PROVISION NEW PENDING IDENTITY
         setIsProvisioning(true);
-        const newMemberRef = doc(db, "teamMembers", user.uid);
         const nameParts = (user.displayName || "New Expert").split(' ');
+        const newMemberRef = doc(db, "teamMembers", user.uid);
         
         setDocumentNonBlocking(newMemberRef, {
           id: user.uid,
