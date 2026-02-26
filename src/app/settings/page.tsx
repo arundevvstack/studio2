@@ -228,11 +228,11 @@ export default function SettingsPage() {
     }
   }, []);
 
-  const memberRef = useMemoFirebase(() => {
+  const registryRef = useMemoFirebase(() => {
     if (!user) return null;
-    return doc(db, "teamMembers", user.uid);
+    return doc(db, "users", user.uid);
   }, [db, user]);
-  const { data: currentUserMember } = useDoc(memberRef);
+  const { data: currentIdentity } = useDoc(registryRef);
 
   const rolesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -240,19 +240,20 @@ export default function SettingsPage() {
   }, [db, user]);
   const { data: roles } = useCollection(rolesQuery);
 
-  const teamMembersQuery = useMemoFirebase(() => {
+  const databaseUsersQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, "teamMembers"), orderBy("updatedAt", "desc"));
+    return query(collection(db, "users"), orderBy("updatedAt", "desc"));
   }, [db, user]);
-  const { data: teamMembers, isLoading: teamLoading } = useCollection(teamMembersQuery);
+  const { data: databaseUsers, isLoading: usersLoading } = useCollection(databaseUsersQuery);
 
   const userRoleRef = useMemoFirebase(() => {
-    if (!currentUserMember?.roleId) return null;
-    return doc(db, "roles", currentUserMember.roleId);
-  }, [db, currentUserMember?.roleId]);
+    if (!currentIdentity?.role) return null;
+    // Note: identities use simple 'admin' or custom roles
+    return doc(db, "roles", currentIdentity.role);
+  }, [db, currentIdentity?.role]);
   const { data: userRole } = useDoc(userRoleRef);
 
-  const isMasterAdmin = userRole?.name === 'Root Administrator' || userRole?.name === 'Super Admin' || currentUserMember?.roleId === 'root-admin';
+  const isMasterAdmin = currentIdentity?.role === 'admin' || currentIdentity?.email === 'defineperspective.in@gmail.com';
 
   // Active Sessions Stream
   const sessionsQuery = useMemoFirebase(() => {
@@ -268,8 +269,8 @@ export default function SettingsPage() {
   }, [roles, selectedRoleIdForNav]);
 
   const hasPermission = (perm: string) => {
-    if (!userRole && !isMasterAdmin) return false;
-    return userRole?.permissions?.includes(perm) || isMasterAdmin;
+    if (isMasterAdmin) return true;
+    return userRole?.permissions?.includes(perm) || false;
   };
 
   const visibleTabs = useMemo(() => {
@@ -319,15 +320,16 @@ export default function SettingsPage() {
   }, [billingSettings]);
 
   useEffect(() => {
-    if (currentUserMember) {
+    if (currentIdentity) {
+      const names = (currentIdentity.name || "User").split(" ");
       setProfileForm({
-        firstName: currentUserMember.firstName || "",
-        lastName: currentUserMember.lastName || "",
-        phone: currentUserMember.phone || "",
-        thumbnail: currentUserMember.thumbnail || ""
+        firstName: names[0] || "",
+        lastName: names.slice(1).join(" ") || "",
+        phone: currentIdentity.phone || "",
+        thumbnail: currentIdentity.photoURL || ""
       });
     }
-  }, [currentUserMember]);
+  }, [currentIdentity]);
 
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
@@ -370,10 +372,14 @@ export default function SettingsPage() {
   };
 
   const handleSavePersonalProfile = async () => {
-    if (!memberRef || !user) return;
+    if (!registryRef || !user) return;
     setIsSaving(true);
     try {
-      await updateDoc(memberRef, { ...profileForm, updatedAt: serverTimestamp() });
+      await updateDoc(registryRef, { 
+        name: `${profileForm.firstName} ${profileForm.lastName}`,
+        photoURL: profileForm.thumbnail,
+        updatedAt: serverTimestamp() 
+      });
       toast({ title: "Identity Synchronized", description: "Personal profile updated." });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Sync Failed", description: error.message });
@@ -458,8 +464,8 @@ export default function SettingsPage() {
 
   const executePurgeUser = () => {
     if (userToPurge) {
-      deleteDocumentNonBlocking(doc(db, "teamMembers", userToPurge.id));
-      toast({ variant: "destructive", title: "Identity Purged", description: `${userToPurge.email} removed.` });
+      deleteDocumentNonBlocking(doc(db, "users", userToPurge.id));
+      toast({ variant: "destructive", title: "Identity Purged", description: `${userToPurge.email} removed from system registry.` });
       setUserToPurge(null);
     }
   };
@@ -597,11 +603,11 @@ export default function SettingsPage() {
         <TabsContent value="users" className="animate-in slide-in-from-left-2 duration-300">
           <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900 overflow-hidden">
             <CardHeader className="p-10 border-b border-slate-50 dark:border-slate-800">
-              <CardTitle className="text-xl font-bold font-headline">Database User Registry</CardTitle>
-              <CardDescription>Audit system identifiers and manage permanent record purges.</CardDescription>
+              <CardTitle className="text-xl font-bold font-headline">Identity Registry</CardTitle>
+              <CardDescription>Authorize permits and manage permanent organizational purges.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              {teamLoading ? (
+              {usersLoading ? (
                 <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
               ) : (
                 <Table>
@@ -609,45 +615,52 @@ export default function SettingsPage() {
                     <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Expert Identity</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-widest">Email Identifier</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Permit Status</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Strategic Permit</TableHead>
                       <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {teamMembers?.map((member) => (
-                      <TableRow key={member.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
+                    {databaseUsers?.map((dbUser) => (
+                      <TableRow key={dbUser.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
                         <TableCell className="px-10 py-6">
                           <div className="flex items-center gap-4">
                             <Avatar className="h-10 w-10 rounded-xl border-2 border-white shadow-sm">
-                              <AvatarImage src={member.thumbnail} />
-                              <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">{member.firstName?.[0] || 'U'}</AvatarFallback>
+                              <AvatarImage src={dbUser.photoURL} />
+                              <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">{dbUser.name?.[0] || 'U'}</AvatarFallback>
                             </Avatar>
-                            <span className="font-bold text-slate-900 dark:text-white">{member.firstName} {member.lastName}</span>
+                            <span className="font-bold text-slate-900 dark:text-white">{dbUser.name}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 text-slate-500 font-medium">
                             <Mail className="h-3.5 w-3.5 opacity-40" />
-                            <span>{member.email}</span>
+                            <span>{dbUser.email}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full ${
-                            member.status === 'Active' ? 'bg-green-50 text-green-600' : 
-                            member.status === 'Pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
+                            dbUser.status === 'active' ? 'bg-green-50 text-green-600' : 
+                            dbUser.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
                           }`}>
-                            {member.status === 'Active' ? 'AUTHORIZED' : member.status === 'Pending' ? 'PENDING' : 'REVOKED'}
+                            {dbUser.status === 'active' ? 'AUTHORIZED' : dbUser.status === 'pending' ? 'PENDING' : 'SUSPENDED'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right px-10">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => setUserToPurge(member)}
-                            className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-red-50 hover:text-red-600 text-slate-400 dark:bg-slate-800 transition-all"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                              <Link href="/admin/users">
+                                <Edit2 className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => setUserToPurge(dbUser)}
+                              className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-red-50 hover:text-red-600 text-slate-400 dark:bg-slate-800 transition-all"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -754,7 +767,7 @@ export default function SettingsPage() {
             <CardHeader className="p-10 pb-0">
               <div className="flex items-center justify-between">
                 <div><CardTitle className="text-xl font-bold font-headline">Project Matrix</CardTitle></div>
-                <Button variant="outline" size="sm" onClick={() => { if(confirm("Restore defaults?")) { setDocumentNonBlocking(projectSettingsRef, { serviceTypes: DEFAULT_PROJECT_TYPES, updatedAt: serverTimestamp() }, { merge: true }); toast({ title: "Defaults Restored" }); } }} className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase gap-2"><RotateCcw className="h-3.5 w-3.5" /> Defaults</Button>
+                <Button variant="outline" size="sm" onClick={() => { if(confirm("Restore defaults?")) { setDocumentNonBlocking(projectSettingsRef, { serviceTypes: DEFAULT_SERVICE_TYPES, updatedAt: serverTimestamp() }, { merge: true }); toast({ title: "Defaults Restored" }); } }} className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase gap-2"><RotateCcw className="h-3.5 w-3.5" /> Defaults</Button>
               </div>
             </CardHeader>
             <CardContent className="p-10 space-y-10">
@@ -890,7 +903,7 @@ export default function SettingsPage() {
               <AlertDialogTitle className="font-headline text-xl">Purge Identity Record</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
-              This will permanently remove <span className="font-bold text-slate-900">{userToPurge?.email}</span> from the organizational registry. This action is irreversible and terminates all historical permit tracking.
+              This will permanently remove <span className="font-bold text-slate-900">{userToPurge?.email}</span> from the organizational registry. This action is irreversible and terminates all future authentication permits.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-3 mt-6">

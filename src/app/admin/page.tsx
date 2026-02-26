@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 /**
  * @fileOverview Strategic Admin Console.
  * Manages system-wide metrics, operational status, and global audit logs.
- * Gated by strictly "Active" Permit Status.
+ * Gated by strictly "Active" Permit Status in the authoritative Identity Registry.
  */
 
 export default function AdminConsolePage() {
@@ -34,34 +34,34 @@ export default function AdminConsolePage() {
     setMounted(true);
   }, []);
 
-  // Fetch user record status
-  const memberRef = useMemoFirebase(() => {
+  // Fetch identity record status from the users collection (Registry)
+  const identityRef = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
-    return doc(db, "teamMembers", user.uid);
+    return doc(db, "users", user.uid);
   }, [db, user]);
-  const { data: member, isLoading: memberLoading } = useDoc(memberRef);
+  const { data: identity, isLoading: identityLoading } = useDoc(identityRef);
 
   // Strategic Access Guard
   useEffect(() => {
-    if (!isUserLoading && mounted && !memberLoading) {
+    if (!isUserLoading && mounted && !identityLoading) {
       if (!user || user.isAnonymous) {
         router.push("/login");
-      } else if (member && member.status !== "Active") {
+      } else if (identity && identity.status !== "active") {
         router.push("/login");
-      } else if (!member && !isUserLoading) {
+      } else if (!identity && !isUserLoading) {
         // Redirect if no organizational identity exists
         router.push("/login");
       }
     }
-  }, [user, isUserLoading, router, member, memberLoading, mounted]);
+  }, [user, isUserLoading, router, identity, identityLoading, mounted]);
 
   const teamQuery = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
-    return query(collection(db, "teamMembers"), orderBy("updatedAt", "desc"), limit(5));
+    return query(collection(db, "users"), orderBy("updatedAt", "desc"), limit(10));
   }, [db, user]);
-  const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
+  const { data: identities, isLoading: teamLoading } = useCollection(teamQuery);
 
-  if (!mounted || isUserLoading || (user && memberLoading)) {
+  if (!mounted || isUserLoading || (user && identityLoading)) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -70,7 +70,7 @@ export default function AdminConsolePage() {
     );
   }
 
-  if (!user || user.isAnonymous || member?.status !== "Active") return null;
+  if (!user || user.isAnonymous || identity?.status !== "active") return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
@@ -112,7 +112,7 @@ export default function AdminConsolePage() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Identities</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{team?.length || 0}</h3>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{identities?.length || 0}</h3>
           </div>
         </Card>
       </div>

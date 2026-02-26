@@ -80,7 +80,7 @@ const ROLES = ["strategic", "sales", "production", "admin"];
 /**
  * @fileOverview Identity Governance Hub.
  * Manages Strategic Permits, Roles, and Phase-Level Access.
- * Synchronizes metadata with Firebase Custom Claims triggers.
+ * Purge action is secured via Firestore Security Rules.
  */
 export default function UserManagementPage() {
   const router = useRouter();
@@ -251,7 +251,7 @@ export default function UserManagementPage() {
                         <ShieldX className="h-4 w-4" /> Suspend Expert
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setUserToPurge(u)} className="rounded-xl p-3 cursor-pointer gap-3 font-bold text-xs text-destructive hover:bg-destructive/5">
+                      <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setUserToPurge(u); }} className="rounded-xl p-3 cursor-pointer gap-3 font-bold text-xs text-destructive hover:bg-destructive/5">
                         <Trash2 className="h-4 w-4" /> Purge Identifier
                       </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -18,7 +18,6 @@ service cloud.firestore {
     }
 
     // Authoritative check for Strategic Permit & Active Status
-    // Prioritizes token claims for performance, falls back to doc check for real-time accuracy
     function hasStrategicPermit() {
       let user = getUserData();
       return isSignedIn() && (
@@ -48,7 +47,8 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid == userId;
       // Only Admins can authorize permits or assign roles
       allow update: if isSignedIn() && isAdmin();
-      allow delete: if false;
+      // Admins can purge identities from the registry
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     /**
