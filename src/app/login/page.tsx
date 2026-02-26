@@ -283,24 +283,6 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-slate-950/80" />
         
         <div className="relative w-full h-full max-w-xl">
-          {/* Floating UI Widget 2: Calendar Node */}
-          <div className="absolute bottom-[25%] left-[5%] bg-white/10 backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-left-8 duration-700 delay-500">
-            <div className="space-y-5">
-              <div className="flex items-center justify-between gap-12">
-                <p className="text-[10px] font-bold text-white uppercase tracking-widest">Production Schedule</p>
-                <Calendar className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex gap-3">
-                {[22, 23, 24, 25, 26].map((day, i) => (
-                  <div key={day} className={`h-12 w-12 rounded-xl flex flex-col items-center justify-center transition-all ${i === 2 ? 'bg-primary text-white scale-110 shadow-lg' : 'bg-white/5 text-white/40'}`}>
-                    <span className="text-[8px] font-bold uppercase">{['S','M','T','W','T'][i]}</span>
-                    <span className="text-sm font-bold">{day}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
           {/* Visual Centerpiece */}
           <div className="h-full flex items-center justify-center">
             <div className="text-center space-y-8 p-6">
