@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { 
   initiateEmailSignIn, 
@@ -326,7 +327,7 @@ export default function LoginPage() {
                 </button>
                 <button className="h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-all active:scale-95">
                   <svg className="h-5 w-5 fill-slate-900" viewBox="0 0 24 24">
-                    <path d="M17.05 20.28c-.96.95-2.21 1.72-3.72 1.72-2.14 0-3.64-1.33-4.64-2.62-1.32-1.7-2.14-4.24-2.14-6.67 0-3.83 2.44-5.88 4.78-5.88 1.18 0 2.1.42 2.8.88.64.43 1.1.88 1.46.88.36 0 .82-.45 1.46-.88.7-.46 1.62-.88 2.8-.88 1.8 0 3.44 1.04 4.22 2.62-3.6.1-4.22 2.62-4.22 3.82 0 1.2.62 3.72 4.22 3.82-.38 1.14-1.06 2.3-2.02 3.3zM12.03 6.83c0-2.3 1.88-4.18 4.18-4.18.05 0 .1 0 .15.01-.1 2.35-2.03 4.17-4.18 4.17h-.15z" />
+                    <path d="M17.05 20.28c-.96.95-2.21 1.72-3.72 1.72-2.14 0-3.64-1.33-4.64-2.62-1.32-1.7-2.14-4.24-2.14-6.67 0-3.83 2.44-5.88 4.78-5.88 1.18 0 2.1.42 2.8.88.64.43 1.1.88 1.46.88.36 0 .82-.45 1.46-.88.36 0 .82-.45 1.46-.88.7-.46 1.62-.88 2.8-.88 1.8 0 3.44 1.04 4.22 2.62-3.6.1-4.22 2.62-4.22 3.82 0 1.2.62 3.72 4.22 3.82-.38 1.14-1.06 2.3-2.02 3.3zM12.03 6.83c0-2.3 1.88-4.18 4.18-4.18.05 0 .1 0 .15.01-.1 2.35-2.03 4.17-4.18 4.17h-.15z" />
                   </svg>
                 </button>
                 <button className="h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-all active:scale-95">
