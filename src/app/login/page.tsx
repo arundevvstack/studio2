@@ -189,9 +189,6 @@ export default function LoginPage() {
           <Button variant="ghost" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 gap-2">
             <Globe className="h-3 w-3" /> EN <ChevronDown className="h-3 w-3" />
           </Button>
-          <Button asChild className="rounded-[10px] bg-slate-900 text-white font-bold h-10 px-6 text-[10px] uppercase tracking-widest shadow-xl shadow-slate-200">
-            <Link href="/admin">Root Portal</Link>
-          </Button>
         </div>
       </nav>
 
