@@ -7,17 +7,16 @@ service cloud.firestore {
      * MEDIAFLOW STRATEGIC PERMIT RULES
      * 
      * Access requires:
-     * 1. Auth token claims: strategicPermit == true
-     * 2. Auth token claims: status == "active"
+     * 1. Auth token claims or User document: strategicPermit == true
+     * 2. Auth token claims or User document: status == "active"
      */
 
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // Authoritative check against the user document for real-time consistency
     function hasStrategicPermit() {
-      // Logic for checking custom claims or reading from the users collection
-      // For immediate development effect, we fall back to a direct get() check on the users doc
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       return userDoc.strategicPermit == true && userDoc.status == "active";
     }
@@ -28,7 +27,9 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // Users can create their initial pending record on sign-up
       allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.status == "pending";
+      // Only admins can update role, status, and permits
       allow update: if isSignedIn() && isAdmin();
       allow delete: if false;
     }

@@ -13,13 +13,13 @@ import {
   Zap,
   RotateCcw,
   Globe,
-  ChevronDown
+  ChevronDown,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { 
@@ -27,7 +27,7 @@ import {
   initiateEmailSignUp,
   initiateGoogleSignIn
 } from "@/firebase/non-blocking-login";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -35,8 +35,8 @@ import Link from "next/link";
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
 
 /**
- * @fileOverview Strategic Permit Gated Login.
- * New sign-ups are placed in "Pending" status and blocked until Admin approval.
+ * @fileOverview Authoritative Strategic Login Node.
+ * Handles Email & Google authentication with strict Admin Authorization Gating.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -46,6 +46,7 @@ export default function LoginPage() {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -58,66 +59,60 @@ export default function LoginPage() {
   const { data: userData, isLoading: isUserRegistryLoading } = useDoc(userRef);
 
   useEffect(() => {
-    if (user && !isUserRegistryLoading) {
-      // 1. Check if user exists in registry
-      if (!userData) {
-        // One-time auto-provision for Master Node
-        if (user.email?.toLowerCase() === MASTER_EMAIL.toLowerCase()) {
-          const masterRef = doc(db, "users", user.uid);
-          setDoc(masterRef, {
+    const syncUserRegistry = async () => {
+      if (user && !isUserRegistryLoading) {
+        const docSnap = await getDoc(userRef!);
+        
+        // 1. Provision New Identity if missing
+        if (!docSnap.exists()) {
+          const isMaster = user.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
+          
+          const newIdentity = {
             id: user.uid,
-            name: user.displayName || "Master Administrator",
-            email: user.email.toLowerCase(),
-            role: "admin",
-            permittedPhases: ["sales", "production", "release", "socialMedia"],
-            strategicPermit: true,
-            status: "active",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          });
-          router.push("/dashboard");
-        } else {
-          // Provision baseline pending identity
-          const newRef = doc(db, "users", user.uid);
-          setDoc(newRef, {
-            id: user.uid,
-            name: user.displayName || "New Expert",
+            name: name || user.displayName || "New Expert",
             email: user.email?.toLowerCase(),
-            role: null,
-            permittedPhases: [],
-            strategicPermit: false,
-            status: "pending",
+            photoURL: user.photoURL || "",
+            role: isMaster ? "admin" : null,
+            permittedPhases: isMaster ? ["sales", "production", "release", "socialMedia"] : [],
+            strategicPermit: isMaster ? true : false,
+            status: isMaster ? "active" : "pending",
+            provider: user.providerData[0]?.providerId || "password",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
-          });
-          toast({ title: "Registry Entry Created", description: "Awaiting Strategic Permit from Root Node." });
+          };
+
+          await setDoc(userRef!, newIdentity);
+          
+          if (!isMaster) {
+            toast({ title: "Registry Entry Created", description: "Awaiting Admin authorization." });
+          }
         }
-        return;
-      }
 
-      // 2. Validate Permit
-      if (userData.status === "active" && userData.strategicPermit === true) {
-        router.push("/dashboard");
-      } else {
-        // If not active, the UI below will show the restricted barrier
-        setIsProcessing(false);
+        // 2. Redirect if Authorized
+        if (userData?.status === "active" && userData?.strategicPermit === true) {
+          router.push("/dashboard");
+        }
       }
-    }
-  }, [user, userData, isUserRegistryLoading, router, db]);
+    };
 
-  const handleAuth = (e: React.FormEvent) => {
+    syncUserRegistry();
+  }, [user, userData, isUserRegistryLoading, router, db, name]);
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
     
     setIsProcessing(true);
-    const authPromise = mode === "login" 
-      ? initiateEmailSignIn(auth, email.toLowerCase(), password)
-      : initiateEmailSignUp(auth, email.toLowerCase(), password);
-
-    authPromise.catch((err: any) => {
-      toast({ variant: "destructive", title: "Auth Failed", description: err.message });
+    try {
+      if (mode === "login") {
+        await initiateEmailSignIn(auth, email.toLowerCase(), password);
+      } else {
+        await initiateEmailSignUp(auth, email.toLowerCase(), password);
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Authentication Failed", description: err.message });
       setIsProcessing(false);
-    });
+    }
   };
 
   const handleGoogleAuth = async () => {
@@ -136,32 +131,34 @@ export default function LoginPage() {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-6">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verifying Strategic Permit...</p>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Validating Strategic Permit...</p>
       </div>
     );
   }
 
-  // ACCESS BARRIER: For authenticated users without a valid permit
+  // ACCESS BARRIER: Restricted screen for pending/suspended experts
   if (user && userData && (userData.status !== "active" || !userData.strategicPermit)) {
     return (
-      <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-[2rem] shadow-2xl p-12 max-w-lg w-full flex flex-col items-center text-center space-y-10">
+      <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-6 font-body">
+        <div className="bg-white rounded-[3rem] shadow-2xl p-12 max-w-lg w-full flex flex-col items-center text-center space-y-10 border border-slate-100">
           <div className="h-24 w-24 rounded-[2.5rem] bg-orange-50 flex items-center justify-center shadow-lg relative">
             <Hourglass className="h-10 w-10 text-orange-500 animate-pulse" />
             <div className="absolute -top-2 -right-2">
-              <Badge className="bg-orange-500 text-white border-none uppercase text-[8px] font-bold">LOCKED</Badge>
+              <Badge className="bg-orange-500 text-white border-none uppercase text-[8px] font-bold px-2 py-1 rounded-lg">RESTRICTED</Badge>
             </div>
           </div>
           <div className="space-y-4">
-            <h1 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">Access Restricted</h1>
+            <h1 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">Access Pending</h1>
             <p className="text-sm text-slate-500 font-medium leading-relaxed">
-              Identity: <span className="font-bold text-slate-900">{user.email}</span><br/>
-              Status: <span className="text-primary font-bold uppercase">{userData.status}</span><br/><br/>
-              Your Strategic Permit is currently inactive. System features will be provisioned once an administrator authorizes your role and permitted phases.
+              Hello, <span className="font-bold text-slate-900">{userData.name}</span>. Your identity is registered but your **Strategic Permit** is currently inactive.
+              <br/><br/>
+              Status: <span className="text-primary font-bold uppercase">{userData.status}</span>
+              <br/>
+              A system administrator must authorize your assigned role and phases before the workspace is provisioned.
             </p>
           </div>
           <div className="flex flex-col gap-3 w-full">
-            <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-xs uppercase tracking-widest border-slate-100 bg-slate-50 hover:bg-slate-100">Switch Identity</Button>
+            <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-xs uppercase tracking-widest border-slate-100 bg-slate-50 hover:bg-slate-100 transition-all">Switch Identity</Button>
             <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-xs uppercase tracking-widest gap-2"><RotateCcw className="h-4 w-4" /> Refresh Authorization</Button>
           </div>
         </div>
@@ -190,41 +187,53 @@ export default function LoginPage() {
         <div className="space-y-12 animate-in fade-in slide-in-from-left-4 duration-1000">
           <div className="space-y-6">
             <Badge className="bg-primary/5 text-primary border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">
-              Identity Node v2.6
+              Strategic Identity Node
             </Badge>
             <h1 className="text-5xl lg:text-7xl font-bold font-headline text-slate-900 tracking-tight leading-[1.1]">
-              Secure <br/> <span className="text-primary">Workspace.</span>
+              Workspace <br/> <span className="text-primary">Authorization.</span>
             </h1>
             <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-sm">
-              Phase-level authorization ensures high-fidelity project management and resource security.
+              Role-based permits ensure high-fidelity project management and organizational resource security.
             </p>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="h-px w-12 bg-slate-200" />
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              {mode === 'login' ? "New expert?" : "Registered user?"}
+              {mode === 'login' ? "New to the hub?" : "Already registered?"}
             </p>
             <button 
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
             >
-              {mode === 'login' ? 'Provision Account' : 'Sign In'}
+              {mode === 'login' ? 'Provision Identity' : 'Secure Login'}
             </button>
           </div>
         </div>
 
         <div className="flex justify-center lg:justify-end animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
-          <Card className="w-full max-w-[420px] bg-white border border-slate-100 shadow-2xl rounded-[2rem] p-10 space-y-10">
-            <div className="space-y-2">
+          <Card className="w-full max-w-[420px] bg-white border border-slate-100 shadow-2xl rounded-[2.5rem] p-10 space-y-10">
+            <div className="space-y-2 text-center">
               <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
                 {mode === 'login' ? 'Operational Hub' : 'Register Expert'}
               </h3>
-              <p className="text-sm text-slate-400 font-medium">Authentication required for permit validation.</p>
+              <p className="text-sm text-slate-400 font-medium">Identity verification required for permit sync.</p>
             </div>
 
             <form onSubmit={handleAuth} className="space-y-6">
               <div className="space-y-4">
+                {mode === 'signup' && (
+                  <div className="relative">
+                    <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                    <Input 
+                      value={name} 
+                      onChange={(e) => setName(e.target.value)} 
+                      placeholder="Full Name" 
+                      className="h-14 rounded-2xl bg-slate-50 border-none pl-12 font-bold shadow-inner" 
+                      required
+                    />
+                  </div>
+                )}
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
                   <Input 
@@ -256,13 +265,13 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-sm uppercase tracking-widest shadow-xl shadow-primary/20">
-                {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (mode === 'login' ? 'Sign In' : 'Provision')}
+              <Button type="submit" disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-sm uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
+                {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (mode === 'login' ? 'Sign In' : 'Provision Account')}
               </Button>
               
               <div className="relative">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100" /></div>
-                <div className="relative flex justify-center text-[10px] uppercase font-bold"><span className="bg-white px-4 text-slate-300 tracking-widest">Institutional Auth</span></div>
+                <div className="relative flex justify-center text-[10px] uppercase font-bold"><span className="bg-white px-4 text-slate-300 tracking-widest">Enterprise Sync</span></div>
               </div>
 
               <Button 
@@ -270,7 +279,7 @@ export default function LoginPage() {
                 onClick={handleGoogleAuth} 
                 disabled={isProcessing}
                 variant="outline" 
-                className="w-full h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 gap-3"
+                className="w-full h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 gap-3 transition-all"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -278,7 +287,7 @@ export default function LoginPage() {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
-                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Sync with Google</span>
+                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Sign in with Google</span>
               </Button>
             </form>
           </Card>
