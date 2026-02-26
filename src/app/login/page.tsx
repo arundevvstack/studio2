@@ -9,7 +9,7 @@ import {
   ArrowRight, 
   Loader2, 
   Hourglass,
-  Eye,
+  Eye, 
   EyeOff,
   Zap,
   RotateCcw,
@@ -34,7 +34,7 @@ import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const RESTRICTED_EMAIL = 'arunadhi.com@gmail.com';
+const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com', 'anonymous-root@mediaflow.internal'];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -59,14 +59,15 @@ export default function LoginPage() {
     if (isUserLoading || isMemberLoading) return;
 
     if (user) {
-      if (user.email?.toLowerCase() === RESTRICTED_EMAIL.toLowerCase()) {
-        toast({ variant: "destructive", title: "Security Restriction", description: "Identifier restricted." });
+      const userEmail = user.email?.toLowerCase();
+      if (user.isAnonymous || (userEmail && RESTRICTED_EMAILS.includes(userEmail))) {
+        toast({ variant: "destructive", title: "Security Restriction", description: "Identifier restricted or unauthorized session type." });
         signOut(auth);
         setIsProcessing(false);
         return;
       }
       
-      if (user.email?.toLowerCase() === MASTER_EMAIL.toLowerCase()) {
+      if (userEmail === MASTER_EMAIL.toLowerCase()) {
         if (!member || member.status !== 'Active') {
           const masterRef = doc(db, "teamMembers", user.uid);
           setDocumentNonBlocking(masterRef, {
@@ -116,7 +117,7 @@ export default function LoginPage() {
     e.preventDefault();
     if (!email || !password) return;
     
-    if (email.toLowerCase() === RESTRICTED_EMAIL.toLowerCase()) {
+    if (RESTRICTED_EMAILS.includes(email.toLowerCase())) {
       toast({ variant: "destructive", title: "Security Restriction", description: "Identifier restricted." });
       return;
     }
@@ -171,7 +172,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#fcfcfe] flex flex-col font-body selection:bg-primary/10">
-      {/* Global Public Nav */}
       <nav className="w-full h-20 px-8 lg:px-20 border-b border-slate-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="hidden lg:flex items-center gap-10">
           <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Home</Link>
@@ -186,10 +186,7 @@ export default function LoginPage() {
         </div>
       </nav>
 
-      {/* Main Two-Column Layout */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 items-center max-w-[1400px] mx-auto w-full">
-        
-        {/* Column 1: Strategic Brief (Left) */}
         <div className="p-8 lg:p-24 space-y-12 animate-in fade-in slide-in-from-left-4 duration-1000">
           <div className="space-y-6">
             <Badge className="bg-primary/5 text-primary border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">
@@ -217,23 +214,23 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Column 2: Command Card (Right) */}
         <div className="p-8 lg:p-20 flex justify-center lg:justify-end animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
           <Card className="w-full max-w-[420px] bg-white border border-slate-100 shadow-2xl rounded-[10px] p-10 space-y-10">
-            {/* Logo Aligned Left with Header */}
             <div className="space-y-10">
-              <Link href="/" className="flex items-center gap-2 group">
-                <div className="h-10 w-10 rounded-[10px] bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:rotate-6">
-                  <Zap className="h-5 w-5 text-white fill-white" />
-                </div>
-                <span className="font-headline font-bold text-xl tracking-tight text-slate-900">DP MediaFlow</span>
-              </Link>
+              <div className="flex flex-col space-y-10">
+                <Link href="/" className="flex items-center gap-2 group">
+                  <div className="h-10 w-10 rounded-[10px] bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:rotate-6">
+                    <Zap className="h-5 w-5 text-white fill-white" />
+                  </div>
+                  <span className="font-headline font-bold text-xl tracking-tight text-slate-900">DP MediaFlow</span>
+                </Link>
 
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
-                  {mode === 'login' ? 'Welcome Back' : 'Join the Network'}
-                </h3>
-                <p className="text-sm text-slate-400 font-medium">Enter your credentials to access the hub.</p>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
+                    {mode === 'login' ? 'Welcome Back' : 'Join the Network'}
+                  </h3>
+                  <p className="text-sm text-slate-400 font-medium">Enter your credentials to access the hub.</p>
+                </div>
               </div>
             </div>
 
@@ -303,7 +300,6 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer Meta */}
       <footer className="w-full h-16 border-t border-slate-100 flex items-center justify-center bg-white px-8">
         <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.5em]">
           DP MediaFlow Operating System • Built for high-stakes production

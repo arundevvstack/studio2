@@ -47,7 +47,7 @@ export default function Dashboard() {
   }, []);
 
   const memberRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || user.isAnonymous) return null;
     return doc(db, "teamMembers", user.uid);
   }, [db, user]);
   const { data: member, isLoading: memberLoading } = useDoc(memberRef);
@@ -60,7 +60,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isUserLoading && mounted) {
-      if (!user) {
+      if (!user || user.isAnonymous) {
         router.push("/login");
       } else if (member && member.status !== "Active") {
         router.push("/login");
@@ -68,7 +68,7 @@ export default function Dashboard() {
     }
   }, [user, isUserLoading, router, mounted, member]);
 
-  const isAdmin = role?.name === "Administrator" || role?.name === "Root Administrator" || member?.roleId === 'root-admin' || user?.isAnonymous;
+  const isAdmin = (role?.name === "Administrator" || role?.name === "Root Administrator" || member?.roleId === 'root-admin') && !user?.isAnonymous;
   const canSee = (item: string) => {
     if (isAdmin) return true;
     return role?.permissions?.includes(`dash:${item}`) || false;

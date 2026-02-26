@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect } from "react";
@@ -7,7 +6,7 @@ import {
   Users, 
   Activity, 
   Server, 
-  CheckCircle2,
+  CheckCircle2, 
   Loader2
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -38,7 +37,7 @@ export default function AdminConsolePage() {
   // Strategic Access Guard
   useEffect(() => {
     if (!isUserLoading) {
-      if (!user) {
+      if (!user || user.isAnonymous) {
         router.push("/login");
       } else if (member && member.status !== "Active") {
         router.push("/login");
@@ -47,7 +46,7 @@ export default function AdminConsolePage() {
   }, [user, isUserLoading, router, member]);
 
   const teamQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || user.isAnonymous) return null;
     return query(collection(db, "teamMembers"), orderBy("updatedAt", "desc"), limit(5));
   }, [db, user]);
   const { data: team, isLoading: teamLoading } = useCollection(teamQuery);
@@ -61,7 +60,7 @@ export default function AdminConsolePage() {
     );
   }
 
-  if (!user || member?.status !== "Active") return null;
+  if (!user || user.isAnonymous || member?.status !== "Active") return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
@@ -85,8 +84,7 @@ export default function AdminConsolePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Statistics Cards */}
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+        <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
             <Server className="h-5 w-5 text-blue-500" />
           </div>
@@ -98,7 +96,7 @@ export default function AdminConsolePage() {
             </h3>
           </div>
         </Card>
-        <Card className="border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-4">
+        <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
             <Users className="h-5 w-5 text-primary" />
           </div>
