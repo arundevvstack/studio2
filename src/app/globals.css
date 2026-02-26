@@ -42,11 +42,11 @@
   }
 
   .dark {
-    --background: 222 47% 4%; /* Deeper Black */
+    --background: 0 0% 0%; /* Pitch Black */
     --foreground: 210 40% 98%;
-    --card: 222 47% 6%;
+    --card: 222 47% 4%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 6%;
+    --popover: 222 47% 4%;
     --popover-foreground: 210 40% 98%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -99,9 +99,4 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.2);
   border-radius: 10px;
-}
-
-/* Transitions for dynamic primary color updates */
-:root {
-  transition: --primary 0.3s ease, --ring 0.3s ease;
 }
