@@ -5,28 +5,51 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { PublicNav } from "@/components/layout/public-nav";
+import { PublicFooter } from "@/components/layout/public-footer";
 import { Zap } from "lucide-react";
 
 /**
  * @fileOverview Strategic Layout Shell.
  * Manages the workspace structure and conditionally renders the sidebar based on active routes.
- * Enhanced with mobile-friendly header and responsive main content area.
  */
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Define routes where the sidebar should be hidden (Public Pages)
-  const noSidebarRoutes = [
-    "/login", 
-    "/logout", 
+  // Routes where the authenticated sidebar should be hidden
+  const marketingRoutes = [
+    "/", 
+    "/how-it-works", 
+    "/modules", 
+    "/industries", 
+    "/pricing", 
+    "/resources", 
+    "/about", 
+    "/book-demo",
     "/verticals", 
     "/portfolio", 
     "/contact", 
     "/docs"
   ];
-  const isPublicRoute = noSidebarRoutes.includes(pathname);
 
-  if (isPublicRoute) {
+  const authRoutes = ["/login", "/logout"];
+
+  const isMarketingRoute = marketingRoutes.includes(pathname);
+  const isAuthRoute = authRoutes.includes(pathname);
+
+  if (isMarketingRoute) {
+    return (
+      <div className="min-h-screen w-full flex flex-col bg-white">
+        <PublicNav />
+        <main className="flex-1 pt-20">
+          {children}
+        </main>
+        <PublicFooter />
+      </div>
+    );
+  }
+
+  if (isAuthRoute) {
     return (
       <main className="min-h-screen w-full bg-white">
         {children}
@@ -40,7 +63,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Mobile Header - Only visible on small screens */}
           <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-100 bg-white sticky top-0 z-40">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="h-10 w-10 text-slate-600" />
