@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -51,7 +52,10 @@ import {
   Palette,
   Pipette,
   Tag,
-  Check
+  Check,
+  AlertTriangle,
+  Search,
+  MoreHorizontal
 } from "lucide-react";
 import { 
   DndContext, 
@@ -107,6 +111,16 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const SIDEBAR_MODULES = [
@@ -139,6 +153,7 @@ const DASHBOARD_ITEMS = [
 const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
   { id: "organization", label: "Organization", icon: Building2 },
+  { id: "users", label: "Database Users", icon: Users },
   { id: "project", label: "Project Settings", icon: Briefcase },
   { id: "billing", label: "Financials", icon: Receipt },
   { id: "navigation", label: "Navigation", icon: LayoutGrid },
@@ -178,6 +193,7 @@ export default function SettingsPage() {
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
   const [orderedModules, setOrderedModules] = useState(SIDEBAR_MODULES);
+  const [userToPurge, setUserToPurge] = useState<any>(null);
   
   const navSettingsRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -219,6 +235,12 @@ export default function SettingsPage() {
   }, [db, user]);
   const { data: roles } = useCollection(rolesQuery);
 
+  const teamMembersQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "teamMembers"), orderBy("updatedAt", "desc"));
+  }, [db, user]);
+  const { data: teamMembers, isLoading: teamLoading } = useCollection(teamMembersQuery);
+
   const userRoleRef = useMemoFirebase(() => {
     if (!currentUserMember?.roleId) return null;
     return doc(db, "roles", currentUserMember.roleId);
@@ -242,6 +264,7 @@ export default function SettingsPage() {
     return SETTINGS_TABS.filter(tab => {
       if (tab.id === 'profile') return true; 
       if (tab.id === 'preferences') return true; 
+      if (tab.id === 'users') return isMasterAdmin;
       return hasPermission(`settings:${tab.id}`);
     });
   }, [userRole, isMasterAdmin]);
@@ -350,7 +373,6 @@ export default function SettingsPage() {
     localStorage.setItem("theme-mode", themeMode);
     localStorage.setItem("theme-color", primaryColor);
     
-    // Apply theme mode
     const html = document.documentElement;
     if (themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       html.classList.add('dark');
@@ -358,7 +380,6 @@ export default function SettingsPage() {
       html.classList.remove('dark');
     }
 
-    // Apply primary color
     html.style.setProperty('--primary', primaryColor);
     html.style.setProperty('--ring', primaryColor);
 
@@ -422,6 +443,14 @@ export default function SettingsPage() {
     }
   };
 
+  const executePurgeUser = () => {
+    if (userToPurge) {
+      deleteDocumentNonBlocking(doc(db, "teamMembers", userToPurge.id));
+      toast({ variant: "destructive", title: "Identity Purged", description: `${userToPurge.email} removed.` });
+      setUserToPurge(null);
+    }
+  };
+
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="space-y-1">
@@ -457,6 +486,70 @@ export default function SettingsPage() {
                 <div className="space-y-2"><Label className="text-[10px] font-bold uppercase text-slate-400">Last Name</Label><Input value={profileForm.lastName} onChange={e => setProfileForm({...profileForm, lastName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none font-bold" /></div>
               </div>
               <div className="flex justify-end pt-6 border-t border-slate-50"><Button onClick={handleSavePersonalProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 gap-2">{isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Profile</Button></div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="users" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900 overflow-hidden">
+            <CardHeader className="p-10 border-b border-slate-50 dark:border-slate-800">
+              <CardTitle className="text-xl font-bold font-headline">Database User Registry</CardTitle>
+              <CardDescription>Audit system identifiers and manage permanent record purges.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {teamLoading ? (
+                <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Expert Identity</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Email Identifier</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Permit Status</TableHead>
+                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {teamMembers?.map((member) => (
+                      <TableRow key={member.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
+                        <TableCell className="px-10 py-6">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-10 w-10 rounded-xl border-2 border-white shadow-sm">
+                              <AvatarImage src={member.thumbnail} />
+                              <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">{member.firstName?.[0] || 'U'}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-bold text-slate-900 dark:text-white">{member.firstName} {member.lastName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-slate-500 font-medium">
+                            <Mail className="h-3.5 w-3.5 opacity-40" />
+                            <span>{member.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full ${
+                            member.status === 'Active' ? 'bg-green-50 text-green-600' : 
+                            member.status === 'Pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
+                          }`}>
+                            {member.status === 'Active' ? 'AUTHORIZED' : member.status === 'Pending' ? 'PENDING' : 'REVOKED'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right px-10">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => setUserToPurge(member)}
+                            className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-red-50 hover:text-red-600 text-slate-400 dark:bg-slate-800 transition-all"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -684,6 +777,29 @@ export default function SettingsPage() {
           </Dialog>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!userToPurge} onOpenChange={(o) => !o && setUserToPurge(null)}>
+        <AlertDialogContent className="rounded-[10px] border-none shadow-2xl">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 text-destructive mb-2">
+              <AlertTriangle className="h-6 w-6" />
+              <AlertDialogTitle className="font-headline text-xl">Purge Identity Record</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
+              This will permanently remove <span className="font-bold text-slate-900">{userToPurge?.email}</span> from the organizational registry. This action is irreversible and terminates all historical permit tracking.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 mt-6">
+            <AlertDialogCancel className="rounded-[10px] font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executePurgeUser} 
+              className="bg-destructive hover:bg-destructive/90 text-white rounded-[10px] font-bold px-8 uppercase text-xs tracking-normal"
+            >
+              Confirm Purge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
