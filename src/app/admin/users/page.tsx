@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -16,7 +17,6 @@ import {
   Zap,
   ShieldBan,
   Filter,
-  ShieldAlert,
   BadgeCheck,
   ShieldX
 } from "lucide-react";
@@ -102,39 +102,6 @@ export default function UserManagementPage() {
   }, [db, currentUser]);
   const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
 
-  // TARGETED MAINTENANCE SYNC (Master Admin Only)
-  useEffect(() => {
-    const executePurge = async () => {
-      if (isMasterUser && team) {
-        const batch = writeBatch(db);
-        let count = 0;
-
-        for (const email of RESTRICTED_EMAILS) {
-          const registryTargets = team.filter(m => m.email?.toLowerCase() === email.toLowerCase());
-          registryTargets.forEach(t => {
-            batch.delete(doc(db, "teamMembers", t.id));
-            count++;
-          });
-
-          const leadsRef = collection(db, "leads");
-          const leadsQuery = query(leadsRef, where("email", "==", email));
-          const leadsSnap = await getDocs(leadsQuery);
-          leadsSnap.forEach(ldoc => {
-            batch.delete(doc(db, "leads", ldoc.id));
-            count++;
-          });
-        }
-
-        if (count > 0) {
-          await batch.commit();
-          toast({ title: "Maintenance Sync", description: `Purged ${count} restricted instances from registry.` });
-        }
-      }
-    };
-
-    executePurge();
-  }, [isMasterUser, team, db]);
-
   const filteredUsers = useMemo(() => {
     if (!team) return [];
     return team.filter(member => 
@@ -167,7 +134,7 @@ export default function UserManagementPage() {
   const executePurge = () => {
     if (userToDelete) {
       deleteDocumentNonBlocking(doc(db, "teamMembers", userToDelete.id));
-      toast({ variant: "destructive", title: "Identity Purged", description: `${userToDelete.firstName} has been removed from the registry.` });
+      toast({ variant: "destructive", title: "Identity Purged", description: `${userToDelete.firstName} removed.` });
       setUserToDelete(null);
     }
   };
@@ -257,7 +224,7 @@ export default function UserManagementPage() {
                   const isActive = member.status === 'Active';
                   const isPending = member.status === 'Pending';
                   
-                  // Role detection logic
+                  // Role resolution with system fallbacks
                   const memberRoleId = member.roleId || "staff";
                   const resolvedRole = roles?.find(r => r.id === memberRoleId);
                   
@@ -289,8 +256,8 @@ export default function UserManagementPage() {
                             <SelectValue placeholder={rolesLoading ? "Loading..." : "Assign Role"} />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl shadow-2xl">
-                            {/* System Role Fallbacks */}
-                            {memberRoleId === 'root-admin' && !roles?.find(r => r.id === 'root-admin') && (
+                            {/* System Role Fallbacks if collection is empty or missing these keys */}
+                            {!roles?.find(r => r.id === 'root-admin') && (
                               <SelectItem value="root-admin" className="text-[10px] font-bold uppercase">ROOT ADMINISTRATOR (System)</SelectItem>
                             )}
                             {!roles?.find(r => r.id === 'staff') && (

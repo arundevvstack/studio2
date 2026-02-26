@@ -51,10 +51,10 @@ export default function LoginPage() {
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
 
-  // Identify expert by Email instead of just UID to handle pre-registered invites
+  // Identify expert by Lowercase Email to handle pre-registered invites robustly
   const memberQuery = useMemoFirebase(() => {
-    if (!user || user.isAnonymous) return null;
-    return query(collection(db, "teamMembers"), where("email", "==", user.email));
+    if (!user || !user.email || user.isAnonymous) return null;
+    return query(collection(db, "teamMembers"), where("email", "==", user.email.toLowerCase()));
   }, [db, user]);
   const { data: memberDocs, isLoading: isMemberLoading } = useCollection(memberQuery);
   
@@ -66,17 +66,17 @@ export default function LoginPage() {
     if (user) {
       const userEmail = user.email?.toLowerCase();
       
-      // Enforce restricted list and non-anonymous sessions
+      // 1. Security Restriction Gate
       if (user.isAnonymous || (userEmail && RESTRICTED_EMAILS.includes(userEmail))) {
-        toast({ variant: "destructive", title: "Security Restriction", description: "This identifier is restricted or unauthorized." });
+        toast({ variant: "destructive", title: "Security Restriction", description: "This identifier is unauthorized." });
         signOut(auth);
         setIsProcessing(false);
         return;
       }
       
-      // Found an existing identity record by email
+      // 2. Existing Identity Resolution
       if (member) {
-        // ID Mismatch Migration: Consolidate legacy or invite-based IDs into the official UID
+        // ID Consolidation: If the record exists under a different ID (e.g. invite-based), move it to the UID
         if (member.id !== user.uid) {
           const migrateIdentity = async () => {
             setIsMigrating(true);
@@ -85,17 +85,15 @@ export default function LoginPage() {
               const newRef = doc(db, "teamMembers", user.uid);
               const oldRef = doc(db, "teamMembers", member.id);
               
-              // Copy data to new UID-based record
               batch.set(newRef, {
                 ...member,
                 id: user.uid,
+                email: userEmail,
                 thumbnail: member.thumbnail || user.photoURL || "",
                 updatedAt: serverTimestamp()
               }, { merge: true });
               
-              // Purge old record
               batch.delete(oldRef);
-              
               await batch.commit();
               toast({ title: "Identity Consolidated", description: "Strategic profile successfully linked." });
             } catch (e: any) {
@@ -108,49 +106,55 @@ export default function LoginPage() {
           return;
         }
 
-        // Handle Status Redirects
+        // Redirect if authorized, otherwise stop and wait for permit
         if (member.status === "Active") {
           router.push("/dashboard");
         } else {
           setIsProcessing(false);
         }
+        return; // CRITICAL: Stop here for existing members to prevent clobbering
       } 
-      // Auto-authorize Master Node (if no record exists or needs sync)
-      else if (userEmail === MASTER_EMAIL.toLowerCase()) {
-        const masterRef = doc(db, "teamMembers", user.uid);
-        setDocumentNonBlocking(masterRef, {
-          id: user.uid,
-          email: user.email,
-          firstName: "Master",
-          lastName: "Administrator",
-          status: "Active",
-          type: "In-house",
-          roleId: "root-admin",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-        router.push("/dashboard");
-      }
-      // Provision NEW identity only if completely unknown to the system
-      else if (user.email && !isProvisioning) {
-        setIsProvisioning(true);
-        const nameParts = (user.displayName || "New Expert").split(' ');
-        const newMemberRef = doc(db, "teamMembers", user.uid);
-        
-        setDocumentNonBlocking(newMemberRef, {
-          id: user.uid,
-          email: user.email,
-          firstName: nameParts[0] || "New",
-          lastName: nameParts.slice(1).join(' ') || "User",
-          thumbnail: user.photoURL || "",
-          status: "Pending", 
-          type: "In-house",
-          roleId: "staff", 
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }, { merge: true });
-        
-        toast({ title: "Identity Provisioned", description: "Your account is awaiting strategic permit authorization." });
+      
+      // 3. New Identity Provisioning (Only if member is confirmed null)
+      if (userEmail && !isProvisioning) {
+        // Auto-authorize Master Node
+        if (userEmail === MASTER_EMAIL.toLowerCase()) {
+          setIsProvisioning(true);
+          const masterRef = doc(db, "teamMembers", user.uid);
+          setDocumentNonBlocking(masterRef, {
+            id: user.uid,
+            email: userEmail,
+            firstName: "Master",
+            lastName: "Administrator",
+            status: "Active",
+            type: "In-house",
+            roleId: "root-admin",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+          router.push("/dashboard");
+        } 
+        // Provision baseline user identity
+        else {
+          setIsProvisioning(true);
+          const nameParts = (user.displayName || "New Expert").split(' ');
+          const newMemberRef = doc(db, "teamMembers", user.uid);
+          
+          setDocumentNonBlocking(newMemberRef, {
+            id: user.uid,
+            email: userEmail,
+            firstName: nameParts[0] || "New",
+            lastName: nameParts.slice(1).join(' ') || "User",
+            thumbnail: user.photoURL || "",
+            status: "Pending", 
+            type: "In-house",
+            roleId: "staff", 
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+          
+          toast({ title: "Identity Provisioned", description: "Awaiting strategic permit authorization." });
+        }
       }
     }
   }, [user, isUserLoading, member, isMemberLoading, router, db, auth, isProvisioning, isMigrating]);
@@ -166,8 +170,8 @@ export default function LoginPage() {
 
     setIsProcessing(true);
     const authPromise = mode === "login" 
-      ? initiateEmailSignIn(auth, email, password)
-      : initiateEmailSignUp(auth, email, password);
+      ? initiateEmailSignIn(auth, email.toLowerCase(), password)
+      : initiateEmailSignUp(auth, email.toLowerCase(), password);
 
     authPromise.catch((err: any) => {
       toast({ variant: "destructive", title: "Authentication Failed", description: err.message });
@@ -264,21 +268,19 @@ export default function LoginPage() {
 
         <div className="p-8 lg:p-20 flex justify-center lg:justify-end animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
           <Card className="w-full max-w-[420px] bg-white border border-slate-100 shadow-2xl rounded-[10px] p-10 space-y-10">
-            <div className="space-y-10">
-              <div className="flex flex-col space-y-10">
-                <Link href="/" className="flex items-center gap-2 group">
-                  <div className="h-10 w-10 rounded-[10px] bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:rotate-6">
-                    <Zap className="h-5 w-5 text-white fill-white" />
-                  </div>
-                  <span className="font-headline font-bold text-xl tracking-tight text-slate-900">DP MediaFlow</span>
-                </Link>
-
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
-                    {mode === 'login' ? 'Welcome Back' : 'Join the Network'}
-                  </h3>
-                  <p className="text-sm text-slate-400 font-medium">Enter your credentials to access the hub.</p>
+            <div className="space-y-10 text-left">
+              <Link href="/" className="flex items-center gap-2 group">
+                <div className="h-10 w-10 rounded-[10px] bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:rotate-6">
+                  <Zap className="h-5 w-5 text-white fill-white" />
                 </div>
+                <span className="font-headline font-bold text-xl tracking-tight text-slate-900">DP MediaFlow</span>
+              </Link>
+
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold font-headline tracking-tight text-slate-900">
+                  {mode === 'login' ? 'Welcome Back' : 'Join the Network'}
+                </h3>
+                <p className="text-sm text-slate-400 font-medium">Enter your credentials to access the hub.</p>
               </div>
             </div>
 
