@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
@@ -238,8 +237,8 @@ export default function UserManagementPage() {
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="hover:bg-transparent border-slate-100">
                   <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Identity</TableHead>
-                  <TableHead className="text-[10px) font-bold uppercase tracking-widest">Strategic Role</TableHead>
-                  <TableHead className="text-[10px) font-bold uppercase tracking-widest">Lifecycle Phase</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Strategic Role</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Lifecycle Phase</TableHead>
                   <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
                 </TableRow>
               </TableHeader>
