@@ -20,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { 
   initiateEmailSignIn, 
@@ -33,7 +35,8 @@ import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 
 /**
- * @fileOverview High-Fidelity Illustrative Identity Governance Portal.
+ * @fileOverview High-Fidelity Strategic Identity Governance Portal.
+ * Redesigned to match the provided illustrative reference image.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -145,7 +148,7 @@ export default function LoginPage() {
 
   if (isUserLoading || (user && isMemberLoading)) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#f0f2f5] space-y-6">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-black space-y-6">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Synchronizing Identity...</p>
       </div>
@@ -154,7 +157,7 @@ export default function LoginPage() {
 
   if (user && member?.status === "Pending") {
     return (
-      <div className="min-h-screen w-full bg-[#f0f2f5] flex items-center justify-center p-6">
+      <div className="min-h-screen w-full bg-black flex items-center justify-center p-6">
         <div className="bg-white rounded-[3rem] shadow-2xl p-16 max-w-lg w-full flex flex-col items-center text-center space-y-10">
           <div className="h-24 w-24 rounded-[2rem] bg-orange-50 flex items-center justify-center shadow-xl">
             <Hourglass className="h-10 w-10 text-orange-500 animate-pulse" />
@@ -173,99 +176,141 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#fcfcfe] relative overflow-hidden flex flex-col font-body selection:bg-primary/10">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100/40 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-5%] right-[-5%] w-[30%] h-[30%] bg-orange-100/30 rounded-full blur-[100px] pointer-events-none" />
+    <div className="min-h-screen bg-black p-4 md:p-10 flex items-center justify-center font-body selection:bg-primary/10">
+      <div className="max-w-7xl w-full min-h-[85vh] bg-white rounded-[3rem] overflow-hidden flex flex-col lg:flex-row shadow-2xl relative">
+        
+        {/* Left Pane - Cinematic Visuals */}
+        <div className="hidden lg:flex w-1/2 relative overflow-hidden p-16 flex-col justify-between text-white">
+          <div className="absolute inset-0 z-0">
+            <img 
+              src="https://picsum.photos/seed/production-depth/1200/1200" 
+              alt="Cinematic Background" 
+              className="w-full h-full object-cover"
+              data-ai-hint="abstract fluid"
+            />
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+          </div>
+          
+          <div className="relative z-10 flex items-center gap-4">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-80">A Wise Quote</span>
+            <div className="h-px w-24 bg-white/30" />
+          </div>
 
-      <nav className="relative z-50 flex items-center justify-between px-8 md:px-20 py-8">
-        <div className="flex items-center gap-12">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:rotate-6">
-              <Zap className="h-4 w-4 text-white fill-white" />
+          <div className="relative z-10 space-y-6 max-w-md">
+            <h2 className="text-6xl font-serif font-bold leading-tight tracking-tight">
+              Get Everything You Want
+            </h2>
+            <p className="text-sm font-medium leading-relaxed text-white/80">
+              You can get everything you want if you work hard, trust the process, and stick to the plan.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Pane - Authentication Engine */}
+        <div className="w-full lg:w-1/2 bg-white p-8 md:p-20 flex flex-col justify-center relative">
+          
+          {/* Brand Identity */}
+          <div className="absolute top-12 left-8 md:left-20 lg:left-auto lg:right-12">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                <Zap className="h-4 w-4 text-white fill-white" />
+              </div>
+              <span className="font-headline font-bold text-sm tracking-tight text-slate-900 uppercase">DP MediaFlow</span>
             </div>
-            <span className="font-headline font-bold text-lg tracking-tight text-slate-900">DP PM TOOL</span>
-          </Link>
-          <div className="hidden lg:flex items-center gap-8 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-            <Link href="/" className="hover:text-primary cursor-pointer transition-colors">Home</Link>
-            <Link href="/how-it-works" className="hover:text-primary cursor-pointer transition-colors">Workflow</Link>
-            <Link href="/modules" className="hover:text-primary cursor-pointer transition-colors">Modules</Link>
-            <Link href="/pricing" className="hover:text-primary cursor-pointer transition-colors">Pricing</Link>
           </div>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer">
-            <Globe className="h-3 w-3" />
-            <span>English</span>
-            <ChevronDown className="h-3 w-3" />
-          </div>
-          <div className="h-px w-4 bg-slate-200 hidden sm:block" />
-          <button onClick={() => setMode('login')} className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${mode === 'login' ? 'text-primary' : 'text-slate-400'}`}>Sign in</button>
-          <Button onClick={() => setMode('signup')} className="h-10 px-6 rounded-full bg-white text-slate-900 border border-slate-100 shadow-sm font-bold text-[10px] uppercase tracking-widest">Register</Button>
-        </div>
-      </nav>
 
-      <main className="flex-1 relative z-10 flex items-center justify-center px-8 md:px-20 pb-20">
-        <div className="max-w-[1400px] w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-4 space-y-8 animate-in fade-in slide-in-from-left-4 duration-1000">
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-6xl font-bold font-headline text-slate-900 tracking-tight leading-[1.1]">
-                {mode === 'login' ? 'Sign In to' : 'Join the'} <br/>
-                <span className="text-primary">System Portal</span>
+          <div className="max-w-sm mx-auto w-full space-y-10">
+            <div className="space-y-3">
+              <h1 className="text-4xl font-serif font-bold text-slate-900 tracking-tight">
+                {mode === 'login' ? 'Welcome Back' : 'Join the System'}
               </h1>
-              <p className="text-base text-slate-500 font-medium leading-relaxed max-w-sm">
-                Authorize your session to access organizational intel and manage production assets.
+              <p className="text-sm text-slate-500 font-medium">
+                Enter your email and password to access your account
               </p>
             </div>
-            <div className="flex items-center gap-2 text-sm font-medium pt-4">
-              <span className="text-slate-400">{mode === 'login' ? "New expert?" : "Already provisioned?"}</span>
-              <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-primary font-bold hover:underline">{mode === 'login' ? 'Register here!' : 'Sign in here!'}</button>
-            </div>
-          </div>
 
-          <div className="hidden lg:flex lg:col-span-4 justify-center items-center relative animate-in fade-in zoom-in duration-1000 delay-300">
-            <div className="relative w-full aspect-square max-w-[400px] rounded-[2rem] overflow-hidden shadow-2xl grayscale hover:grayscale-0 transition-all duration-700">
-              <img src="https://picsum.photos/seed/production-depth/800/800" alt="Strategic Context" className="w-full h-full object-cover" />
-            </div>
-          </div>
-
-          <div className="lg:col-span-4 flex justify-center lg:justify-end animate-in fade-in slide-in-from-right-4 duration-1000 delay-500">
-            <Card className="w-full max-w-[420px] bg-white/40 backdrop-blur-md border border-white/60 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] rounded-[2.5rem] p-10 space-y-10">
-              <form onSubmit={handleAuth} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter Email" className="h-14 rounded-2xl bg-slate-50/50 border-none px-6 font-bold text-sm shadow-inner" />
-                    <X className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-200 cursor-pointer" onClick={() => setEmail("")} />
+            <form onSubmit={handleAuth} className="space-y-6">
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-1">Email</Label>
+                  <Input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder="Enter your email" 
+                    className="h-12 rounded-xl bg-slate-50 border-none px-4 font-medium shadow-inner focus-visible:ring-primary/20" 
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Password</Label>
+                    {mode === 'login' && (
+                      <button type="button" className="text-[10px] font-bold uppercase text-slate-400 hover:text-primary transition-colors">
+                        Forgot Password
+                      </button>
+                    )}
                   </div>
                   <div className="relative">
-                    <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="h-14 rounded-2xl bg-slate-50/50 border-none px-6 font-bold text-sm shadow-inner" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-200 hover:text-slate-400">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                    <Input 
+                      type={showPassword ? "text" : "password"} 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      placeholder="Enter your password" 
+                      className="h-12 rounded-xl bg-slate-50 border-none px-4 font-medium shadow-inner focus-visible:ring-primary/20" 
+                      required
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
-                <Button type="submit" disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-sm shadow-xl shadow-primary/20 transition-all active:scale-[0.98]">
-                  {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (mode === 'login' ? 'Sign In' : 'Register')}
-                </Button>
-              </form>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100" /></div>
-                <div className="relative flex justify-center text-[9px] font-bold uppercase tracking-[0.2em]"><span className="bg-white/40 backdrop-blur-sm px-4 text-slate-300">Or continue with</span></div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                <button onClick={handleGoogleAuth} className="h-14 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-all active:scale-95 gap-3">
-                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+              <div className="flex items-center space-x-2 px-1">
+                <Checkbox id="remember" className="rounded-md border-slate-200 data-[state=checked]:bg-black data-[state=checked]:border-black" />
+                <label htmlFor="remember" className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer select-none">
+                  Remember me
+                </label>
+              </div>
+
+              <div className="space-y-4 pt-4">
+                <Button type="submit" disabled={isProcessing} className="w-full h-12 rounded-xl bg-black hover:bg-slate-800 text-white font-bold text-sm transition-all active:scale-[0.98] shadow-xl shadow-black/10">
+                  {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (mode === 'login' ? 'Sign In' : 'Register')}
+                </Button>
+                
+                <Button 
+                  type="button" 
+                  onClick={handleGoogleAuth} 
+                  variant="outline" 
+                  className="w-full h-12 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-all active:scale-95 gap-3"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
-                  <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Sign in with Google</span>
-                </button>
+                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Sign in with Google</span>
+                </Button>
               </div>
-            </Card>
+            </form>
+
+            <div className="pt-8 text-center border-t border-slate-50">
+              <p className="text-xs font-medium text-slate-400">
+                {mode === 'login' ? "Don't have an account?" : "Already provisioned?"}{' '}
+                <button onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} className="text-slate-900 font-bold hover:underline">
+                  {mode === 'login' ? 'Sign Up' : 'Sign In'}
+                </button>
+              </p>
+            </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
