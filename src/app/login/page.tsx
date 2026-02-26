@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -36,7 +35,7 @@ import Link from "next/link";
 
 /**
  * @fileOverview High-Fidelity Strategic Identity Governance Portal.
- * Redesigned to match the provided illustrative reference image.
+ * Updated to use Inter font exclusively.
  */
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
@@ -197,7 +196,7 @@ export default function LoginPage() {
           </div>
 
           <div className="relative z-10 space-y-6 max-w-md">
-            <h2 className="text-6xl font-serif font-bold leading-tight tracking-tight">
+            <h2 className="text-6xl font-bold font-headline leading-tight tracking-tight">
               Get Everything You Want
             </h2>
             <p className="text-sm font-medium leading-relaxed text-white/80">
@@ -221,7 +220,7 @@ export default function LoginPage() {
 
           <div className="max-w-sm mx-auto w-full space-y-10">
             <div className="space-y-3">
-              <h1 className="text-4xl font-serif font-bold text-slate-900 tracking-tight">
+              <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">
                 {mode === 'login' ? 'Welcome Back' : 'Join the System'}
               </h1>
               <p className="text-sm text-slate-500 font-medium">

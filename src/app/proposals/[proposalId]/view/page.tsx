@@ -33,8 +33,7 @@ import {
 
 /**
  * @fileOverview High-Fidelity Strategic Proposal Viewport.
- * Integrates all AI-generated content with real-time Market Intelligence and Competitor Analysis.
- * Features data visualizations and infographics optimized for professional printing.
+ * Updated to use Inter font exclusively.
  */
 
 export default function ProposalPrintView({ params }: { params: Promise<{ proposalId: string }> }) {
@@ -129,7 +128,7 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
       </div>
 
       {/* Main Print Artifact */}
-      <div className="max-w-[900px] mx-auto bg-white shadow-2xl print:shadow-none font-serif text-slate-900 leading-relaxed">
+      <div className="max-w-[900px] mx-auto bg-white shadow-2xl print:shadow-none font-body text-slate-900 leading-relaxed">
         
         {/* Cover Page */}
         <section className="h-[1100px] flex flex-col justify-between p-24 relative overflow-hidden page-break-after">
@@ -175,7 +174,7 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Section 01</p>
               <h2 className="text-4xl font-bold font-headline tracking-tight">Executive Summary</h2>
             </div>
-            <div className="prose max-w-none text-xl leading-[1.8] text-slate-700 whitespace-pre-wrap font-serif">
+            <div className="prose max-w-none text-xl leading-[1.8] text-slate-700 whitespace-pre-wrap font-body">
               {proposal.aiContent.introduction}
             </div>
             <div className="pt-12">
@@ -256,7 +255,7 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Section 03</p>
               <h2 className="text-4xl font-bold font-headline tracking-tight">Strategic Approach</h2>
             </div>
-            <div className="prose max-w-none text-xl leading-[1.8] text-slate-700 whitespace-pre-wrap font-serif">
+            <div className="prose max-w-none text-xl leading-[1.8] text-slate-700 whitespace-pre-wrap font-body">
               {proposal.aiContent.strategicApproach}
             </div>
             <div className="grid grid-cols-3 gap-6 pt-12">
@@ -314,7 +313,7 @@ export default function ProposalPrintView({ params }: { params: Promise<{ propos
           {proposal.aiContent?.investmentNarrative && (
             <div className="mt-12 space-y-6">
               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Investment Narrative</h3>
-              <div className="text-lg leading-relaxed text-slate-600 italic font-serif">
+              <div className="text-lg leading-relaxed text-slate-600 italic font-body">
                 {proposal.aiContent.investmentNarrative}
               </div>
             </div>
