@@ -158,11 +158,23 @@ const DEFAULT_SERVICE_TYPES = [
   "Virtual Tours"
 ];
 
+const THEME_COLORS = [
+  { name: "Vibrant Blue", value: "204 61% 47%" },
+  { name: "Ruby Red", value: "0 84% 60%" },
+  { name: "Emerald Green", value: "142 76% 36%" },
+  { name: "Deep Violet", value: "262 83% 58%" },
+  { name: "Amber Gold", value: "38 92% 50%" },
+  { name: "Slate Grey", value: "215 25% 27%" },
+  { name: "Rose Pink", value: "330 81% 60%" },
+  { name: "Cyan Spark", value: "188 86% 43%" }
+];
+
 export default function SettingsPage() {
   const db = useFirestore();
   const { user } = useUser();
   const [isSaving, setIsSaving] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [themeMode, setThemeMode] = useState<"light" | "dark" | "system">("light");
+  const [primaryColor, setPrimaryColor] = useState("204 61% 47%");
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
   const [orderedModules, setOrderedModules] = useState(SIDEBAR_MODULES);
@@ -185,6 +197,15 @@ export default function SettingsPage() {
       setOrderedModules([...newOrder, ...newModules]);
     }
   }, [navSettings]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("theme-mode") as any || "light";
+      const savedColor = localStorage.getItem("theme-color") || "204 61% 47%";
+      setThemeMode(savedTheme);
+      setPrimaryColor(savedColor);
+    }
+  }, []);
 
   const memberRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -323,6 +344,30 @@ export default function SettingsPage() {
     } finally { setIsSaving(false); }
   };
 
+  const handleApplyPreferences = () => {
+    if (typeof window === "undefined") return;
+    setIsSaving(true);
+    localStorage.setItem("theme-mode", themeMode);
+    localStorage.setItem("theme-color", primaryColor);
+    
+    // Apply theme mode
+    const html = document.documentElement;
+    if (themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+
+    // Apply primary color
+    html.style.setProperty('--primary', primaryColor);
+    html.style.setProperty('--ring', primaryColor);
+
+    setTimeout(() => {
+      setIsSaving(false);
+      toast({ title: "Preferences Applied", description: "Theme and branding synchronized." });
+    }, 500);
+  };
+
   const projectSettingsRef = useMemoFirebase(() => doc(db, "settings", "projects"), [db]);
   const { data: projectSettings } = useDoc(projectSettingsRef);
   const [newServiceType, setNewServiceType] = useState("");
@@ -385,25 +430,25 @@ export default function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-2xl shadow-sm gap-1 dark:bg-slate-900 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+        <TabsList className="bg-white border border-slate-100 p-1 h-auto rounded-xl shadow-sm gap-1 dark:bg-slate-900 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           {visibleTabs.map(tab => (
-            <TabsTrigger key={tab.id} value={tab.id} className="rounded-xl px-6 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal whitespace-nowrap">
+            <TabsTrigger key={tab.id} value={tab.id} className="rounded-lg px-6 py-3 text-xs font-bold uppercase gap-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-all tracking-normal whitespace-nowrap">
               <tab.icon className="h-4 w-4" /> {tab.label}
             </TabsTrigger>
           ))}
         </TabsList>
 
         <TabsContent value="profile" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white dark:bg-slate-900">
+          <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900">
             <CardHeader className="p-10 pb-0"><CardTitle className="text-xl font-bold font-headline">Personal Identity</CardTitle></CardHeader>
             <CardContent className="p-10 space-y-8">
               <div className="flex flex-col items-center gap-4 py-4 border-b border-slate-50 dark:border-slate-800">
                 <div className="relative group cursor-pointer" onClick={() => profilePicInputRef.current?.click()}>
-                  <Avatar className="h-32 w-32 rounded-[2.5rem] border-4 border-slate-50 shadow-xl bg-white dark:bg-slate-800">
+                  <Avatar className="h-32 w-32 rounded-[10px] border-4 border-slate-50 shadow-xl bg-white dark:bg-slate-800">
                     <AvatarImage src={profileForm.thumbnail} className="object-cover" />
                     <AvatarFallback className="bg-primary/5 text-primary text-2xl font-bold">{profileForm.firstName?.[0] || 'E'}</AvatarFallback>
                   </Avatar>
-                  <div className="absolute inset-0 bg-black/40 rounded-[2.5rem] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><Upload className="h-6 w-6 text-white" /></div>
+                  <div className="absolute inset-0 bg-black/40 rounded-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><Upload className="h-6 w-6 text-white" /></div>
                   <input type="file" ref={profilePicInputRef} className="hidden" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onloadend = () => setProfileForm(p => ({ ...p, thumbnail: r.result as string })); r.readAsDataURL(f); } }} />
                 </div>
               </div>
@@ -416,8 +461,99 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="preferences" className="animate-in slide-in-from-left-2 duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900">
+              <CardHeader className="p-10 pb-4">
+                <CardTitle className="text-xl font-bold font-headline flex items-center gap-2">
+                  <Palette className="h-5 w-5 text-primary" /> Visual Theme
+                </CardTitle>
+                <CardDescription>Configure the interface aesthetics for your workspace.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-10 pt-0 space-y-10">
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { id: "light", icon: Sun, label: "Light" },
+                    { id: "dark", icon: Moon, label: "Deep Black" },
+                    { id: "system", icon: Monitor, label: "System" }
+                  ].map((mode) => (
+                    <button
+                      key={mode.id}
+                      onClick={() => setThemeMode(mode.id as any)}
+                      className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
+                        themeMode === mode.id 
+                          ? "border-primary bg-primary/5 text-primary shadow-md" 
+                          : "border-slate-50 bg-slate-50/50 text-slate-400 hover:border-slate-200 dark:bg-slate-800 dark:border-slate-800"
+                      }`}
+                    >
+                      <mode.icon className="h-6 w-6" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">{mode.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-6 pt-6 border-t border-slate-50 dark:border-slate-800">
+                  <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Brand Primary Color</Label>
+                  <div className="grid grid-cols-4 gap-4">
+                    {THEME_COLORS.map((color) => (
+                      <button
+                        key={color.value}
+                        onClick={() => setPrimaryColor(color.value)}
+                        className={`h-12 w-full rounded-xl transition-all flex items-center justify-center border-2 ${
+                          primaryColor === color.value ? "border-slate-900 dark:border-white scale-105" : "border-transparent"
+                        }`}
+                        style={{ backgroundColor: `hsl(${color.value})` }}
+                        title={color.name}
+                      >
+                        {primaryColor === color.value && <Check className="h-4 w-4 text-white" />}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="pt-4 flex items-center gap-4">
+                    <Pipette className="h-4 w-4 text-slate-400" />
+                    <Input 
+                      value={primaryColor} 
+                      onChange={e => setPrimaryColor(e.target.value)} 
+                      placeholder="Custom HSL Value (e.g. 204 61% 47%)" 
+                      className="h-12 rounded-xl bg-slate-50 border-none font-mono text-xs dark:bg-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-6 border-t border-slate-50 dark:border-slate-800">
+                  <Button onClick={handleApplyPreferences} disabled={isSaving} className="h-12 px-10 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 gap-2">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} 
+                    Apply Preferences
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-sm rounded-[10px] bg-slate-900 text-white p-10 relative overflow-hidden flex flex-col justify-center">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full -mr-32 -mt-32" />
+              <div className="relative z-10 space-y-6">
+                <Badge className="bg-white/10 text-white border-none rounded-full px-4 py-1 text-[10px] font-bold uppercase tracking-widest">Aesthetics Sync</Badge>
+                <h3 className="text-3xl font-bold font-headline tracking-tight leading-tight">Unified Brand Architecture</h3>
+                <p className="text-slate-400 text-lg font-medium leading-relaxed italic">
+                  "Your preferences are applied across the entire operating system, from the client-facing portal to the internal intelligence ledger."
+                </p>
+                <div className="pt-10 flex items-center gap-6">
+                  <div className="flex -space-x-3">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="h-10 w-10 rounded-full border-2 border-slate-900 bg-white/5 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                        {i}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Environment Synchronized</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </TabsContent>
+
         <TabsContent value="project" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white dark:bg-slate-900">
+          <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900">
             <CardHeader className="p-10 pb-0">
               <div className="flex items-center justify-between">
                 <div><CardTitle className="text-xl font-bold font-headline">Project Matrix</CardTitle></div>
@@ -432,7 +568,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {projectSettings?.serviceTypes?.map((type: string) => (
-                    <div key={type} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 group transition-all hover:shadow-md">
+                    <div key={type} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 group transition-all hover:shadow-md dark:bg-slate-800 dark:border-slate-700">
                       {editingServiceType === type ? (
                         <div className="flex items-center gap-2 flex-1">
                           <Input value={editServiceValue} onChange={e => setEditServiceValue(e.target.value)} className="h-10 rounded-xl bg-white border-primary/20 font-bold" autoFocus onKeyDown={e => e.key === 'Enter' && handleUpdateServiceType()} />
@@ -442,7 +578,7 @@ export default function SettingsPage() {
                         </div>
                       ) : (
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-sm font-bold text-slate-900">{type}</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{type}</span>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                             <Button variant="ghost" size="icon" onClick={() => { setEditingServiceType(type); setEditServiceValue(type); }} className="text-slate-400 hover:text-primary">
                               <Edit2 className="h-3.5 w-3.5" />
@@ -462,15 +598,15 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="navigation" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[2.5rem] bg-white dark:bg-slate-900">
-            <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/30">
+          <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900">
+            <div className="p-10 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/30 dark:bg-slate-800/20">
               <div><CardTitle className="text-xl font-bold font-headline">Navigation Architecture</CardTitle></div>
-              <div className="flex items-center gap-4"><Label className="text-[10px] font-bold uppercase text-slate-400">Select Role:</Label><Select value={selectedRoleIdForNav} onValueChange={setSelectedRoleIdForNav}><SelectTrigger className="h-12 w-full md:w-[240px] rounded-xl bg-white font-bold text-xs uppercase"><SelectValue placeholder="Choose Role" /></SelectTrigger><SelectContent className="rounded-xl shadow-xl">{roles?.map(r => (<SelectItem key={r.id} value={r.id} className="text-xs font-bold uppercase">{r.name}</SelectItem>))}</SelectContent></Select></div>
+              <div className="flex items-center gap-4"><Label className="text-[10px] font-bold uppercase text-slate-400">Select Role:</Label><Select value={selectedRoleIdForNav} onValueChange={setSelectedRoleIdForNav}><SelectTrigger className="h-12 w-full md:w-[240px] rounded-xl bg-white font-bold text-xs uppercase dark:bg-slate-800"><SelectValue placeholder="Choose Role" /></SelectTrigger><SelectContent className="rounded-xl shadow-xl">{roles?.map(r => (<SelectItem key={r.id} value={r.id} className="text-xs font-bold uppercase">{r.name}</SelectItem>))}</SelectContent></Select></div>
             </div>
             <CardContent className="p-0">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={orderedModules.map(m => m.id)} strategy={verticalListSortingStrategy}>
-                  <div className="divide-y divide-slate-50">
+                  <div className="divide-y divide-slate-50 dark:divide-slate-800">
                     {orderedModules.map((item) => (
                       <SortableNavigationItem key={item.id} item={item} roles={roles} selectedRoleId={selectedRoleIdForNav} db={db} />
                     ))}
@@ -486,26 +622,26 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h3 className="text-2xl font-bold font-headline">Administrative Access Roles</h3>
-                <p className="text-sm text-slate-500 font-medium">Configure module access and action permissions for the production team.</p>
+                <p className="text-sm text-slate-500 font-medium dark:text-slate-400">Configure module access and action permissions for the production team.</p>
               </div>
               <Button onClick={() => handleOpenRoleDialog()} className="rounded-xl font-bold h-12 gap-2 shadow-lg shadow-primary/20"><Plus className="h-4 w-4" /> Create Role</Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {roles?.map((role) => (
-                <Card key={role.id} className="border-none shadow-sm rounded-[2.5rem] bg-white group hover:shadow-xl transition-all">
+                <Card key={role.id} className="border-none shadow-sm rounded-[10px] bg-white group hover:shadow-xl transition-all dark:bg-slate-900">
                   <CardHeader className="p-8 pb-4 flex flex-row items-start justify-between">
                     <div className="space-y-1">
                       <h4 className="text-xl font-bold font-headline">{role.name}</h4>
-                      <Badge variant="outline" className="text-[8px] font-bold uppercase border-slate-100">{role.permissions?.length || 0} Permissions</Badge>
+                      <Badge variant="outline" className="text-[8px] font-bold uppercase border-slate-100 dark:border-slate-800">{role.permissions?.length || 0} Permissions</Badge>
                     </div>
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenRoleDialog(role)} className="h-10 w-10 rounded-xl bg-slate-50"><Edit2 className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "roles", role.id))} className="h-10 w-10 rounded-xl bg-slate-50 text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenRoleDialog(role)} className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800"><Edit2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "roles", role.id))} className="h-10 w-10 rounded-xl bg-slate-50 text-destructive dark:bg-slate-800"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
-                    <p className="text-sm text-slate-500 font-medium leading-relaxed">{role.description || "No strategic description provided."}</p>
+                    <p className="text-sm text-slate-500 font-medium leading-relaxed dark:text-slate-400">{role.description || "No strategic description provided."}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -513,20 +649,20 @@ export default function SettingsPage() {
           </div>
 
           <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
-            <DialogContent className="sm:max-w-[800px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
-              <DialogHeader className="p-10 pb-4"><DialogTitle className="text-2xl font-bold font-headline">{editingRole ? 'Update Access Role' : 'Provision New Role'}</DialogTitle></DialogHeader>
-              <div className="p-10 pt-0 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <DialogContent className="sm:max-w-[800px] rounded-[10px] border-none shadow-2xl p-0 overflow-hidden">
+              <DialogHeader className="p-10 pb-4 bg-slate-50 dark:bg-slate-800"><DialogTitle className="text-2xl font-bold font-headline">{editingRole ? 'Update Access Role' : 'Provision New Role'}</DialogTitle></DialogHeader>
+              <div className="p-10 pt-8 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-3"><Label className="text-[10px] font-bold uppercase text-slate-400">Role Nomenclature</Label><Input value={roleForm.name} onChange={e => setRoleForm({...roleForm, name: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg" placeholder="e.g. Executive Producer" /></div>
-                  <div className="space-y-3"><Label className="text-[10px] font-bold uppercase text-slate-400">Strategic Description</Label><Input value={roleForm.description} onChange={e => setRoleForm({...roleForm, description: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold" /></div>
+                  <div className="space-y-3"><Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Role Nomenclature</Label><Input value={roleForm.name} onChange={e => setRoleForm({...roleForm, name: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg dark:bg-slate-800" placeholder="e.g. Executive Producer" /></div>
+                  <div className="space-y-3"><Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Strategic Description</Label><Input value={roleForm.description} onChange={e => setRoleForm({...roleForm, description: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold dark:bg-slate-800" /></div>
                 </div>
                 <div className="space-y-6">
                   <h4 className="text-sm font-bold font-headline flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Dashboard Modules</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {DASHBOARD_ITEMS.map(item => (
-                      <div key={item.id} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer" onClick={() => handleTogglePermission(`dash:${item.id}`)}>
+                      <div key={item.id} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700" onClick={() => handleTogglePermission(`dash:${item.id}`)}>
                         <Checkbox checked={roleForm.permissions.includes(`dash:${item.id}`)} onCheckedChange={() => {}} className="rounded-md border-slate-200 pointer-events-none" />
-                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{item.title}</span>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest dark:text-slate-300">{item.title}</span>
                       </div>
                     ))}
                   </div>
@@ -534,16 +670,16 @@ export default function SettingsPage() {
                 <div className="space-y-6">
                   <h4 className="text-sm font-bold font-headline flex items-center gap-2"><Key className="h-4 w-4 text-primary" /> System Capabilities</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {['settings:view', 'settings:organization', 'settings:roles', 'settings:project', 'settings:billing', 'settings:navigation'].map(perm => (
-                      <div key={perm} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer" onClick={() => handleTogglePermission(perm)}>
+                    {['settings:view', 'settings:organization', 'settings:roles', 'settings:project', 'settings:billing', 'settings:navigation', 'settings:preferences'].map(perm => (
+                      <div key={perm} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700" onClick={() => handleTogglePermission(perm)}>
                         <Checkbox checked={roleForm.permissions.includes(perm)} onCheckedChange={() => {}} className="rounded-md border-slate-200 pointer-events-none" />
-                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{perm.split(':')[1].toUpperCase()} Access</span>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest dark:text-slate-300">{perm.split(':')[1].toUpperCase()} Access</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-              <DialogFooter className="bg-slate-50 p-10"><Button onClick={handleSaveRole} disabled={isSaving} className="h-14 px-12 rounded-full font-bold bg-primary text-white shadow-2xl shadow-primary/20 transition-all active:scale-95">{isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />} Deploy Role</Button></DialogFooter>
+              <DialogFooter className="bg-slate-50 p-10 dark:bg-slate-800"><Button onClick={handleSaveRole} disabled={isSaving} className="h-14 px-12 rounded-full font-bold bg-primary text-white shadow-2xl shadow-primary/20 transition-all active:scale-95">{isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />} Deploy Role</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         </TabsContent>
@@ -563,10 +699,10 @@ function SortableNavigationItem({ item, roles, selectedRoleId, db }: any) {
   return (
     <div ref={setNodeRef} style={style} className="flex items-center justify-between p-8 hover:bg-slate-50/50 transition-colors bg-white dark:bg-slate-900">
       <div className="flex items-center gap-6">
-        <button {...attributes} {...listeners} className="p-2 hover:bg-slate-100 rounded-lg">
+        <button {...attributes} {...listeners} className="p-2 hover:bg-slate-100 rounded-lg dark:hover:bg-slate-800">
           <GripVertical className="h-5 w-5 text-slate-300" />
         </button>
-        <div className="h-12 w-12 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">
+        <div className="h-12 w-12 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center dark:bg-slate-800 dark:border-slate-700">
           <Icon className="h-5 w-5 text-primary" />
         </div>
         <div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect } from 'react';
@@ -13,12 +12,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   useEffect(() => {
-    // Apply saved theme color on initial mount to prevent flash of default color
+    // Apply saved theme mode and primary color on initial mount
     if (typeof window !== "undefined") {
       const savedColor = localStorage.getItem("theme-color");
+      const savedMode = localStorage.getItem("theme-mode") || "light";
+      
+      const html = document.documentElement;
+
+      // Apply primary color
       if (savedColor) {
-        document.documentElement.style.setProperty('--primary', savedColor);
-        document.documentElement.style.setProperty('--ring', savedColor);
+        html.style.setProperty('--primary', savedColor);
+        html.style.setProperty('--ring', savedColor);
+      }
+
+      // Apply theme mode
+      if (savedMode === 'dark' || (savedMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
       }
     }
   }, []);
