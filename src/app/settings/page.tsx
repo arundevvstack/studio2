@@ -108,7 +108,6 @@ import {
   DialogClose
 } from "@/components/ui/dialog";
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
-import WorkflowManager from "@/components/settings/WorkflowManager";
 
 const SIDEBAR_MODULES = [
   { id: "dashboard", title: "Dashboard", icon: LayoutGrid },
@@ -140,21 +139,11 @@ const DASHBOARD_ITEMS = [
 const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
   { id: "organization", label: "Organization", icon: Building2 },
-  { id: "workflow", label: "Workflow Manager", icon: GitBranch },
   { id: "project", label: "Project Settings", icon: Briefcase },
   { id: "billing", label: "Financials", icon: Receipt },
   { id: "navigation", label: "Navigation", icon: LayoutGrid },
   { id: "roles", label: "Roles", icon: Key },
   { id: "preferences", label: "Preferences", icon: Monitor },
-];
-
-const THEME_COLORS = [
-  { name: "Strategic Blue", hsl: "204 61% 47%", color: "#2E86C1" },
-  { name: "Emerald Growth", hsl: "142 71% 45%", color: "#10B981" },
-  { name: "Royal Vision", hsl: "262 83% 58%", color: "#8B5CF6" },
-  { name: "Sunset Impact", hsl: "24 95% 53%", color: "#F97316" },
-  { name: "Midnight Slate", hsl: "215 25% 27%", color: "#334155" },
-  { name: "Rose Distinction", hsl: "330 81% 60%", color: "#EC4899" },
 ];
 
 const DEFAULT_SERVICE_TYPES = [
@@ -169,49 +158,13 @@ const DEFAULT_SERVICE_TYPES = [
   "Virtual Tours"
 ];
 
-function hexToHslValues(hex: string): string {
-  let r = 0, g = 0, b = 0;
-  if (hex.length === 4) {
-    r = parseInt(hex[1] + hex[1], 16);
-    g = parseInt(hex[2] + hex[2], 16);
-    b = parseInt(hex[3] + hex[3], 16);
-  } else if (hex.length === 7) {
-    r = parseInt(hex.substring(1, 3), 16);
-    g = parseInt(hex.substring(3, 5), 16);
-    b = parseInt(hex.substring(5, 7), 16);
-  }
-  
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-}
-
 export default function SettingsPage() {
   const db = useFirestore();
   const { user } = useUser();
   const [isSaving, setIsSaving] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [selectedColor, setSelectedColor] = useState(THEME_COLORS[0].hsl);
-  const [customHex, setCustomHex] = useState("#2E86C1");
-  const logoInputRef = useRef<HTMLInputElement>(null);
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
-
   const [orderedModules, setOrderedModules] = useState(SIDEBAR_MODULES);
   
   const navSettingsRef = useMemoFirebase(() => {
@@ -243,7 +196,7 @@ export default function SettingsPage() {
     if (!user) return null;
     return query(collection(db, "roles"), orderBy("name", "asc"));
   }, [db, user]);
-  const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
+  const { data: roles } = useCollection(rolesQuery);
 
   const userRoleRef = useMemoFirebase(() => {
     if (!currentUserMember?.roleId) return null;
@@ -260,8 +213,8 @@ export default function SettingsPage() {
   }, [roles, selectedRoleIdForNav]);
 
   const hasPermission = (perm: string) => {
-    if (!userRole) return true; 
-    return userRole.permissions?.includes(perm) || isMasterAdmin;
+    if (!userRole && !isMasterAdmin) return false;
+    return userRole?.permissions?.includes(perm) || isMasterAdmin;
   };
 
   const visibleTabs = useMemo(() => {
@@ -273,44 +226,6 @@ export default function SettingsPage() {
   }, [userRole, isMasterAdmin]);
 
   const [activeTab, setActiveTab] = useState("profile");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("theme");
-      const savedColor = localStorage.getItem("theme-color");
-      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      
-      if (savedTheme === "dark" || (!savedTheme && systemDark)) {
-        setIsDarkMode(true);
-        document.documentElement.classList.add("dark");
-      }
-
-      if (savedColor) {
-        setSelectedColor(savedColor);
-        document.documentElement.style.setProperty('--primary', savedColor);
-        document.documentElement.style.setProperty('--ring', savedColor);
-      }
-    }
-  }, []);
-
-  const toggleTheme = (checked: boolean) => {
-    setIsDarkMode(checked);
-    if (checked) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  };
-
-  const changeThemeColor = (hsl: string) => {
-    setSelectedColor(hsl);
-    document.documentElement.style.setProperty('--primary', hsl);
-    document.documentElement.style.setProperty('--ring', hsl);
-    localStorage.setItem("theme-color", hsl);
-    toast({ title: "Tactical Color Updated", description: "Workspace identity synchronized." });
-  };
 
   const billingSettingsRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -506,7 +421,7 @@ export default function SettingsPage() {
             <CardHeader className="p-10 pb-0">
               <div className="flex items-center justify-between">
                 <div><CardTitle className="text-xl font-bold font-headline">Project Matrix</CardTitle></div>
-                <Button variant="outline" size="sm" onClick={() => { if(confirm("Restore defaults?")) { setDocumentNonBlocking(projectSettingsRef, { serviceTypes: DEFAULT_SERVICE_TYPES, updatedAt: serverTimestamp() }, { merge: true }); toast({ title: "Defaults Restored" }); } }} className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase gap-2"><RotateCcw className="h-3.5 w-3.5" /> Defaults</Button>
+                <Button variant="outline" size="sm" onClick={() => { if(confirm("Restore defaults?")) { setDocumentNonBlocking(projectSettingsRef, { serviceTypes: DEFAULT_PROJECT_TYPES, updatedAt: serverTimestamp() }, { merge: true }); toast({ title: "Defaults Restored" }); } }} className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase gap-2"><RotateCcw className="h-3.5 w-3.5" /> Defaults</Button>
               </div>
             </CardHeader>
             <CardContent className="p-10 space-y-10">
@@ -619,7 +534,7 @@ export default function SettingsPage() {
                 <div className="space-y-6">
                   <h4 className="text-sm font-bold font-headline flex items-center gap-2"><Key className="h-4 w-4 text-primary" /> System Capabilities</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {['settings:view', 'settings:organization', 'settings:workflow', 'settings:roles', 'settings:project', 'settings:billing', 'settings:navigation'].map(perm => (
+                    {['settings:view', 'settings:organization', 'settings:roles', 'settings:project', 'settings:billing', 'settings:navigation'].map(perm => (
                       <div key={perm} className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md transition-all cursor-pointer" onClick={() => handleTogglePermission(perm)}>
                         <Checkbox checked={roleForm.permissions.includes(perm)} onCheckedChange={() => {}} className="rounded-md border-slate-200 pointer-events-none" />
                         <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{perm.split(':')[1].toUpperCase()} Access</span>
