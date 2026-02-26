@@ -13,18 +13,27 @@ service cloud.firestore {
 
     // Helper to get the user's registry document
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(userPath) ? get(userPath).data : null;
     }
 
     // Authoritative check for Strategic Permit & Active Status
+    // Prioritizes token claims for performance, falls back to doc check for real-time accuracy
     function hasStrategicPermit() {
       let user = getUserData();
-      return user.strategicPermit == true && user.status == "active";
+      return isSignedIn() && (
+        (request.auth.token.strategicPermit == true && request.auth.token.status == "active") ||
+        (user != null && user.strategicPermit == true && user.status == "active")
+      );
     }
 
     // Check for Root Administrative Authority
     function isAdmin() {
-      return getUserData().role == "admin";
+      let user = getUserData();
+      return isSignedIn() && (
+        request.auth.token.role == "admin" ||
+        (user != null && user.role == "admin")
+      );
     }
 
     /**
@@ -36,7 +45,7 @@ service cloud.firestore {
       // Admins need to list users for the Identity Ledger
       allow list: if isSignedIn() && isAdmin();
       // Allow initial provisioning during sign-up
-      allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.status == "pending";
+      allow create: if isSignedIn() && request.auth.uid == userId;
       // Only Admins can authorize permits or assign roles
       allow update: if isSignedIn() && isAdmin();
       allow delete: if false;
@@ -46,8 +55,8 @@ service cloud.firestore {
      * ORGANIZATIONAL INFRASTRUCTURE
      */
     match /teamMembers/{memberId} {
-      // Authorized experts need to see their team; Admins manage it
-      allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
+      // Users need to read their own record even if pending; Experts see the whole team
+      allow read: if isSignedIn() && (request.auth.uid == memberId || hasStrategicPermit() || isAdmin());
       allow write: if isSignedIn() && isAdmin();
       
       // Allow session tracking for the authenticated user
@@ -66,62 +75,68 @@ service cloud.firestore {
      * CORE PRODUCTION ENTITIES
      */
     match /projects/{projectId} {
-      allow read, write: if isSignedIn() && hasStrategicPermit();
+      allow read, write: if hasStrategicPermit() || isAdmin();
       
       // Nested task roadmap
       match /tasks/{taskId} {
-        allow read, write: if isSignedIn() && hasStrategicPermit();
+        allow read, write: if hasStrategicPermit() || isAdmin();
       }
     }
 
     match /clients/{clientId} {
-      allow read, write: if isSignedIn() && hasStrategicPermit();
+      allow read, write: if hasStrategicPermit() || isAdmin();
       
       // Client-specific billing
       match /invoices/{invoiceId} {
-        allow read, write: if isSignedIn() && hasStrategicPermit();
+        allow read, write: if hasStrategicPermit() || isAdmin();
       }
     }
 
     match /leads/{leadId} {
-      allow read, write: if isSignedIn() && hasStrategicPermit();
+      allow read, write: if hasStrategicPermit() || isAdmin();
     }
 
     match /talents/{talentId} {
-      allow read, write: if isSignedIn() && hasStrategicPermit();
+      allow read, write: if hasStrategicPermit() || isAdmin();
     }
 
     match /shoot_network/{talentId} {
-      allow read, write: if isSignedIn() && hasStrategicPermit();
+      allow read, write: if hasStrategicPermit() || isAdmin();
+    }
+
+    match /proposals/{proposalId} {
+      allow read, write: if hasStrategicPermit() || isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
      * APP CONFIGURATION & SETTINGS
      */
     match /settings/{settingId} {
-      allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
-      allow write: if isSignedIn() && isAdmin();
+      // Basic settings like project verticals need to be readable for provisioning
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /companyBillingSettings/{id} {
       allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
-      allow write: if isSignedIn() && isAdmin();
+      allow write: if isAdmin();
     }
 
     match /workflowSettings/{id} {
       allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
-      allow write: if isSignedIn() && isAdmin();
+      allow write: if isAdmin();
     }
 
     /**
      * PIPELINE & MARKETING INTELLIGENCE
      */
     match /followUps/{id} {
-      allow read, write: if isSignedIn() && hasStrategicPermit();
+      allow read, write: if hasStrategicPermit() || isAdmin();
     }
 
     match /campaigns/{id} {
-      allow read, write: if isSignedIn() && hasStrategicPermit();
+      allow read, write: if hasStrategicPermit() || isAdmin();
     }
   }
 }
