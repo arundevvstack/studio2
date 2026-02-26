@@ -73,7 +73,7 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com'];
+const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com', 'anonymous-root@mediaflow.internal'];
 
 export default function UserManagementPage() {
   const router = useRouter();
@@ -100,7 +100,7 @@ export default function UserManagementPage() {
     if (!currentUser) return null;
     return query(collection(db, "roles"), orderBy("name", "asc"));
   }, [db, currentUser]);
-  const { data: roles } = useCollection(rolesQuery);
+  const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
 
   // TARGETED MAINTENANCE SYNC (Master Admin Only)
   useEffect(() => {
@@ -256,8 +256,11 @@ export default function UserManagementPage() {
                   const isRestricted = RESTRICTED_EMAILS.includes(member.email?.toLowerCase());
                   const isActive = member.status === 'Active';
                   const isPending = member.status === 'Pending';
-                  const isSuspended = member.status === 'Suspended';
-
+                  
+                  // Role detection logic
+                  const memberRoleId = member.roleId || "staff";
+                  const resolvedRole = roles?.find(r => r.id === memberRoleId);
+                  
                   return (
                     <TableRow key={member.id} className={`group hover:bg-slate-50/50 transition-colors border-slate-50 ${isRestricted ? 'bg-red-50/30' : ''}`}>
                       <TableCell className="px-10 py-6">
@@ -277,11 +280,22 @@ export default function UserManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Select value={member.roleId || "staff"} onValueChange={(val) => handleUpdateRole(member.id, val)}>
+                        <Select 
+                          value={memberRoleId} 
+                          onValueChange={(val) => handleUpdateRole(member.id, val)}
+                          disabled={rolesLoading}
+                        >
                           <SelectTrigger className="h-10 w-48 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
-                            <SelectValue />
+                            <SelectValue placeholder={rolesLoading ? "Loading..." : "Assign Role"} />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl shadow-2xl">
+                            {/* System Role Fallbacks */}
+                            {memberRoleId === 'root-admin' && !roles?.find(r => r.id === 'root-admin') && (
+                              <SelectItem value="root-admin" className="text-[10px] font-bold uppercase">ROOT ADMINISTRATOR (System)</SelectItem>
+                            )}
+                            {!roles?.find(r => r.id === 'staff') && (
+                              <SelectItem value="staff" className="text-[10px] font-bold uppercase">STAFF (Default)</SelectItem>
+                            )}
                             {roles?.map(role => (
                               <SelectItem key={role.id} value={role.id} className="text-[10px] font-bold uppercase">{role.name}</SelectItem>
                             ))}
