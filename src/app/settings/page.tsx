@@ -610,7 +610,7 @@ export default function SettingsPage() {
               <div className="p-10 pt-0 space-y-10 max-h-[70vh] overflow-y-auto custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3"><Label className="text-[10px] font-bold uppercase text-slate-400">Role Nomenclature</Label><Input value={roleForm.name} onChange={e => setRoleForm({...roleForm, name: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg" placeholder="e.g. Executive Producer" /></div>
-                  <div className="space-y-3"><Label className="text-[10px] font-bold uppercase text-slate-400">Strategic Description</Label><Input value={roleForm.description} onChange={e => setRoleForm({...roleForm, description: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold" /></div>
+                  <div className="space-y-3"><Label className="text-[10px) font-bold uppercase text-slate-400">Strategic Description</Label><Input value={roleForm.description} onChange={e => setRoleForm({...roleForm, description: e.target.value})} className="h-14 rounded-2xl bg-slate-50 border-none font-bold" /></div>
                 </div>
                 <div className="space-y-6">
                   <h4 className="text-sm font-bold font-headline flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-primary" /> Dashboard Modules</h4>
