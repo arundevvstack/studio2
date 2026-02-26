@@ -55,7 +55,11 @@ import {
   Check,
   AlertTriangle,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  Smartphone,
+  Laptop,
+  LogOut,
+  ShieldIcon
 } from "lucide-react";
 import { 
   DndContext, 
@@ -99,7 +103,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp, updateDoc } from "firebase/firestore";
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -152,6 +156,7 @@ const DASHBOARD_ITEMS = [
 
 const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
+  { id: "sessions", label: "Security & Sessions", icon: ShieldIcon },
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "users", label: "Database Users", icon: Users },
   { id: "project", label: "Project Settings", icon: Briefcase },
@@ -249,6 +254,13 @@ export default function SettingsPage() {
 
   const isMasterAdmin = userRole?.name === 'Root Administrator' || userRole?.name === 'Super Admin' || currentUserMember?.roleId === 'root-admin';
 
+  // Active Sessions Stream
+  const sessionsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "teamMembers", user.uid, "sessions"), orderBy("lastActive", "desc"));
+  }, [db, user]);
+  const { data: sessions, isLoading: sessionsLoading } = useCollection(sessionsQuery);
+
   useEffect(() => {
     if (roles && roles.length > 0 && !selectedRoleIdForNav) {
       setSelectedRoleIdForNav(roles[0].id);
@@ -263,6 +275,7 @@ export default function SettingsPage() {
   const visibleTabs = useMemo(() => {
     return SETTINGS_TABS.filter(tab => {
       if (tab.id === 'profile') return true; 
+      if (tab.id === 'sessions') return true;
       if (tab.id === 'preferences') return true; 
       if (tab.id === 'users') return isMasterAdmin;
       return hasPermission(`settings:${tab.id}`);
@@ -451,6 +464,18 @@ export default function SettingsPage() {
     }
   };
 
+  const handleTerminateSession = async (sid: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, "teamMembers", user.uid, "sessions", sid));
+      toast({ title: "Session Terminated", description: "Access revoked for the selected entry node." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Termination Failed", description: e.message });
+    }
+  };
+
+  const currentSid = typeof window !== 'undefined' ? localStorage.getItem('mf_session_id') : null;
+
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="space-y-1">
@@ -486,6 +511,85 @@ export default function SettingsPage() {
                 <div className="space-y-2"><Label className="text-[10px] font-bold uppercase text-slate-400">Last Name</Label><Input value={profileForm.lastName} onChange={e => setProfileForm({...profileForm, lastName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none font-bold" /></div>
               </div>
               <div className="flex justify-end pt-6 border-t border-slate-50"><Button onClick={handleSavePersonalProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 gap-2">{isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Profile</Button></div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sessions" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900 overflow-hidden">
+            <CardHeader className="p-10 border-b border-slate-50 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-xl font-bold font-headline">Active Entry Nodes</CardTitle>
+                  <CardDescription>Monitor and manage all active browser and device sessions for this identity.</CardDescription>
+                </div>
+                <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                  {sessions?.length || 0} ACTIVE NODES
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {sessionsLoading ? (
+                <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Device / Browser</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Platform</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Last Intelligence Sync</TableHead>
+                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions?.map((session) => {
+                      const isCurrent = session.id === currentSid;
+                      return (
+                        <TableRow key={session.id} className={`group hover:bg-slate-50/50 transition-colors border-slate-50 dark:border-slate-800 ${isCurrent ? 'bg-primary/5' : ''}`}>
+                          <TableCell className="px-10 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center dark:bg-slate-800 dark:border-slate-700">
+                                {session.deviceType === 'Mobile' ? <Smartphone className="h-5 w-5 text-slate-400" /> : <Laptop className="h-5 w-5 text-slate-400" />}
+                              </div>
+                              <div>
+                                <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                  {session.browser || "Unknown Browser"}
+                                  {isCurrent && <Badge className="bg-primary text-white border-none text-[7px] px-2 h-4 rounded-full uppercase tracking-widest">CURRENT</Badge>}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{session.userAgent?.substring(0, 40)}...</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">{session.platform}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 text-slate-500 font-medium text-xs">
+                              <Clock className="h-3.5 w-3.5 opacity-40" />
+                              <span>{session.lastActive?.toDate().toLocaleString()}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right px-10">
+                            {isCurrent ? (
+                              <Button variant="ghost" disabled className="h-10 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-300">Self Node</Button>
+                            ) : (
+                              <Button 
+                                onClick={() => handleTerminateSession(session.id)}
+                                variant="outline" 
+                                size="sm" 
+                                className="h-10 px-4 rounded-xl bg-white hover:bg-red-50 hover:text-red-600 text-slate-600 border-slate-100 transition-all font-bold text-[10px] uppercase tracking-widest gap-2"
+                              >
+                                <LogOut className="h-3.5 w-3.5" />
+                                Terminate
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

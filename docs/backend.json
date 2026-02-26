@@ -74,7 +74,7 @@
       "description": "Stores the global configuration for the sidebar navigation, including the custom order of modules.",
       "properties": {
         "order": {
-          "type": "array",
+          "array": { "type": "string" },
           "items": { "type": "string" },
           "description": "An ordered array of module IDs representing their position in the sidebar."
         },
@@ -152,6 +152,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "firstName", "lastName", "email", "status"]
+    },
+    "UserSession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserSession",
+      "type": "object",
+      "description": "Represents an active device/browser session for a team member.",
+      "properties": {
+        "id": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "lastActive": { "type": "string", "format": "date-time" },
+        "deviceType": { "type": "string", "enum": ["Desktop", "Mobile", "Tablet"] },
+        "browser": { "type": "string" },
+        "platform": { "type": "string" }
+      },
+      "required": ["id", "userAgent", "lastActive"]
     }
   },
   "auth": {
@@ -187,6 +202,12 @@
       "schema": {
         "$ref": "#/backend/entities/MarketValidation"
       }
+    },
+    "/teamMembers/{memberId}/sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/backend/entities/UserSession"
+      },
+      "description": "Active sessions for a specific team member."
     }
   }
 }
