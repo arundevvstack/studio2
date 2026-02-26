@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -17,7 +16,7 @@ import { collection, query, doc, serverTimestamp, orderBy, updateDoc } from "fir
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Loader2, Save, Mail, Phone, Briefcase, User, Upload, ShieldCheck, Trash2, AlertTriangle } from "lucide-react";
+import { Loader2, Save, Mail, Phone, Briefcase, User, Upload, ShieldCheck, Trash2, AlertTriangle, BadgeCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,7 +28,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 interface TeamMemberFormProps {
@@ -41,7 +39,7 @@ const MEMBER_TYPES = ["In-house", "Freelancer"];
 /**
  * @fileOverview Strategic Team Member Provisioning Form.
  * Connects personnel identity with dynamic system roles.
- * Includes deletion authority for administrators.
+ * Manages the permit state from onboarding to active status.
  */
 export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   const db = useFirestore();
@@ -79,7 +77,6 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
   const rolesQuery = useMemoFirebase(() => query(collection(db, "roles"), orderBy("name", "asc")), [db]);
   const { data: roles, isLoading: rolesLoading } = useCollection(rolesQuery);
 
-  // Initialize form with existing member data only once per member change
   useEffect(() => {
     if (existingMember) {
       setFormData({
@@ -91,17 +88,6 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
         type: existingMember.type || "In-house",
         status: existingMember.status || "Active",
         thumbnail: existingMember.thumbnail || "",
-      });
-    } else {
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        roleId: "",
-        type: "In-house",
-        status: "Active",
-        thumbnail: "",
       });
     }
   }, [existingMember]);
@@ -174,11 +160,11 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
     <div key={existingMember?.id || 'new'} className="p-10 space-y-10 max-h-[85vh] overflow-y-auto custom-scrollbar bg-white">
       <div className="flex flex-col items-center gap-4 py-4">
         <div className="relative group cursor-pointer" onClick={handleThumbnailClick}>
-          <Avatar className="h-32 w-32 border-8 border-slate-50 shadow-2xl rounded-[3rem] transition-all group-hover:scale-105">
+          <Avatar className="h-32 w-32 border-8 border-slate-50 shadow-2xl rounded-[10px] transition-all group-hover:scale-105">
             <AvatarImage src={formData.thumbnail || ""} className="object-cover" />
             <AvatarFallback className="bg-slate-100"><Upload className="h-10 w-10 text-slate-300" /></AvatarFallback>
           </Avatar>
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-[3rem] backdrop-blur-[2px]">
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-[10px] backdrop-blur-[2px]">
             <Badge className="bg-white text-slate-900 border-none rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest shadow-lg">Change Portrait</Badge>
           </div>
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
@@ -194,7 +180,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
             <Input 
               value={formData.firstName} 
               onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
-              className="rounded-2xl bg-slate-50 border-none h-14 pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" 
+              className="rounded-[10px] bg-slate-50 border-none h-14 pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" 
               placeholder="e.g. Rahul" 
             />
           </div>
@@ -204,7 +190,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
           <Input 
             value={formData.lastName} 
             onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
-            className="rounded-2xl bg-slate-50 border-none h-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" 
+            className="rounded-[10px] bg-slate-50 border-none h-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" 
             placeholder="e.g. Nair" 
           />
         </div>
@@ -215,26 +201,26 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Executive Email</Label>
           <div className="relative">
             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-            <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="rounded-2xl bg-slate-50 border-none h-14 pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" placeholder="r.nair@agency.com" />
+            <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="rounded-[10px] bg-slate-50 border-none h-14 pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" placeholder="r.nair@agency.com" />
           </div>
         </div>
         <div className="space-y-3">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Contact Hotline</Label>
           <div className="relative">
             <Phone className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
-            <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="rounded-2xl bg-slate-50 border-none h-14 pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" placeholder="+91 0000 0000" />
+            <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="rounded-[10px] bg-slate-50 border-none h-14 pl-14 font-bold text-base shadow-inner focus-visible:ring-primary/20" placeholder="+91 0000 0000" />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-50">
         <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Connect System Role</Label>
+          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Strategic Role permit</Label>
           <Select value={formData.roleId} onValueChange={(val) => setFormData({...formData, roleId: val})}>
-            <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg shadow-inner px-6 focus:ring-primary/20">
-              <SelectValue placeholder={rolesLoading ? "Syncing Roles..." : "Assign Professional Title"} />
+            <SelectTrigger className="h-14 rounded-[10px] bg-slate-50 border-none font-bold text-lg shadow-inner px-6 focus:ring-primary/20">
+              <SelectValue placeholder={rolesLoading ? "Syncing Roles..." : "Assign Strategic Role"} />
             </SelectTrigger>
-            <SelectContent className="rounded-2xl border-slate-100 shadow-2xl max-h-[300px]">
+            <SelectContent className="rounded-[10px] border-slate-100 shadow-2xl max-h-[300px]">
               {roles?.map(role => (
                 <SelectItem key={role.id} value={role.id} className="font-bold text-slate-900">{role.name}</SelectItem>
               ))}
@@ -247,21 +233,21 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
         <div className="space-y-3">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Resource Type</Label>
           <Select value={formData.type} onValueChange={(val) => setFormData({...formData, type: val})}>
-            <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg shadow-inner px-6 focus:ring-primary/20"><SelectValue /></SelectTrigger>
-            <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
+            <SelectTrigger className="h-14 rounded-[10px] bg-slate-50 border-none font-bold text-lg shadow-inner px-6 focus:ring-primary/20"><SelectValue /></SelectTrigger>
+            <SelectContent className="rounded-[10px] border-slate-100 shadow-2xl">
               {MEMBER_TYPES.map(t => <SelectItem key={t} value={t} className="font-medium">{t}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      <div className="p-6 rounded-[2rem] bg-slate-50/50 border border-slate-100 flex items-center justify-between">
+      <div className="p-6 rounded-[10px] bg-slate-50/50 border border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center">
-            <ShieldCheck className="h-6 w-6 text-primary" />
+          <div className="h-12 w-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
+            <BadgeCheck className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-slate-900 tracking-tight leading-none">Account Access</h4>
+            <h4 className="text-sm font-bold text-slate-900 tracking-tight leading-none">Access Permit</h4>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status Policy</p>
           </div>
         </div>
@@ -270,13 +256,14 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="Active" className="text-green-600 font-bold">Active</SelectItem>
+            <SelectItem value="Active" className="text-green-600 font-bold">Authorized</SelectItem>
             <SelectItem value="Suspended" className="text-red-600 font-bold">Suspended</SelectItem>
+            <SelectItem value="Pending" className="text-orange-600 font-bold">Pending</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <DialogFooter className="bg-slate-50 p-10 flex justify-between items-center -mx-10 -mb-10 mt-10 rounded-b-[3.5rem]">
+      <DialogFooter className="bg-slate-50 p-10 flex justify-between items-center -mx-10 -mb-10 mt-10 rounded-b-[10px]">
         <div className="flex items-center gap-4">
           <DialogClose asChild><Button variant="ghost" className="text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-transparent">Discard</Button></DialogClose>
           {existingMember && isAuthorizedToDelete && (
@@ -284,24 +271,24 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" className="text-destructive font-bold text-xs uppercase tracking-widest gap-2 hover:bg-destructive/5 hover:text-destructive">
                   <Trash2 className="h-4 w-4" />
-                  Delete Identity
+                  Purge Identity
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl">
+              <AlertDialogContent className="rounded-[10px] border-none shadow-2xl">
                 <AlertDialogHeader>
                   <div className="flex items-center gap-3 text-destructive mb-2">
                     <AlertTriangle className="h-6 w-6" />
                     <AlertDialogTitle className="font-headline text-xl">Confirm Delete</AlertDialogTitle>
                   </div>
                   <AlertDialogDescription className="text-slate-500 font-medium">
-                    This will permanently remove <span className="font-bold text-slate-900">{formData.firstName} {formData.lastName}</span> and their email record from the organizational registry. This action cannot be undone.
+                    This will permanently remove <span className="font-bold text-slate-900">{formData.firstName} {formData.lastName}</span> from the organizational registry.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-3 mt-6">
-                  <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="rounded-[10px] font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
                   <DialogClose asChild>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
-                      Confirm Delete
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90 text-white rounded-[10px] font-bold px-8 uppercase text-xs tracking-normal">
+                      Confirm Purge
                     </AlertDialogAction>
                   </DialogClose>
                 </AlertDialogFooter>
@@ -310,7 +297,7 @@ export function TeamMemberForm({ existingMember }: TeamMemberFormProps) {
           )}
         </div>
         <DialogClose asChild>
-          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white rounded-full font-bold px-12 h-14 gap-3 tracking-widest shadow-2xl shadow-primary/20 transition-all active:scale-95">
+          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white rounded-[10px] font-bold px-12 h-14 gap-3 tracking-widest shadow-2xl shadow-primary/20 transition-all active:scale-95">
             {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
             Sync Identity
           </Button>

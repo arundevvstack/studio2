@@ -16,7 +16,9 @@ import {
   Zap,
   ShieldBan,
   Filter,
-  ShieldAlert
+  ShieldAlert,
+  BadgeCheck,
+  ShieldX
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,7 +73,7 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
-const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com', 'anonymous-root@mediaflow.internal'];
+const RESTRICTED_EMAILS = ['arunadhi.com@gmail.com'];
 
 export default function UserManagementPage() {
   const router = useRouter();
@@ -106,7 +108,6 @@ export default function UserManagementPage() {
         const batch = writeBatch(db);
         let count = 0;
 
-        // 1. Check Team Registry for all restricted emails
         RESTRICTED_EMAILS.forEach(async (email) => {
           const registryTargets = team.filter(m => m.email?.toLowerCase() === email.toLowerCase());
           registryTargets.forEach(t => {
@@ -114,7 +115,6 @@ export default function UserManagementPage() {
             count++;
           });
 
-          // 2. Check Sales Pipeline (Leads)
           const leadsRef = collection(db, "leads");
           const leadsQuery = query(leadsRef, where("email", "==", email));
           const leadsSnap = await getDocs(leadsQuery);
@@ -152,10 +152,14 @@ export default function UserManagementPage() {
   const handleSetStatus = (userId: string, status: string) => {
     const userRef = doc(db, "teamMembers", userId);
     updateDocumentNonBlocking(userRef, { status, updatedAt: serverTimestamp() });
+    
+    const isActivation = status === "Active";
     toast({ 
       variant: status === "Suspended" ? "destructive" : "default",
-      title: `Identity ${status}`, 
-      description: `Access policy updated for the selected identifier.` 
+      title: isActivation ? "Strategic Permit Authorized" : "Strategic Permit Revoked", 
+      description: isActivation 
+        ? "User now has active operational privileges." 
+        : "System access has been suspended." 
     });
   };
 
@@ -172,23 +176,23 @@ export default function UserManagementPage() {
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-6">
-          <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl bg-white border-slate-200 shadow-sm shrink-0" onClick={() => router.push("/admin")}>
+          <Button variant="outline" size="icon" className="h-12 w-12 rounded-[10px] bg-white border-slate-200 shadow-sm shrink-0" onClick={() => router.push("/admin")}>
             <ChevronLeft className="h-6 w-6 text-slate-600" />
           </Button>
           <div className="space-y-1">
             <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal leading-none">Identity Governance</h1>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage the Onboarding &rarr; Approval &rarr; Activation lifecycle.</p>
+            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage the Onboarding &rarr; Strategic Permit &rarr; Suspension lifecycle.</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="h-12 px-6 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white gap-2 tracking-normal shadow-lg shadow-primary/20 transition-all active:scale-95">
+              <Button className="h-12 px-6 rounded-[10px] font-bold bg-primary hover:bg-primary/90 text-white gap-2 tracking-normal shadow-lg shadow-primary/20 transition-all active:scale-95">
                 <Plus className="h-4 w-4" /> Invite Expert
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[600px] rounded-[10px] border-none shadow-2xl p-0 overflow-hidden">
               <DialogHeader className="p-10 pb-0"><DialogTitle className="text-2xl font-bold font-headline tracking-normal">Provision Team Identity</DialogTitle></DialogHeader>
               <TeamMemberForm />
             </DialogContent>
@@ -199,31 +203,31 @@ export default function UserManagementPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center"><Hourglass className="h-5 w-5 text-orange-500" /></div>
-          <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting Approval</p><h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{team?.filter(m => m.status === 'Pending').length || 0}</h3></div>
+          <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting Permit</p><h3 className="text-3xl font-bold font-headline mt-1 text-orange-600">{team?.filter(m => m.status === 'Pending').length || 0}</h3></div>
         </Card>
         <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
           <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center"><CheckCircle2 className="h-5 w-5 text-primary" /></div>
-          <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Experts</p><h3 className="text-3xl font-bold font-headline mt-1">{team?.filter(m => m.status === 'Active').length || 0}</h3></div>
+          <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorized Experts</p><h3 className="text-3xl font-bold font-headline mt-1">{team?.filter(m => m.status === 'Active').length || 0}</h3></div>
         </Card>
         <Card className="border-none shadow-sm rounded-[10px] bg-slate-900 text-white p-8 space-y-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-3xl rounded-full -mr-16 -mt-16" />
           <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center relative z-10"><Shield className="h-5 w-5 text-primary" /></div>
-          <div className="relative z-10"><p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">System Status</p><h3 className="text-2xl font-bold font-headline mt-1 uppercase">Protocol Active</h3></div>
+          <div className="relative z-10"><p className="text-[10px] font-bold text-slate-50 uppercase tracking-widest">Protocol Status</p><h3 className="text-2xl font-bold font-headline mt-1 uppercase">Permits Active</h3></div>
         </Card>
       </div>
 
       <div className="flex gap-4">
         <div className="relative flex-1 group">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search identifiers by name or email..." className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-full text-base font-bold" />
+          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search identifiers by name or email..." className="pl-16 h-16 bg-white border-none shadow-xl shadow-slate-200/30 rounded-[10px] text-base font-bold" />
         </div>
-        <Button variant="outline" className="h-16 px-8 rounded-full bg-white border-slate-100 font-bold text-slate-600 gap-2 shadow-sm text-xs uppercase tracking-widest"><Filter className="h-4 w-4" /> Refine</Button>
+        <Button variant="outline" className="h-16 px-8 rounded-[10px] bg-white border-slate-100 font-bold text-slate-600 gap-2 shadow-sm text-xs uppercase tracking-widest"><Filter className="h-4 w-4" /> Refine</Button>
       </div>
 
       <Card className="border-none shadow-sm rounded-[10px] bg-white overflow-hidden border border-slate-50">
         <CardHeader className="p-10 pb-6 border-b border-slate-50 bg-slate-50/30">
           <CardTitle className="text-xl font-bold font-headline tracking-normal">Identity Ledger</CardTitle>
-          <CardDescription className="tracking-normal">Audit, approve, and manage organizational access for the production crew.</CardDescription>
+          <CardDescription className="tracking-normal">Audit permits, authorize access, and manage organizational identity policies.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {teamLoading ? (
@@ -234,13 +238,17 @@ export default function UserManagementPage() {
                 <TableRow className="hover:bg-transparent border-slate-100">
                   <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Identity</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase tracking-widest">Strategic Role</TableHead>
-                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Lifecycle Phase</TableHead>
+                  <TableHead className="text-[10px] font-bold uppercase tracking-widest">Permit Phase</TableHead>
                   <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((member) => {
                   const isRestricted = RESTRICTED_EMAILS.includes(member.email?.toLowerCase());
+                  const isActive = member.status === 'Active';
+                  const isPending = member.status === 'Pending';
+                  const isSuspended = member.status === 'Suspended';
+
                   return (
                     <TableRow key={member.id} className={`group hover:bg-slate-50/50 transition-colors border-slate-50 ${isRestricted ? 'bg-red-50/30' : ''}`}>
                       <TableCell className="px-10 py-6">
@@ -264,7 +272,7 @@ export default function UserManagementPage() {
                           <SelectTrigger className="h-10 w-48 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="rounded-2xl shadow-2xl">
+                          <SelectContent className="rounded-xl shadow-2xl">
                             {roles?.map(role => (
                               <SelectItem key={role.id} value={role.id} className="text-[10px] font-bold uppercase">{role.name}</SelectItem>
                             ))}
@@ -273,10 +281,10 @@ export default function UserManagementPage() {
                       </TableCell>
                       <TableCell>
                         <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
-                          member.status === 'Active' ? 'bg-green-50 text-green-600' : 
-                          member.status === 'Pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
+                          isActive ? 'bg-green-50 text-green-600' : 
+                          isPending ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
                         }`}>
-                          {member.status}
+                          {isActive ? 'Active Permit' : isPending ? 'Awaiting Permit' : 'Permit Revoked'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right px-10">
@@ -285,22 +293,27 @@ export default function UserManagementPage() {
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all"><MoreHorizontal className="h-4 w-4" /></Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
-                              <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Lifecycle Control</DropdownMenuLabel>
+                            <DropdownMenuContent align="end" className="rounded-xl w-64 p-2 shadow-2xl border-slate-100">
+                              <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Strategic Control</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              {member.status === 'Pending' && (
-                                <DropdownMenuItem onClick={() => handleSetStatus(member.id, "Active")} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs text-green-600">
-                                  <CheckCircle2 className="h-4 w-4" /> Authorize Activation
+                              {isPending && (
+                                <DropdownMenuItem onClick={() => handleSetStatus(member.id, "Active")} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer font-bold text-xs text-green-600">
+                                  <BadgeCheck className="h-4 w-4" /> Authorize Strategic Permit
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem onClick={() => handleSetStatus(member.id, member.status === 'Active' ? "Suspended" : "Active")} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer font-bold text-xs ${member.status === 'Active' ? 'text-orange-600' : 'text-green-600'}`}>
-                                {member.status === 'Active' ? <ShieldAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                                <span>{member.status === 'Active' ? 'Suspend Privileges' : 'Restore Access'}</span>
-                              </DropdownMenuItem>
+                              {isActive ? (
+                                <DropdownMenuItem onClick={() => handleSetStatus(member.id, "Suspended")} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer font-bold text-xs text-orange-600">
+                                  <ShieldX className="h-4 w-4" /> Suspend Strategic Permit
+                                </DropdownMenuItem>
+                              ) : !isPending && (
+                                <DropdownMenuItem onClick={() => handleSetStatus(member.id, "Active")} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer font-bold text-xs text-green-600">
+                                  <CheckCircle2 className="h-4 w-4" /> Restore Strategic Permit
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuSeparator />
                               <AlertDialog>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
-                                  <Trash2 className="h-4 w-4" /> Purge Identity
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-3 p-3 rounded-lg cursor-pointer text-destructive focus:text-destructive font-bold text-xs">
+                                  <Trash2 className="h-4 w-4" /> Purge Identity Record
                                 </DropdownMenuItem>
                                 <AlertDialogContent className="rounded-[10px] border-none shadow-2xl">
                                   <AlertDialogHeader>
@@ -309,12 +322,12 @@ export default function UserManagementPage() {
                                       <AlertDialogTitle className="font-headline text-xl">Confirm Identity Purge</AlertDialogTitle>
                                     </div>
                                     <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
-                                      This will permanently remove <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the registry. This action is irreversible.
+                                      This will permanently remove <span className="font-bold text-slate-900">{member.firstName} {member.lastName}</span> from the registry. This action is irreversible and terminates all historical permit tracking.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter className="gap-3 mt-6">
-                                    <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, "teamMembers", member.id))} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">Confirm Purge</AlertDialogAction>
+                                    <AlertDialogCancel className="rounded-[10px] font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deleteDocumentNonBlocking(doc(db, "teamMembers", member.id))} className="bg-destructive hover:bg-destructive/90 text-white rounded-[10px] font-bold px-8 uppercase text-xs tracking-normal">Confirm Purge</AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
