@@ -27,7 +27,7 @@ import {
   initiateEmailSignUp,
   initiateGoogleSignIn
 } from "@/firebase/non-blocking-login";
-import { doc, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc, getDoc, writeBatch } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -37,6 +37,7 @@ const MASTER_EMAIL = 'defineperspective.in@gmail.com';
 /**
  * @fileOverview Authoritative Strategic Login Node.
  * Handles Email & Google authentication with strict Admin Authorization Gating.
+ * Provisions both User Registry and Team Member nodes.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -51,7 +52,6 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch permit status from registry
   const userRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, "users", user.uid);
@@ -60,12 +60,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     const syncUserRegistry = async () => {
-      if (user && !isUserRegistryLoading) {
-        const docSnap = await getDoc(userRef!);
+      if (user && !isUserRegistryLoading && userRef) {
+        const docSnap = await getDoc(userRef);
         
-        // 1. Provision New Identity if missing
         if (!docSnap.exists()) {
           const isMaster = user.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
+          const batch = writeBatch(db);
           
           const newIdentity = {
             id: user.uid,
@@ -81,14 +81,35 @@ export default function LoginPage() {
             updatedAt: serverTimestamp()
           };
 
-          await setDoc(userRef!, newIdentity);
+          const memberRef = doc(db, "teamMembers", user.uid);
+          const parts = newIdentity.name.split(" ");
+          const firstName = parts[0] || "New";
+          const lastName = parts.slice(1).join(" ") || "Expert";
+
+          const memberData = {
+            id: user.uid,
+            firstName,
+            lastName,
+            email: newIdentity.email,
+            thumbnail: newIdentity.photoURL,
+            roleId: newIdentity.role || "",
+            status: isMaster ? "Active" : "Pending",
+            department: "Production",
+            type: "In-house",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          };
+
+          batch.set(userRef, newIdentity);
+          batch.set(memberRef, memberData);
+          
+          await batch.commit();
           
           if (!isMaster) {
             toast({ title: "Registry Entry Created", description: "Awaiting Admin authorization." });
           }
         }
 
-        // 2. Redirect if Authorized
         if (userData?.status === "active" && userData?.strategicPermit === true) {
           router.push("/dashboard");
         }
@@ -136,7 +157,6 @@ export default function LoginPage() {
     );
   }
 
-  // ACCESS BARRIER: Restricted screen for pending/suspended experts
   if (user && userData && (userData.status !== "active" || !userData.strategicPermit)) {
     return (
       <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-6 font-body">

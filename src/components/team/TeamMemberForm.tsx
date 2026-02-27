@@ -130,8 +130,11 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
     
     try {
       const batch = writeBatch(db);
+      const memberId = existingMember?.id || doc(collection(db, "teamMembers")).id;
+      
       const memberData = {
         ...formData,
+        id: memberId,
         updatedAt: serverTimestamp(),
       };
 
@@ -149,24 +152,11 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
         registryData.strategicPermit = formData.status === 'Active';
       }
 
-      if (existingMember) {
-        batch.update(doc(db, "teamMembers", existingMember.id), memberData);
-        batch.update(doc(db, "users", existingMember.id), registryData);
-      } else {
-        const newRef = doc(collection(db, "teamMembers"));
-        const newRegistryRef = doc(db, "users", newRef.id);
-        batch.set(newRef, { ...memberData, id: newRef.id, createdAt: serverTimestamp() });
-        batch.set(newRegistryRef, { 
-          ...registryData, 
-          id: newRef.id, 
-          provider: 'password', 
-          permittedPhases: [], 
-          role: formData.roleId,
-          status: formData.status === 'Active' ? 'active' : 'pending',
-          strategicPermit: formData.status === 'Active',
-          createdAt: serverTimestamp() 
-        });
-      }
+      const memberRef = doc(db, "teamMembers", memberId);
+      const userRef = doc(db, "users", memberId);
+
+      batch.set(memberRef, memberData, { merge: true });
+      batch.set(userRef, registryData, { merge: true });
 
       await batch.commit();
       toast({ title: "Identity Synchronized", description: "Records updated across system nodes." });

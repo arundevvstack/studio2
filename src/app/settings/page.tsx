@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { 
   Settings, 
@@ -125,7 +125,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const SIDEBAR_MODULES = [
   { id: "dashboard", title: "Dashboard", icon: LayoutGrid },
