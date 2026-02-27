@@ -1,192 +1,95 @@
 
 {
   "entities": {
-    "AppSettings": {
+    "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AppSettings",
+      "title": "User",
       "type": "object",
-      "description": "Stores global application settings, including the enablement status of various modules. There should typically be only one record of this entity.",
+      "description": "Represents a user account within the MediaFlow application, including their personal details and authorization configuration for role-based access control.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the AppSettings entity. Recommended value: 'global'."
+          "description": "Unique identifier for the User entity (Firebase UID)."
         },
-        "modules": {
+        "name": {
           "type": "string",
-          "description": "A JSON string representing an object where keys are module names (e.g., 'projects', 'finance') and values are boolean indicating whether the module is enabled or disabled. This is stored as a string due to schema nesting limitations."
+          "description": "Full name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The assigned strategic role (strategic | sales | production | admin | null).",
+          "enum": ["strategic", "sales", "production", "admin", null]
+        },
+        "permittedPhases": {
+          "type": "array",
+          "description": "A list of phases the user is permitted to access.",
+          "items": {
+            "type": "string",
+            "enum": ["sales", "production", "release", "socialMedia"]
+          }
+        },
+        "strategicPermit": {
+          "type": "boolean",
+          "description": "Master switch enabling access to the system features."
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the user's account.",
+          "enum": ["pending", "active", "suspended"]
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the application settings record was created.",
+          "description": "Timestamp when the user account was created.",
           "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp when the application settings record was last updated.",
+          "description": "Timestamp when the user account was last updated.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
-        "modules",
+        "name",
+        "email",
+        "role",
+        "permittedPhases",
+        "strategicPermit",
+        "status",
         "createdAt",
         "updatedAt"
       ]
-    },
-    "ProjectSettings": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ProjectSettings",
-      "type": "object",
-      "description": "Global settings for project management, including available service verticals.",
-      "properties": {
-        "serviceTypes": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "List of available service types/verticals for new projects."
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "CompanyBillingSettings": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "CompanyBillingSettings",
-      "type": "object",
-      "description": "Stores organizational branding, banking, and legal identifiers.",
-      "properties": {
-        "companyName": { "type": "string" },
-        "companyAddress": { "type": "string" },
-        "logo": { "type": "string", "description": "Base64 or URL of the company logo." },
-        "taxId": { "type": "string", "description": "GSTIN or equivalent." },
-        "panNumber": { "type": "string" },
-        "cinNumber": { "type": "string" },
-        "bankName": { "type": "string" },
-        "bankAccountNumber": { "type": "string" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "NavigationSettings": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "NavigationSettings",
-      "type": "object",
-      "description": "Stores the global configuration for the sidebar navigation, including the custom order of modules.",
-      "properties": {
-        "order": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "An ordered array of module IDs representing their position in the sidebar."
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "MarketValidation": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "MarketValidation",
-      "type": "object",
-      "description": "Stores market analysis and competitor intelligence for specific project verticals and scopes.",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "scope_type": {
-          "type": "string",
-          "description": "The service combination being validated (e.g. AI Content + Social Media)."
-        },
-        "demand_level": {
-          "type": "string",
-          "enum": ["High", "Medium", "Low"]
-        },
-        "competitor_summary": {
-          "type": "string",
-          "description": "Summary of common competitor offerings in this niche."
-        },
-        "avg_budget_range": {
-          "type": "number",
-          "description": "Average industry budget for this scope."
-        },
-        "opportunity_gap": {
-          "type": "string",
-          "description": "Specific gaps in the market that can be exploited."
-        },
-        "trend_summary": {
-          "type": "string"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": ["id", "scope_type", "demand_level"]
-    },
-    "Client": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Client",
-      "type": "object",
-      "description": "Represents a client of the media production company.",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "name", "email"]
-    },
-    "TeamMember": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "TeamMember",
-      "type": "object",
-      "description": "Represents an internal employee or core team member.",
-      "properties": {
-        "id": { "type": "string" },
-        "firstName": { "type": "string" },
-        "lastName": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "roleId": { "type": "string" },
-        "status": { "type": "string", "enum": ["Active", "Pending", "Suspended"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "firstName", "lastName", "email", "status"]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous",
       "google"
     ]
   },
   "firestore": {
-    "/settings/navigation": {
-      "schema": {
-        "$ref": "#/backend/entities/NavigationSettings"
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Primary identity registry. Security rules check custom claims derived from this document's permit state.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "Matching Firebase Authentication UID."
+            }
+          ]
+        }
       }
-    },
-    "/settings/projects": {
-      "schema": {
-        "$ref": "#/backend/entities/ProjectSettings"
-      }
-    },
-    "/companyBillingSettings/global": {
-      "schema": {
-        "$ref": "#/backend/entities/CompanyBillingSettings"
-      },
-      "description": "Global organization settings including branding and financials."
-    },
-    "/app_settings/modules": {
-      "schema": {
-        "$ref": "#/backend/entities/AppSettings"
-      }
-    },
-    "/market_validation/{validationId}": {
-      "schema": {
-        "$ref": "#/backend/entities/MarketValidation"
-      }
-    }
+    ]
   }
 }

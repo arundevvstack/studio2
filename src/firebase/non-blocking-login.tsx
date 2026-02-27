@@ -6,37 +6,26 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup,
-  sendPasswordResetEmail,
-  UserCredential,
+  signInWithPopup
 } from 'firebase/auth';
 
 /** Initiate anonymous sign-in (non-blocking). */
-export function initiateAnonymousSignIn(authInstance: Auth): Promise<UserCredential> {
-  // CRITICAL: Call signInAnonymously directly.
-  return signInAnonymously(authInstance);
+export function initiateAnonymousSignIn(authInstance: Auth): void {
+  signInAnonymously(authInstance);
 }
 
 /** Initiate email/password sign-up (non-blocking). */
-export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
-  // CRITICAL: Call createUserWithEmailAndPassword directly.
+export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): Promise<any> {
   return createUserWithEmailAndPassword(authInstance, email, password);
 }
 
 /** Initiate email/password sign-in (non-blocking). */
-export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
-  // CRITICAL: Call signInWithEmailAndPassword directly.
+export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<any> {
   return signInWithEmailAndPassword(authInstance, email, password);
 }
 
 /** Initiate Google sign-in (non-blocking). */
-export function initiateGoogleSignIn(authInstance: Auth): Promise<UserCredential> {
+export async function initiateGoogleSignIn(authInstance: Auth): Promise<any> {
   const provider = new GoogleAuthProvider();
-  // Ensure the provider is configured for workspace accounts if needed
   return signInWithPopup(authInstance, provider);
-}
-
-/** Initiate password reset email (non-blocking). */
-export function initiatePasswordReset(authInstance: Auth, email: string): Promise<void> {
-  return sendPasswordResetEmail(authInstance, email);
 }

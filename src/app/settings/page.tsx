@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
@@ -51,7 +52,14 @@ import {
   Palette,
   Pipette,
   Tag,
-  Check
+  Check,
+  AlertTriangle,
+  Search,
+  MoreHorizontal,
+  Smartphone,
+  Laptop,
+  LogOut,
+  ShieldIcon
 } from "lucide-react";
 import { 
   DndContext, 
@@ -95,7 +103,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp, updateDoc } from "firebase/firestore";
+import { collection, query, orderBy, doc, writeBatch, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -107,6 +115,16 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const SIDEBAR_MODULES = [
@@ -138,7 +156,9 @@ const DASHBOARD_ITEMS = [
 
 const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
+  { id: "sessions", label: "Security & Sessions", icon: ShieldIcon },
   { id: "organization", label: "Organization", icon: Building2 },
+  { id: "users", label: "Database Users", icon: Users },
   { id: "project", label: "Project Settings", icon: Briefcase },
   { id: "billing", label: "Financials", icon: Receipt },
   { id: "navigation", label: "Navigation", icon: LayoutGrid },
@@ -178,6 +198,7 @@ export default function SettingsPage() {
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
   const [orderedModules, setOrderedModules] = useState(SIDEBAR_MODULES);
+  const [userToPurge, setUserToPurge] = useState<any>(null);
   
   const navSettingsRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -207,11 +228,11 @@ export default function SettingsPage() {
     }
   }, []);
 
-  const memberRef = useMemoFirebase(() => {
+  const registryRef = useMemoFirebase(() => {
     if (!user) return null;
-    return doc(db, "teamMembers", user.uid);
+    return doc(db, "users", user.uid);
   }, [db, user]);
-  const { data: currentUserMember } = useDoc(memberRef);
+  const { data: currentIdentity } = useDoc(registryRef);
 
   const rolesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -219,13 +240,27 @@ export default function SettingsPage() {
   }, [db, user]);
   const { data: roles } = useCollection(rolesQuery);
 
+  const databaseUsersQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "users"), orderBy("updatedAt", "desc"));
+  }, [db, user]);
+  const { data: databaseUsers, isLoading: usersLoading } = useCollection(databaseUsersQuery);
+
   const userRoleRef = useMemoFirebase(() => {
-    if (!currentUserMember?.roleId) return null;
-    return doc(db, "roles", currentUserMember.roleId);
-  }, [db, currentUserMember?.roleId]);
+    if (!currentIdentity?.role) return null;
+    // Note: identities use simple 'admin' or custom roles
+    return doc(db, "roles", currentIdentity.role);
+  }, [db, currentIdentity?.role]);
   const { data: userRole } = useDoc(userRoleRef);
 
-  const isMasterAdmin = userRole?.name === 'Root Administrator' || userRole?.name === 'Super Admin' || currentUserMember?.roleId === 'root-admin';
+  const isMasterAdmin = currentIdentity?.role === 'admin' || currentIdentity?.email === 'defineperspective.in@gmail.com';
+
+  // Active Sessions Stream
+  const sessionsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, "teamMembers", user.uid, "sessions"), orderBy("lastActive", "desc"));
+  }, [db, user]);
+  const { data: sessions, isLoading: sessionsLoading } = useCollection(sessionsQuery);
 
   useEffect(() => {
     if (roles && roles.length > 0 && !selectedRoleIdForNav) {
@@ -234,14 +269,16 @@ export default function SettingsPage() {
   }, [roles, selectedRoleIdForNav]);
 
   const hasPermission = (perm: string) => {
-    if (!userRole && !isMasterAdmin) return false;
-    return userRole?.permissions?.includes(perm) || isMasterAdmin;
+    if (isMasterAdmin) return true;
+    return userRole?.permissions?.includes(perm) || false;
   };
 
   const visibleTabs = useMemo(() => {
     return SETTINGS_TABS.filter(tab => {
       if (tab.id === 'profile') return true; 
+      if (tab.id === 'sessions') return true;
       if (tab.id === 'preferences') return true; 
+      if (tab.id === 'users') return isMasterAdmin;
       return hasPermission(`settings:${tab.id}`);
     });
   }, [userRole, isMasterAdmin]);
@@ -283,15 +320,16 @@ export default function SettingsPage() {
   }, [billingSettings]);
 
   useEffect(() => {
-    if (currentUserMember) {
+    if (currentIdentity) {
+      const names = (currentIdentity.name || "User").split(" ");
       setProfileForm({
-        firstName: currentUserMember.firstName || "",
-        lastName: currentUserMember.lastName || "",
-        phone: currentUserMember.phone || "",
-        thumbnail: currentUserMember.thumbnail || ""
+        firstName: names[0] || "",
+        lastName: names.slice(1).join(" ") || "",
+        phone: currentIdentity.phone || "",
+        thumbnail: currentIdentity.photoURL || ""
       });
     }
-  }, [currentUserMember]);
+  }, [currentIdentity]);
 
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
@@ -334,10 +372,14 @@ export default function SettingsPage() {
   };
 
   const handleSavePersonalProfile = async () => {
-    if (!memberRef || !user) return;
+    if (!registryRef || !user) return;
     setIsSaving(true);
     try {
-      await updateDoc(memberRef, { ...profileForm, updatedAt: serverTimestamp() });
+      await updateDoc(registryRef, { 
+        name: `${profileForm.firstName} ${profileForm.lastName}`,
+        photoURL: profileForm.thumbnail,
+        updatedAt: serverTimestamp() 
+      });
       toast({ title: "Identity Synchronized", description: "Personal profile updated." });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Sync Failed", description: error.message });
@@ -350,7 +392,6 @@ export default function SettingsPage() {
     localStorage.setItem("theme-mode", themeMode);
     localStorage.setItem("theme-color", primaryColor);
     
-    // Apply theme mode
     const html = document.documentElement;
     if (themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       html.classList.add('dark');
@@ -358,7 +399,6 @@ export default function SettingsPage() {
       html.classList.remove('dark');
     }
 
-    // Apply primary color
     html.style.setProperty('--primary', primaryColor);
     html.style.setProperty('--ring', primaryColor);
 
@@ -422,6 +462,26 @@ export default function SettingsPage() {
     }
   };
 
+  const executePurgeUser = () => {
+    if (userToPurge) {
+      deleteDocumentNonBlocking(doc(db, "users", userToPurge.id));
+      toast({ variant: "destructive", title: "Identity Purged", description: `${userToPurge.email} removed from system registry.` });
+      setUserToPurge(null);
+    }
+  };
+
+  const handleTerminateSession = async (sid: string) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, "teamMembers", user.uid, "sessions", sid));
+      toast({ title: "Session Terminated", description: "Access revoked for the selected entry node." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Termination Failed", description: e.message });
+    }
+  };
+
+  const currentSid = typeof window !== 'undefined' ? localStorage.getItem('mf_session_id') : null;
+
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="space-y-1">
@@ -457,6 +517,156 @@ export default function SettingsPage() {
                 <div className="space-y-2"><Label className="text-[10px] font-bold uppercase text-slate-400">Last Name</Label><Input value={profileForm.lastName} onChange={e => setProfileForm({...profileForm, lastName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none font-bold" /></div>
               </div>
               <div className="flex justify-end pt-6 border-t border-slate-50"><Button onClick={handleSavePersonalProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 gap-2">{isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Profile</Button></div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sessions" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900 overflow-hidden">
+            <CardHeader className="p-10 border-b border-slate-50 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-xl font-bold font-headline">Active Entry Nodes</CardTitle>
+                  <CardDescription>Monitor and manage all active browser and device sessions for this identity.</CardDescription>
+                </div>
+                <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                  {sessions?.length || 0} ACTIVE NODES
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {sessionsLoading ? (
+                <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Device / Browser</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Platform</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Last Intelligence Sync</TableHead>
+                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions?.map((session) => {
+                      const isCurrent = session.id === currentSid;
+                      return (
+                        <TableRow key={session.id} className={`group hover:bg-slate-50/50 transition-colors border-slate-50 dark:border-slate-800 ${isCurrent ? 'bg-primary/5' : ''}`}>
+                          <TableCell className="px-10 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="h-10 w-10 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center dark:bg-slate-800 dark:border-slate-700">
+                                {session.deviceType === 'Mobile' ? <Smartphone className="h-5 w-5 text-slate-400" /> : <Laptop className="h-5 w-5 text-slate-400" />}
+                              </div>
+                              <div>
+                                <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                  {session.browser || "Unknown Browser"}
+                                  {isCurrent && <Badge className="bg-primary text-white border-none text-[7px] px-2 h-4 rounded-full uppercase tracking-widest">CURRENT</Badge>}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{session.userAgent?.substring(0, 40)}...</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">{session.platform}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 text-slate-500 font-medium text-xs">
+                              <Clock className="h-3.5 w-3.5 opacity-40" />
+                              <span>{session.lastActive?.toDate().toLocaleString()}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right px-10">
+                            {isCurrent ? (
+                              <Button variant="ghost" disabled className="h-10 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-300">Self Node</Button>
+                            ) : (
+                              <Button 
+                                onClick={() => handleTerminateSession(session.id)}
+                                variant="outline" 
+                                size="sm" 
+                                className="h-10 px-4 rounded-xl bg-white hover:bg-red-50 hover:text-red-600 text-slate-600 border-slate-100 transition-all font-bold text-[10px] uppercase tracking-widest gap-2"
+                              >
+                                <LogOut className="h-3.5 w-3.5" />
+                                Terminate
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="users" className="animate-in slide-in-from-left-2 duration-300">
+          <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900 overflow-hidden">
+            <CardHeader className="p-10 border-b border-slate-50 dark:border-slate-800">
+              <CardTitle className="text-xl font-bold font-headline">Identity Registry</CardTitle>
+              <CardDescription>Authorize permits and manage permanent organizational purges.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {usersLoading ? (
+                <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-slate-50/50 dark:bg-slate-800/50">
+                    <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
+                      <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Expert Identity</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Email Identifier</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Strategic Permit</TableHead>
+                      <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {databaseUsers?.map((dbUser) => (
+                      <TableRow key={dbUser.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
+                        <TableCell className="px-10 py-6">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-10 w-10 rounded-xl border-2 border-white shadow-sm">
+                              <AvatarImage src={dbUser.photoURL} />
+                              <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">{dbUser.name?.[0] || 'U'}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-bold text-slate-900 dark:text-white">{dbUser.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-slate-500 font-medium">
+                            <Mail className="h-3.5 w-3.5 opacity-40" />
+                            <span>{dbUser.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full ${
+                            dbUser.status === 'active' ? 'bg-green-50 text-green-600' : 
+                            dbUser.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
+                          }`}>
+                            {dbUser.status === 'active' ? 'AUTHORIZED' : dbUser.status === 'pending' ? 'PENDING' : 'SUSPENDED'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right px-10">
+                          <div className="flex justify-end gap-2">
+                            <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
+                              <Link href="/admin/users">
+                                <Edit2 className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => setUserToPurge(dbUser)}
+                              className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-red-50 hover:text-red-600 text-slate-400 dark:bg-slate-800 transition-all"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -557,7 +767,7 @@ export default function SettingsPage() {
             <CardHeader className="p-10 pb-0">
               <div className="flex items-center justify-between">
                 <div><CardTitle className="text-xl font-bold font-headline">Project Matrix</CardTitle></div>
-                <Button variant="outline" size="sm" onClick={() => { if(confirm("Restore defaults?")) { setDocumentNonBlocking(projectSettingsRef, { serviceTypes: DEFAULT_PROJECT_TYPES, updatedAt: serverTimestamp() }, { merge: true }); toast({ title: "Defaults Restored" }); } }} className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase gap-2"><RotateCcw className="h-3.5 w-3.5" /> Defaults</Button>
+                <Button variant="outline" size="sm" onClick={() => { if(confirm("Restore defaults?")) { setDocumentNonBlocking(projectSettingsRef, { serviceTypes: DEFAULT_SERVICE_TYPES, updatedAt: serverTimestamp() }, { merge: true }); toast({ title: "Defaults Restored" }); } }} className="h-9 px-4 rounded-xl font-bold text-[10px] uppercase gap-2"><RotateCcw className="h-3.5 w-3.5" /> Defaults</Button>
               </div>
             </CardHeader>
             <CardContent className="p-10 space-y-10">
@@ -684,6 +894,29 @@ export default function SettingsPage() {
           </Dialog>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!userToPurge} onOpenChange={(o) => !o && setUserToPurge(null)}>
+        <AlertDialogContent className="rounded-[10px] border-none shadow-2xl">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 text-destructive mb-2">
+              <AlertTriangle className="h-6 w-6" />
+              <AlertDialogTitle className="font-headline text-xl">Purge Identity Record</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
+              This will permanently remove <span className="font-bold text-slate-900">{userToPurge?.email}</span> from the organizational registry. This action is irreversible and terminates all future authentication permits.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 mt-6">
+            <AlertDialogCancel className="rounded-[10px] font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executePurgeUser} 
+              className="bg-destructive hover:bg-destructive/90 text-white rounded-[10px] font-bold px-8 uppercase text-xs tracking-normal"
+            >
+              Confirm Purge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
