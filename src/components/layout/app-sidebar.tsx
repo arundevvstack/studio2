@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from "react";
@@ -70,6 +69,7 @@ const ICON_MAP: Record<string, any> = {
 
 const ALL_MODULES = [
   { id: "dashboard", title: "Dashboard", iconName: "TrendingUp", url: "/dashboard", group: "core", phase: null },
+  { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "core", phase: null },
   { id: "intelligence", title: "Intelligence", iconName: "Zap", url: "/intelligence", group: "core", phase: null },
   { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "phases", phase: "sales" },
   { id: "proposals", title: "Proposal", iconName: "FileText", url: "/proposals", group: "phases", phase: "sales" },
@@ -230,13 +230,15 @@ export function AppSidebar() {
                 <DropdownMenuSeparator className="bg-slate-50" />
                 <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 text-destructive focus:bg-destructive/5 focus:text-destructive">
                   <Link href="/logout">
-                    <div className="relative">
-                      <LogOut className="h-4 w-4" />
-                      <Avatar className="h-3 w-3 absolute -top-1 -right-1 border border-white shadow-sm">
-                        <AvatarImage src={userData?.photoURL || ""} />
-                      </Avatar>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <LogOut className="h-4 w-4" />
+                        <Avatar className="h-3 w-3 absolute -top-1 -right-1 border border-white shadow-sm">
+                          <AvatarImage src={userData?.photoURL || ""} />
+                        </Avatar>
+                      </div>
+                      <span className="font-bold text-[10px] uppercase tracking-widest">Logout Session</span>
                     </div>
-                    <span className="font-bold text-[10px] uppercase tracking-widest">Logout Session</span>
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
