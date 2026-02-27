@@ -102,7 +102,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, orderBy, doc, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -484,7 +484,7 @@ export default function SettingsPage() {
                     <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Device / Browser</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-widest">Platform</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Last Intelligence Sync</TableHead>
+                      <TableHead className="text-[10px) font-bold uppercase tracking-widest">Last Intelligence Sync</TableHead>
                       <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -843,7 +843,7 @@ export default function SettingsPage() {
               <AlertTriangle className="h-6 w-6" />
               <AlertDialogTitle className="font-headline text-xl">Confirm Delete User</AlertDialogTitle>
             </div>
-            <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
+            <AlertDialogDescription className="text-sm text-slate-500 font-medium leading-relaxed">
               This will permanently remove <span className="font-bold text-slate-900">{userToPurge?.email}</span> from the organizational registry. This action is irreversible and terminates all future authentication permits.
             </AlertDialogDescription>
           </AlertDialogHeader>

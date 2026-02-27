@@ -72,6 +72,7 @@ const ICON_MAP: Record<string, any> = {
 const ALL_MODULES = [
   { id: "dashboard", title: "Dashboard", iconName: "TrendingUp", url: "/dashboard", group: "core", phase: null },
   { id: "intelligence", title: "Intelligence", iconName: "Zap", url: "/intelligence", group: "core", phase: null },
+  { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "core", phase: null },
   { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "phases", phase: "sales" },
   { id: "proposals", title: "Proposal", iconName: "FileText", url: "/proposals", group: "phases", phase: "sales" },
   { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "phases", phase: "production" },
@@ -81,14 +82,12 @@ const ALL_MODULES = [
   { id: "billing", title: "Invoice", iconName: "Receipt", url: "/invoices", group: "phases", phase: "release" },
   { id: "market", title: "Marketing Intel", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
   { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network", phase: null },
-  { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "admin", phase: null },
 ];
 
 const GROUPS = [
   { id: "core", label: "Core" },
   { id: "phases", label: "Operations" },
   { id: "network", label: "Network" },
-  { id: "admin", label: "Admin" },
 ];
 
 export function AppSidebar() {
@@ -103,14 +102,22 @@ export function AppSidebar() {
   const { data: userData } = useDoc(userRef);
 
   const permittedPhases = userData?.permittedPhases || [];
-  const isAdmin = userData?.role === 'admin';
+  const isAdmin = userData?.role === 'admin' || user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
 
   const groupedMenuItems = useMemo(() => {
     const allowedModules = ALL_MODULES.filter(item => {
+      // Admin sees everything
       if (isAdmin) return true;
+      
+      // If it's restricted to a phase, check permit
       if (item.phase) {
         return permittedPhases.includes(item.phase);
       }
+      
+      // Admin module specifically
+      if (item.id === 'admin') return false;
+
+      // core and network are usually visible to all authenticated users
       return item.group === 'core' || item.group === 'network';
     });
 
