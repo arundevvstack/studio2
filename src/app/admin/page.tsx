@@ -107,11 +107,15 @@ export default function AdminConsolePage() {
     }
   }, [user, isUserLoading, router, identity, identityLoading, mounted, isMasterUser]);
 
-  // Fetch all users for management
+  // Fetch all users for management - Gated by Admin Role to prevent Security Rules violations
   const usersQuery = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
+    // Only fire listing query if we are Master OR we have loaded the identity and confirmed admin role
+    const hasAuthority = isMasterUser || (identity && identity.role === 'admin');
+    if (!hasAuthority) return null;
+    
     return query(collection(db, "users"), orderBy("updatedAt", "desc"));
-  }, [db, user]);
+  }, [db, user, identity, isMasterUser]);
   const { data: allUsers, isLoading: usersLoading } = useCollection(usersQuery);
 
   const filteredUsers = useMemo(() => {

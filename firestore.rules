@@ -20,7 +20,9 @@ service cloud.firestore {
     // Authoritative check for Strategic Permit & Active Status
     function hasStrategicPermit() {
       let user = getUserData();
+      let isMaster = request.auth.token.email == "defineperspective.in@gmail.com";
       return isSignedIn() && (
+        isMaster ||
         (request.auth.token.strategicPermit == true && request.auth.token.status == "active") ||
         (user != null && user.strategicPermit == true && user.status == "active")
       );
@@ -29,7 +31,9 @@ service cloud.firestore {
     // Check for Root Administrative Authority
     function isAdmin() {
       let user = getUserData();
+      let isMaster = request.auth.token.email == "defineperspective.in@gmail.com";
       return isSignedIn() && (
+        isMaster ||
         request.auth.token.role == "admin" ||
         (user != null && user.role == "admin")
       );
@@ -39,13 +43,15 @@ service cloud.firestore {
      * IDENTITY & AUTHORIZATION REGISTRY
      */
     match /users/{userId} {
-      // Users can read and update their own profile; Admins can see everyone
-      allow get, update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      // Admins need to list users for the Identity Ledger
+      // get: Allow user to read own doc or Admin to read any
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // list: ONLY Admins can list the registry collection
       allow list: if isSignedIn() && isAdmin();
-      // Allow initial provisioning during sign-up
+      // update: User updates self or Admin updates any
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // create: User creates self during sign-up
       allow create: if isSignedIn() && request.auth.uid == userId;
-      // Admins can purge identities from the registry
+      // delete: Admin only
       allow delete: if isSignedIn() && isAdmin();
     }
 
@@ -53,20 +59,18 @@ service cloud.firestore {
      * ORGANIZATIONAL INFRASTRUCTURE
      */
     match /teamMembers/{memberId} {
-      // Users need to read and update their own record; Experts see the whole team
-      allow read, update: if isSignedIn() && (request.auth.uid == memberId || hasStrategicPermit() || isAdmin());
-      // Only admins can create new records via the team form
-      allow create: if isSignedIn() && isAdmin();
+      allow get: if isSignedIn() && (request.auth.uid == memberId || isAdmin());
+      allow list: if isSignedIn() && (hasStrategicPermit() || isAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == memberId || isAdmin());
+      allow create: if isSignedIn() && (request.auth.uid == memberId || isAdmin());
       allow delete: if isSignedIn() && isAdmin();
       
-      // Allow session tracking for the authenticated user
       match /sessions/{sessionId} {
         allow read, write: if isSignedIn() && request.auth.uid == memberId;
       }
     }
 
     match /roles/{roleId} {
-      // All users need to read roles to resolve nomenclature
       allow read: if isSignedIn();
       allow write: if isSignedIn() && isAdmin();
     }
@@ -77,7 +81,6 @@ service cloud.firestore {
     match /projects/{projectId} {
       allow read, write: if hasStrategicPermit() || isAdmin();
       
-      // Nested task roadmap
       match /tasks/{taskId} {
         allow read, write: if hasStrategicPermit() || isAdmin();
       }
@@ -86,7 +89,6 @@ service cloud.firestore {
     match /clients/{clientId} {
       allow read, write: if hasStrategicPermit() || isAdmin();
       
-      // Client-specific billing
       match /invoices/{invoiceId} {
         allow read, write: if hasStrategicPermit() || isAdmin();
       }
@@ -113,7 +115,6 @@ service cloud.firestore {
      * APP CONFIGURATION & SETTINGS
      */
     match /settings/{settingId} {
-      // Basic settings like project verticals need to be readable for provisioning
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }

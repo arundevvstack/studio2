@@ -238,10 +238,14 @@ export default function SettingsPage() {
   }, [db, user]);
   const { data: roles } = useCollection(rolesQuery);
 
+  const isMasterAdmin = currentIdentity?.role === 'admin' || user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
+
+  // Gated query for database users - prevents list operations for non-admins
   const databaseUsersQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !currentIdentity) return null;
+    if (!isMasterAdmin && currentIdentity.role !== 'admin') return null;
     return query(collection(db, "users"), orderBy("updatedAt", "desc"));
-  }, [db, user]);
+  }, [db, user, currentIdentity, isMasterAdmin]);
   const { data: databaseUsers, isLoading: usersLoading } = useCollection(databaseUsersQuery);
 
   const userRoleRef = useMemoFirebase(() => {
@@ -249,8 +253,6 @@ export default function SettingsPage() {
     return doc(db, "roles", currentIdentity.role);
   }, [db, currentIdentity?.role]);
   const { data: userRole } = useDoc(userRoleRef);
-
-  const isMasterAdmin = currentIdentity?.role === 'admin' || user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
 
   const sessionsQuery = useMemoFirebase(() => {
     if (!user) return null;
