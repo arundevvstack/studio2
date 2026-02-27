@@ -95,6 +95,7 @@ export default function AdminConsolePage() {
       if (!user || user.isAnonymous) {
         router.push("/login");
       } else if (!isMasterUser && (!identity || identity.status !== "active")) {
+        // Only non-master users are gated if they are pending or suspended
         router.push("/login");
       }
     }
@@ -149,20 +150,22 @@ export default function AdminConsolePage() {
     );
   }
 
-  if (!user || user.isAnonymous || (!isMasterUser && identity?.status !== "active")) return null;
+  // Bypass logic for master user to see the admin console even if database identity isn't loaded yet
+  if (!user || user.isAnonymous) return null;
+  if (!isMasterUser && identity?.status !== "active") return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Admin</h1>
+            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Admin Console</h1>
             <Badge className="bg-slate-900 text-white border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
               <ShieldCheck className="h-3 w-3 mr-1" />
               Root Access
             </Badge>
           </div>
-          <p className="text-sm text-slate-500 font-medium tracking-normal">High-level system oversight, operational health, and organization security.</p>
+          <p className="text-sm text-slate-500 font-medium tracking-normal">High-level system oversight, identity governance, and permit authorization.</p>
         </div>
       </div>
 
@@ -197,7 +200,7 @@ export default function AdminConsolePage() {
             <Hourglass className="h-5 w-5 text-orange-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pending Users</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pending Permits</p>
             <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600 tracking-normal">
               {(allUsers || []).filter(u => u.status === 'pending').length}
             </h3>
@@ -209,7 +212,7 @@ export default function AdminConsolePage() {
             <Zap className="h-5 w-5 text-purple-500" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Access Request</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Permit Requests</p>
             <h3 className="text-3xl font-bold font-headline mt-1 text-purple-600 tracking-normal">
               {(allUsers || []).filter(u => u.status === 'pending').length}
             </h3>
@@ -221,7 +224,7 @@ export default function AdminConsolePage() {
             <UsersIcon className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Users</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Registry</p>
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{(allUsers || []).length}</h3>
           </div>
         </Card>

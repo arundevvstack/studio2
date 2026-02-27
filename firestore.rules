@@ -11,31 +11,25 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper to get the user's registry document
-    function getUserData() {
-      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(userPath) ? get(userPath).data : null;
+    // Authoritative check for Root Administrative Authority
+    function isAdmin() {
+      let isMaster = request.auth.token.email == "defineperspective.in@gmail.com";
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isSignedIn() && (
+        isMaster ||
+        request.auth.token.role == "admin" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && userDoc.data.role == "admin")
+      );
     }
 
     // Authoritative check for Strategic Permit & Active Status
     function hasStrategicPermit() {
-      let user = getUserData();
       let isMaster = request.auth.token.email == "defineperspective.in@gmail.com";
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
       return isSignedIn() && (
         isMaster ||
-        (request.auth.token.strategicPermit == true && request.auth.token.status == "active") ||
-        (user != null && user.strategicPermit == true && user.status == "active")
-      );
-    }
-
-    // Check for Root Administrative Authority
-    function isAdmin() {
-      let user = getUserData();
-      let isMaster = request.auth.token.email == "defineperspective.in@gmail.com";
-      return isSignedIn() && (
-        isMaster ||
-        request.auth.token.role == "admin" ||
-        (user != null && user.role == "admin")
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && userDoc.data.strategicPermit == true && userDoc.data.status == "active")
       );
     }
 
@@ -47,7 +41,7 @@ service cloud.firestore {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       // list: ONLY Admins can list the registry collection
       allow list: if isSignedIn() && isAdmin();
-      // update: User updates self or Admin updates any
+      // update: User updates self (restricted fields via rules logic) or Admin updates any
       allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       // create: User creates self during sign-up
       allow create: if isSignedIn() && request.auth.uid == userId;

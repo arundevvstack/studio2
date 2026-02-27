@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo } from "react";
@@ -99,16 +100,25 @@ export function AppSidebar() {
   }, [db, user]);
   const { data: userData } = useDoc(userRef);
 
+  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
+  const isAdmin = isMasterUser || userData?.role === 'admin';
   const permittedPhases = userData?.permittedPhases || [];
-  const isAdmin = userData?.role === 'admin' || user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
 
   const groupedMenuItems = useMemo(() => {
     const allowedModules = ALL_MODULES.filter(item => {
+      // Root admin sees everything
       if (isAdmin) return true;
+      
+      // Phase-gated modules
       if (item.phase) {
         return permittedPhases.includes(item.phase);
       }
-      return item.group === 'core' || item.group === 'network';
+      
+      // Core modules (excluding Admin which is handled by isAdmin check above)
+      if (item.group === 'core' && item.id !== 'admin') return true;
+      
+      // Network modules are generally public to internal team
+      return item.group === 'network';
     });
 
     return GROUPS.map(group => ({
@@ -231,12 +241,7 @@ export function AppSidebar() {
                 <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 text-destructive focus:bg-destructive/5 focus:text-destructive">
                   <Link href="/logout">
                     <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <LogOut className="h-4 w-4" />
-                        <Avatar className="h-3 w-3 absolute -top-1 -right-1 border border-white shadow-sm">
-                          <AvatarImage src={userData?.photoURL || ""} />
-                        </Avatar>
-                      </div>
+                      <LogOut className="h-4 w-4" />
                       <span className="font-bold text-[10px] uppercase tracking-widest">Logout Session</span>
                     </div>
                   </Link>
