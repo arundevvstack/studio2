@@ -58,8 +58,7 @@ import {
   MoreHorizontal,
   Smartphone,
   Laptop,
-  LogOut,
-  ShieldIcon
+  LogOut
 } from "lucide-react";
 import { 
   DndContext, 
@@ -129,19 +128,19 @@ import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const SIDEBAR_MODULES = [
   { id: "dashboard", title: "Dashboard", icon: LayoutGrid },
-  { id: "proposals", title: "Proposals", icon: FileText },
+  { id: "proposals", title: "Proposal", icon: FileText },
   { id: "talent-library", title: "Talent Library", icon: Users },
   { id: "pipeline", title: "Pipeline", icon: GitBranch },
   { id: "projects", title: "Projects", icon: Briefcase },
-  { id: "board", title: "Board", icon: Trello },
+  { id: "board", title: "Kanban", icon: Trello },
   { id: "clients", title: "Clients", icon: Briefcase },
   { id: "schedule", title: "Schedule", icon: Calendar },
   { id: "time", title: "Time Tracking", icon: Clock },
   { id: "team", title: "Team", icon: Users },
   { id: "billing", title: "Billing", icon: FileText },
   { id: "intelligence", title: "Intelligence", icon: BarChart3 },
-  { id: "market", title: "Market Research", icon: Globe },
-  { id: "admin", title: "Admin Console", icon: ShieldCheck },
+  { id: "market", title: "Marketing Intelligence", icon: Globe },
+  { id: "admin", title: "Admin", icon: ShieldCheck },
   { id: "settings", title: "Settings", icon: Settings },
 ];
 
@@ -156,7 +155,7 @@ const DASHBOARD_ITEMS = [
 
 const SETTINGS_TABS = [
   { id: "profile", label: "My Profile", icon: User },
-  { id: "sessions", label: "Security & Sessions", icon: ShieldIcon },
+  { id: "sessions", label: "Security & Sessions", icon: Shield },
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "users", label: "Database Users", icon: Users },
   { id: "project", label: "Project Settings", icon: Briefcase },
@@ -248,14 +247,12 @@ export default function SettingsPage() {
 
   const userRoleRef = useMemoFirebase(() => {
     if (!currentIdentity?.role) return null;
-    // Note: identities use simple 'admin' or custom roles
     return doc(db, "roles", currentIdentity.role);
   }, [db, currentIdentity?.role]);
   const { data: userRole } = useDoc(userRoleRef);
 
   const isMasterAdmin = currentIdentity?.role === 'admin' || currentIdentity?.email === 'defineperspective.in@gmail.com';
 
-  // Active Sessions Stream
   const sessionsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, "teamMembers", user.uid, "sessions"), orderBy("lastActive", "desc"));
@@ -485,8 +482,8 @@ export default function SettingsPage() {
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="space-y-1">
-        <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal dark:text-white">Strategic Settings</h1>
-        <p className="text-sm text-slate-500 font-medium dark:text-slate-400">Manage your organization profile, team access, and system permissions.</p>
+        <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal dark:text-white">Settings</h1>
+        <p className="text-sm text-slate-500 font-medium dark:text-slate-400">Manage your organization profile, team access, and system preferences.</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
@@ -586,7 +583,7 @@ export default function SettingsPage() {
                                 className="h-10 px-4 rounded-xl bg-white hover:bg-red-50 hover:text-red-600 text-slate-600 border-slate-100 transition-all font-bold text-[10px] uppercase tracking-widest gap-2"
                               >
                                 <LogOut className="h-3.5 w-3.5" />
-                                Terminate
+                                Logout
                               </Button>
                             )}
                           </TableCell>
@@ -846,8 +843,8 @@ export default function SettingsPage() {
                       <Badge variant="outline" className="text-[8px] font-bold uppercase border-slate-100 dark:border-slate-800">{role.permissions?.length || 0} Permissions</Badge>
                     </div>
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenRoleDialog(role)} className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800"><Edit2 className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteDocumentNonBlocking(doc(db, "roles", role.id))} className="h-10 w-10 rounded-xl bg-slate-50 text-destructive dark:bg-slate-800"><Trash2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800" onClick={() => handleOpenRoleDialog(role)}><Edit2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 text-destructive dark:bg-slate-800" onClick={() => deleteDocumentNonBlocking(doc(db, "roles", role.id))}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </CardHeader>
                   <CardContent className="p-8 pt-0">

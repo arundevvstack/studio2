@@ -84,14 +84,14 @@ export default function Dashboard() {
             <Zap className="h-10 w-10 text-white fill-white" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-950">Expert Hub</h1>
+            <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-950">Dashboard</h1>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Active Strategic Permit • {userData.role || 'Personnel'}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           {hasPhase('production') && (
             <Button asChild className="h-14 px-10 rounded-full font-bold bg-primary text-white shadow-xl shadow-primary/20 gap-3">
-              <Link href="/projects/new">Initiate Phase <Plus className="h-5 w-5" /></Link>
+              <Link href="/projects/new">Add Project <Plus className="h-5 w-5" /></Link>
             </Button>
           )}
         </div>
@@ -100,7 +100,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {hasPhase('sales') && (
           <PhaseCard 
-            title="Sales Phase" 
+            title="Pipeline" 
             desc="Pipeline Management & Lead Intel" 
             icon={Target} 
             color="bg-orange-50 text-orange-600" 
@@ -109,7 +109,7 @@ export default function Dashboard() {
         )}
         {hasPhase('production') && (
           <PhaseCard 
-            title="Production Phase" 
+            title="Projects" 
             desc="Resource Load & Roadmap Execution" 
             icon={Activity} 
             color="bg-blue-50 text-blue-600" 
@@ -118,7 +118,7 @@ export default function Dashboard() {
         )}
         {hasPhase('release') && (
           <PhaseCard 
-            title="Release Phase" 
+            title="Release" 
             desc="High-Fidelity Delivery & Billing" 
             icon={Play} 
             color="bg-green-50 text-green-600" 
@@ -127,7 +127,7 @@ export default function Dashboard() {
         )}
         {hasPhase('socialMedia') && (
           <PhaseCard 
-            title="Social Media" 
+            title="Marketing Intelligence" 
             desc="Asset Monitoring & Market Research" 
             icon={Globe} 
             color="bg-purple-50 text-purple-600" 
@@ -142,7 +142,7 @@ export default function Dashboard() {
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
             <div className="space-y-4">
               <Badge className="bg-white/10 text-white border-none rounded-full px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em]">Root Authority</Badge>
-              <h2 className="text-4xl font-bold font-headline tracking-tight">Identity Governance</h2>
+              <h2 className="text-4xl font-bold font-headline tracking-tight">Admin</h2>
               <p className="text-slate-400 max-w-md font-medium">Authorize new expert permits, assigned roles, and manage organizational access tiers.</p>
             </div>
             <Button asChild className="h-16 px-12 bg-white text-slate-950 hover:bg-slate-100 rounded-full font-bold text-xs uppercase tracking-widest shadow-2xl">
