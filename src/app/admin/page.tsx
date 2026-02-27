@@ -150,7 +150,7 @@ export default function AdminConsolePage() {
     return (
       <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-xs uppercase tracking-normal">Authorizing Executive Access...</p>
+        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Authorizing Executive Access...</p>
       </div>
     );
   }
@@ -193,7 +193,7 @@ export default function AdminConsolePage() {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Users</p>
             <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">
-              {allUsers?.filter(u => u.status === 'active').length || 0}
+              {(allUsers || []).filter(u => u.status === 'active').length}
             </h3>
           </div>
         </Card>
@@ -205,7 +205,7 @@ export default function AdminConsolePage() {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pending Users</p>
             <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600 tracking-normal">
-              {allUsers?.filter(u => u.status === 'pending').length || 0}
+              {(allUsers || []).filter(u => u.status === 'pending').length}
             </h3>
           </div>
         </Card>
@@ -217,7 +217,7 @@ export default function AdminConsolePage() {
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Access Request</p>
             <h3 className="text-3xl font-bold font-headline mt-1 text-purple-600 tracking-normal">
-              {allUsers?.filter(u => u.status === 'pending').length || 0}
+              {(allUsers || []).filter(u => u.status === 'pending').length}
             </h3>
           </div>
         </Card>
@@ -228,7 +228,7 @@ export default function AdminConsolePage() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Users</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{allUsers?.length || 0}</h3>
+            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{(allUsers || []).length}</h3>
           </div>
         </Card>
       </div>

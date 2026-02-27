@@ -124,6 +124,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 const SIDEBAR_MODULES = [
@@ -562,7 +563,7 @@ export default function SettingsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {databaseUsers?.map((dbUser) => (
+                    {(databaseUsers || []).map((dbUser) => (
                       <TableRow key={dbUser.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
                         <TableCell className="px-10 py-6">
                           <div className="flex items-center gap-4">
@@ -719,7 +720,7 @@ export default function SettingsPage() {
                   <div className="flex gap-4"><Input value={newServiceType} onChange={e => setNewServiceType(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddServiceType()} placeholder="e.g. AI Content Repurposing" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold flex-1" /><Button onClick={handleAddServiceType} disabled={isSaving || !newServiceType} className="h-14 px-8 rounded-2xl bg-primary text-white font-bold gap-2 shadow-lg shadow-primary/20"><Plus className="h-5 w-5" /> Add</Button></div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {projectSettings?.serviceTypes?.map((type: string) => (
+                  {(projectSettings?.serviceTypes || []).map((type: string) => (
                     <div key={type} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 group transition-all hover:shadow-md dark:bg-slate-800 dark:border-slate-700">
                       {editingServiceType === type ? (
                         <div className="flex items-center gap-2 flex-1">

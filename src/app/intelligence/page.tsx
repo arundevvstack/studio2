@@ -156,6 +156,7 @@ export default function IntelligenceHub() {
             <div className="space-y-4">
               <Badge className="bg-white/10 text-white border-none rounded-full px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em]">Root Authority</Badge>
               <h2 className="text-4xl font-bold font-headline tracking-tight leading-tight">System Governance</h2>
+              <h2 className="text-4xl font-bold font-headline tracking-tight leading-tight">System Governance</h2>
               <p className="text-slate-400 max-w-md font-medium">Authorize new expert permits, assign strategic roles, and manage organizational access tiers across the entire workspace.</p>
             </div>
             <Button asChild className="h-16 px-12 bg-white text-slate-950 hover:bg-slate-100 rounded-full font-bold text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95">

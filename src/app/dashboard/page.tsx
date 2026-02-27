@@ -159,7 +159,7 @@ export default function AnalyticsDashboard() {
           </CardHeader>
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={projects?.slice(0, 10).reverse()}>
+              <BarChart data={(projects || []).slice(0, 10).reverse()}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.05} />
                 <XAxis dataKey="name" hide />
                 <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} stroke="#cbd5e1" />
@@ -168,7 +168,7 @@ export default function AnalyticsDashboard() {
                   formatter={(v: any) => [`₹${v.toLocaleString('en-IN')}`, 'Budget']}
                 />
                 <Bar dataKey="budget" radius={[6, 6, 0, 0]} barSize={40}>
-                  {projects?.slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  {(projects || []).slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
