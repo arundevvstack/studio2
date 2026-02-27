@@ -72,7 +72,7 @@ const ROLES = ["strategic", "sales", "production", "admin"];
 
 /**
  * @fileOverview Consolidated Admin Console.
- * Manages system-wide metrics, operational status, and Integrated Access Governance.
+ * Manages system-wide metrics, operational status, and Integrated Access Governance (Manage Permits).
  * Gated by strictly "Active" Access Status in the authoritative Identity Registry.
  */
 
@@ -237,7 +237,7 @@ export default function AdminConsolePage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold font-headline text-slate-900 tracking-normal">Access Governance</h2>
+            <h2 className="text-2xl font-bold font-headline text-slate-900 tracking-normal">Manage Permits</h2>
             <p className="text-sm text-slate-500 font-medium tracking-normal">Manage user authorization, strategic roles, and phase-level permissions.</p>
           </div>
         </div>
