@@ -70,12 +70,6 @@ const PHASES = [
 
 const ROLES = ["strategic", "sales", "production", "admin"];
 
-/**
- * @fileOverview Consolidated Admin Console.
- * Manages system-wide metrics, operational status, and Integrated Access Governance (Manage Permits).
- * Gated by strictly "Active" Access Status, with bypass for Master Executive (Test Mode).
- */
-
 export default function AdminConsolePage() {
   const router = useRouter();
   const db = useFirestore();
@@ -96,7 +90,6 @@ export default function AdminConsolePage() {
 
   const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
 
-  // Strategic Access Guard
   useEffect(() => {
     if (!isUserLoading && mounted && !identityLoading) {
       if (!user || user.isAnonymous) {
@@ -107,13 +100,10 @@ export default function AdminConsolePage() {
     }
   }, [user, isUserLoading, router, identity, identityLoading, mounted, isMasterUser]);
 
-  // Fetch all users for management - Gated by Admin Role to prevent Security Rules violations
   const usersQuery = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
-    // Only fire listing query if we are Master OR we have loaded the identity and confirmed admin role
     const hasAuthority = isMasterUser || (identity && identity.role === 'admin');
     if (!hasAuthority) return null;
-    
     return query(collection(db, "users"), orderBy("updatedAt", "desc"));
   }, [db, user, identity, isMasterUser]);
   const { data: allUsers, isLoading: usersLoading } = useCollection(usersQuery);

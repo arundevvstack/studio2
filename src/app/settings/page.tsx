@@ -240,7 +240,6 @@ export default function SettingsPage() {
 
   const isMasterAdmin = currentIdentity?.role === 'admin' || user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
 
-  // Gated query for database users - prevents list operations for non-admins
   const databaseUsersQuery = useMemoFirebase(() => {
     if (!user || !currentIdentity) return null;
     if (!isMasterAdmin && currentIdentity.role !== 'admin') return null;

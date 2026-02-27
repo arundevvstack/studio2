@@ -39,11 +39,6 @@ import { collection, query, orderBy, limit, doc } from "firebase/firestore";
 
 const CHART_COLORS = ['#2E86C1', '#4CAF50', '#F39C12', '#9B59B6', '#E74C3C', '#1ABC9C'];
 
-/**
- * @fileOverview Analytics Dashboard.
- * High-fidelity monitoring of organizational throughput and revenue.
- * Updated with Executive Test Mode bypass for master account.
- */
 export default function AnalyticsDashboard() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -83,7 +78,8 @@ export default function AnalyticsDashboard() {
   }, [user, userData, isUserLoading, isUserRegistryLoading, router, mounted, isMasterUser]);
 
   const stats = useMemo(() => {
-    if (!projects) return { totalRevenue: 0, activeProjects: 0, pipelineValue: 0, conversionRate: 0, verticalData: [] };
+    const defaultStats = { totalRevenue: 0, activeProjects: 0, pipelineValue: 0, conversionRate: 0, verticalData: [] };
+    if (!projects) return defaultStats;
     
     const totalRevenue = projects.reduce((sum, p) => sum + (p.budget || 0), 0);
     const activeProjects = projects.filter(p => p.status !== "Released").length;
@@ -223,7 +219,7 @@ export default function AnalyticsDashboard() {
             </Button>
           </div>
           <div className="divide-y divide-slate-50">
-            {projects?.slice(0, 5).map((p) => (
+            {(projects || []).slice(0, 5).map((p) => (
               <div key={p.id} className="p-8 flex items-center justify-between hover:bg-slate-50/50 transition-colors group">
                 <div className="flex items-center gap-6">
                   <div className="h-12 w-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-primary/5 transition-colors">

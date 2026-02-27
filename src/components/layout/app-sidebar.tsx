@@ -107,18 +107,11 @@ export function AppSidebar() {
 
   const groupedMenuItems = useMemo(() => {
     const allowedModules = ALL_MODULES.filter(item => {
-      // Admin sees everything
       if (isAdmin) return true;
-      
-      // If it's restricted to a phase, check permit
       if (item.phase) {
         return permittedPhases.includes(item.phase);
       }
-      
-      // Admin module specifically
       if (item.id === 'admin') return false;
-
-      // core and network are usually visible to all authenticated users
       return item.group === 'core' || item.group === 'network';
     });
 
