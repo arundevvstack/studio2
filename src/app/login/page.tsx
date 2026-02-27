@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -7,11 +6,9 @@ import {
   Mail, 
   Lock, 
   Loader2, 
-  Hourglass,
   Eye, 
   EyeOff,
   Zap,
-  RotateCcw,
   Globe,
   ChevronDown,
   UserPlus
@@ -27,18 +24,12 @@ import {
   initiateEmailSignUp,
   initiateGoogleSignIn
 } from "@/firebase/non-blocking-login";
-import { doc, serverTimestamp, setDoc, getDoc, writeBatch } from "firebase/firestore";
-import { signOut } from "firebase/auth";
+import { doc, serverTimestamp, getDoc, setDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 
 const MASTER_EMAIL = 'defineperspective.in@gmail.com';
 
-/**
- * @fileOverview Authoritative Strategic Login Node.
- * Handles Email & Google authentication with strict Admin Authorization Gating.
- * Provisions both User Registry and Team Member nodes.
- */
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
@@ -65,59 +56,63 @@ export default function LoginPage() {
         
         if (!docSnap.exists()) {
           const isMaster = user.email?.toLowerCase() === MASTER_EMAIL.toLowerCase();
-          const batch = writeBatch(db);
           
           const newIdentity = {
+            uid: user.uid,
             id: user.uid,
             name: name || user.displayName || "New Expert",
             email: user.email?.toLowerCase(),
             photoURL: user.photoURL || "",
+            provider: user.providerData[0]?.providerId === 'google.com' ? "google" : "password",
+            
+            status: isMaster ? "approved" : "pending",
             role: isMaster ? "admin" : null,
-            permittedPhases: isMaster ? ["sales", "production", "release", "socialMedia"] : [],
-            strategicPermit: isMaster ? true : false,
-            status: isMaster ? "active" : "pending",
-            provider: user.providerData[0]?.providerId || "password",
+            department: isMaster ? "Executive" : null,
+
+            permissions: {
+              canCreateProject: isMaster,
+              canEditProject: isMaster,
+              canDeleteProject: isMaster,
+              canViewFinance: isMaster,
+              canAccessSettings: isMaster
+            },
+
+            phaseAccess: {
+              phase1: isMaster,
+              phase2: isMaster,
+              phase3: isMaster,
+              phase4: isMaster
+            },
+
+            approvedBy: isMaster ? "SYSTEM" : null,
+            approvedAt: isMaster ? serverTimestamp() : null,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           };
 
-          const memberRef = doc(db, "teamMembers", user.uid);
-          const parts = newIdentity.name.split(" ");
-          const firstName = parts[0] || "New";
-          const lastName = parts.slice(1).join(" ") || "Expert";
-
-          const memberData = {
-            id: user.uid,
-            firstName,
-            lastName,
-            email: newIdentity.email,
-            thumbnail: newIdentity.photoURL,
-            roleId: newIdentity.role || "",
-            status: isMaster ? "Active" : "Pending",
-            department: "Production",
-            type: "In-house",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-          };
-
-          batch.set(userRef, newIdentity);
-          batch.set(memberRef, memberData);
-          
-          await batch.commit();
+          await setDoc(userRef, newIdentity);
           
           if (!isMaster) {
-            toast({ title: "Registry Entry Created", description: "Awaiting Admin authorization." });
+            toast({ title: "Account Created", description: "Awaiting administrative approval." });
+            router.push("/waiting-approval");
+          } else {
+            router.push("/dashboard");
           }
-        }
-
-        if (userData?.status === "active" && userData?.strategicPermit === true) {
-          router.push("/dashboard");
+        } else {
+          // Existing user logic
+          if (userData?.status === "approved") {
+            router.push("/dashboard");
+          } else if (userData?.status === "suspended") {
+            router.push("/account-suspended");
+          } else if (userData?.status === "pending") {
+            router.push("/waiting-approval");
+          }
         }
       }
     };
 
-    syncUserRegistry();
-  }, [user, userData, isUserRegistryLoading, router, db, name]);
+    if (user) syncUserRegistry();
+  }, [user, userData, isUserRegistryLoading, router, db, name, userRef]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,36 +147,7 @@ export default function LoginPage() {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-6">
         <Loader2 className="h-12 w-12 text-primary animate-spin" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Validating Strategic Permit...</p>
-      </div>
-    );
-  }
-
-  if (user && userData && (userData.status !== "active" || !userData.strategicPermit)) {
-    return (
-      <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-6 font-body">
-        <div className="bg-white rounded-[3rem] shadow-2xl p-12 max-w-lg w-full flex flex-col items-center text-center space-y-10 border border-slate-100">
-          <div className="h-24 w-24 rounded-[2.5rem] bg-orange-50 flex items-center justify-center shadow-lg relative">
-            <Hourglass className="h-10 w-10 text-orange-500 animate-pulse" />
-            <div className="absolute -top-2 -right-2">
-              <Badge className="bg-orange-500 text-white border-none uppercase text-[8px] font-bold px-2 py-1 rounded-lg">RESTRICTED</Badge>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <h1 className="text-3xl font-bold font-headline text-slate-900 tracking-tight">Access Pending</h1>
-            <p className="text-sm text-slate-500 font-medium leading-relaxed">
-              Hello, <span className="font-bold text-slate-900">{userData.name}</span>. Your identity is registered but your **Strategic Permit** is currently inactive.
-              <br/><br/>
-              Status: <span className="text-primary font-bold uppercase">{userData.status}</span>
-              <br/>
-              A system administrator must authorize your assigned role and phases before the workspace is provisioned.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 w-full">
-            <Button variant="outline" onClick={() => signOut(auth)} className="h-14 rounded-2xl font-bold text-xs uppercase tracking-widest border-slate-100 bg-slate-50 hover:bg-slate-100 transition-all">Switch Identity</Button>
-            <Button variant="ghost" onClick={() => window.location.reload()} className="h-14 rounded-2xl font-bold text-primary text-xs uppercase tracking-widest gap-2"><RotateCcw className="h-4 w-4" /> Refresh Authorization</Button>
-          </div>
-        </div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Verifying Enterprise Permit...</p>
       </div>
     );
   }
@@ -207,13 +173,13 @@ export default function LoginPage() {
         <div className="space-y-12 animate-in fade-in slide-in-from-left-4 duration-1000">
           <div className="space-y-6">
             <Badge className="bg-primary/5 text-primary border-none rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest">
-              Strategic Identity Node
+              Enterprise Access Node
             </Badge>
             <h1 className="text-5xl lg:text-7xl font-bold font-headline text-slate-900 tracking-tight leading-[1.1]">
-              Workspace <br/> <span className="text-primary">Authorization.</span>
+              Secure Hub <br/> <span className="text-primary">Authorization.</span>
             </h1>
             <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-sm">
-              Role-based permits ensure high-fidelity project management and organizational resource security.
+              Approved permits ensure high-fidelity management and organizational asset security.
             </p>
           </div>
 
@@ -226,7 +192,7 @@ export default function LoginPage() {
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
               className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline"
             >
-              {mode === 'login' ? 'Provision Identity' : 'Secure Login'}
+              {mode === 'login' ? 'Provision Account' : 'Secure Login'}
             </button>
           </div>
         </div>

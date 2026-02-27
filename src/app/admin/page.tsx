@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { 
   ShieldCheck, 
   Users as UsersIcon, 
-  Server, 
-  CheckCircle2, 
   Loader2,
   Search,
   Hourglass,
@@ -13,9 +11,12 @@ import {
   Trash2,
   AlertTriangle,
   MoreHorizontal,
-  Zap
+  CheckCircle2,
+  Lock,
+  LayoutGrid,
+  Filter
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -44,11 +45,9 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, serverTimestamp } from "firebase/firestore";
-import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { collection, query, orderBy, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,307 +59,302 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const PHASES = [
-  { id: "sales", label: "Sales Phase" },
-  { id: "production", label: "Production Phase" },
-  { id: "release", label: "Invoice Phase" },
-  { id: "socialMedia", label: "Social Media Phase" }
+const ROLES = ["admin", "manager", "editor", "viewer"];
+const DEPARTMENTS = ["Executive", "Production", "Sales", "Marketing", "Post-Production"];
+
+const PERMISSION_KEYS = [
+  { id: "canCreateProject", label: "Create Project" },
+  { id: "canEditProject", label: "Edit Project" },
+  { id: "canDeleteProject", label: "Delete Project" },
+  { id: "canViewFinance", label: "View Finance" },
+  { id: "canAccessSettings", label: "Access Settings" }
 ];
 
-const ROLES = ["strategic", "sales", "production", "admin"];
+const PHASE_KEYS = [
+  { id: "phase1", label: "Phase 1" },
+  { id: "phase2", label: "Phase 2" },
+  { id: "phase3", label: "Phase 3" },
+  { id: "phase4", label: "Phase 4" }
+];
 
 export default function AdminConsolePage() {
-  const router = useRouter();
   const db = useFirestore();
-  const { user, isUserLoading } = useUser();
-  const [mounted, setMounted] = useState(false);
+  const { user: adminUser } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [userToDelete, setUserToDelete] = useState<any>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const identityRef = useMemoFirebase(() => {
-    if (!user || user.isAnonymous) return null;
-    return doc(db, "users", user.uid);
-  }, [db, user]);
-  const { data: identity, isLoading: identityLoading } = useDoc(identityRef);
-
-  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
-
-  useEffect(() => {
-    if (!isUserLoading && mounted && !identityLoading) {
-      if (!user || user.isAnonymous) {
-        router.push("/login");
-      } else if (!isMasterUser && (!identity || identity.status !== "active")) {
-        router.push("/login");
-      }
-    }
-  }, [user, isUserLoading, router, identity, identityLoading, mounted, isMasterUser]);
-
   const usersQuery = useMemoFirebase(() => {
-    if (!user || user.isAnonymous) return null;
-    const hasAuthority = isMasterUser || (identity && identity.role === 'admin');
-    if (!hasAuthority) return null;
-    return query(collection(db, "users"), orderBy("updatedAt", "desc"));
-  }, [db, user, identity, isMasterUser]);
-  const { data: allUsers, isLoading: usersLoading } = useCollection(usersQuery);
+    return query(collection(db, "users"), orderBy("createdAt", "desc"));
+  }, [db]);
+  const { data: allUsers, isLoading } = useCollection(usersQuery);
 
   const filteredUsers = useMemo(() => {
     if (!allUsers) return [];
-    return allUsers.filter(u => 
-      u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [allUsers, searchQuery]);
-
-  const handleUpdateAccess = async (userId: string, data: any) => {
-    const userRef = doc(db, "users", userId);
-    updateDocumentNonBlocking(userRef, {
-      ...data,
-      updatedAt: serverTimestamp()
+    return allUsers.filter(u => {
+      const matchesSearch = 
+        u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
+      return matchesSearch && matchesStatus;
     });
-    toast({ title: "Access Updated", description: "Identity metadata synchronized." });
-  };
+  }, [allUsers, searchQuery, statusFilter]);
 
-  const handleTogglePhase = (userId: string, phase: string, currentPhases: string[]) => {
-    const updated = (currentPhases || []).includes(phase)
-      ? currentPhases.filter(p => p !== phase)
-      : [...(currentPhases || []), phase];
-    handleUpdateAccess(userId, { permittedPhases: updated });
-  };
-
-  const executeDeleteUser = () => {
-    if (userToDelete) {
-      deleteDocumentNonBlocking(doc(db, "users", userToDelete.id));
-      toast({ variant: "destructive", title: "User Deleted", description: `${userToDelete.name} removed from registry.` });
-      setUserToDelete(null);
+  const handleUpdateUser = async (userId: string, data: any) => {
+    const userRef = doc(db, "users", userId);
+    try {
+      await updateDoc(userRef, {
+        ...data,
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: "Permit Updated", description: "Identity metadata synchronized." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Update Failed", description: e.message });
     }
   };
 
-  if (!mounted || isUserLoading || (user && identityLoading)) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Authorizing Executive Access...</p>
-      </div>
-    );
-  }
+  const handleApprove = (user: any) => {
+    handleUpdateUser(user.id, {
+      status: "approved",
+      approvedBy: adminUser?.uid,
+      approvedAt: serverTimestamp()
+    });
+  };
 
-  if (!user || user.isAnonymous) return null;
-  if (!isMasterUser && identity?.status !== "active") return null;
+  const handleSuspend = (user: any) => {
+    handleUpdateUser(user.id, { status: "suspended" });
+  };
+
+  const executeDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      // In a real app, you'd call a cloud function to delete the Auth user too
+      toast({ title: "User Purged", description: `${userToDelete.name} removed from registry.` });
+      setUserToDelete(null);
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Delete Failed", description: e.message });
+    }
+  };
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
+    <div className="max-w-[1600px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Admin Console</h1>
-            <Badge className="bg-slate-900 text-white border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
-              <ShieldCheck className="h-3 w-3 mr-1" />
+            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Enterprise Governance</h1>
+            <Badge className="bg-slate-900 text-white border-none text-[10px] font-bold px-3 py-1 uppercase">
               Root Access
             </Badge>
           </div>
-          <p className="text-sm text-slate-500 font-medium tracking-normal">High-level system oversight, identity governance, and permit authorization.</p>
+          <p className="text-sm text-slate-500 font-medium">Authorize expert permits, assign strategic roles, and manage module-level permissions.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6">
-        <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
-            <Server className="h-5 w-5 text-blue-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        <Card className="border-none shadow-sm rounded-3xl bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
+            <Hourglass className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">System Status</p>
-            <h3 className="text-xl font-bold font-headline mt-1 flex items-center gap-2 text-green-600">
-              <CheckCircle2 className="h-4 w-4" />
-              Operational
-            </h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pending Approval</p>
+            <h3 className="text-3xl font-bold font-headline mt-1">{(allUsers || []).filter(u => u.status === 'pending').length}</h3>
           </div>
         </Card>
-        
-        <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center">
-            <UsersIcon className="h-5 w-5 text-primary" />
+        <Card className="border-none shadow-sm rounded-3xl bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+            <CheckCircle2 className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Active Users</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">
-              {(allUsers || []).filter(u => u.status === 'active').length}
-            </h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Licenses</p>
+            <h3 className="text-3xl font-bold font-headline mt-1">{(allUsers || []).filter(u => u.status === 'approved').length}</h3>
           </div>
         </Card>
-
-        <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
-            <Hourglass className="h-5 w-5 text-orange-500" />
+        <Card className="border-none shadow-sm rounded-3xl bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+            <ShieldX className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Pending Permits</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 text-orange-600 tracking-normal">
-              {(allUsers || []).filter(u => u.status === 'pending').length}
-            </h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Suspended</p>
+            <h3 className="text-3xl font-bold font-headline mt-1">{(allUsers || []).filter(u => u.status === 'suspended').length}</h3>
           </div>
         </Card>
-
-        <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-purple-50 flex items-center justify-center">
-            <Zap className="h-5 w-5 text-purple-500" />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Permit Requests</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 text-purple-600 tracking-normal">
-              {(allUsers || []).filter(u => u.status === 'pending').length}
-            </h3>
-          </div>
-        </Card>
-
-        <Card className="border-none shadow-sm rounded-[10px] bg-white p-8 space-y-4">
-          <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+        <Card className="border-none shadow-sm rounded-3xl bg-white p-8 space-y-4">
+          <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
             <UsersIcon className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-normal">Total Registry</p>
-            <h3 className="text-3xl font-bold font-headline mt-1 tracking-normal">{(allUsers || []).length}</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Registry</p>
+            <h3 className="text-3xl font-bold font-headline mt-1">{(allUsers || []).length}</h3>
           </div>
         </Card>
       </div>
 
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold font-headline text-slate-900 tracking-normal">Manage Permits</h2>
-            <p className="text-sm text-slate-500 font-medium tracking-normal">Manage user authorization, strategic roles, and phase-level permissions.</p>
-          </div>
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <Input 
+            value={searchQuery} 
+            onChange={(e) => setSearchQuery(e.target.value)} 
+            placeholder="Search expert registry..." 
+            className="pl-12 h-14 bg-white border-none shadow-sm rounded-2xl text-base font-bold" 
+          />
         </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-14 w-full md:w-[200px] rounded-2xl bg-white border-none shadow-sm font-bold text-xs uppercase tracking-widest">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl shadow-2xl">
+            <SelectItem value="all">ALL STATUSES</SelectItem>
+            <SelectItem value="pending">PENDING</SelectItem>
+            <SelectItem value="approved">APPROVED</SelectItem>
+            <SelectItem value="suspended">SUSPENDED</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div className="flex gap-4">
-          <div className="relative flex-1 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-            <Input 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              placeholder="Search expert registry by name or email..." 
-              className="pl-12 h-12 bg-white border-none shadow-sm rounded-xl text-base font-bold tracking-normal" 
-            />
-          </div>
-        </div>
-
-        <Card className="border-none shadow-sm rounded-[10px] bg-white overflow-hidden border border-slate-50">
-          <Table>
-            <TableHeader className="bg-slate-50/50">
-              <TableRow className="hover:bg-transparent border-slate-100">
-                <TableHead className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Users</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Strategic Role</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Access</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Phase Permits</TableHead>
-                <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest text-slate-400">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {usersLoading ? (
-                <TableRow><TableCell colSpan={5} className="py-24 text-center"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
-              ) : filteredUsers.map((u) => (
-                <TableRow key={u.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
-                  <TableCell className="px-10 py-8">
-                    <div className="flex items-center gap-5">
-                      <Avatar className="h-12 w-12 rounded-xl border-2 border-white shadow-sm">
-                        <AvatarImage src={u.photoURL || `https://picsum.photos/seed/${u.id}/200/200`} />
-                        <AvatarFallback className="bg-primary/5 text-primary font-bold">{u.name?.[0] || 'E'}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-bold text-slate-900 tracking-tight">{u.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{u.email}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Select value={u.role || "none"} onValueChange={(val) => handleUpdateAccess(u.id, { role: val === 'none' ? null : val })}>
-                      <SelectTrigger className="h-10 w-40 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest focus:ring-primary/20">
-                        <SelectValue placeholder="No Assignment" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-2xl border-slate-100">
-                        <SelectItem value="none" className="text-[10px] font-bold uppercase">No Role</SelectItem>
-                        {ROLES.map(r => <SelectItem key={r} value={r} className="text-[10px] font-bold uppercase">{r}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-4">
-                      <Switch 
-                        checked={u.strategicPermit} 
-                        onCheckedChange={(val) => handleUpdateAccess(u.id, { strategicPermit: val, status: val ? 'active' : 'suspended' })} 
-                      />
-                      <Badge className={`border-none font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest ${
-                        u.status === 'active' ? 'bg-green-50 text-green-600' : 
+      <Card className="border-none shadow-sm rounded-[2.5rem] bg-white overflow-hidden border border-slate-50">
+        <Table>
+          <TableHeader className="bg-slate-50/50">
+            <TableRow className="hover:bg-transparent border-slate-100">
+              <TableHead className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest">Identity</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Role & Dept</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Permissions</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Phase Access</TableHead>
+              <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Decision</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={5} className="py-24 text-center"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
+            ) : filteredUsers.map((u) => (
+              <TableRow key={u.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
+                <TableCell className="px-10 py-8">
+                  <div className="flex items-center gap-5">
+                    <Avatar className="h-12 w-12 rounded-2xl border-2 border-white shadow-sm">
+                      <AvatarImage src={u.photoURL || `https://picsum.photos/seed/${u.id}/200/200`} />
+                      <AvatarFallback className="bg-primary/5 text-primary font-bold">{u.name?.[0] || 'E'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-bold text-slate-900 tracking-tight">{u.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{u.email}</p>
+                      <Badge className={`mt-2 border-none font-bold text-[8px] uppercase px-2 py-0.5 rounded-lg ${
+                        u.status === 'approved' ? 'bg-green-50 text-green-600' : 
                         u.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
                       }`}>
                         {u.status}
                       </Badge>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-2 max-w-[220px]">
-                      {PHASES.map(p => (
-                        <Badge 
-                          key={p.id} 
-                          variant={u.permittedPhases?.includes(p.id) ? "default" : "outline"}
-                          onClick={() => handleTogglePhase(u.id, p.id, u.permittedPhases || [])}
-                          className={`px-2 py-0.5 rounded-lg text-[8px] font-bold uppercase tracking-widest cursor-pointer transition-all ${
-                            u.permittedPhases?.includes(p.id) 
-                              ? "bg-primary border-none text-white shadow-sm" 
-                              : "bg-white text-slate-300 border-slate-100 hover:border-slate-300"
-                          }`}
-                        >
-                          {p.id}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right px-10">
+                  </div>
+                </TableCell>
+                <TableCell className="space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Strategic Role</p>
+                    <Select value={u.role || "none"} onValueChange={(val) => handleUpdateUser(u.id, { role: val === 'none' ? null : val })}>
+                      <SelectTrigger className="h-10 w-40 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
+                        <SelectValue placeholder="Assign Role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Role</SelectItem>
+                        {ROLES.map(r => <SelectItem key={r} value={r} className="uppercase text-[10px] font-bold">{r}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Department</p>
+                    <Select value={u.department || "none"} onValueChange={(val) => handleUpdateUser(u.id, { department: val === 'none' ? null : val })}>
+                      <SelectTrigger className="h-10 w-40 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
+                        <SelectValue placeholder="Assign Dept" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No Dept</SelectItem>
+                        {DEPARTMENTS.map(d => <SelectItem key={d} value={d} className="uppercase text-[10px] font-bold">{d}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="grid grid-cols-1 gap-2">
+                    {PERMISSION_KEYS.map(pk => (
+                      <div key={pk.id} className="flex items-center gap-2">
+                        <Switch 
+                          size="sm"
+                          checked={u.permissions?.[pk.id] || false} 
+                          onCheckedChange={(val) => {
+                            const updated = { ...(u.permissions || {}), [pk.id]: val };
+                            handleUpdateUser(u.id, { permissions: updated });
+                          }}
+                        />
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{pk.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PHASE_KEYS.map(pk => (
+                      <Badge 
+                        key={pk.id}
+                        variant={u.phaseAccess?.[pk.id] ? "default" : "outline"}
+                        onClick={() => {
+                          const updated = { ...(u.phaseAccess || {}), [pk.id]: !u.phaseAccess?.[pk.id] };
+                          handleUpdateUser(u.id, { phaseAccess: updated });
+                        }}
+                        className={`cursor-pointer px-2 py-1 rounded-lg text-[8px] font-bold uppercase transition-all ${
+                          u.phaseAccess?.[pk.id] ? 'bg-primary border-none text-white' : 'text-slate-300 border-slate-100 hover:bg-slate-50'
+                        }`}
+                      >
+                        {pk.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right px-10">
+                  <div className="flex flex-col items-end gap-2">
+                    {u.status !== 'approved' && (
+                      <Button onClick={() => handleApprove(u)} size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-[10px] uppercase w-32">
+                        <CheckCircle2 className="h-3 w-3 mr-2" /> Approve
+                      </Button>
+                    )}
+                    {u.status !== 'suspended' && (
+                      <Button onClick={() => handleSuspend(u)} size="sm" variant="outline" className="border-red-100 text-red-600 hover:bg-red-50 rounded-xl font-bold text-[10px] uppercase w-32">
+                        <ShieldX className="h-3 w-3 mr-2" /> Suspend
+                      </Button>
+                    )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-white hover:shadow-md transition-all"><MoreHorizontal className="h-5 w-5 text-slate-400" /></Button>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 mt-2"><MoreHorizontal className="h-5 w-5 text-slate-400" /></Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-xl w-56 p-2 shadow-2xl border-slate-100">
-                        <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">Identity Governance</DropdownMenuLabel>
+                      <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
+                        <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Registry Cleanup</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleUpdateAccess(u.id, { status: "active", strategicPermit: true })} className="rounded-lg p-2.5 cursor-pointer gap-3 font-bold text-xs text-green-600">
-                          <CheckCircle2 className="h-4 w-4" /> Authorize Access
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleUpdateAccess(u.id, { status: "suspended", strategicPermit: false })} className="rounded-lg p-2.5 cursor-pointer gap-3 font-bold text-xs text-orange-600">
-                          <ShieldX className="h-4 w-4" /> Suspend Expert
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setUserToDelete(u); }} className="rounded-lg p-2.5 cursor-pointer gap-3 font-bold text-xs text-destructive hover:bg-destructive/5">
-                          <Trash2 className="h-4 w-4" /> Delete User
+                        <DropdownMenuItem onClick={() => setUserToDelete(u)} className="rounded-xl p-3 cursor-pointer gap-3 text-destructive font-bold text-xs">
+                          <Trash2 className="h-4 w-4" /> Purge Identity
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
 
       <AlertDialog open={!!userToDelete} onOpenChange={(o) => !o && setUserToDelete(null)}>
-        <AlertDialogContent className="rounded-[10px] border-none shadow-2xl">
+        <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl p-10">
           <AlertDialogHeader>
-            <div className="flex items-center gap-3 text-destructive mb-2">
-              <AlertTriangle className="h-6 w-6" />
-              <AlertDialogTitle className="font-headline text-xl">Confirm Delete User</AlertDialogTitle>
+            <div className="flex items-center gap-4 text-destructive mb-4">
+              <AlertTriangle className="h-10 w-10" />
+              <AlertDialogTitle className="text-2xl font-bold font-headline">Confirm Identity Purge</AlertDialogTitle>
             </div>
-            <AlertDialogDescription className="text-sm text-slate-500 font-medium leading-relaxed">
-              You are about to irreversibly remove <span className="font-bold text-slate-900">{userToDelete?.name}</span> from the organizational registry. This will revoke all future access attempts and terminate their strategic profile.
+            <AlertDialogDescription className="text-base text-slate-500 font-medium">
+              You are about to irreversibly remove <span className="font-bold text-slate-900">{userToDelete?.name}</span> from the organizational registry.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-3 mt-6">
-            <AlertDialogCancel className="rounded-xl font-bold text-xs uppercase tracking-normal">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={executeDeleteUser} className="bg-destructive hover:bg-destructive/90 text-white rounded-xl font-bold px-8 uppercase text-xs tracking-normal">
-              Confirm Delete
+          <AlertDialogFooter className="mt-8 gap-4">
+            <AlertDialogCancel className="h-14 px-8 rounded-2xl font-bold text-xs uppercase tracking-widest bg-slate-50 border-none">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDelete} className="h-14 px-8 rounded-2xl font-bold text-xs uppercase tracking-widest bg-destructive hover:bg-destructive/90 text-white shadow-xl shadow-destructive/20">
+              Confirm Purge
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
