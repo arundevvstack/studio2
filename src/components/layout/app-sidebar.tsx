@@ -73,6 +73,7 @@ const ALL_MODULES = [
   { id: "dashboard", title: "Dashboard", iconName: "TrendingUp", url: "/dashboard", group: "core" },
   { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "core" },
   { id: "intelligence", title: "Intelligence", iconName: "Zap", url: "/intelligence", group: "core" },
+  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", group: "core" },
   { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "phases" },
   { id: "proposals", title: "Proposal", iconName: "FileText", url: "/proposals", group: "phases" },
   { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "phases" },
@@ -107,12 +108,8 @@ export function AppSidebar() {
 
   const groupedMenuItems = useMemo(() => {
     const allowedModules = ALL_MODULES.filter(item => {
-      // Root admin sees everything
       if (isAdmin) return true;
-      
-      // Basic approved user sees everything except admin
       if (isApproved) return item.id !== 'admin';
-      
       return false;
     });
 
@@ -232,12 +229,24 @@ export function AppSidebar() {
                     <span className="font-bold text-[10px] uppercase tracking-widest">My Profile</span>
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 focus:bg-primary/5 focus:text-primary">
+                  <Link href="/settings">
+                    <Settings className="h-4 w-4 opacity-60" />
+                    <span className="font-bold text-[10px] uppercase tracking-widest">System Settings</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-slate-50" />
                 <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 text-destructive focus:bg-destructive/5 focus:text-destructive">
                   <Link href="/logout">
                     <div className="flex items-center gap-2">
-                      <LogOut className="h-4 w-4" />
-                      <span className="font-bold text-[10px] uppercase tracking-widest">Logout Session</span>
+                      <div className="relative">
+                        <LogOut className="h-4 w-4" />
+                        <Avatar className="h-3 w-3 absolute -top-1 -right-1 border border-white shadow-sm">
+                          <AvatarImage src={userData?.photoURL || ""} />
+                          <AvatarFallback className="bg-red-50 text-red-500 text-[4px] font-bold">U</AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <span className="font-bold text-[10px] uppercase tracking-widest ml-1">Logout Session</span>
                     </div>
                   </Link>
                 </DropdownMenuItem>

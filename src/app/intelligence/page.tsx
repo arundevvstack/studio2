@@ -6,7 +6,11 @@ import {
   Loader2,
   Zap,
   Globe,
-  ArrowRight
+  ArrowRight,
+  GitBranch,
+  Briefcase,
+  Users,
+  Receipt
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -70,6 +74,34 @@ export default function IntelligenceHub() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <PhaseCard 
+          title="Sales Intelligence" 
+          desc="Pipeline Velocity & Conversion Tracking" 
+          icon={GitBranch} 
+          color="bg-blue-50 text-blue-600" 
+          href="/pipeline" 
+        />
+        <PhaseCard 
+          title="Production Matrix" 
+          desc="Project Roadmap & Capacity Monitoring" 
+          icon={Briefcase} 
+          color="bg-orange-50 text-orange-600" 
+          href="/projects" 
+        />
+        <PhaseCard 
+          title="Personnel Ledger" 
+          desc="Team Resource & Skill Distribution" 
+          icon={Users} 
+          color="bg-emerald-50 text-emerald-600" 
+          href="/team" 
+        />
+        <PhaseCard 
+          title="Revenue Generation" 
+          desc="Financial Reconciliation & Invoicing" 
+          icon={Receipt} 
+          color="bg-pink-50 text-pink-600" 
+          href="/invoices" 
+        />
         <PhaseCard 
           title="Marketing Intelligence" 
           desc="Asset Monitoring & Market Research" 
