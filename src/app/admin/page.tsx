@@ -60,7 +60,6 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const ROLES = ["admin", "manager", "editor", "viewer"];
-const DEPARTMENTS = ["Executive", "Production", "Sales", "Marketing", "Post-Production"];
 
 const PERMISSION_KEYS = [
   { id: "canCreateProject", label: "Create Project" },
@@ -128,7 +127,6 @@ export default function AdminConsolePage() {
   const executeDelete = async () => {
     if (!userToDelete) return;
     try {
-      // In a real app, you'd call a cloud function to delete the Auth user too
       toast({ title: "User Purged", description: `${userToDelete.name} removed from registry.` });
       setUserToDelete(null);
     } catch (e: any) {
@@ -217,7 +215,7 @@ export default function AdminConsolePage() {
           <TableHeader className="bg-slate-50/50">
             <TableRow className="hover:bg-transparent border-slate-100">
               <TableHead className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest">Identity</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Role & Dept</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Strategic Role</TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest">Permissions</TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest">Phase Access</TableHead>
               <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Decision</TableHead>
@@ -246,7 +244,7 @@ export default function AdminConsolePage() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="space-y-3">
+                <TableCell>
                   <div className="space-y-1">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Strategic Role</p>
                     <Select value={u.role || "none"} onValueChange={(val) => handleUpdateUser(u.id, { role: val === 'none' ? null : val })}>
@@ -256,18 +254,6 @@ export default function AdminConsolePage() {
                       <SelectContent>
                         <SelectItem value="none">No Role</SelectItem>
                         {ROLES.map(r => <SelectItem key={r} value={r} className="uppercase text-[10px] font-bold">{r}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Department</p>
-                    <Select value={u.department || "none"} onValueChange={(val) => handleUpdateUser(u.id, { department: val === 'none' ? null : val })}>
-                      <SelectTrigger className="h-10 w-40 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
-                        <SelectValue placeholder="Assign Dept" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Dept</SelectItem>
-                        {DEPARTMENTS.map(d => <SelectItem key={d} value={d} className="uppercase text-[10px] font-bold">{d}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>

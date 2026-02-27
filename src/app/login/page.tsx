@@ -67,7 +67,6 @@ export default function LoginPage() {
             
             status: isMaster ? "approved" : "pending",
             role: isMaster ? "admin" : null,
-            department: isMaster ? "Executive" : null,
 
             permissions: {
               canCreateProject: isMaster,
