@@ -3,33 +3,34 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * MEDIAFLOW STRATEGIC SECURITY CORE
+     * MEDIAFLOW ENTERPRISE SECURITY CORE
      */
 
     function isSignedIn() {
       return request.auth != null;
     }
 
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
     // Authoritative check for Root Administrative Authority
     function isAdmin() {
       let masterEmail = "defineperspective.in@gmail.com";
-      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() && (
         request.auth.token.email == masterEmail ||
-        (exists(userPath) && get(userPath).data.role == "admin")
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         userDoc().data.role == "admin")
       );
     }
 
-    // Authoritative check for Strategic Permit & Active Status
-    function hasStrategicPermit() {
+    // Check if the user has been authorized by an Admin
+    function isApproved() {
       let masterEmail = "defineperspective.in@gmail.com";
-      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
       return isSignedIn() && (
         request.auth.token.email == masterEmail ||
-        isAdmin() ||
-        (exists(userPath) && 
-         get(userPath).data.strategicPermit == true && 
-         get(userPath).data.status == "active")
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         userDoc().data.status == "approved")
       );
     }
 
@@ -37,105 +38,28 @@ service cloud.firestore {
      * IDENTITY & AUTHORIZATION REGISTRY
      */
     match /users/{userId} {
-      // get: Allow user to read own doc or Admin to read any
-      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      
-      // list: ONLY Admins can list the registry collection
-      allow list: if isSignedIn() && isAdmin();
-      
-      // create: User creates self during sign-up
+      // Create: Users can create their own doc during signup
       allow create: if isSignedIn() && request.auth.uid == userId;
       
-      // update: User updates self or Admin updates any
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // Read: Users read self, or Admin reads all
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       
-      // delete: Admin only
-      allow delete: if isSignedIn() && isAdmin();
-    }
-
-    /**
-     * ORGANIZATIONAL INFRASTRUCTURE
-     */
-    match /teamMembers/{memberId} {
-      allow get: if isSignedIn() && (request.auth.uid == memberId || isAdmin());
-      allow list: if isSignedIn() && (hasStrategicPermit() || isAdmin());
-      allow update: if isSignedIn() && (request.auth.uid == memberId || isAdmin());
-      allow create: if isSignedIn() && (request.auth.uid == memberId || isAdmin());
-      allow delete: if isSignedIn() && isAdmin();
+      // List: ONLY Admins can list the user registry
+      allow list: if isAdmin();
       
-      match /sessions/{sessionId} {
-        allow read, write: if isSignedIn() && request.auth.uid == memberId;
-      }
-    }
-
-    match /roles/{roleId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && isAdmin();
-    }
-
-    /**
-     * CORE PRODUCTION ENTITIES
-     */
-    match /projects/{projectId} {
-      allow read, write: if hasStrategicPermit() || isAdmin();
+      // Update: Admin has full write access for permits
+      allow update: if isAdmin();
       
-      match /tasks/{taskId} {
-        allow read, write: if hasStrategicPermit() || isAdmin();
-      }
-    }
-
-    match /clients/{clientId} {
-      allow read, write: if hasStrategicPermit() || isAdmin();
-      
-      match /invoices/{invoiceId} {
-        allow read, write: if hasStrategicPermit() || isAdmin();
-      }
-    }
-
-    match /leads/{leadId} {
-      allow read, write: if hasStrategicPermit() || isAdmin();
-    }
-
-    match /talents/{talentId} {
-      allow read, write: if hasStrategicPermit() || isAdmin();
-    }
-
-    match /shoot_network/{talentId} {
-      allow read, write: if hasStrategicPermit() || isAdmin();
-    }
-
-    match /proposals/{proposalId} {
-      allow read, write: if hasStrategicPermit() || isAdmin();
+      // Delete: Admin only
       allow delete: if isAdmin();
     }
 
     /**
-     * APP CONFIGURATION & SETTINGS
+     * PROTECTED ENTERPRISE DATA
+     * All other collections require an 'approved' status.
      */
-    match /settings/{settingId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /companyBillingSettings/{id} {
-      allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
-      allow write: if isAdmin();
-    }
-
-    match /workflowSettings/{id} {
-      allow read: if isSignedIn() && (hasStrategicPermit() || isAdmin());
-      allow write: if isAdmin();
-    }
-
-    /**
-     * PIPELINE & MARKETING INTELLIGENCE
-     */
-    match /followUps/{id} {
-      allow read, write: if hasStrategicPermit() || isAdmin();
-    }
-
-    match /campaigns/{id} {
-      allow read, write: if hasStrategicPermit() || isAdmin();
+    match /{document=**} {
+      allow read, write: if isApproved();
     }
   }
 }
