@@ -11,7 +11,10 @@ import {
   Zap,
   Target,
   Play,
-  Globe
+  Globe,
+  Users,
+  ShieldCheck,
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +24,9 @@ import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { doc } from "firebase/firestore";
 
 /**
- * @fileOverview Intelligence Hub (Previous Dashboard).
+ * @fileOverview Intelligence Hub (Operations Hub).
  * Filters viewable operational phases based on authorized permits.
+ * Now includes Organization and Admin nodes for consolidated governance.
  */
 export default function IntelligenceHub() {
   const router = useRouter();
@@ -68,12 +72,12 @@ export default function IntelligenceHub() {
     <div className="space-y-12 animate-in fade-in duration-1000 pb-20 max-w-[1400px] mx-auto">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-50">
         <div className="flex items-center gap-8">
-          <div className="h-20 w-20 rounded-[2rem] bg-slate-950 flex items-center justify-center shadow-2xl shrink-0">
+          <div className="h-20 w-20 rounded-[2rem] bg-slate-950 flex items-center justify-center shadow-2xl shrink-0 transition-transform hover:rotate-6">
             <Zap className="h-10 w-10 text-white fill-white" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-950">Intelligence</h1>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">Operational Hub • {userData.role || 'Personnel'}</p>
+            <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-950 leading-none">Intelligence</h1>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Operational Hub • {userData.role || 'Personnel'}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -85,7 +89,7 @@ export default function IntelligenceHub() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {hasPhase('sales') && (
           <PhaseCard 
             title="Pipeline" 
@@ -102,6 +106,15 @@ export default function IntelligenceHub() {
             icon={Activity} 
             color="bg-blue-50 text-blue-600" 
             href="/projects" 
+          />
+        )}
+        {hasPhase('production') && (
+          <PhaseCard 
+            title="Organization" 
+            desc="Personnel Registry & Resource Hub" 
+            icon={Users} 
+            color="bg-slate-50 text-slate-600" 
+            href="/team" 
           />
         )}
         {hasPhase('release') && (
@@ -122,6 +135,15 @@ export default function IntelligenceHub() {
             href="/market-research" 
           />
         )}
+        {isAdmin && (
+          <PhaseCard 
+            title="Admin Console" 
+            desc="System Governance & Permits" 
+            icon={ShieldCheck} 
+            color="bg-amber-50 text-amber-600" 
+            href="/admin" 
+          />
+        )}
       </div>
 
       {isAdmin && (
@@ -130,11 +152,11 @@ export default function IntelligenceHub() {
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
             <div className="space-y-4">
               <Badge className="bg-white/10 text-white border-none rounded-full px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em]">Root Authority</Badge>
-              <h2 className="text-4xl font-bold font-headline tracking-tight">Admin</h2>
-              <p className="text-slate-400 max-w-md font-medium">Authorize new expert permits, assigned roles, and manage organizational access tiers.</p>
+              <h2 className="text-4xl font-bold font-headline tracking-tight leading-tight">System Governance</h2>
+              <p className="text-slate-400 max-w-md font-medium">Authorize new expert permits, assign strategic roles, and manage organizational access tiers across the entire workspace.</p>
             </div>
-            <Button asChild className="h-16 px-12 bg-white text-slate-950 hover:bg-slate-100 rounded-full font-bold text-xs uppercase tracking-widest shadow-2xl">
-              <Link href="/admin">Manage Permits</Link>
+            <Button asChild className="h-16 px-12 bg-white text-slate-950 hover:bg-slate-100 rounded-full font-bold text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95">
+              <Link href="/admin">Manage System Permits</Link>
             </Button>
           </div>
         </Card>
@@ -146,19 +168,19 @@ export default function IntelligenceHub() {
 function PhaseCard({ title, desc, icon: Icon, color, href }: any) {
   return (
     <Link href={href}>
-      <Card className="border-none shadow-sm rounded-3xl bg-white p-8 group hover:shadow-xl transition-all h-full flex flex-col justify-between">
+      <Card className="border-none shadow-sm rounded-3xl bg-white p-8 group hover:shadow-xl transition-all h-full flex flex-col justify-between border border-slate-50">
         <div className="space-y-6">
           <div className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${color}`}>
             <Icon className="h-6 w-6" />
           </div>
           <div>
             <h3 className="text-xl font-bold font-headline text-slate-900 tracking-tight">{title}</h3>
-            <p className="text-sm text-slate-500 font-medium mt-1 leading-relaxed">{desc}</p>
+            <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">{desc}</p>
           </div>
         </div>
         <div className="pt-8 flex justify-end">
           <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white transition-all">
-            <Globe className="h-5 w-5" />
+            <ArrowRight className="h-5 w-5" />
           </div>
         </div>
       </Card>

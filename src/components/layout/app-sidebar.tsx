@@ -76,10 +76,10 @@ const ALL_MODULES = [
   { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "phases", phase: "production" },
   { id: "board", title: "Kanban", iconName: "Trello", url: "/board", group: "phases", phase: "production" },
   { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "phases", phase: "production" },
+  { id: "team", title: "Organization", iconName: "Users", url: "/team", group: "phases", phase: "production" },
   { id: "billing", title: "Release", iconName: "FileText", url: "/invoices", group: "phases", phase: "release" },
   { id: "market", title: "Marketing Intel", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
   { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network", phase: null },
-  { id: "team", title: "Organization", iconName: "Users", url: "/team", group: "admin", phase: null },
   { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "admin", phase: null },
 ];
 
@@ -142,7 +142,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="space-y-0.5">
                 {group.items.map((item) => {
-                  const isActive = pathname.startsWith(item.url);
+                  const isActive = pathname === item.url || pathname.startsWith(item.url + "/");
                   const Icon = ICON_MAP[item.iconName] || Globe;
                   
                   return (
