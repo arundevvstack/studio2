@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -112,10 +113,20 @@ export default function AdminConsolePage() {
   const executeDelete = async () => {
     if (!userToDelete) return;
     try {
-      toast({ title: "User Purged", description: `${userToDelete.name} removed from registry.` });
+      // Execute deletion from Firestore registry
+      deleteDocumentNonBlocking(doc(db, "users", userToDelete.id));
+      
+      toast({ 
+        title: "User Purged", 
+        description: `${userToDelete.name} removed from registry.` 
+      });
       setUserToDelete(null);
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Delete Failed", description: e.message });
+      toast({ 
+        variant: "destructive", 
+        title: "Delete Failed", 
+        description: e.message 
+      });
     }
   };
 
