@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from "react";
@@ -20,7 +19,8 @@ import {
   Zap,
   User,
   ChevronsUpDown,
-  TrendingUp
+  TrendingUp,
+  Receipt
 } from "lucide-react";
 import {
   Sidebar,
@@ -65,7 +65,8 @@ const ICON_MAP: Record<string, any> = {
   Globe,
   Clock,
   Zap,
-  User
+  User,
+  Receipt
 };
 
 const ALL_MODULES = [
@@ -77,7 +78,7 @@ const ALL_MODULES = [
   { id: "board", title: "Kanban", iconName: "Trello", url: "/board", group: "phases", phase: "production" },
   { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "phases", phase: "production" },
   { id: "team", title: "Organization", iconName: "Users", url: "/team", group: "phases", phase: "production" },
-  { id: "billing", title: "Release", iconName: "FileText", url: "/invoices", group: "phases", phase: "release" },
+  { id: "billing", title: "Invoice", iconName: "Receipt", url: "/invoices", group: "phases", phase: "release" },
   { id: "market", title: "Marketing Intel", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
   { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network", phase: null },
   { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "admin", phase: null },

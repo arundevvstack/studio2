@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -137,7 +136,7 @@ const SIDEBAR_MODULES = [
   { id: "schedule", title: "Schedule", icon: Calendar },
   { id: "time", title: "Time Tracking", icon: Clock },
   { id: "team", title: "Team", icon: Users },
-  { id: "billing", title: "Invoice", icon: FileText },
+  { id: "billing", title: "Invoice", icon: Receipt },
   { id: "intelligence", title: "Intelligence", icon: BarChart3 },
   { id: "market", title: "Marketing Intelligence", icon: Globe },
   { id: "admin", title: "Admin", icon: ShieldCheck },

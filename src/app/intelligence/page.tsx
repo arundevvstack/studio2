@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -14,7 +13,8 @@ import {
   Globe,
   Users,
   ShieldCheck,
-  ArrowRight
+  ArrowRight,
+  Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,9 +119,9 @@ export default function IntelligenceHub() {
         )}
         {hasPhase('release') && (
           <PhaseCard 
-            title="Release" 
+            title="Invoice" 
             desc="High-Fidelity Delivery & Billing" 
-            icon={Play} 
+            icon={Receipt} 
             color="bg-green-50 text-green-600" 
             href="/invoices" 
           />
