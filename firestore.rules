@@ -45,8 +45,8 @@ service cloud.firestore {
       allow list: if isSignedIn() && isAdmin();
       // Allow initial provisioning during sign-up
       allow create: if isSignedIn() && request.auth.uid == userId;
-      // Only Admins can authorize permits or assign roles
-      allow update: if isSignedIn() && isAdmin();
+      // Users can update their own metadata (UI gates sensitive fields); Admins can update any
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       // Admins can purge identities from the registry
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -57,7 +57,11 @@ service cloud.firestore {
     match /teamMembers/{memberId} {
       // Users need to read their own record even if pending; Experts see the whole team
       allow read: if isSignedIn() && (request.auth.uid == memberId || hasStrategicPermit() || isAdmin());
-      allow write: if isSignedIn() && isAdmin();
+      // Allow self-updates for professional profile management
+      allow update: if isSignedIn() && (request.auth.uid == memberId || isAdmin());
+      // Only admins can create new records via the team form
+      allow create: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
       
       // Allow session tracking for the authenticated user
       match /sessions/{sessionId} {

@@ -75,16 +75,27 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
 
   useEffect(() => {
     if (existingMember && !isInitialized) {
+      // Logic to split 'name' into first/last if separate fields are missing
+      let fName = existingMember.firstName || "";
+      let lName = existingMember.lastName || "";
+      
+      if (!fName && !lName && existingMember.name) {
+        const parts = existingMember.name.split(" ");
+        fName = parts[0] || "";
+        lName = parts.slice(1).join(" ") || "";
+      }
+
       setFormData({
-        firstName: existingMember.firstName || "",
-        lastName: existingMember.lastName || "",
+        firstName: fName,
+        lastName: lName,
         email: existingMember.email || "",
         phone: existingMember.phone || "",
-        roleId: existingMember.roleId || "",
+        roleId: existingMember.role || existingMember.roleId || "",
         type: existingMember.type || "In-house",
-        status: existingMember.status || "Active",
+        status: (existingMember.status === 'active' || existingMember.status === 'Active') ? "Active" : 
+                (existingMember.status === 'suspended' || existingMember.status === 'Suspended') ? "Suspended" : "Pending",
         department: existingMember.department || "Production",
-        thumbnail: existingMember.thumbnail || "",
+        thumbnail: existingMember.thumbnail || existingMember.photoURL || "",
       });
       setIsInitialized(true);
     }
@@ -106,11 +117,11 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
   };
 
   const handleSave = async () => {
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.roleId) {
+    if (!formData.firstName || !formData.lastName || !formData.email) {
       toast({ 
         variant: "destructive", 
         title: "Incomplete Identity", 
-        description: "Name, Email, and Strategic Role are required." 
+        description: "Name and Email are required." 
       });
       return;
     }
@@ -124,15 +135,19 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
         updatedAt: serverTimestamp(),
       };
 
-      const registryData = {
+      const registryData: any = {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email.toLowerCase(),
         photoURL: formData.thumbnail,
-        role: formData.roleId,
-        status: formData.status === 'Active' ? 'active' : formData.status === 'Suspended' ? 'suspended' : 'pending',
-        strategicPermit: formData.status === 'Active',
         updatedAt: serverTimestamp()
       };
+
+      // Only sync role/status if admin or not editing self
+      if (isAuthorizedAdmin) {
+        registryData.role = formData.roleId;
+        registryData.status = formData.status === 'Active' ? 'active' : formData.status === 'Suspended' ? 'suspended' : 'pending';
+        registryData.strategicPermit = formData.status === 'Active';
+      }
 
       if (existingMember) {
         batch.update(doc(db, "teamMembers", existingMember.id), memberData);
@@ -141,13 +156,23 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
         const newRef = doc(collection(db, "teamMembers"));
         const newRegistryRef = doc(db, "users", newRef.id);
         batch.set(newRef, { ...memberData, id: newRef.id, createdAt: serverTimestamp() });
-        batch.set(newRegistryRef, { ...registryData, id: newRef.id, provider: 'password', permittedPhases: [], createdAt: serverTimestamp() });
+        batch.set(newRegistryRef, { 
+          ...registryData, 
+          id: newRef.id, 
+          provider: 'password', 
+          permittedPhases: [], 
+          role: formData.roleId,
+          status: formData.status === 'Active' ? 'active' : 'pending',
+          strategicPermit: formData.status === 'Active',
+          createdAt: serverTimestamp() 
+        });
       }
 
       await batch.commit();
       toast({ title: "Identity Synchronized", description: "Records updated across system nodes." });
       onSuccess?.();
     } catch (error: any) {
+      console.error("Save Error:", error);
       toast({ variant: "destructive", title: "Sync Error", description: error.message });
     } finally {
       setIsSubmitting(false);
