@@ -14,13 +14,13 @@ import {
   ShieldCheck,
   Settings,
   LogOut,
-  ChevronRight,
   Briefcase,
   Globe,
   Clock,
   Zap,
   User,
-  ChevronsUpDown
+  ChevronsUpDown,
+  TrendingUp
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,6 +50,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ICON_MAP: Record<string, any> = {
   LayoutGrid,
+  TrendingUp,
   GitBranch,
   Folder,
   Trello,
@@ -68,7 +69,7 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const ALL_MODULES = [
-  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/dashboard", group: "core", phase: null },
+  { id: "dashboard", title: "Dashboard", iconName: "TrendingUp", url: "/dashboard", group: "core", phase: null },
   { id: "intelligence", title: "Intelligence", iconName: "Zap", url: "/intelligence", group: "core", phase: null },
   { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "phases", phase: "sales" },
   { id: "proposals", title: "Proposal", iconName: "FileText", url: "/proposals", group: "phases", phase: "sales" },
@@ -76,7 +77,7 @@ const ALL_MODULES = [
   { id: "board", title: "Kanban", iconName: "Trello", url: "/board", group: "phases", phase: "production" },
   { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "phases", phase: "production" },
   { id: "billing", title: "Release", iconName: "FileText", url: "/invoices", group: "phases", phase: "release" },
-  { id: "market", title: "Marketing Intelligence", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
+  { id: "market", title: "Marketing Intel", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
   { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network", phase: null },
   { id: "team", title: "Organization", iconName: "Users", url: "/team", group: "admin", phase: null },
   { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "admin", phase: null },

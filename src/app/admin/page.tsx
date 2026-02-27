@@ -5,22 +5,18 @@ import React, { useEffect, useState, useMemo } from "react";
 import { 
   ShieldCheck, 
   Users as UsersIcon, 
-  Activity, 
   Server, 
   CheckCircle2, 
   Loader2,
   Search,
   Hourglass,
-  BadgeCheck,
   ShieldX,
   Trash2,
   AlertTriangle,
   MoreHorizontal,
-  Filter,
-  Zap,
-  ChevronLeft
+  Zap
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -49,7 +45,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc, serverTimestamp } from "firebase/firestore";
+import { collection, query, orderBy, doc, serverTimestamp } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
