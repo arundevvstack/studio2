@@ -77,7 +77,7 @@ export default function AdminConsolePage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Admin Console</h1>
+            <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-normal">Admin</h1>
             <Badge className="bg-slate-900 text-white border-none text-[10px] font-bold px-3 py-1 uppercase tracking-normal">
               <ShieldCheck className="h-3 w-3 mr-1" />
               Root Access
@@ -88,7 +88,7 @@ export default function AdminConsolePage() {
         <Button asChild className="rounded-xl font-bold h-12 px-6 shadow-lg shadow-slate-200">
           <Link href="/admin/users">
             <Users className="h-4 w-4 mr-2" />
-            Manage Identities & RBAC
+            Manage Permits
           </Link>
         </Button>
       </div>
