@@ -4,20 +4,11 @@
 import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { 
-  Plus, 
-  Briefcase,
   Loader2,
-  Activity,
   Zap,
-  Target,
-  Play,
   Globe,
-  Users,
-  ShieldCheck,
-  ArrowRight,
-  Receipt
+  ArrowRight
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,8 +17,8 @@ import { doc } from "firebase/firestore";
 
 /**
  * @fileOverview Intelligence Hub (Operations Hub).
- * Filters viewable operational phases based on authorized permits.
- * Updated with Admin module removal.
+ * Focused on high-level market intelligence and specialized monitoring.
+ * Redundant phase cards have been removed as they are now in the primary sidebar.
  */
 export default function IntelligenceHub() {
   const router = useRouter();
@@ -83,52 +74,9 @@ export default function IntelligenceHub() {
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Operational Hub • {userData?.role || 'Executive'}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          {hasPhase('production') && (
-            <Button asChild className="h-14 px-10 rounded-full font-bold bg-primary text-white shadow-xl shadow-primary/20 gap-3">
-              <Link href="/projects/new">Add Project <Plus className="h-5 w-5" /></Link>
-            </Button>
-          )}
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {hasPhase('sales') && (
-          <PhaseCard 
-            title="Pipeline" 
-            desc="Pipeline Management & Lead Intel" 
-            icon={Target} 
-            color="bg-orange-50 text-orange-600" 
-            href="/pipeline" 
-          />
-        )}
-        {hasPhase('production') && (
-          <PhaseCard 
-            title="Projects" 
-            desc="Resource Load & Roadmap Execution" 
-            icon={Activity} 
-            color="bg-blue-50 text-blue-600" 
-            href="/projects" 
-          />
-        )}
-        {hasPhase('production') && (
-          <PhaseCard 
-            title="Organization" 
-            desc="Personnel Registry & Resource Hub" 
-            icon={Users} 
-            color="bg-slate-50 text-slate-600" 
-            href="/team" 
-          />
-        )}
-        {hasPhase('release') && (
-          <PhaseCard 
-            title="Invoice" 
-            desc="High-Fidelity Delivery & Billing" 
-            icon={Receipt} 
-            color="bg-green-50 text-green-600" 
-            href="/invoices" 
-          />
-        )}
         {hasPhase('socialMedia') && (
           <PhaseCard 
             title="Marketing Intelligence" 
