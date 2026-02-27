@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -95,7 +94,6 @@ export default function AdminConsolePage() {
       if (!user || user.isAnonymous) {
         router.push("/login");
       } else if (!isMasterUser && (!identity || identity.status !== "active")) {
-        // Only non-master users are gated if they are pending or suspended
         router.push("/login");
       }
     }
@@ -127,9 +125,9 @@ export default function AdminConsolePage() {
   };
 
   const handleTogglePhase = (userId: string, phase: string, currentPhases: string[]) => {
-    const updated = currentPhases.includes(phase)
+    const updated = (currentPhases || []).includes(phase)
       ? currentPhases.filter(p => p !== phase)
-      : [...currentPhases, phase];
+      : [...(currentPhases || []), phase];
     handleUpdateAccess(userId, { permittedPhases: updated });
   };
 
@@ -150,7 +148,6 @@ export default function AdminConsolePage() {
     );
   }
 
-  // Bypass logic for master user to see the admin console even if database identity isn't loaded yet
   if (!user || user.isAnonymous) return null;
   if (!isMasterUser && identity?.status !== "active") return null;
 

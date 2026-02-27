@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from "react";
@@ -20,7 +19,8 @@ import {
   User,
   ChevronsUpDown,
   TrendingUp,
-  Receipt
+  Receipt,
+  Settings
 } from "lucide-react";
 import {
   Sidebar,
@@ -65,7 +65,8 @@ const ICON_MAP: Record<string, any> = {
   Clock,
   Zap,
   User,
-  Receipt
+  Receipt,
+  Settings
 };
 
 const ALL_MODULES = [
@@ -81,6 +82,7 @@ const ALL_MODULES = [
   { id: "billing", title: "Invoice", iconName: "Receipt", url: "/invoices", group: "phases", phase: "release" },
   { id: "market", title: "Marketing Intel", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
   { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network", phase: null },
+  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", group: "core", phase: null },
 ];
 
 const GROUPS = [
@@ -235,6 +237,12 @@ export function AppSidebar() {
                   <Link href={`/team/${user?.uid}`}>
                     <User className="h-4 w-4 opacity-60" />
                     <span className="font-bold text-[10px] uppercase tracking-widest">My Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 focus:bg-primary/5 focus:text-primary">
+                  <Link href={`/settings`}>
+                    <Settings className="h-4 w-4 opacity-60" />
+                    <span className="font-bold text-[10px] uppercase tracking-widest">Settings</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-slate-50" />

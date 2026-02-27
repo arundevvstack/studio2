@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -7,7 +6,11 @@ import {
   Loader2,
   Zap,
   Globe,
-  ArrowRight
+  ArrowRight,
+  GitBranch,
+  Folder,
+  Users,
+  Receipt
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -17,8 +20,7 @@ import { doc } from "firebase/firestore";
 
 /**
  * @fileOverview Intelligence Hub (Operations Hub).
- * Focused on high-level market intelligence and specialized monitoring.
- * Redundant phase cards have been removed as they are now in the primary sidebar.
+ * Strategic focal point for operational monitoring and market research.
  */
 export default function IntelligenceHub() {
   const router = useRouter();
@@ -70,13 +72,40 @@ export default function IntelligenceHub() {
             <Zap className="h-10 w-10 text-white fill-white" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-950 leading-none">Intelligence</h1>
+            <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-950 leading-none">Intelligence Hub</h1>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Operational Hub • {userData?.role || 'Executive'}</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {hasPhase('sales') && (
+          <PhaseCard 
+            title="Sales Pipeline" 
+            desc="Identify leads and track sales velocity." 
+            icon={GitBranch} 
+            color="bg-orange-50 text-orange-600" 
+            href="/pipeline" 
+          />
+        )}
+        {hasPhase('production') && (
+          <PhaseCard 
+            title="Production Grid" 
+            desc="End-to-end asset management ledger." 
+            icon={Folder} 
+            color="bg-blue-50 text-blue-600" 
+            href="/projects" 
+          />
+        )}
+        {hasPhase('release') && (
+          <PhaseCard 
+            title="Invoice & Billing" 
+            desc="Strategic financial reconciliation." 
+            icon={Receipt} 
+            color="bg-emerald-50 text-emerald-600" 
+            href="/invoices" 
+          />
+        )}
         {hasPhase('socialMedia') && (
           <PhaseCard 
             title="Marketing Intelligence" 
