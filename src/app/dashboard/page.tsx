@@ -92,7 +92,7 @@ export default function AnalyticsDashboard() {
 
     const verticals = projects.reduce((acc: any, p) => {
       const type = p.type || "Other";
-      acc[type] = (acc[type] || 0) + 1;
+      acc[type] = (acc[type] || 0) + (p.budget || 0);
       return acc;
     }, {});
     const verticalData = Object.entries(verticals).map(([name, value]) => ({ name, value }));
@@ -159,7 +159,7 @@ export default function AnalyticsDashboard() {
               <BarChart data={projects?.slice(0, 10).reverse()}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.05} />
                 <XAxis dataKey="name" hide />
-                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} />
+                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${v/1000}k`} stroke="#cbd5e1" />
                 <Tooltip 
                   contentStyle={{ borderRadius: '1.25rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
                   formatter={(v: any) => [`₹${v.toLocaleString('en-IN')}`, 'Budget']}
@@ -175,7 +175,7 @@ export default function AnalyticsDashboard() {
         <Card className="lg:col-span-4 border-none shadow-sm rounded-[2.5rem] bg-white p-10 flex flex-col">
           <CardHeader className="p-0 mb-10">
             <CardTitle className="text-xl font-bold font-headline">Vertical Split</CardTitle>
-            <p className="text-sm text-slate-400 font-medium">Asset distribution by vertical.</p>
+            <p className="text-sm text-slate-400 font-medium">Asset distribution by vertical value.</p>
           </CardHeader>
           <div className="flex-1 flex flex-col justify-center">
             <div className="h-[250px] w-full">
@@ -201,9 +201,9 @@ export default function AnalyticsDashboard() {
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                    <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">{item.name}</span>
+                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{item.name}</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-900">{item.value}</span>
+                  <span className="text-[10px] font-bold text-slate-900">₹{(Number(item.value)/1000).toFixed(0)}k</span>
                 </div>
               ))}
             </div>

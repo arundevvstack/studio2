@@ -39,14 +39,12 @@ service cloud.firestore {
      * IDENTITY & AUTHORIZATION REGISTRY
      */
     match /users/{userId} {
-      // Users can read their own profile; Admins can see everyone
-      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // Users can read and update their own profile; Admins can see everyone
+      allow get, update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       // Admins need to list users for the Identity Ledger
       allow list: if isSignedIn() && isAdmin();
       // Allow initial provisioning during sign-up
       allow create: if isSignedIn() && request.auth.uid == userId;
-      // Users can update their own metadata (UI gates sensitive fields); Admins can update any
-      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       // Admins can purge identities from the registry
       allow delete: if isSignedIn() && isAdmin();
     }
@@ -55,10 +53,8 @@ service cloud.firestore {
      * ORGANIZATIONAL INFRASTRUCTURE
      */
     match /teamMembers/{memberId} {
-      // Users need to read their own record even if pending; Experts see the whole team
-      allow read: if isSignedIn() && (request.auth.uid == memberId || hasStrategicPermit() || isAdmin());
-      // Allow self-updates for professional profile management
-      allow update: if isSignedIn() && (request.auth.uid == memberId || isAdmin());
+      // Users need to read and update their own record; Experts see the whole team
+      allow read, update: if isSignedIn() && (request.auth.uid == memberId || hasStrategicPermit() || isAdmin());
       // Only admins can create new records via the team form
       allow create: if isSignedIn() && isAdmin();
       allow delete: if isSignedIn() && isAdmin();
