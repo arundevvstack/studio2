@@ -42,6 +42,7 @@ const CHART_COLORS = ['#2E86C1', '#4CAF50', '#F39C12', '#9B59B6', '#E74C3C', '#1
 /**
  * @fileOverview Analytics Dashboard.
  * High-fidelity monitoring of organizational throughput and revenue.
+ * Updated with Executive Test Mode bypass for master account.
  */
 export default function AnalyticsDashboard() {
   const router = useRouter();
@@ -59,6 +60,8 @@ export default function AnalyticsDashboard() {
   }, [db, user]);
   const { data: userData, isLoading: isUserRegistryLoading } = useDoc(userRef);
 
+  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
+
   const projectsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, "projects"), orderBy("updatedAt", "desc"));
@@ -72,12 +75,12 @@ export default function AnalyticsDashboard() {
   const { data: leads } = useCollection(leadsQuery);
 
   useEffect(() => {
-    if (!isUserLoading && !isUserRegistryLoading && mounted) {
+    if (!isUserLoading && !isUserRegistryLoading && mounted && !isMasterUser) {
       if (!user || !userData || userData.status !== "active" || !userData.strategicPermit) {
         router.push("/login");
       }
     }
-  }, [user, userData, isUserLoading, isUserRegistryLoading, router, mounted]);
+  }, [user, userData, isUserLoading, isUserRegistryLoading, router, mounted, isMasterUser]);
 
   const stats = useMemo(() => {
     if (!projects) return { totalRevenue: 0, activeProjects: 0, pipelineValue: 0, conversionRate: 0, verticalData: [] };

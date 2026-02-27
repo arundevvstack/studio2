@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -26,7 +27,7 @@ import { doc } from "firebase/firestore";
 /**
  * @fileOverview Intelligence Hub (Operations Hub).
  * Filters viewable operational phases based on authorized permits.
- * Now includes Organization and Admin nodes for consolidated governance.
+ * Updated with Test Mode bypass for master account.
  */
 export default function IntelligenceHub() {
   const router = useRouter();
@@ -44,16 +45,18 @@ export default function IntelligenceHub() {
   }, [db, user]);
   const { data: userData, isLoading: isUserRegistryLoading } = useDoc(userRef);
 
+  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
+
   useEffect(() => {
-    if (!isUserLoading && !isUserRegistryLoading && mounted) {
+    if (!isUserLoading && !isUserRegistryLoading && mounted && !isMasterUser) {
       if (!user || !userData || userData.status !== "active" || !userData.strategicPermit) {
         router.push("/login");
       }
     }
-  }, [user, userData, isUserLoading, isUserRegistryLoading, router, mounted]);
+  }, [user, userData, isUserLoading, isUserRegistryLoading, router, mounted, isMasterUser]);
 
   const permittedPhases = userData?.permittedPhases || [];
-  const isAdmin = userData?.role === 'admin';
+  const isAdmin = userData?.role === 'admin' || isMasterUser;
 
   const hasPhase = (phase: string) => isAdmin || permittedPhases.includes(phase);
 
@@ -66,18 +69,18 @@ export default function IntelligenceHub() {
     );
   }
 
-  if (!user || userData?.status !== "active") return null;
+  if (!user || (!isMasterUser && userData?.status !== "active")) return null;
 
   return (
     <div className="space-y-12 animate-in fade-in duration-1000 pb-20 max-w-[1400px] mx-auto">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-50">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
         <div className="flex items-center gap-8">
           <div className="h-20 w-20 rounded-[2rem] bg-slate-950 flex items-center justify-center shadow-2xl shrink-0 transition-transform hover:rotate-6">
             <Zap className="h-10 w-10 text-white fill-white" />
           </div>
           <div>
             <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-950 leading-none">Intelligence</h1>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Operational Hub • {userData.role || 'Personnel'}</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Operational Hub • {userData?.role || 'Executive'}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">

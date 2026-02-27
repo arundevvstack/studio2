@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -248,7 +249,7 @@ export default function SettingsPage() {
   }, [db, currentIdentity?.role]);
   const { data: userRole } = useDoc(userRoleRef);
 
-  const isMasterAdmin = currentIdentity?.role === 'admin' || currentIdentity?.email === 'defineperspective.in@gmail.com';
+  const isMasterAdmin = currentIdentity?.role === 'admin' || user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
 
   const sessionsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -484,7 +485,7 @@ export default function SettingsPage() {
                     <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Device / Browser</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-widest">Platform</TableHead>
-                      <TableHead className="text-[10px) font-bold uppercase tracking-widest">Last Intelligence Sync</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest">Last Intelligence Sync</TableHead>
                       <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Action</TableHead>
                     </TableRow>
                   </TableHeader>

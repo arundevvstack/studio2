@@ -64,7 +64,7 @@ import {
 const PHASES = [
   { id: "sales", label: "Sales Phase" },
   { id: "production", label: "Production Phase" },
-  { id: "release", label: "Release Phase" },
+  { id: "release", label: "Invoice Phase" },
   { id: "socialMedia", label: "Social Media Phase" }
 ];
 
@@ -73,7 +73,7 @@ const ROLES = ["strategic", "sales", "production", "admin"];
 /**
  * @fileOverview Consolidated Admin Console.
  * Manages system-wide metrics, operational status, and Integrated Access Governance (Manage Permits).
- * Gated by strictly "Active" Access Status in the authoritative Identity Registry.
+ * Gated by strictly "Active" Access Status, with bypass for Master Executive (Test Mode).
  */
 
 export default function AdminConsolePage() {
@@ -88,25 +88,24 @@ export default function AdminConsolePage() {
     setMounted(true);
   }, []);
 
-  // Fetch identity record status from the users collection (Registry)
   const identityRef = useMemoFirebase(() => {
     if (!user || user.isAnonymous) return null;
     return doc(db, "users", user.uid);
   }, [db, user]);
   const { data: identity, isLoading: identityLoading } = useDoc(identityRef);
 
+  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
+
   // Strategic Access Guard
   useEffect(() => {
     if (!isUserLoading && mounted && !identityLoading) {
       if (!user || user.isAnonymous) {
         router.push("/login");
-      } else if (identity && identity.status !== "active") {
-        router.push("/login");
-      } else if (!identity && !isUserLoading) {
+      } else if (!isMasterUser && (!identity || identity.status !== "active")) {
         router.push("/login");
       }
     }
-  }, [user, isUserLoading, router, identity, identityLoading, mounted]);
+  }, [user, isUserLoading, router, identity, identityLoading, mounted, isMasterUser]);
 
   // Fetch all users for management
   const usersQuery = useMemoFirebase(() => {
@@ -156,7 +155,7 @@ export default function AdminConsolePage() {
     );
   }
 
-  if (!user || user.isAnonymous || identity?.status !== "active") return null;
+  if (!user || user.isAnonymous || (!isMasterUser && identity?.status !== "active")) return null;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-10 animate-in fade-in duration-500 pb-20">
