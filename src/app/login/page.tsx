@@ -68,21 +68,6 @@ export default function LoginPage() {
             status: isMaster ? "approved" : "pending",
             role: isMaster ? "admin" : null,
 
-            permissions: {
-              canCreateProject: isMaster,
-              canEditProject: isMaster,
-              canDeleteProject: isMaster,
-              canViewFinance: isMaster,
-              canAccessSettings: isMaster
-            },
-
-            phaseAccess: {
-              phase1: isMaster,
-              phase2: isMaster,
-              phase3: isMaster,
-              phase4: isMaster
-            },
-
             approvedBy: isMaster ? "SYSTEM" : null,
             approvedAt: isMaster ? serverTimestamp() : null,
             createdAt: serverTimestamp(),
@@ -99,7 +84,7 @@ export default function LoginPage() {
           }
         } else {
           // Existing user logic
-          if (userData?.status === "approved") {
+          if (userData?.status === "approved" || userData?.status === "active") {
             router.push("/dashboard");
           } else if (userData?.status === "suspended") {
             router.push("/account-suspended");

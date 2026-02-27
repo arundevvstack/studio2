@@ -6,11 +6,7 @@ import {
   Loader2,
   Zap,
   Globe,
-  ArrowRight,
-  GitBranch,
-  Folder,
-  Users,
-  Receipt
+  ArrowRight
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -42,16 +38,11 @@ export default function IntelligenceHub() {
 
   useEffect(() => {
     if (!isUserLoading && !isUserRegistryLoading && mounted && !isMasterUser) {
-      if (!user || !userData || userData.status !== "active" || !userData.strategicPermit) {
+      if (!user || !userData || (userData.status !== "active" && userData.status !== "approved")) {
         router.push("/login");
       }
     }
   }, [user, userData, isUserLoading, isUserRegistryLoading, router, mounted, isMasterUser]);
-
-  const permittedPhases = userData?.permittedPhases || [];
-  const isAdmin = userData?.role === 'admin' || isMasterUser;
-
-  const hasPhase = (phase: string) => isAdmin || permittedPhases.includes(phase);
 
   if (!mounted || isUserLoading || isUserRegistryLoading) {
     return (
@@ -62,7 +53,7 @@ export default function IntelligenceHub() {
     );
   }
 
-  if (!user || (!isMasterUser && userData?.status !== "active")) return null;
+  if (!user || (!isMasterUser && userData?.status !== "active" && userData?.status !== "approved")) return null;
 
   return (
     <div className="space-y-12 animate-in fade-in duration-1000 pb-20 max-w-[1400px] mx-auto">
@@ -79,42 +70,13 @@ export default function IntelligenceHub() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {hasPhase('sales') && (
-          <PhaseCard 
-            title="Sales Pipeline" 
-            desc="Identify leads and track sales velocity." 
-            icon={GitBranch} 
-            color="bg-orange-50 text-orange-600" 
-            href="/pipeline" 
-          />
-        )}
-        {hasPhase('production') && (
-          <PhaseCard 
-            title="Production Grid" 
-            desc="End-to-end asset management ledger." 
-            icon={Folder} 
-            color="bg-blue-50 text-blue-600" 
-            href="/projects" 
-          />
-        )}
-        {hasPhase('release') && (
-          <PhaseCard 
-            title="Invoice & Billing" 
-            desc="Strategic financial reconciliation." 
-            icon={Receipt} 
-            color="bg-emerald-50 text-emerald-600" 
-            href="/invoices" 
-          />
-        )}
-        {hasPhase('socialMedia') && (
-          <PhaseCard 
-            title="Marketing Intelligence" 
-            desc="Asset Monitoring & Market Research" 
-            icon={Globe} 
-            color="bg-purple-50 text-purple-600" 
-            href="/market-research" 
-          />
-        )}
+        <PhaseCard 
+          title="Marketing Intelligence" 
+          desc="Asset Monitoring & Market Research" 
+          icon={Globe} 
+          color="bg-purple-50 text-purple-600" 
+          href="/market-research" 
+        />
       </div>
     </div>
   );

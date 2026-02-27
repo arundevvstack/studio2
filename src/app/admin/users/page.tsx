@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -27,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Table, 
   TableBody, 
@@ -68,20 +66,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const PHASES = [
-  { id: "sales", label: "Sales Phase" },
-  { id: "production", label: "Production Phase" },
-  { id: "release", label: "Release Phase" },
-  { id: "socialMedia", label: "Social Media Phase" }
-];
-
 const ROLES = ["strategic", "sales", "production", "admin"];
 
-/**
- * @fileOverview Identity Governance Hub.
- * Manages Strategic Permits, Roles, and Phase-Level Access.
- * Purge action is secured via Firestore Security Rules.
- */
 export default function UserManagementPage() {
   const router = useRouter();
   const db = useFirestore();
@@ -106,20 +92,12 @@ export default function UserManagementPage() {
   const handleUpdatePermit = async (userId: string, data: any) => {
     const userRef = doc(db, "users", userId);
     
-    // Non-blocking update for UI responsiveness
     updateDocumentNonBlocking(userRef, {
       ...data,
       updatedAt: serverTimestamp()
     });
 
     toast({ title: "Authorization Updated", description: "Identity metadata synchronized." });
-  };
-
-  const handleTogglePhase = (userId: string, phase: string, currentPhases: string[]) => {
-    const updated = currentPhases.includes(phase)
-      ? currentPhases.filter(p => p !== phase)
-      : [...currentPhases, phase];
-    handleUpdatePermit(userId, { permittedPhases: updated });
   };
 
   const executePurge = () => {
@@ -139,7 +117,7 @@ export default function UserManagementPage() {
           </Button>
           <div className="space-y-1">
             <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight leading-none">Strategic Authorization</h1>
-            <p className="text-sm text-slate-500 font-medium">Authorize expert permits, assign strategic roles, and manage phase-level access.</p>
+            <p className="text-sm text-slate-500 font-medium">Authorize expert permits and assign strategic organizational roles.</p>
           </div>
         </div>
       </div>
@@ -168,14 +146,13 @@ export default function UserManagementPage() {
             <TableRow className="hover:bg-transparent border-slate-100">
               <TableHead className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Identity Identifier</TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Strategic Role</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Strategic Permit</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Phase Permits</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Permit Status</TableHead>
               <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest text-slate-400">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {usersLoading ? (
-              <TableRow><TableCell colSpan={5} className="py-24 text-center"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="py-24 text-center"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
             ) : filteredUsers.map((u) => (
               <TableRow key={u.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
                 <TableCell className="px-10 py-8">
@@ -204,11 +181,11 @@ export default function UserManagementPage() {
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-4">
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-4">
                     <Switch 
-                      checked={u.strategicPermit} 
-                      onCheckedChange={(val) => handleUpdatePermit(u.id, { strategicPermit: val, status: val ? 'active' : 'suspended' })} 
+                      checked={u.status === 'active'} 
+                      onCheckedChange={(val) => handleUpdatePermit(u.id, { status: val ? 'active' : 'suspended' })} 
                     />
                     <Badge className={`border-none font-bold text-[9px] uppercase px-4 py-1.5 rounded-full tracking-widest ${
                       u.status === 'active' ? 'bg-green-50 text-green-600' : 
@@ -216,24 +193,6 @@ export default function UserManagementPage() {
                     }`}>
                       {u.status}
                     </Badge>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-2 max-w-[220px]">
-                    {PHASES.map(p => (
-                      <Badge 
-                        key={p.id} 
-                        variant={u.permittedPhases?.includes(p.id) ? "default" : "outline"}
-                        onClick={() => handleTogglePhase(u.id, p.id, u.permittedPhases || [])}
-                        className={`px-3 py-1 rounded-lg text-[8px] font-bold uppercase tracking-widest cursor-pointer transition-all ${
-                          u.permittedPhases?.includes(p.id) 
-                            ? "bg-primary border-none text-white shadow-lg shadow-primary/20" 
-                            : "bg-white text-slate-300 border-slate-100 hover:border-slate-300"
-                        }`}
-                      >
-                        {p.id}
-                      </Badge>
-                    ))}
                   </div>
                 </TableCell>
                 <TableCell className="text-right px-10">
@@ -244,10 +203,10 @@ export default function UserManagementPage() {
                     <DropdownMenuContent align="end" className="rounded-2xl w-60 p-2 shadow-2xl border-slate-100">
                       <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-2">Identity Governance</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleUpdatePermit(u.id, { status: "active", strategicPermit: true })} className="rounded-xl p-3 cursor-pointer gap-3 font-bold text-xs text-green-600">
+                      <DropdownMenuItem onClick={() => handleUpdatePermit(u.id, { status: "active" })} className="rounded-xl p-3 cursor-pointer gap-3 font-bold text-xs text-green-600">
                         <CheckCircle2 className="h-4 w-4" /> Authorize Permit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleUpdatePermit(u.id, { status: "suspended", strategicPermit: false })} className="rounded-xl p-3 cursor-pointer gap-3 font-bold text-xs text-orange-600">
+                      <DropdownMenuItem onClick={() => handleUpdatePermit(u.id, { status: "suspended" })} className="rounded-xl p-3 cursor-pointer gap-3 font-bold text-xs text-orange-600">
                         <ShieldX className="h-4 w-4" /> Suspend Expert
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />

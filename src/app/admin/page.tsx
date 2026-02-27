@@ -61,21 +61,6 @@ import {
 
 const ROLES = ["admin", "manager", "editor", "viewer"];
 
-const PERMISSION_KEYS = [
-  { id: "canCreateProject", label: "Create Project" },
-  { id: "canEditProject", label: "Edit Project" },
-  { id: "canDeleteProject", label: "Delete Project" },
-  { id: "canViewFinance", label: "View Finance" },
-  { id: "canAccessSettings", label: "Access Settings" }
-];
-
-const PHASE_KEYS = [
-  { id: "phase1", label: "Phase 1" },
-  { id: "phase2", label: "Phase 2" },
-  { id: "phase3", label: "Phase 3" },
-  { id: "phase4", label: "Phase 4" }
-];
-
 export default function AdminConsolePage() {
   const db = useFirestore();
   const { user: adminUser } = useUser();
@@ -106,7 +91,7 @@ export default function AdminConsolePage() {
         ...data,
         updatedAt: serverTimestamp()
       });
-      toast({ title: "Permit Updated", description: "Identity metadata synchronized." });
+      toast({ title: "Identity Updated", description: "Metadata synchronized." });
     } catch (e: any) {
       toast({ variant: "destructive", title: "Update Failed", description: e.message });
     }
@@ -144,7 +129,7 @@ export default function AdminConsolePage() {
               Root Access
             </Badge>
           </div>
-          <p className="text-sm text-slate-500 font-medium">Authorize expert permits, assign strategic roles, and manage module-level permissions.</p>
+          <p className="text-sm text-slate-500 font-medium">Authorize expert permits and assign strategic organizational roles.</p>
         </div>
       </div>
 
@@ -216,14 +201,12 @@ export default function AdminConsolePage() {
             <TableRow className="hover:bg-transparent border-slate-100">
               <TableHead className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest">Identity</TableHead>
               <TableHead className="text-[10px] font-bold uppercase tracking-widest">Strategic Role</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Permissions</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Phase Access</TableHead>
               <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Decision</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="py-24 text-center"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="py-24 text-center"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
             ) : filteredUsers.map((u) => (
               <TableRow key={u.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
                 <TableCell className="px-10 py-8">
@@ -256,42 +239,6 @@ export default function AdminConsolePage() {
                         {ROLES.map(r => <SelectItem key={r} value={r} className="uppercase text-[10px] font-bold">{r}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="grid grid-cols-1 gap-2">
-                    {PERMISSION_KEYS.map(pk => (
-                      <div key={pk.id} className="flex items-center gap-2">
-                        <Switch 
-                          size="sm"
-                          checked={u.permissions?.[pk.id] || false} 
-                          onCheckedChange={(val) => {
-                            const updated = { ...(u.permissions || {}), [pk.id]: val };
-                            handleUpdateUser(u.id, { permissions: updated });
-                          }}
-                        />
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{pk.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="grid grid-cols-2 gap-2">
-                    {PHASE_KEYS.map(pk => (
-                      <Badge 
-                        key={pk.id}
-                        variant={u.phaseAccess?.[pk.id] ? "default" : "outline"}
-                        onClick={() => {
-                          const updated = { ...(u.phaseAccess || {}), [pk.id]: !u.phaseAccess?.[pk.id] };
-                          handleUpdateUser(u.id, { phaseAccess: updated });
-                        }}
-                        className={`cursor-pointer px-2 py-1 rounded-lg text-[8px] font-bold uppercase transition-all ${
-                          u.phaseAccess?.[pk.id] ? 'bg-primary border-none text-white' : 'text-slate-300 border-slate-100 hover:bg-slate-50'
-                        }`}
-                      >
-                        {pk.label}
-                      </Badge>
-                    ))}
                   </div>
                 </TableCell>
                 <TableCell className="text-right px-10">

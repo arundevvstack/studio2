@@ -70,19 +70,18 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const ALL_MODULES = [
-  { id: "dashboard", title: "Dashboard", iconName: "TrendingUp", url: "/dashboard", group: "core", phase: null },
-  { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "core", phase: null },
-  { id: "intelligence", title: "Intelligence", iconName: "Zap", url: "/intelligence", group: "core", phase: null },
-  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "phases", phase: "sales" },
-  { id: "proposals", title: "Proposal", iconName: "FileText", url: "/proposals", group: "phases", phase: "sales" },
-  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "phases", phase: "production" },
-  { id: "board", title: "Kanban", iconName: "Trello", url: "/board", group: "phases", phase: "production" },
-  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "phases", phase: "production" },
-  { id: "team", title: "Organization", iconName: "Users", url: "/team", group: "phases", phase: "production" },
-  { id: "billing", title: "Invoice", iconName: "Receipt", url: "/invoices", group: "phases", phase: "release" },
-  { id: "market", title: "Marketing Intel", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
-  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network", phase: null },
-  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", group: "core", phase: null },
+  { id: "dashboard", title: "Dashboard", iconName: "TrendingUp", url: "/dashboard", group: "core" },
+  { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "core" },
+  { id: "intelligence", title: "Intelligence", iconName: "Zap", url: "/intelligence", group: "core" },
+  { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "phases" },
+  { id: "proposals", title: "Proposal", iconName: "FileText", url: "/proposals", group: "phases" },
+  { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "phases" },
+  { id: "board", title: "Kanban", iconName: "Trello", url: "/board", group: "phases" },
+  { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "phases" },
+  { id: "team", title: "Organization", iconName: "Users", url: "/team", group: "phases" },
+  { id: "billing", title: "Invoice", iconName: "Receipt", url: "/invoices", group: "phases" },
+  { id: "market", title: "Marketing Intel", iconName: "Globe", url: "/market-research", group: "phases" },
+  { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network" },
 ];
 
 const GROUPS = [
@@ -104,30 +103,24 @@ export function AppSidebar() {
 
   const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
   const isAdmin = isMasterUser || userData?.role === 'admin';
-  const permittedPhases = userData?.permittedPhases || [];
+  const isApproved = isAdmin || userData?.status === 'approved' || userData?.status === 'active';
 
   const groupedMenuItems = useMemo(() => {
     const allowedModules = ALL_MODULES.filter(item => {
       // Root admin sees everything
       if (isAdmin) return true;
       
-      // Phase-gated modules
-      if (item.phase) {
-        return permittedPhases.includes(item.phase);
-      }
+      // Basic approved user sees everything except admin
+      if (isApproved) return item.id !== 'admin';
       
-      // Core modules (excluding Admin which is handled by isAdmin check above)
-      if (item.group === 'core' && item.id !== 'admin') return true;
-      
-      // Network modules are generally public to internal team
-      return item.group === 'network';
+      return false;
     });
 
     return GROUPS.map(group => ({
       ...group,
       items: allowedModules.filter(item => item.group === group.id)
     })).filter(g => g.items.length > 0);
-  }, [permittedPhases, isAdmin]);
+  }, [isAdmin, isApproved]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar font-body">
@@ -237,12 +230,6 @@ export function AppSidebar() {
                   <Link href={`/team/${user?.uid}`}>
                     <User className="h-4 w-4 opacity-60" />
                     <span className="font-bold text-[10px] uppercase tracking-widest">My Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 focus:bg-primary/5 focus:text-primary">
-                  <Link href={`/settings`}>
-                    <Settings className="h-4 w-4 opacity-60" />
-                    <span className="font-bold text-[10px] uppercase tracking-widest">Settings</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-slate-50" />
