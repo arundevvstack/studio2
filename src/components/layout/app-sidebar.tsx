@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from "react";
@@ -12,14 +11,16 @@ import {
   FileText,
   BarChart3,
   ShieldCheck,
-  Settings,
   LogOut,
-  ChevronRight,
   Briefcase,
   Globe,
   Clock,
   Zap,
-  User
+  User,
+  ChevronsUpDown,
+  TrendingUp,
+  Receipt,
+  Settings
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,6 +34,14 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
@@ -41,6 +50,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ICON_MAP: Record<string, any> = {
   LayoutGrid,
+  TrendingUp,
   GitBranch,
   Folder,
   Trello,
@@ -49,34 +59,36 @@ const ICON_MAP: Record<string, any> = {
   FileText,
   BarChart3,
   ShieldCheck,
-  Settings,
   LogOut,
   Briefcase,
   Globe,
   Clock,
   Zap,
-  User
+  User,
+  Receipt,
+  Settings
 };
 
 const ALL_MODULES = [
-  { id: "dashboard", title: "Dashboard", iconName: "LayoutGrid", url: "/dashboard", group: "core", phase: null },
+  { id: "dashboard", title: "Dashboard", iconName: "TrendingUp", url: "/dashboard", group: "core", phase: null },
+  { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "core", phase: null },
+  { id: "intelligence", title: "Intelligence", iconName: "Zap", url: "/intelligence", group: "core", phase: null },
   { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "phases", phase: "sales" },
   { id: "proposals", title: "Proposal", iconName: "FileText", url: "/proposals", group: "phases", phase: "sales" },
   { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "phases", phase: "production" },
   { id: "board", title: "Kanban", iconName: "Trello", url: "/board", group: "phases", phase: "production" },
   { id: "clients", title: "Clients", iconName: "Briefcase", url: "/clients", group: "phases", phase: "production" },
-  { id: "billing", title: "Release", iconName: "FileText", url: "/invoices", group: "phases", phase: "release" },
-  { id: "market", title: "Marketing Intelligence", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
+  { id: "team", title: "Organization", iconName: "Users", url: "/team", group: "phases", phase: "production" },
+  { id: "billing", title: "Invoice", iconName: "Receipt", url: "/invoices", group: "phases", phase: "release" },
+  { id: "market", title: "Marketing Intel", iconName: "Globe", url: "/market-research", group: "phases", phase: "socialMedia" },
   { id: "talent-library", title: "Talent Library", iconName: "Users", url: "/talent-library", group: "network", phase: null },
-  { id: "team", title: "Organization", iconName: "Users", url: "/team", group: "admin", phase: null },
-  { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "admin", phase: null },
+  { id: "settings", title: "Settings", iconName: "Settings", url: "/settings", group: "core", phase: null },
 ];
 
 const GROUPS = [
-  { id: "core", label: "Intelligence" },
-  { id: "phases", label: "Marketing" },
+  { id: "core", label: "Core" },
+  { id: "phases", label: "Operations" },
   { id: "network", label: "Network" },
-  { id: "admin", label: "Admin" },
 ];
 
 export function AppSidebar() {
@@ -90,21 +102,25 @@ export function AppSidebar() {
   }, [db, user]);
   const { data: userData } = useDoc(userRef);
 
+  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
+  const isAdmin = isMasterUser || userData?.role === 'admin';
   const permittedPhases = userData?.permittedPhases || [];
-  const isAdmin = userData?.role === 'admin';
 
   const groupedMenuItems = useMemo(() => {
     const allowedModules = ALL_MODULES.filter(item => {
-      // 1. Root Administrators see everything
+      // Root admin sees everything
       if (isAdmin) return true;
       
-      // 2. Filter modules tied to specific Permit Phases
+      // Phase-gated modules
       if (item.phase) {
         return permittedPhases.includes(item.phase);
       }
       
-      // 3. Baseline modules for authorized experts
-      return item.group === 'core' || item.group === 'network';
+      // Core modules (excluding Admin which is handled by isAdmin check above)
+      if (item.group === 'core' && item.id !== 'admin') return true;
+      
+      // Network modules are generally public to internal team
+      return item.group === 'network';
     });
 
     return GROUPS.map(group => ({
@@ -136,7 +152,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="space-y-0.5">
                 {group.items.map((item) => {
-                  const isActive = pathname.startsWith(item.url);
+                  const isActive = pathname === item.url || pathname.startsWith(item.url + "/");
                   const Icon = ICON_MAP[item.iconName] || Globe;
                   
                   return (
@@ -167,22 +183,79 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-sidebar-border/50">
-        <SidebarMenu className="space-y-1">
+        <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="rounded-xl h-9 px-4 text-slate-500 hover:bg-slate-50 hover:text-slate-900">
-              <Link href="/settings">
-                <Settings className="h-4 w-4" />
-                <span className="ml-3 font-bold text-[10px] uppercase tracking-widest group-data-[collapsible=icon]:hidden">Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="rounded-xl h-9 px-4 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors">
-              <Link href="/logout">
-                <LogOut className="h-4 w-4" />
-                <span className="ml-3 font-bold text-[10px] uppercase tracking-widest group-data-[collapsible=icon]:hidden">Logout</span>
-              </Link>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="rounded-xl px-2 hover:bg-slate-50 data-[state=open]:bg-slate-50 transition-all"
+                >
+                  <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-slate-100">
+                    <AvatarImage src={userData?.photoURL || ""} />
+                    <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
+                      {userData?.name?.[0] || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col flex-1 text-left group-data-[collapsible=icon]:hidden">
+                    <span className="font-bold text-[10px] text-slate-900 uppercase tracking-widest truncate">
+                      {userData?.name || "Expert Identity"}
+                    </span>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight truncate">
+                      {userData?.role || "Personnel"}
+                    </span>
+                  </div>
+                  <ChevronsUpDown className="h-3 w-3 text-slate-400 ml-auto group-data-[collapsible=icon]:hidden" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-2xl p-2 shadow-2xl border-slate-100"
+                side="top"
+                align="end"
+                sideOffset={12}
+              >
+                <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="flex items-center gap-3 px-3 py-2">
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage src={userData?.photoURL || ""} />
+                      <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
+                        {userData?.name?.[0] || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col text-left">
+                      <span className="font-bold text-[10px] text-slate-900 uppercase tracking-widest">
+                        {userData?.name}
+                      </span>
+                      <span className="text-[8px] text-slate-400 font-bold uppercase">
+                        {userData?.email}
+                      </span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-50" />
+                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 focus:bg-primary/5 focus:text-primary">
+                  <Link href={`/team/${user?.uid}`}>
+                    <User className="h-4 w-4 opacity-60" />
+                    <span className="font-bold text-[10px] uppercase tracking-widest">My Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 focus:bg-primary/5 focus:text-primary">
+                  <Link href={`/settings`}>
+                    <Settings className="h-4 w-4 opacity-60" />
+                    <span className="font-bold text-[10px] uppercase tracking-widest">Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-50" />
+                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 text-destructive focus:bg-destructive/5 focus:text-destructive">
+                  <Link href="/logout">
+                    <div className="flex items-center gap-2">
+                      <LogOut className="h-4 w-4" />
+                      <span className="font-bold text-[10px] uppercase tracking-widest">Logout Session</span>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

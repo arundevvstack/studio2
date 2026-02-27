@@ -1,7 +1,8 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { 
   Settings, 
   Building2, 
@@ -102,7 +103,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, doc, writeBatch, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, orderBy, doc, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -123,8 +124,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 
 const SIDEBAR_MODULES = [
   { id: "dashboard", title: "Dashboard", icon: LayoutGrid },
@@ -137,7 +138,7 @@ const SIDEBAR_MODULES = [
   { id: "schedule", title: "Schedule", icon: Calendar },
   { id: "time", title: "Time Tracking", icon: Clock },
   { id: "team", title: "Team", icon: Users },
-  { id: "billing", title: "Billing", icon: FileText },
+  { id: "billing", title: "Invoice", icon: Receipt },
   { id: "intelligence", title: "Intelligence", icon: BarChart3 },
   { id: "market", title: "Marketing Intelligence", icon: Globe },
   { id: "admin", title: "Admin", icon: ShieldCheck },
@@ -154,7 +155,6 @@ const DASHBOARD_ITEMS = [
 ];
 
 const SETTINGS_TABS = [
-  { id: "profile", label: "My Profile", icon: User },
   { id: "sessions", label: "Security & Sessions", icon: Shield },
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "users", label: "Database Users", icon: Users },
@@ -194,7 +194,6 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [themeMode, setThemeMode] = useState<"light" | "dark" | "system">("light");
   const [primaryColor, setPrimaryColor] = useState("204 61% 47%");
-  const profilePicInputRef = useRef<HTMLInputElement>(null);
   const [selectedRoleIdForNav, setSelectedRoleIdForNav] = useState<string>("");
   const [orderedModules, setOrderedModules] = useState(SIDEBAR_MODULES);
   const [userToPurge, setUserToPurge] = useState<any>(null);
@@ -239,10 +238,13 @@ export default function SettingsPage() {
   }, [db, user]);
   const { data: roles } = useCollection(rolesQuery);
 
+  const isMasterAdmin = currentIdentity?.role === 'admin' || user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
+
   const databaseUsersQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !currentIdentity) return null;
+    if (!isMasterAdmin && currentIdentity.role !== 'admin') return null;
     return query(collection(db, "users"), orderBy("updatedAt", "desc"));
-  }, [db, user]);
+  }, [db, user, currentIdentity, isMasterAdmin]);
   const { data: databaseUsers, isLoading: usersLoading } = useCollection(databaseUsersQuery);
 
   const userRoleRef = useMemoFirebase(() => {
@@ -250,8 +252,6 @@ export default function SettingsPage() {
     return doc(db, "roles", currentIdentity.role);
   }, [db, currentIdentity?.role]);
   const { data: userRole } = useDoc(userRoleRef);
-
-  const isMasterAdmin = currentIdentity?.role === 'admin' || currentIdentity?.email === 'defineperspective.in@gmail.com';
 
   const sessionsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -272,7 +272,6 @@ export default function SettingsPage() {
 
   const visibleTabs = useMemo(() => {
     return SETTINGS_TABS.filter(tab => {
-      if (tab.id === 'profile') return true; 
       if (tab.id === 'sessions') return true;
       if (tab.id === 'preferences') return true; 
       if (tab.id === 'users') return isMasterAdmin;
@@ -280,7 +279,7 @@ export default function SettingsPage() {
     });
   }, [userRole, isMasterAdmin]);
 
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("sessions");
 
   const billingSettingsRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -293,8 +292,6 @@ export default function SettingsPage() {
     bankSwiftCode: "", bankIban: "", companyPhone: "", taxId: "",
     invoicePrefix: "", nextInvoiceNumberSequence: 1001, panNumber: "", cinNumber: "", logo: ""
   });
-
-  const [profileForm, setProfileForm] = useState({ firstName: "", lastName: "", phone: "", thumbnail: "" });
 
   useEffect(() => {
     if (billingSettings) {
@@ -315,18 +312,6 @@ export default function SettingsPage() {
       });
     }
   }, [billingSettings]);
-
-  useEffect(() => {
-    if (currentIdentity) {
-      const names = (currentIdentity.name || "User").split(" ");
-      setProfileForm({
-        firstName: names[0] || "",
-        lastName: names.slice(1).join(" ") || "",
-        phone: currentIdentity.phone || "",
-        thumbnail: currentIdentity.photoURL || ""
-      });
-    }
-  }, [currentIdentity]);
 
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
@@ -366,21 +351,6 @@ export default function SettingsPage() {
     setIsSaving(true);
     setDocumentNonBlocking(billingSettingsRef, { ...billingForm, updatedAt: serverTimestamp() }, { merge: true });
     setTimeout(() => { setIsSaving(false); toast({ title: "Profile Synchronized", description: "Org details updated." }); }, 800);
-  };
-
-  const handleSavePersonalProfile = async () => {
-    if (!registryRef || !user) return;
-    setIsSaving(true);
-    try {
-      await updateDoc(registryRef, { 
-        name: `${profileForm.firstName} ${profileForm.lastName}`,
-        photoURL: profileForm.thumbnail,
-        updatedAt: serverTimestamp() 
-      });
-      toast({ title: "Identity Synchronized", description: "Personal profile updated." });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Sync Failed", description: error.message });
-    } finally { setIsSaving(false); }
   };
 
   const handleApplyPreferences = () => {
@@ -462,7 +432,7 @@ export default function SettingsPage() {
   const executePurgeUser = () => {
     if (userToPurge) {
       deleteDocumentNonBlocking(doc(db, "users", userToPurge.id));
-      toast({ variant: "destructive", title: "Identity Purged", description: `${userToPurge.email} removed from system registry.` });
+      toast({ variant: "destructive", title: "Identity Deleted", description: `${userToPurge.email} removed from system registry.` });
       setUserToPurge(null);
     }
   };
@@ -494,29 +464,6 @@ export default function SettingsPage() {
             </TabsTrigger>
           ))}
         </TabsList>
-
-        <TabsContent value="profile" className="animate-in slide-in-from-left-2 duration-300">
-          <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900">
-            <CardHeader className="p-10 pb-0"><CardTitle className="text-xl font-bold font-headline">Personal Identity</CardTitle></CardHeader>
-            <CardContent className="p-10 space-y-8">
-              <div className="flex flex-col items-center gap-4 py-4 border-b border-slate-50 dark:border-slate-800">
-                <div className="relative group cursor-pointer" onClick={() => profilePicInputRef.current?.click()}>
-                  <Avatar className="h-32 w-32 rounded-[10px] border-4 border-slate-50 shadow-xl bg-white dark:bg-slate-800">
-                    <AvatarImage src={profileForm.thumbnail} className="object-cover" />
-                    <AvatarFallback className="bg-primary/5 text-primary text-2xl font-bold">{profileForm.firstName?.[0] || 'E'}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute inset-0 bg-black/40 rounded-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><Upload className="h-6 w-6 text-white" /></div>
-                  <input type="file" ref={profilePicInputRef} className="hidden" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onloadend = () => setProfileForm(p => ({ ...p, thumbnail: r.result as string })); r.readAsDataURL(f); } }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2"><Label className="text-[10px] font-bold uppercase text-slate-400">First Name</Label><Input value={profileForm.firstName} onChange={e => setProfileForm({...profileForm, firstName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none font-bold" /></div>
-                <div className="space-y-2"><Label className="text-[10px] font-bold uppercase text-slate-400">Last Name</Label><Input value={profileForm.lastName} onChange={e => setProfileForm({...profileForm, lastName: e.target.value})} className="h-14 rounded-xl bg-slate-50 border-none font-bold" /></div>
-              </div>
-              <div className="flex justify-end pt-6 border-t border-slate-50"><Button onClick={handleSavePersonalProfile} disabled={isSaving} className="h-12 px-8 rounded-xl font-bold bg-primary text-white shadow-lg shadow-primary/20 gap-2">{isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Profile</Button></div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="sessions" className="animate-in slide-in-from-left-2 duration-300">
           <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900 overflow-hidden">
@@ -601,7 +548,7 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm rounded-[10px] bg-white dark:bg-slate-900 overflow-hidden">
             <CardHeader className="p-10 border-b border-slate-50 dark:border-slate-800">
               <CardTitle className="text-xl font-bold font-headline">Identity Registry</CardTitle>
-              <CardDescription>Authorize permits and manage permanent organizational purges.</CardDescription>
+              <CardDescription>Authorize permits and manage permanent organizational deletions.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {usersLoading ? (
@@ -612,12 +559,12 @@ export default function SettingsPage() {
                     <TableRow className="hover:bg-transparent border-slate-100 dark:border-slate-800">
                       <TableHead className="px-10 text-[10px] font-bold uppercase tracking-widest">Expert Identity</TableHead>
                       <TableHead className="text-[10px] font-bold uppercase tracking-widest">Email Identifier</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Strategic Permit</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Access</TableHead>
                       <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {databaseUsers?.map((dbUser) => (
+                    {(databaseUsers || []).map((dbUser) => (
                       <TableRow key={dbUser.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
                         <TableCell className="px-10 py-6">
                           <div className="flex items-center gap-4">
@@ -645,7 +592,7 @@ export default function SettingsPage() {
                         <TableCell className="text-right px-10">
                           <div className="flex justify-end gap-2">
                             <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 hover:bg-primary hover:text-white transition-all">
-                              <Link href="/admin/users">
+                              <Link href="/admin">
                                 <Edit2 className="h-4 w-4" />
                               </Link>
                             </Button>
@@ -774,7 +721,7 @@ export default function SettingsPage() {
                   <div className="flex gap-4"><Input value={newServiceType} onChange={e => setNewServiceType(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddServiceType()} placeholder="e.g. AI Content Repurposing" className="h-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold flex-1" /><Button onClick={handleAddServiceType} disabled={isSaving || !newServiceType} className="h-14 px-8 rounded-2xl bg-primary text-white font-bold gap-2 shadow-lg shadow-primary/20"><Plus className="h-5 w-5" /> Add</Button></div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {projectSettings?.serviceTypes?.map((type: string) => (
+                  {(projectSettings?.serviceTypes || []).map((type: string) => (
                     <div key={type} className="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 group transition-all hover:shadow-md dark:bg-slate-800 dark:border-slate-700">
                       {editingServiceType === type ? (
                         <div className="flex items-center gap-2 flex-1">
@@ -897,9 +844,9 @@ export default function SettingsPage() {
           <AlertDialogHeader>
             <div className="flex items-center gap-3 text-destructive mb-2">
               <AlertTriangle className="h-6 w-6" />
-              <AlertDialogTitle className="font-headline text-xl">Purge Identity Record</AlertDialogTitle>
+              <AlertDialogTitle className="font-headline text-xl">Confirm Delete User</AlertDialogTitle>
             </div>
-            <AlertDialogDescription className="text-slate-500 font-medium leading-relaxed">
+            <AlertDialogDescription className="text-sm text-slate-500 font-medium leading-relaxed">
               This will permanently remove <span className="font-bold text-slate-900">{userToPurge?.email}</span> from the organizational registry. This action is irreversible and terminates all future authentication permits.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -909,7 +856,7 @@ export default function SettingsPage() {
               onClick={executePurgeUser} 
               className="bg-destructive hover:bg-destructive/90 text-white rounded-[10px] font-bold px-8 uppercase text-xs tracking-normal"
             >
-              Confirm Purge
+              Confirm Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
