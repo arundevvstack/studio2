@@ -27,7 +27,7 @@ import { doc } from "firebase/firestore";
 /**
  * @fileOverview Intelligence Hub (Operations Hub).
  * Filters viewable operational phases based on authorized permits.
- * Updated with Test Mode bypass for master account.
+ * Updated with Admin module removal.
  */
 export default function IntelligenceHub() {
   const router = useRouter();
@@ -138,33 +138,7 @@ export default function IntelligenceHub() {
             href="/market-research" 
           />
         )}
-        {isAdmin && (
-          <PhaseCard 
-            title="Admin Console" 
-            desc="System Governance & Permits" 
-            icon={ShieldCheck} 
-            color="bg-amber-50 text-amber-600" 
-            href="/admin" 
-          />
-        )}
       </div>
-
-      {isAdmin && (
-        <Card className="border-none shadow-sm rounded-[2.5rem] bg-slate-900 text-white p-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full -mr-32 -mt-32" />
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
-            <div className="space-y-4">
-              <Badge className="bg-white/10 text-white border-none rounded-full px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.2em]">Root Authority</Badge>
-              <h2 className="text-4xl font-bold font-headline tracking-tight leading-tight">System Governance</h2>
-              <h2 className="text-4xl font-bold font-headline tracking-tight leading-tight">System Governance</h2>
-              <p className="text-slate-400 max-w-md font-medium">Authorize new expert permits, assign strategic roles, and manage organizational access tiers across the entire workspace.</p>
-            </div>
-            <Button asChild className="h-16 px-12 bg-white text-slate-950 hover:bg-slate-100 rounded-full font-bold text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95">
-              <Link href="/admin">Manage System Permits</Link>
-            </Button>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

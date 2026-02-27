@@ -71,7 +71,6 @@ const ICON_MAP: Record<string, any> = {
 const ALL_MODULES = [
   { id: "dashboard", title: "Dashboard", iconName: "TrendingUp", url: "/dashboard", group: "core", phase: null },
   { id: "intelligence", title: "Intelligence", iconName: "Zap", url: "/intelligence", group: "core", phase: null },
-  { id: "admin", title: "Admin", iconName: "ShieldCheck", url: "/admin", group: "core", phase: null },
   { id: "pipeline", title: "Pipeline", iconName: "GitBranch", url: "/pipeline", group: "phases", phase: "sales" },
   { id: "proposals", title: "Proposal", iconName: "FileText", url: "/proposals", group: "phases", phase: "sales" },
   { id: "projects", title: "Projects", iconName: "Folder", url: "/projects", group: "phases", phase: "production" },
@@ -109,7 +108,6 @@ export function AppSidebar() {
       if (item.phase) {
         return permittedPhases.includes(item.phase);
       }
-      if (item.id === 'admin') return false;
       return item.group === 'core' || item.group === 'network';
     });
 
