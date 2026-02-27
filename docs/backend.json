@@ -25,14 +25,6 @@
           "description": "The assigned strategic role (strategic | sales | production | admin | null).",
           "enum": ["strategic", "sales", "production", "admin", null]
         },
-        "permittedPhases": {
-          "type": "array",
-          "description": "A list of phases the user is permitted to access.",
-          "items": {
-            "type": "string",
-            "enum": ["sales", "production", "release", "socialMedia"]
-          }
-        },
         "strategicPermit": {
           "type": "boolean",
           "description": "Master switch enabling access to the system features."
@@ -58,7 +50,6 @@
         "name",
         "email",
         "role",
-        "permittedPhases",
         "strategicPermit",
         "status",
         "createdAt",
