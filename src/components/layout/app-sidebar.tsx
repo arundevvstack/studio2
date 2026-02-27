@@ -12,7 +12,6 @@ import {
   FileText,
   BarChart3,
   ShieldCheck,
-  Settings,
   LogOut,
   Briefcase,
   Globe,
@@ -60,7 +59,6 @@ const ICON_MAP: Record<string, any> = {
   FileText,
   BarChart3,
   ShieldCheck,
-  Settings,
   LogOut,
   Briefcase,
   Globe,
@@ -229,12 +227,6 @@ export function AppSidebar() {
                   <Link href={`/team/${user?.uid}`}>
                     <User className="h-4 w-4 opacity-60" />
                     <span className="font-bold text-[10px] uppercase tracking-widest">My Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 focus:bg-primary/5 focus:text-primary">
-                  <Link href="/settings">
-                    <Settings className="h-4 w-4 opacity-60" />
-                    <span className="font-bold text-[10px] uppercase tracking-widest">Settings</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-slate-50" />
