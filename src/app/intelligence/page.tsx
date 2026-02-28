@@ -6,58 +6,29 @@ import {
   Loader2,
   Zap,
   Globe,
-  ArrowRight,
-  GitBranch,
-  Briefcase,
-  Users,
-  Receipt
+  ArrowRight
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { doc } from "firebase/firestore";
 
 /**
  * @fileOverview Intelligence Hub (Operations Hub).
  * Strategic focal point for operational monitoring and market research.
  */
 export default function IntelligenceHub() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const db = useFirestore();
-  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const userRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(db, "users", user.uid);
-  }, [db, user]);
-  const { data: userData, isLoading: isUserRegistryLoading } = useDoc(userRef);
-
-  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
-
-  useEffect(() => {
-    if (!isUserLoading && !isUserRegistryLoading && mounted && !isMasterUser) {
-      if (!user || !userData || (userData.status !== "active" && userData.status !== "approved")) {
-        router.push("/login");
-      }
-    }
-  }, [user, userData, isUserLoading, isUserRegistryLoading, router, mounted, isMasterUser]);
-
-  if (!mounted || isUserLoading || isUserRegistryLoading) {
+  if (!mounted) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Validating Authorized Permits...</p>
+        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Initializing Hub...</p>
       </div>
     );
   }
-
-  if (!user || (!isMasterUser && userData?.status !== "active" && userData?.status !== "approved")) return null;
 
   return (
     <div className="space-y-12 animate-in fade-in duration-1000 pb-20 max-w-[1400px] mx-auto">
@@ -68,40 +39,12 @@ export default function IntelligenceHub() {
           </div>
           <div>
             <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-950 leading-none">Intelligence Hub</h1>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Operational Hub • {userData?.role || 'Executive'}</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Strategic Operational Node</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <PhaseCard 
-          title="Sales Intelligence" 
-          desc="Pipeline Velocity & Conversion Tracking" 
-          icon={GitBranch} 
-          color="bg-blue-50 text-blue-600" 
-          href="/pipeline" 
-        />
-        <PhaseCard 
-          title="Production Matrix" 
-          desc="Project Roadmap & Capacity Monitoring" 
-          icon={Briefcase} 
-          color="bg-orange-50 text-orange-600" 
-          href="/projects" 
-        />
-        <PhaseCard 
-          title="Personnel Ledger" 
-          desc="Team Resource & Skill Distribution" 
-          icon={Users} 
-          color="bg-emerald-50 text-emerald-600" 
-          href="/team" 
-        />
-        <PhaseCard 
-          title="Revenue Generation" 
-          desc="Financial Reconciliation & Invoicing" 
-          icon={Receipt} 
-          color="bg-pink-50 text-pink-600" 
-          href="/invoices" 
-        />
         <PhaseCard 
           title="Marketing Intelligence" 
           desc="Asset Monitoring & Market Research" 

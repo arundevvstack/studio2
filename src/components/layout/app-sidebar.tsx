@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import {
   LayoutGrid,
   GitBranch,
@@ -11,16 +11,13 @@ import {
   FileText,
   BarChart3,
   ShieldCheck,
-  LogOut,
   Briefcase,
   Globe,
   Clock,
   Zap,
-  User,
-  ChevronsUpDown,
-  TrendingUp,
   Receipt,
-  Settings
+  Settings,
+  TrendingUp
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,21 +29,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
 } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useFirestore, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { doc } from "firebase/firestore";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ICON_MAP: Record<string, any> = {
   LayoutGrid,
@@ -59,12 +44,10 @@ const ICON_MAP: Record<string, any> = {
   FileText,
   BarChart3,
   ShieldCheck,
-  LogOut,
   Briefcase,
   Globe,
   Clock,
   Zap,
-  User,
   Receipt,
   Settings
 };
@@ -93,31 +76,6 @@ const GROUPS = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const db = useFirestore();
-  const { user } = useUser();
-
-  const userRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(db, "users", user.uid);
-  }, [db, user]);
-  const { data: userData } = useDoc(userRef);
-
-  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
-  const isAdmin = isMasterUser || userData?.role === 'admin';
-  const isApproved = isAdmin || userData?.status === 'approved' || userData?.status === 'active';
-
-  const groupedMenuItems = useMemo(() => {
-    const allowedModules = ALL_MODULES.filter(item => {
-      if (isAdmin) return true;
-      if (isApproved) return item.id !== 'admin';
-      return false;
-    });
-
-    return GROUPS.map(group => ({
-      ...group,
-      items: allowedModules.filter(item => item.group === group.id)
-    })).filter(g => g.items.length > 0);
-  }, [isAdmin, isApproved]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar font-body">
@@ -128,20 +86,20 @@ export function AppSidebar() {
           </div>
           <div className="group-data-[collapsible=icon]:hidden">
             <p className="font-headline font-bold text-sm tracking-tight leading-none text-slate-900">MediaFlow</p>
-            <p className="text-[7px] font-bold text-primary uppercase tracking-[0.2em] mt-1">Permit OS v2.8</p>
+            <p className="text-[7px] font-bold text-primary uppercase tracking-[0.2em] mt-1">Open Node v3.0</p>
           </div>
         </Link>
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-2">
-        {groupedMenuItems.map((group) => (
+        {GROUPS.map((group) => (
           <SidebarGroup key={group.id} className="py-1">
             <SidebarGroupLabel className="px-4 text-[8px] font-bold uppercase text-slate-400 mb-1 group-data-[collapsible=icon]:hidden tracking-[0.3em]">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-0.5">
-                {group.items.map((item) => {
+                {ALL_MODULES.filter(item => item.group === group.id).map((item) => {
                   const isActive = pathname === item.url || pathname.startsWith(item.url + "/");
                   const Icon = ICON_MAP[item.iconName] || Globe;
                   
@@ -171,90 +129,6 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-sidebar-border/50">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="rounded-xl px-2 hover:bg-slate-50 data-[state=open]:bg-slate-50 transition-all"
-                >
-                  <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-slate-100">
-                    <AvatarImage src={userData?.photoURL || ""} />
-                    <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
-                      {userData?.name?.[0] || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col flex-1 text-left group-data-[collapsible=icon]:hidden">
-                    <span className="font-bold text-[10px] text-slate-900 uppercase tracking-widest truncate">
-                      {userData?.name || "Expert Identity"}
-                    </span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight truncate">
-                      {userData?.role || "Personnel"}
-                    </span>
-                  </div>
-                  <ChevronsUpDown className="h-3 w-3 text-slate-400 ml-auto group-data-[collapsible=icon]:hidden" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-2xl p-2 shadow-2xl border-slate-100"
-                side="top"
-                align="end"
-                sideOffset={12}
-              >
-                <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-3 px-3 py-2">
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={userData?.photoURL || ""} />
-                      <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">
-                        {userData?.name?.[0] || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col text-left">
-                      <span className="font-bold text-[10px] text-slate-900 uppercase tracking-widest">
-                        {userData?.name}
-                      </span>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase">
-                        {userData?.email}
-                      </span>
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-slate-50" />
-                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 focus:bg-primary/5 focus:text-primary">
-                  <Link href={`/team/${user?.uid}`}>
-                    <User className="h-4 w-4 opacity-60" />
-                    <span className="font-bold text-[10px] uppercase tracking-widest">My Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 focus:bg-primary/5 focus:text-primary">
-                  <Link href="/settings">
-                    <Settings className="h-4 w-4 opacity-60" />
-                    <span className="font-bold text-[10px] uppercase tracking-widest">System Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-slate-50" />
-                <DropdownMenuItem asChild className="rounded-xl p-2.5 cursor-pointer gap-3 text-destructive focus:bg-destructive/5 focus:text-destructive">
-                  <Link href="/logout">
-                    <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <LogOut className="h-4 w-4" />
-                        <Avatar className="h-3 w-3 absolute -top-1 -right-1 border border-white shadow-sm">
-                          <AvatarImage src={userData?.photoURL || ""} />
-                          <AvatarFallback className="bg-red-50 text-red-500 text-[4px] font-bold">U</AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <span className="font-bold text-[10px] uppercase tracking-widest ml-1">Logout Session</span>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }
