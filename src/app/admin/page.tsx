@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   Lock,
   LayoutGrid,
-  Filter
+  Filter,
+  Edit2
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,8 +45,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { deleteDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -60,26 +62,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const ROLES = ["admin", "manager", "editor", "viewer"];
-const DEPARTMENTS = ["Executive", "Production", "Sales", "Marketing", "Post-Production"];
-
-const PERMISSION_KEYS = [
-  { id: "canCreateProject", label: "Create Project" },
-  { id: "canEditProject", label: "Edit Project" },
-  { id: "canDeleteProject", label: "Delete Project" },
-  { id: "canViewFinance", label: "View Finance" },
-  { id: "canAccessSettings", label: "Access Settings" }
-];
-
-const PHASE_KEYS = [
-  { id: "phase1", label: "Phase 1" },
-  { id: "phase2", label: "Phase 2" },
-  { id: "phase3", label: "Phase 3" },
-  { id: "phase4", label: "Phase 4" }
-];
 
 export default function AdminConsolePage() {
   const db = useFirestore();
-  const { user: adminUser } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [userToDelete, setUserToDelete] = useState<any>(null);
@@ -100,23 +85,19 @@ export default function AdminConsolePage() {
     });
   }, [allUsers, searchQuery, statusFilter]);
 
-  const handleUpdateUser = async (userId: string, data: any) => {
+  const handleUpdateUser = (userId: string, data: any) => {
     const userRef = doc(db, "users", userId);
-    try {
-      await updateDoc(userRef, {
-        ...data,
-        updatedAt: serverTimestamp()
-      });
-      toast({ title: "Permit Updated", description: "Identity metadata synchronized." });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Update Failed", description: e.message });
-    }
+    updateDocumentNonBlocking(userRef, {
+      ...data,
+      updatedAt: serverTimestamp()
+    });
+    toast({ title: "Registry Updated", description: "Identity metadata synchronized." });
   };
 
   const handleApprove = (user: any) => {
     handleUpdateUser(user.id, {
       status: "approved",
-      approvedBy: adminUser?.uid,
+      approvedBy: "SYSTEM_OPERATOR",
       approvedAt: serverTimestamp()
     });
   };
@@ -125,15 +106,14 @@ export default function AdminConsolePage() {
     handleUpdateUser(user.id, { status: "suspended" });
   };
 
-  const executeDelete = async () => {
+  const executeDelete = () => {
     if (!userToDelete) return;
-    try {
-      // In a real app, you'd call a cloud function to delete the Auth user too
-      toast({ title: "User Purged", description: `${userToDelete.name} removed from registry.` });
-      setUserToDelete(null);
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Delete Failed", description: e.message });
-    }
+    deleteDocumentNonBlocking(doc(db, "users", userToDelete.id));
+    toast({ 
+      title: "User Purged", 
+      description: `${userToDelete.name} removed from registry.` 
+    });
+    setUserToDelete(null);
   };
 
   return (
@@ -143,10 +123,10 @@ export default function AdminConsolePage() {
           <div className="flex items-center gap-3">
             <h1 className="text-4xl font-bold font-headline text-slate-900 tracking-tight">Enterprise Governance</h1>
             <Badge className="bg-slate-900 text-white border-none text-[10px] font-bold px-3 py-1 uppercase">
-              Root Access
+              Management Node
             </Badge>
           </div>
-          <p className="text-sm text-slate-500 font-medium">Authorize expert permits, assign strategic roles, and manage module-level permissions.</p>
+          <p className="text-sm text-slate-500 font-medium">Manage expert identities and assign strategic organizational roles.</p>
         </div>
       </div>
 
@@ -195,7 +175,7 @@ export default function AdminConsolePage() {
           <Input 
             value={searchQuery} 
             onChange={(e) => setSearchQuery(e.target.value)} 
-            placeholder="Search expert registry..." 
+            placeholder="Search identity registry..." 
             className="pl-12 h-14 bg-white border-none shadow-sm rounded-2xl text-base font-bold" 
           />
         </div>
@@ -217,38 +197,38 @@ export default function AdminConsolePage() {
           <TableHeader className="bg-slate-50/50">
             <TableRow className="hover:bg-transparent border-slate-100">
               <TableHead className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest">Identity</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Role & Dept</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Permissions</TableHead>
-              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Phase Access</TableHead>
+              <TableHead className="text-[10px] font-bold uppercase tracking-widest">Strategic Role</TableHead>
               <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest">Decision</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="py-24 text-center"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="py-24 text-center"><Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" /></TableCell></TableRow>
+            ) : filteredUsers.length === 0 ? (
+              <TableRow><TableCell colSpan={3} className="py-24 text-center text-slate-400 font-bold uppercase text-[10px]">No identities matching criteria</TableCell></TableRow>
             ) : filteredUsers.map((u) => (
               <TableRow key={u.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
                 <TableCell className="px-10 py-8">
                   <div className="flex items-center gap-5">
                     <Avatar className="h-12 w-12 rounded-2xl border-2 border-white shadow-sm">
                       <AvatarImage src={u.photoURL || `https://picsum.photos/seed/${u.id}/200/200`} />
-                      <AvatarFallback className="bg-primary/5 text-primary font-bold">{u.name?.[0] || 'E'}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/5 text-primary font-bold">{u.name?.[0] || 'U'}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-bold text-slate-900 tracking-tight">{u.name}</p>
+                      <p className="font-bold text-slate-900 tracking-tight">{u.name || "Anonymous Expert"}</p>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{u.email}</p>
                       <Badge className={`mt-2 border-none font-bold text-[8px] uppercase px-2 py-0.5 rounded-lg ${
                         u.status === 'approved' ? 'bg-green-50 text-green-600' : 
                         u.status === 'pending' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
                       }`}>
-                        {u.status}
+                        {u.status || 'pending'}
                       </Badge>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="space-y-3">
+                <TableCell>
                   <div className="space-y-1">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Strategic Role</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">System Role</p>
                     <Select value={u.role || "none"} onValueChange={(val) => handleUpdateUser(u.id, { role: val === 'none' ? null : val })}>
                       <SelectTrigger className="h-10 w-40 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
                         <SelectValue placeholder="Assign Role" />
@@ -259,76 +239,30 @@ export default function AdminConsolePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Department</p>
-                    <Select value={u.department || "none"} onValueChange={(val) => handleUpdateUser(u.id, { department: val === 'none' ? null : val })}>
-                      <SelectTrigger className="h-10 w-40 rounded-xl bg-slate-50 border-none font-bold text-[10px] uppercase tracking-widest">
-                        <SelectValue placeholder="Assign Dept" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No Dept</SelectItem>
-                        {DEPARTMENTS.map(d => <SelectItem key={d} value={d} className="uppercase text-[10px] font-bold">{d}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="grid grid-cols-1 gap-2">
-                    {PERMISSION_KEYS.map(pk => (
-                      <div key={pk.id} className="flex items-center gap-2">
-                        <Switch 
-                          size="sm"
-                          checked={u.permissions?.[pk.id] || false} 
-                          onCheckedChange={(val) => {
-                            const updated = { ...(u.permissions || {}), [pk.id]: val };
-                            handleUpdateUser(u.id, { permissions: updated });
-                          }}
-                        />
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{pk.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="grid grid-cols-2 gap-2">
-                    {PHASE_KEYS.map(pk => (
-                      <Badge 
-                        key={pk.id}
-                        variant={u.phaseAccess?.[pk.id] ? "default" : "outline"}
-                        onClick={() => {
-                          const updated = { ...(u.phaseAccess || {}), [pk.id]: !u.phaseAccess?.[pk.id] };
-                          handleUpdateUser(u.id, { phaseAccess: updated });
-                        }}
-                        className={`cursor-pointer px-2 py-1 rounded-lg text-[8px] font-bold uppercase transition-all ${
-                          u.phaseAccess?.[pk.id] ? 'bg-primary border-none text-white' : 'text-slate-300 border-slate-100 hover:bg-slate-50'
-                        }`}
-                      >
-                        {pk.label}
-                      </Badge>
-                    ))}
-                  </div>
                 </TableCell>
                 <TableCell className="text-right px-10">
                   <div className="flex flex-col items-end gap-2">
-                    {u.status !== 'approved' && (
-                      <Button onClick={() => handleApprove(u)} size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-[10px] uppercase w-32">
-                        <CheckCircle2 className="h-3 w-3 mr-2" /> Approve
-                      </Button>
-                    )}
-                    {u.status !== 'suspended' && (
-                      <Button onClick={() => handleSuspend(u)} size="sm" variant="outline" className="border-red-100 text-red-600 hover:bg-red-50 rounded-xl font-bold text-[10px] uppercase w-32">
-                        <ShieldX className="h-3 w-3 mr-2" /> Suspend
-                      </Button>
-                    )}
+                    <div className="flex gap-2">
+                      {u.status !== 'approved' && (
+                        <Button onClick={() => handleApprove(u)} size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-[10px] uppercase w-28">
+                          <CheckCircle2 className="h-3 w-3 mr-2" /> Approve
+                        </Button>
+                      )}
+                      {u.status !== 'suspended' && (
+                        <Button onClick={() => handleSuspend(u)} size="sm" variant="outline" className="border-red-100 text-red-600 hover:bg-red-50 rounded-xl font-bold text-[10px] uppercase w-28">
+                          <ShieldX className="h-3 w-3 mr-2" /> Suspend
+                        </Button>
+                      )}
+                    </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50 mt-2"><MoreHorizontal className="h-5 w-5 text-slate-400" /></Button>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-slate-50"><MoreHorizontal className="h-5 w-5 text-slate-400" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-2xl w-56 p-2 shadow-2xl">
-                        <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Registry Cleanup</DropdownMenuLabel>
+                        <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3">Identity Governance</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setUserToDelete(u)} className="rounded-xl p-3 cursor-pointer gap-3 text-destructive font-bold text-xs">
-                          <Trash2 className="h-4 w-4" /> Purge Identity
+                          <Trash2 className="h-4 w-4" /> Purge Record
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -345,10 +279,10 @@ export default function AdminConsolePage() {
           <AlertDialogHeader>
             <div className="flex items-center gap-4 text-destructive mb-4">
               <AlertTriangle className="h-10 w-10" />
-              <AlertDialogTitle className="text-2xl font-bold font-headline">Confirm Identity Purge</AlertDialogTitle>
+              <AlertDialogTitle className="text-2xl font-bold font-headline">Confirm Purge</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="text-base text-slate-500 font-medium">
-              You are about to irreversibly remove <span className="font-bold text-slate-900">{userToDelete?.name}</span> from the organizational registry.
+              You are about to irreversibly remove <span className="font-bold text-slate-900">{userToDelete?.name || userToDelete?.email}</span> from the organizational registry.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-8 gap-4">

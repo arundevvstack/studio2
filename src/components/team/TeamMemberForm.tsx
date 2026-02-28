@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -38,7 +37,6 @@ interface TeamMemberFormProps {
 }
 
 const MEMBER_TYPES = ["In-house", "Freelancer"];
-const DEPARTMENTS = ["Marketing", "Sales", "Admin", "Production", "HR", "Operations"];
 
 export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProps) {
   const db = useFirestore();
@@ -55,7 +53,6 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
     roleId: "",
     type: "In-house",
     status: "Active",
-    department: "Production",
     thumbnail: "",
   });
 
@@ -94,7 +91,6 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
         type: existingMember.type || "In-house",
         status: (existingMember.status === 'active' || existingMember.status === 'Active') ? "Active" : 
                 (existingMember.status === 'suspended' || existingMember.status === 'Suspended') ? "Suspended" : "Pending",
-        department: existingMember.department || "Production",
         thumbnail: existingMember.thumbnail || existingMember.photoURL || "",
       });
       setIsInitialized(true);
@@ -232,15 +228,6 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-slate-50">
         <div className="space-y-3">
-          <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Strategic Department</Label>
-          <Select value={formData.department} onValueChange={(val) => setFormData({...formData, department: val})}>
-            <SelectTrigger className="h-14 rounded-[10px] bg-slate-50 border-none font-bold text-lg shadow-inner px-6"><SelectValue /></SelectTrigger>
-            <SelectContent className="rounded-xl shadow-2xl">
-              {DEPARTMENTS.map(d => <SelectItem key={d} value={d} className="font-bold">{d}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-3">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Strategic Role</Label>
           <Select disabled={!isAuthorizedAdmin} value={formData.roleId} onValueChange={(val) => setFormData({...formData, roleId: val})}>
             <SelectTrigger className="h-14 rounded-[10px] bg-slate-50 border-none font-bold text-lg shadow-inner px-6">
@@ -252,9 +239,6 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-3">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Resource Type</Label>
           <Select disabled={!isAuthorizedAdmin} value={formData.type} onValueChange={(val) => setFormData({...formData, type: val})}>
@@ -264,6 +248,9 @@ export function TeamMemberForm({ existingMember, onSuccess }: TeamMemberFormProp
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-3">
           <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Access Status</Label>
           <Select disabled={!isAuthorizedAdmin} value={formData.status} onValueChange={(val) => setFormData({...formData, status: val})}>

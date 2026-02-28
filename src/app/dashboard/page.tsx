@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
@@ -6,15 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   TrendingUp, 
   Briefcase, 
-  Users, 
   Target, 
-  Zap, 
   Loader2,
   ChevronRight,
   ArrowUpRight,
   Activity,
   IndianRupee,
-  PieChart as PieIcon,
   BarChart3,
   Plus
 } from "lucide-react";
@@ -33,49 +29,28 @@ import {
   Pie
 } from "recharts";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, orderBy, limit, doc } from "firebase/firestore";
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
 
 const CHART_COLORS = ['#2E86C1', '#4CAF50', '#F39C12', '#9B59B6', '#E74C3C', '#1ABC9C'];
 
 export default function AnalyticsDashboard() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const db = useFirestore();
-  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const userRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(db, "users", user.uid);
-  }, [db, user]);
-  const { data: userData, isLoading: isUserRegistryLoading } = useDoc(userRef);
-
-  const isMasterUser = user?.email?.toLowerCase() === 'defineperspective.in@gmail.com';
-
   const projectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "projects"), orderBy("updatedAt", "desc"));
-  }, [db, user]);
+  }, [db]);
   const { data: projects, isLoading: isProjectsLoading } = useCollection(projectsQuery);
 
   const leadsQuery = useMemoFirebase(() => {
-    if (!user) return null;
     return query(collection(db, "leads"));
-  }, [db, user]);
+  }, [db]);
   const { data: leads } = useCollection(leadsQuery);
-
-  useEffect(() => {
-    if (!isUserLoading && !isUserRegistryLoading && mounted && !isMasterUser) {
-      if (!user || !userData || userData.status !== "active" || !userData.strategicPermit) {
-        router.push("/login");
-      }
-    }
-  }, [user, userData, isUserLoading, isUserRegistryLoading, router, mounted, isMasterUser]);
 
   const stats = useMemo(() => {
     const defaultStats = { totalRevenue: 0, activeProjects: 0, pipelineValue: 0, conversionRate: 0, verticalData: [] };
@@ -99,7 +74,7 @@ export default function AnalyticsDashboard() {
     return { totalRevenue, activeProjects, pipelineValue, conversionRate, verticalData };
   }, [projects, leads]);
 
-  if (!mounted || isUserLoading || isUserRegistryLoading || isProjectsLoading) {
+  if (!mounted || isProjectsLoading) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />

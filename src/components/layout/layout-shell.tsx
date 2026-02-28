@@ -1,55 +1,22 @@
 'use client';
 
-import React, { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import React from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { PublicNav } from "@/components/layout/public-nav";
 import { PublicFooter } from "@/components/layout/public-footer";
-import { Zap, Loader2 } from "lucide-react";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { Zap } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, isUserLoading } = useUser();
-  const db = useFirestore();
-
-  const userRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(db, "users", user.uid);
-  }, [db, user]);
-  const { data: userData, isLoading: isRegistryLoading } = useDoc(userRef);
-
-  // Auth & Status Redirection Logic
-  useEffect(() => {
-    if (!isUserLoading && !isRegistryLoading) {
-      const publicRoutes = ["/", "/login", "/waiting-approval", "/account-suspended", "/about", "/contact", "/pricing", "/how-it-works", "/modules", "/industries", "/resources", "/docs", "/portfolio", "/verticals", "/book-demo"];
-      const isPublicRoute = publicRoutes.includes(pathname);
-
-      if (user && userData) {
-        if (userData.status === 'suspended' && pathname !== '/account-suspended') {
-          router.push('/account-suspended');
-        } else if (userData.status === 'pending' && pathname !== '/waiting-approval') {
-          router.push('/waiting-approval');
-        } else if (userData.status === 'approved' && (pathname === '/waiting-approval' || pathname === '/account-suspended')) {
-          router.push('/dashboard');
-        }
-      } else if (!user && !isPublicRoute) {
-        router.push('/login');
-      }
-    }
-  }, [user, userData, isUserLoading, isRegistryLoading, pathname, router]);
 
   const marketingRoutes = [
     "/", "/how-it-works", "/modules", "/industries", "/pricing", "/resources", "/about", "/book-demo",
     "/verticals", "/portfolio", "/contact", "/docs"
   ];
-  const authRoutes = ["/login", "/logout", "/waiting-approval", "/account-suspended"];
 
   const isMarketingRoute = marketingRoutes.includes(pathname);
-  const isAuthRoute = authRoutes.includes(pathname);
 
   if (isMarketingRoute) {
     return (
@@ -59,19 +26,6 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         <PublicFooter />
-      </div>
-    );
-  }
-
-  if (isAuthRoute) {
-    return <main className="min-h-screen w-full bg-white">{children}</main>;
-  }
-
-  if (isUserLoading || isRegistryLoading) {
-    return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-white space-y-4">
-        <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Synchronizing Identity State...</p>
       </div>
     );
   }

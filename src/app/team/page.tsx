@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -48,11 +47,9 @@ import {
 import { TeamMemberForm } from "@/components/team/TeamMemberForm";
 import Link from "next/link";
 
-const DEPARTMENTS = ["Marketing", "Sales", "Admin", "Production", "HR", "Operations"];
-
 /**
  * @fileOverview Team Registry.
- * High-density executive monitoring with dynamic role and departmental resolution.
+ * High-density executive monitoring with dynamic role resolution.
  */
 
 export default function TeamPage() {
@@ -60,7 +57,6 @@ export default function TeamPage() {
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [deptFilter, setDeptFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const teamQuery = useMemoFirebase(() => {
@@ -98,11 +94,10 @@ export default function TeamPage() {
         member.roleName?.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesType = typeFilter === "all" || member.type === typeFilter;
-      const matchesDept = deptFilter === "all" || member.department === deptFilter;
       
-      return matchesSearch && matchesType && matchesDept;
+      return matchesSearch && matchesType;
     });
-  }, [team, searchQuery, typeFilter, deptFilter, projects, roles]);
+  }, [team, searchQuery, typeFilter, projects, roles]);
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500 pb-20">
@@ -139,16 +134,6 @@ export default function TeamPage() {
           />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <Select value={deptFilter} onValueChange={setDeptFilter}>
-            <SelectTrigger className="h-14 w-full md:w-[180px] rounded-full bg-white border-none shadow-sm font-bold text-xs uppercase tracking-widest">
-              <SelectValue placeholder="All Departments" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl shadow-xl">
-              <SelectItem value="all" className="text-xs font-bold uppercase">All Units</SelectItem>
-              {DEPARTMENTS.map(d => <SelectItem key={d} value={d} className="text-xs font-bold uppercase">{d}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="h-14 w-full md:w-[180px] rounded-full bg-white border-none shadow-sm font-bold text-xs uppercase tracking-widest">
               <SelectValue placeholder="All Types" />
@@ -212,7 +197,6 @@ export default function TeamPage() {
                         <CheckCircle2 className="h-4 w-4 text-green-500 fill-green-50" />
                       </div>
                       <p className="text-xs font-bold text-primary uppercase tracking-widest">{member.roleName}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{member.department || 'Production'}</p>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -242,7 +226,6 @@ export default function TeamPage() {
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="hover:bg-transparent border-slate-100">
                   <TableHead className="px-10 py-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Member Identity</TableHead>
-                  <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Unit</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Strategic Role</TableHead>
                   <TableHead className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">Load</TableHead>
                   <TableHead className="text-right px-10 text-[10px] font-bold uppercase tracking-widest text-slate-400">Actions</TableHead>
@@ -265,11 +248,6 @@ export default function TeamPage() {
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">#{member.id.substring(0, 6).toUpperCase()}</p>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="border-slate-100 text-slate-500 font-bold text-[9px] uppercase px-3 py-1 rounded-full tracking-widest">
-                        {member.department || "Production"}
-                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm font-bold text-slate-600 tracking-normal">
@@ -299,7 +277,7 @@ export default function TeamPage() {
           <div className="space-y-2">
             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No members matching your filters</p>
             <p className="text-xs text-slate-300 italic tracking-normal max-w-sm mx-auto">Adjust your search or register a new production expert.</p>
-            <Button variant="link" onClick={() => { setSearchQuery(""); setTypeFilter("all"); setDeptFilter("all"); }} className="text-primary font-bold text-xs mt-4 tracking-widest p-0">Clear all filters</Button>
+            <Button variant="link" onClick={() => { setSearchQuery(""); setTypeFilter("all"); }} className="text-primary font-bold text-xs mt-4 tracking-widest p-0">Clear all filters</Button>
           </div>
         </div>
       )}

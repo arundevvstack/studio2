@@ -1,76 +1,31 @@
-
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user account within the MediaFlow application, including their personal details and authorization configuration for role-based access control.",
+      "description": "Represents a user record (deprecated for auth, used for profile reference).",
       "properties": {
         "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity (Firebase UID)."
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "description": "Full name of the user."
+          "type": "string"
         },
         "email": {
           "type": "string",
-          "description": "Email address of the user.",
           "format": "email"
-        },
-        "role": {
-          "type": "string",
-          "description": "The assigned strategic role (strategic | sales | production | admin | null).",
-          "enum": ["strategic", "sales", "production", "admin", null]
-        },
-        "permittedPhases": {
-          "type": "array",
-          "description": "A list of phases the user is permitted to access.",
-          "items": {
-            "type": "string",
-            "enum": ["sales", "production", "release", "socialMedia"]
-          }
-        },
-        "strategicPermit": {
-          "type": "boolean",
-          "description": "Master switch enabling access to the system features."
-        },
-        "status": {
-          "type": "string",
-          "description": "Current status of the user's account.",
-          "enum": ["pending", "active", "suspended"]
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the user account was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the user account was last updated.",
-          "format": "date-time"
         }
       },
       "required": [
         "id",
         "name",
-        "email",
-        "role",
-        "permittedPhases",
-        "strategicPermit",
-        "status",
-        "createdAt",
-        "updatedAt"
+        "email"
       ]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "google"
-    ]
+    "providers": []
   },
   "firestore": {
     "structure": [
@@ -81,13 +36,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Primary identity registry. Security rules check custom claims derived from this document's permit state.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Matching Firebase Authentication UID."
-            }
-          ]
+          "description": "User profile registry."
         }
       }
     ]

@@ -1,65 +1,12 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     /**
-     * MEDIAFLOW ENTERPRISE SECURITY CORE
-     */
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function userDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
-    // Authoritative check for Root Administrative Authority
-    function isAdmin() {
-      let masterEmail = "defineperspective.in@gmail.com";
-      return isSignedIn() && (
-        request.auth.token.email == masterEmail ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         userDoc().data.role == "admin")
-      );
-    }
-
-    // Check if the user has been authorized by an Admin
-    function isApproved() {
-      let masterEmail = "defineperspective.in@gmail.com";
-      return isSignedIn() && (
-        request.auth.token.email == masterEmail ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         userDoc().data.status == "approved")
-      );
-    }
-
-    /**
-     * IDENTITY & AUTHORIZATION REGISTRY
-     */
-    match /users/{userId} {
-      // Create: Users can create their own doc during signup
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      
-      // Read: Users read self, or Admin reads all
-      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      
-      // List: ONLY Admins can list the user registry
-      allow list: if isAdmin();
-      
-      // Update: Admin has full write access for permits
-      allow update: if isAdmin();
-      
-      // Delete: Admin only
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * PROTECTED ENTERPRISE DATA
-     * All other collections require an 'approved' status.
+     * MEDIAFLOW OPEN ACCESS CORE
+     * All authentication and role-based restrictions have been removed.
      */
     match /{document=**} {
-      allow read, write: if isApproved();
+      allow read, write: if true;
     }
   }
 }
