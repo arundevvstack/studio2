@@ -86,7 +86,7 @@ export function AppSidebar() {
           </div>
           <div className="group-data-[collapsible=icon]:hidden">
             <p className="font-headline font-bold text-sm tracking-tight leading-none text-slate-900">MediaFlow</p>
-            <p className="text-[7px] font-bold text-primary uppercase tracking-[0.2em] mt-1">Open Node v3.0</p>
+            <p className="text-[7px] font-bold text-primary uppercase tracking-[0.2em] mt-1">Universal v3.5</p>
           </div>
         </Link>
       </SidebarHeader>
